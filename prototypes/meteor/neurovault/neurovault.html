@@ -1,0 +1,22 @@
+<head>
+  <title>neurovault</title>
+</head>
+
+<body>
+  {{> home}}
+<script type="text/javascript" src="//api.filepicker.io/v1/filepicker.js"></script>
+</body>
+
+<template name="home">
+  <h1>Hello World!</h1>
+  <input type="button" value="Click" />
+  <div class="leaderboard">
+    {{#each files}}
+      {{> file}}
+    {{/each}}
+  </div>
+</template>
+
+<template name="file">
+    <a href="{{url}}">{{filename}}</a> <br />
+</template>
