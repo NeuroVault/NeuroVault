@@ -1,0 +1,5 @@
+<h1>{{ study.name }}</h1>
+
+{% for statmap in study.statmap_set.all %}
+    <li><a href="{% url 'statmaps:statmap_details' statmap.id %}">{{ statmap.name }}</a></li>
+{% endfor %}
