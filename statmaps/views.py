@@ -4,7 +4,7 @@ from django.http.response import HttpResponseRedirect
 from django.shortcuts import render
 
 
-def manage_statmaps(request, study_id):
+def edit_statmaps(request, study_id):
     study = Study.objects.get(pk=study_id)
     if request.method == "POST":
         formset = StudyFormSet(request.POST, request.FILES, instance=study)

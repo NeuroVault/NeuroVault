@@ -26,6 +26,6 @@ urlpatterns = patterns('',
             template_name='statmaps/new_study.html'),
         name='new_study'),
     url(r'^(?P<study_id>\d+)/editstatmaps$', 
-        "statmaps.views.manage_statmaps", 
-        name="manage_statmaps"),
+        "statmaps.views.edit_statmaps", 
+        name="edit_statmaps"),
 )
