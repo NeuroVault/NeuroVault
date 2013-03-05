@@ -1,7 +1,7 @@
 from django.conf.urls import patterns, url
 from django.views.generic import DetailView, ListView, CreateView
-from statmaps.models import Study, StatMap
-from statmaps.forms import StudyForm
+from .models import Study, StatMap
+from .forms import StudyForm
 
 urlpatterns = patterns('',
     url(r'^$',
@@ -25,4 +25,7 @@ urlpatterns = patterns('',
             form_class=StudyForm,
             template_name='statmaps/new_study.html'),
         name='new_study'),
+    url(r'^(?P<study_id>\d+)/editstatmaps$', 
+        "statmaps.views.manage_statmaps", 
+        name="manage_statmaps"),
 )

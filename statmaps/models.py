@@ -13,14 +13,14 @@ class Study(models.Model):
         return self.name
 
 
-def upload_to(self, instance, filename):
-    return "statmaps/%s/"%instance.study.name
+def upload_to(instance, filename):
+    return "statmaps/%s/%s"%(instance.study.name, filename)
     
 class StatMap(models.Model):
     study = models.ForeignKey(Study)
-    file = models.FileField(upload_to=upload_to) #, null=False)
-    name = models.CharField(max_length=200, null=False)
+    name = models.CharField(max_length=200, null=False, blank=False)
     description = models.CharField(max_length=200, blank=True)
+    file = models.FileField(upload_to=upload_to, null=False, blank=False)
     
     def __unicode__(self):
         return self.name
