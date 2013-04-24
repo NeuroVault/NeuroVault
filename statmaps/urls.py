@@ -2,6 +2,7 @@ from django.conf.urls import patterns, url
 from django.views.generic import DetailView, ListView, CreateView
 from .models import Study, StatMap
 from .forms import StudyForm
+from django.contrib.auth.decorators import login_required
 
 urlpatterns = patterns('',
     url(r'^$',
@@ -21,9 +22,9 @@ urlpatterns = patterns('',
             template_name='statmaps/statmap_details.html'),
         name='statmap_details'),
     url(r'^new$',
-        CreateView.as_view(
+        login_required(CreateView.as_view(
             form_class=StudyForm,
-            template_name='statmaps/new_study.html'),
+            template_name='statmaps/new_study.html')),
         name='new_study'),
     url(r'^(?P<study_id>\d+)/editstatmaps$', 
         "statmaps.views.edit_statmaps", 

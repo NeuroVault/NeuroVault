@@ -2,8 +2,9 @@ from .models import Study
 from .forms import StudyFormSet
 from django.http.response import HttpResponseRedirect
 from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
 
-
+@login_required
 def edit_statmaps(request, study_id):
     study = Study.objects.get(pk=study_id)
     if request.method == "POST":

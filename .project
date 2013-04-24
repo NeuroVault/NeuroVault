@@ -3,6 +3,7 @@
 	<name>neurovault</name>
 	<comment></comment>
 	<projects>
+		<project>django-social-auth</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

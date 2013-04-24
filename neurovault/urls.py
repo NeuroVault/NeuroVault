@@ -2,11 +2,28 @@ from django.conf.urls import patterns, include, url
 from django.conf import settings
 
 from django.contrib import admin
+from django.contrib.auth.forms import UserCreationForm
+from django.views.generic.edit import CreateView
+from django.contrib.auth.models import User
+from django.views.generic.detail import DetailView
 admin.autodiscover()
 
 urlpatterns = patterns('',
     url(r'^studies/', include('statmaps.urls', namespace="statmaps")),
     url(r'^admin/', include(admin.site.urls)),
+    url(r'', include('social_auth.urls')),
+    (r'^accounts/login/$', 'django.contrib.auth.views.login'),
+    url(r'^accounts/create/$',
+        CreateView.as_view(
+            form_class=UserCreationForm,
+            template_name='registration/create_user.html'),
+        name='create_user'),
+    url(r'^users/(?P<username>[a-z]+)/$',
+        DetailView.as_view(
+            model=User,
+            template_name='registration/profile.html'),
+        name="profile"
+        ),                  
 )
 
 if settings.DEBUG:
