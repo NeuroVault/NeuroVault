@@ -6,6 +6,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.views.generic.edit import CreateView
 from django.contrib.auth.models import User
 from django.views.generic.detail import DetailView
+from .views import view_profile
 admin.autodiscover()
 
 urlpatterns = patterns('',
@@ -19,9 +20,7 @@ urlpatterns = patterns('',
             template_name='registration/create_user.html'),
         name='create_user'),
     url(r'^users/(?P<username>[a-z]+)/$',
-        DetailView.as_view(
-            model=User,
-            template_name='registration/profile.html'),
+        view_profile,
         name="profile"
         ),                  
 )
