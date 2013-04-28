@@ -11,7 +11,7 @@ urlpatterns = patterns('',
     url(r'^studies/', include('statmaps.urls', namespace="statmaps")),
     url(r'^admin/', include(admin.site.urls)),
     url(r'', include('social_auth.urls')),
-    (r'^accounts/login/$', 'django.contrib.auth.views.login'),
+    (r'^accounts/login/$', 'django.contrib.auth.views.login', {'template_name': 'registration/login.html'}),
     url(r'^accounts/create/$',
         CreateView.as_view(
             form_class=UserCreationForm,
