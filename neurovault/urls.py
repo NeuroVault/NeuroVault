@@ -4,8 +4,6 @@ from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.forms import UserCreationForm
 from django.views.generic.edit import CreateView
-from django.contrib.auth.models import User
-from django.views.generic.detail import DetailView
 from .views import view_profile
 admin.autodiscover()
 

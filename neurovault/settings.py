@@ -1,4 +1,7 @@
 # Django settings for neurovault project.
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -11,13 +14,13 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'neurovault',                      # Or path to database file if using sqlite3.
+        'ENGINE': 'django.db.backends.sqlite3', #'django.db.backends.postgresql_psycopg2', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'), #'neurovault',                      # Or path to database file if using sqlite3.
         # The following settings are not used with sqlite3:
-        'USER': 'neurovault',
-        'PASSWORD': 'neurovault',
-        'HOST': '127.0.0.1',                      # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
-        'PORT': '',                      # Set to empty string for default.
+        #'USER': 'neurovault',
+        #'PASSWORD': 'neurovault',
+        #'HOST': '127.0.0.1',                      # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
+        #'PORT': '',                      # Set to empty string for default.
     }
 }
 
@@ -50,7 +53,7 @@ USE_TZ = True
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/var/www/example.com/media/"
-MEDIA_ROOT = '/home/raid3/gorgolewski/workspace/neurovault/data'
+MEDIA_ROOT = os.path.join(BASE_DIR,'data')
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash.
@@ -165,8 +168,8 @@ AUTHENTICATION_BACKENDS = (
 FACEBOOK_APP_ID              = '523031064399854'
 FACEBOOK_API_SECRET          = '2fad2e1c24524bda42a0a488118ae680'
 
-LOGIN_URL          = '/login-form/'
-LOGIN_REDIRECT_URL = '/logged-in/'
-LOGIN_ERROR_URL    = '/login-error/'
+#LOGIN_URL          = '/login-form/'
+#LOGIN_REDIRECT_URL = '/logged-in/'
+#LOGIN_ERROR_URL    = '/login-error/'
 
 
