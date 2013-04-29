@@ -1,3 +1,6 @@
+{% extends "base.html" %}
+
+{% block content %}
 <h1>{{ study.name }}</h1>
 
 {% for statmap in study.statmap_set.all %}
@@ -5,3 +8,4 @@
 {% endfor %}
 
 <a href="{% url 'statmaps:edit_statmaps' study.id %}">Add/edit files</a>
+{% endblock %}

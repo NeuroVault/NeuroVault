@@ -5,6 +5,7 @@ from django.forms.models import inlineformset_factory
 # Create the form class.
 class StudyForm(ModelForm):
     class Meta:
+        exclude = ('owner',)
         model = Study
         
 # This allowsinserting null DOIs

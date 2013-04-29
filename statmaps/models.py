@@ -1,10 +1,12 @@
 from django.db import models
 from django.core.urlresolvers import reverse
+from django.contrib.auth.models import User
 
 class Study(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False)
     DOI = models.CharField(max_length=200, unique=True, blank=True, null=True, default=None)
     description = models.CharField(max_length=200, blank=True)
+    owner = models.ForeignKey(User)
     
     def get_absolute_url(self):
         return reverse('statmaps:study_details', args=[str(self.id)])

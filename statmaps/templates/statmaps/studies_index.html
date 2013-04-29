@@ -1,3 +1,6 @@
+{% extends "base.html" %}
+
+{% block content %}
 {% if all_studies_list %}
     <ul>
     {% for study in all_studies_list %}
@@ -9,3 +12,4 @@
 {% endif %}
 
 <a href="{% url 'statmaps:new_study' %}">Add new study</a>
+{% endblock %}

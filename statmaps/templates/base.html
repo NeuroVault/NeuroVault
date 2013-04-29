@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="style.css" />
+    <title>{% block title %}NeuroVault: a new home for all brain statistical maps!{% endblock %}</title>
+</head>
+
+<body>
+    <div id="sidebar">
+        {% if user.is_authenticated %}
+		<a href="{% url 'profile' user.username %}">{{ user.username }}</a> <a href="{% url 'logout' %}">Log out</a>
+		{% else %} 
+		<a href="{% url 'login' %}">Log in</a>
+		{% endif %}
+    </div>
+
+    <div id="content">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

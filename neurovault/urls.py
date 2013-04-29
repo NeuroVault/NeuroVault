@@ -5,19 +5,25 @@ from django.contrib import admin
 from django.contrib.auth.forms import UserCreationForm
 from django.views.generic.edit import CreateView
 from .views import view_profile
+from neurovault.views import edit_user
 admin.autodiscover()
 
 urlpatterns = patterns('',
     url(r'^studies/', include('statmaps.urls', namespace="statmaps")),
     url(r'^admin/', include(admin.site.urls)),
     url(r'', include('social_auth.urls')),
-    (r'^accounts/login/$', 'django.contrib.auth.views.login', {'template_name': 'registration/login.html'}),
+    url(r'^accounts/login/$', 'django.contrib.auth.views.login', 
+        {'template_name': 'registration/login.html'}, name="login"),
+    url(r'^accounts/logout/$', 'django.contrib.auth.views.logout', 
+        {'template_name': 'registration/logout.html'}, name="logout"),
     url(r'^accounts/create/$',
-        CreateView.as_view(
-            form_class=UserCreationForm,
-            template_name='registration/create_user.html'),
-        name='create_user'),
-    url(r'^users/(?P<username>[a-z]+)/$',
+        edit_user,
+        name="create_user"),
+    url(r'^accounts/(?P<username>[A-Za-z]+)/edit$',
+        edit_user,
+        name="edit_user"
+        ),
+    url(r'^accounts/(?P<username>[A-Za-z]+)/$',
         view_profile,
         name="profile"
         ),                  
