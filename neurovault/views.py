@@ -15,7 +15,7 @@ def edit_user(request, username=None):
     else:
         user = User()
         
-    user_form = modelform_factory(User)
+    user_form = modelform_factory(User, fields=("first_name","last_name", "email"))
     if request.method == "POST":
         form = user_form(request.POST, request.FILES, instance=user)
         if form.is_valid():
