@@ -1,8 +1,6 @@
 from django.conf.urls import patterns, url
-from django.views.generic import DetailView, ListView, CreateView
+from django.views.generic import DetailView, ListView
 from .models import Study, StatMap
-from .forms import StudyForm
-from django.contrib.auth.decorators import login_required
 from .views import edit_study
 
 urlpatterns = patterns('',

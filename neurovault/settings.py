@@ -127,7 +127,7 @@ INSTALLED_APPS = (
     # Uncomment the next line to enable the admin:
     'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
-    # 'django.contrib.admindocs',
+     #'django.contrib.admindocs',
     'social_auth',
 )
 
@@ -167,6 +167,7 @@ AUTHENTICATION_BACKENDS = (
 
 FACEBOOK_APP_ID              = '523031064399854'
 FACEBOOK_API_SECRET          = '2fad2e1c24524bda42a0a488118ae680'
+FACEBOOK_EXTENDED_PERMISSIONS = ['email']
 
 #LOGIN_URL          = '/login-form/'
 #LOGIN_REDIRECT_URL = '/logged-in/'

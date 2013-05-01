@@ -1,9 +1,8 @@
 from .models import Study
-from .forms import StudyFormSet
+from .forms import StudyFormSet, StudyForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from statmaps.forms import StudyForm
 
 @login_required
 def edit_statmaps(request, study_id):

@@ -3,8 +3,14 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.models import User
 from django.forms.models import modelform_factory
 
-def view_profile(request, username):
-    user = get_object_or_404(User, username=username)
+def view_profile(request, username=None):
+    if not username:
+        if not request.user:
+            return HttpResponseForbidden()
+        else:
+            user = request.user
+    else:
+        user = get_object_or_404(User, username=username)
     return render(request, 'registration/profile.html', {'user': user})
 
 def edit_user(request, username=None):

@@ -1,11 +1,7 @@
 from django.conf.urls import patterns, include, url
 from django.conf import settings
-
 from django.contrib import admin
-from django.contrib.auth.forms import UserCreationForm
-from django.views.generic.edit import CreateView
-from .views import view_profile
-from neurovault.views import edit_user
+from .views import view_profile, edit_user
 admin.autodiscover()
 
 urlpatterns = patterns('',
@@ -19,14 +15,19 @@ urlpatterns = patterns('',
     url(r'^accounts/create/$',
         edit_user,
         name="create_user"),
-    url(r'^accounts/(?P<username>[A-Za-z]+)/edit$',
+    url(r'^accounts/profile/.*$',
+        view_profile,
+        name="my_profile"
+        ),    
+    url(r'^accounts/(?P<username>[A-Za-z@/./+/-/_]+)/edit$',
         edit_user,
         name="edit_user"
         ),
-    url(r'^accounts/(?P<username>[A-Za-z]+)/$',
+    url(r'^accounts/(?P<username>[A-Za-z@/./+/-/_]+)/$',
         view_profile,
         name="profile"
-        ),                  
+        ),
+                  
 )
 
 if settings.DEBUG:
