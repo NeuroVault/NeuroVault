@@ -1,33 +1,13 @@
 from django.conf.urls import patterns, include, url
 from django.conf import settings
 from django.contrib import admin
-from .views import view_profile, edit_user
 admin.autodiscover()
 
 urlpatterns = patterns('',
-    url(r'^studies/', include('statmaps.urls', namespace="statmaps")),
+    url(r'^$', include('neurovault.apps.main.urls', namespace="main", app_name="main")),
+    url(r'^studies/', include('neurovault.apps.statmaps.urls', namespace="statmaps", app_name="statmaps")),
+    url(r'^accounts/', include('neurovault.apps.users.urls', namespace="users", app_name="users")),
     url(r'^admin/', include(admin.site.urls)),
-    url(r'', include('social_auth.urls')),
-    url(r'^accounts/login/$', 'django.contrib.auth.views.login', 
-        {'template_name': 'registration/login.html'}, name="login"),
-    url(r'^accounts/logout/$', 'django.contrib.auth.views.logout', 
-        {'template_name': 'registration/logout.html'}, name="logout"),
-    url(r'^accounts/create/$',
-        edit_user,
-        name="create_user"),
-    url(r'^accounts/profile/.*$',
-        view_profile,
-        name="my_profile"
-        ),    
-    url(r'^accounts/(?P<username>[A-Za-z@/./+/-/_]+)/edit$',
-        edit_user,
-        name="edit_user"
-        ),
-    url(r'^accounts/(?P<username>[A-Za-z@/./+/-/_]+)/$',
-        view_profile,
-        name="profile"
-        ),
-                  
 )
 
 if settings.DEBUG:

@@ -123,7 +123,9 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'statmaps',
+    'neurovault.apps.main',
+    'neurovault.apps.statmaps',
+    'neurovault.apps.users',
     # Uncomment the next line to enable the admin:
     'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
@@ -161,8 +163,8 @@ LOGGING = {
 }
 
 AUTHENTICATION_BACKENDS = (
-    'social_auth.backends.facebook.FacebookBackend',
     'django.contrib.auth.backends.ModelBackend',
+    'social_auth.backends.facebook.FacebookBackend',
 )
 
 FACEBOOK_APP_ID              = '523031064399854'

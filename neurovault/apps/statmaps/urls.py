@@ -1,7 +1,7 @@
 from django.conf.urls import patterns, url
 from django.views.generic import DetailView, ListView
 from .models import Study, StatMap
-from .views import edit_study
+from .views import edit_study, edit_statmaps
 
 urlpatterns = patterns('',
     url(r'^$',
@@ -27,6 +27,6 @@ urlpatterns = patterns('',
         edit_study,
         name='edit_study'),                   
     url(r'^(?P<study_id>\d+)/editstatmaps$', 
-        "statmaps.views.edit_statmaps", 
+        edit_statmaps, 
         name="edit_statmaps"),
 )
