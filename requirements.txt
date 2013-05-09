@@ -1,0 +1,2 @@
+Django>=1.5
+django-social-auth>=0.7.23
