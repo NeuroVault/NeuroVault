@@ -4,9 +4,9 @@ from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = patterns('',
-    url(r'^$', include('neurovault.apps.main.urls', namespace="main", app_name="main")),
-    url(r'^studies/', include('neurovault.apps.statmaps.urls', namespace="statmaps", app_name="statmaps")),
-    url(r'^accounts/', include('neurovault.apps.users.urls', namespace="users", app_name="users")),
+    url(r'^$', include('neurovault.apps.main.urls', app_name="main")),
+    url(r'^studies/', include('neurovault.apps.statmaps.urls', app_name="statmaps")),
+    url(r'^accounts/', include('neurovault.apps.users.urls', app_name="users")),
     url(r'^admin/', include(admin.site.urls)),
     url(r'', include('social_auth.urls')),
 )

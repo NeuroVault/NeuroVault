@@ -1,11 +1,11 @@
-
+{% extends "base.html" %}
 {% block content %}
 
 {% if form.errors %}
 <p>Your username and password didn't match. Please try again.</p>
 {% endif %}
 
-<form method="post" action="{% url 'users:login' %}">
+<form method="post" action="{% url 'login' %}">
 {% csrf_token %}
 <table>
 <tr>
@@ -22,8 +22,10 @@
 <input type="hidden" name="next" value="{{ next }}" />
 </form>
 
+
+
+<a href="{% url 'create_user' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">Register new account</a>
+
+<a href="{% url "socialauth_begin" "facebook" %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">Login using Facebook</a>
+
 {% endblock %}
-
-<a href="{% url 'users:create_user' %}">Register new account</a>
-
-<a href="{% url "socialauth_begin" "facebook" %}">Login using Facebook</a>

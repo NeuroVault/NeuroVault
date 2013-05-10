@@ -4,8 +4,8 @@
 <h1>{{ study.name }}</h1>
 
 {% for statmap in study.statmap_set.all %}
-    <li><a href="{% url 'statmaps:statmap_details' statmap.id %}">{{ statmap.name }}</a></li>
+    <li><a href="{% url 'statmap_details' statmap.id %}">{{ statmap.name }}</a></li>
 {% endfor %}
 
-<a href="{% url 'statmaps:edit_statmaps' study.id %}">Add/edit files</a>
+<a href="{% url 'edit_statmaps' study.id %}">Add/edit files</a>
 {% endblock %}

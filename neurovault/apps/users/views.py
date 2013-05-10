@@ -1,9 +1,9 @@
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.models import User
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse, resolve
 from django.contrib.auth import authenticate, login
-from django.contrib.auth.forms import UserChangeForm, UserCreationForm
+from .forms import UserEditForm, UserCreateForm
 
 def view_profile(request, username=None):
     if not username:
@@ -20,10 +20,10 @@ def edit_user(request, username=None, next=None):
         user = get_object_or_404(User, username=username)
         if user != request.user:
             return HttpResponseForbidden()
-        user_form = UserChangeForm
+        user_form = UserEditForm
     else:
         user = User()
-        user_form = UserCreationForm
+        user_form = UserCreateForm
 
     if request.method == "POST":
         form = user_form(request.POST, request.FILES, instance=user)
@@ -37,7 +37,7 @@ def edit_user(request, username=None, next=None):
             if next:
                 return HttpResponseRedirect(next)
             else:
-                return HttpResponseRedirect(reverse("my_profile"))
+                return HttpResponseRedirect(reverse("my_profile", current_app="users"))
     else:
         form = user_form(instance=user)
         
