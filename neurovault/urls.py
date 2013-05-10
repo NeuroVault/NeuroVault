@@ -8,6 +8,7 @@ urlpatterns = patterns('',
     url(r'^studies/', include('neurovault.apps.statmaps.urls', namespace="statmaps", app_name="statmaps")),
     url(r'^accounts/', include('neurovault.apps.users.urls', namespace="users", app_name="users")),
     url(r'^admin/', include(admin.site.urls)),
+    url(r'', include('social_auth.urls')),
 )
 
 if settings.DEBUG:

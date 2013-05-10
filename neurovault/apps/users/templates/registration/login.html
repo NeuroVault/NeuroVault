@@ -5,7 +5,7 @@
 <p>Your username and password didn't match. Please try again.</p>
 {% endif %}
 
-<form method="post" action="{% url 'django.contrib.auth.views.login' %}">
+<form method="post" action="{% url 'users:login' %}">
 {% csrf_token %}
 <table>
 <tr>
@@ -24,6 +24,6 @@
 
 {% endblock %}
 
-<a href="{% url 'create_user' %}">Register new account</a>
+<a href="{% url 'users:create_user' %}">Register new account</a>
 
 <a href="{% url "socialauth_begin" "facebook" %}">Login using Facebook</a>

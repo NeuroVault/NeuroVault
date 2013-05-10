@@ -5,7 +5,6 @@ from .views import view_profile, edit_user
 admin.autodiscover()
 
 urlpatterns = patterns('',
-    url(r'', include('social_auth.urls')),
     url(r'^login/$', 'django.contrib.auth.views.login', 
         {'template_name': 'registration/login.html'}, name="login"),
     url(r'^logout/$', 'django.contrib.auth.views.logout', 
