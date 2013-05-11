@@ -1,7 +1,7 @@
 from django.conf.urls import patterns, url
 from django.views.generic import DetailView, ListView
-from .models import Study, StatMap
-from .views import edit_study, edit_statmaps
+from .models import Study
+from .views import edit_study, edit_statmaps, view_statmap
 
 urlpatterns = patterns('',
     url(r'^$',
@@ -16,9 +16,7 @@ urlpatterns = patterns('',
             template_name='statmaps/study_details.html'),
         name='study_details'),
     url(r'^statmap/(?P<pk>\d+)/$',
-        DetailView.as_view(
-            model=StatMap,
-            template_name='statmaps/statmap_details.html'),
+        view_statmap,
         name='statmap_details'),
     url(r'^new$',
         edit_study,
