@@ -2,8 +2,8 @@ from django.conf.urls import patterns, include, url
 from django.conf import settings
 from django.contrib import admin
 from .views import view_profile, edit_user
+from .forms import BlankPasswordChangeForm
 from django.contrib.auth.views import password_change, password_change_done
-from django.core.urlresolvers import reverse
 admin.autodiscover()
 
 urlpatterns = patterns('',
@@ -22,13 +22,13 @@ urlpatterns = patterns('',
         edit_user,
         name="edit_user"
         ),
-#     url(r'^[A-Za-z0-9@/./+/-/_]+/password/done$',
-#         password_change_done,
-#         name="password_change_done"
-#         ),        
+    url(r'^[A-Za-z0-9@/./+/-/_]+/password/done$',
+        password_change_done,
+        name="password_change_done"
+        ),        
     url(r'^[A-Za-z0-9@/./+/-/_]+/password/$',
         password_change,
-        {'post_change_redirect': "/done"},
+        {'post_change_redirect': "done", "password_change_form":BlankPasswordChangeForm},
         name="password_change"
         ),   
     url(r'^(?P<username>[A-Za-z0-9@/./+/-/_]+)/$',

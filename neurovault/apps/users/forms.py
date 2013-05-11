@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
-from django.contrib.auth.forms import UserCreationForm, UserChangeForm
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm,\
+    PasswordChangeForm
 
 class UserCreateForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -29,3 +30,15 @@ class UserEditForm(UserChangeForm):
         if commit:
             user.save()
         return user
+    
+class BlankPasswordChangeForm(PasswordChangeForm):
+    
+    old_password = forms.CharField(label="Old password",
+                                   widget=forms.PasswordInput,
+                                   required=False)
+
+    def clean_old_password(self):
+        if self.user.has_usable_password():
+            return super(BlankPasswordChangeForm, self).clean_old_password()
+        else:
+            return self.cleaned_data["old_password"]

@@ -43,4 +43,3 @@ def edit_user(request, username=None, next=None):
         
     context = {"form": form}
     return render(request, "registration/edit_user.html", context)
-
