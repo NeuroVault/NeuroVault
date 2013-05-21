@@ -31,7 +31,7 @@ def edit_user(request, next=None):
             if next:
                 return HttpResponseRedirect(next)
             else:
-                return HttpResponseRedirect(reverse("my_profile", current_app="users"))
+                return HttpResponseRedirect(reverse("my_profile"))
     else:
         form = user_form(instance=user)
         
