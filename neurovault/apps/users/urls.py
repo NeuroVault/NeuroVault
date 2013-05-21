@@ -14,14 +14,14 @@ urlpatterns = patterns('',
     url(r'^create/$',
         edit_user,
         name="create_user"),
+    url(r'^profile/edit$',
+        edit_user,
+        name="edit_user"
+        ),
     url(r'^profile/.*$',
         view_profile,
         name="my_profile"
         ),    
-    url(r'^(?P<username>[A-Za-z0-9@/./+/-/_]+)/edit$',
-        edit_user,
-        name="edit_user"
-        ),
     url(r'^[A-Za-z0-9@/./+/-/_]+/password/done$',
         password_change_done,
         name="password_change_done"

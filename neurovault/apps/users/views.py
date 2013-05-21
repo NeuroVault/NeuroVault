@@ -15,15 +15,9 @@ def view_profile(request, username=None):
         user = get_object_or_404(User, username=username)
     return render(request, 'registration/profile.html', {'user': user})
 
-def edit_user(request, username=None, next=None):
-    if username:
-        user = get_object_or_404(User, username=username)
-        if user != request.user:
-            return HttpResponseForbidden()
-        user_form = UserEditForm
-    else:
-        user = User()
-        user_form = UserCreateForm
+def edit_user(request, next=None):
+    user = User()
+    user_form = UserCreateForm
 
     if request.method == "POST":
         form = user_form(request.POST, request.FILES, instance=user)
