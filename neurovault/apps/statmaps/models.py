@@ -38,6 +38,11 @@ class StatMap(models.Model):
         unique_together = ("study", "name")
 
     def save(self):
+
+        # Save the file before the rest of the data so we can convert it to json
+        if self.file and not os.path.exists(self.file.path):
+            self.file.save(self.file.name, self.file, save = False)
+        # Convert binary image to JSON using neurosynth
         try:
             if os.path.exists(self.file.path):
                 json_file = self.file.path + '.json'
