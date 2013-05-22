@@ -1,18 +1,16 @@
 {% extends "base.html" %}
 
 {% block content %}
+
 {% if recent_studies %}
-<p>5 most recently upladed studies</p>
+<p>Most recently uploaded studies</p>
     <ul>
     {% for study in recent_studies %}
         <li><a href="{% url 'study_details' study.id %}">{{ study.name }}</a></li>
     {% endfor %}
     </ul>
 {% else %}
-    <p>No studies are available.</p>
+    <p>TEST</p>
 {% endif %}
 
-<a href="{% url 'new_study' %}">Add new study</a><br />
-
-<a href="{% url 'studies_list' %}">See all studies</a>
 {% endblock %}
