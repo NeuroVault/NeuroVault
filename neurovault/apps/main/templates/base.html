@@ -8,24 +8,34 @@
     <link rel="stylesheet" href="{% static "css/bootstrap.css" %}" />
     <link href="{% static "css/jquery-ui.css"%}" media="screen" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="{% static "css/style.css" %}" />
-    {% block includes %}
-    {% endblock %}
+    {% block includes %}{% endblock %}
+	{% block functions %}{% endblock %}
 </head>
 
 <body>
     <div class="container" id="main">
         <div class="navbar">
             <div class="navbar-inner">
-                <a class="brand" href="#">NeuroVault</a>
+                <a class="brand" href="{% url 'index' %}">NeuroVault</a>
                 <ul class="nav">
-                    <li><a href="{% url 'index' %}">Home</a></li>
-                    {% if user.is_authenticated %}
-                        <li><a href="{% url 'my_profile' %}">{{ user.username }}</a></li>
-                        <li><a href="{% url 'logout' %}">Log out</a></li>
-                    {% else %}
+                    <li><a href="{% url 'new_study' %}">Add new study</a></li>
+					<li><a href="{% url 'studies_list' %}">See all studies</a></li>    
+				</ul>
+				<ul class="nav pull-right">
+					{% if user.is_authenticated %}
+					  <li class="dropdown">
+					    <a href="{% url 'my_profile' %}" class="dropdown-toggle" data-toggle="dropdown">
+					      {{ user.username }}
+					      <b class="caret"></b>
+					    </a>
+					    <ul class="dropdown-menu">
+					      <li><a href="{% url 'logout' %}">Logout</a></li>
+					    </ul>
+					  </li>
+	                {% else %}
                         <li><a href="{% url 'login' %}">Log in</a></li>
                     {% endif %}
-                </ul>
+				</ul>					              				       
             </div>
         </div>
         <div class="row" id="content">
