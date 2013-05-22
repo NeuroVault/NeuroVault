@@ -15,4 +15,4 @@ class StudyForm(ModelForm):
             doi = None
         return doi
 
-StudyFormSet = inlineformset_factory(Study, StatMap)
+StudyFormSet = inlineformset_factory(Study, StatMap, exclude = ['json_path'])

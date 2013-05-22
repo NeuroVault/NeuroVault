@@ -1,0 +1,124 @@
+#views_left {
+	width: 265px;
+	float: left;
+}
+
+#views_right {
+	width: 280px;
+	float: left;
+}
+
+#view_axial {
+  width: 280px;
+  height: 260px;
+  margin-bottom: 20px; }
+
+#view_coronal {
+  width: 280px;
+  height: 220px; }
+
+#view_sagittal {
+  width: 264px;
+  height: 260px; }
+
+.view {
+  float: left; }
+
+.nav-slider-vertical {
+  height: 100%;
+  margin-left: 5px;
+  float: left; }
+
+.nav-slider-horizontal {
+  width: 100%;
+  margin-top: 5px;
+  float: left; }
+
+canvas {
+  float: left; }
+
+#layer_panel {
+	width: 190px;
+	float: left;
+	margin-left: 10px;
+}
+
+#layer_settings_panel {
+	font-size: 14px;
+	clear: left;
+	width: 185px;
+	margin-top: 10px;
+	float: right;
+}
+
+#layer_list_panel {
+	width: 185px;
+	float: left;
+}
+
+#layer_list {
+	width: 150px;
+	float: left;
+}
+
+#layer_visible_list {
+	width: 25px;
+	float: left;
+}
+
+
+#color_palette {
+	width: 180px;
+}
+
+.toggle_img {
+	width: 20px;
+	height: 20px;
+	margin: 6px 0px 3px 2px;
+}
+
+#data_panel {
+	margin-top: 20px;
+	float: left;
+	font: 12px;
+}
+
+#data_current_coords {
+	font-size: 24px;
+	float: left;
+	width: 150px;
+	padding: 7px;
+	text-align: center;
+}
+
+#data_current_value {
+	font-size: 24px;
+	padding: 7px;
+	background: #ccc;
+	border: 1px #aaa;
+	width: 90px;
+	float: left;
+	text-align: center;
+}
+
+ul#layer_list li {
+	border-width: 1px 1px 1px 1px;
+	border-style: solid;
+	border-color: #ddb #999 #999 #ddb;
+	font-size: 12px;
+	background: #ffd;
+	padding: 3px;
+	margin: 0px;
+	width: 150px;
+	float: left;
+}
+
+ul#layer_list {
+	margin: 0px;
+	padding: 0px;
+	list-style: none;
+}
+
+ul#layer_list li.selected {
+	background: #cff;
+}

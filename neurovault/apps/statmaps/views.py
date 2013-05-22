@@ -12,7 +12,6 @@ def edit_statmaps(request, study_id):
         formset = StudyFormSet(request.POST, request.FILES, instance=study)
         if formset.is_valid():
             formset.save()
-            # Do something. Should generally end with a redirect. For example:
             return HttpResponseRedirect(study.get_absolute_url())
     else:
         formset = StudyFormSet(instance=study)
@@ -32,7 +31,6 @@ def edit_study(request, study_id=None):
         form = StudyForm(request.POST, request.FILES, instance=study)
         if form.is_valid():
             form.save()
-            # Do something. Should generally end with a redirect. For example:
             return HttpResponseRedirect(study.get_absolute_url())
     else:
         form = StudyForm(instance=study)
