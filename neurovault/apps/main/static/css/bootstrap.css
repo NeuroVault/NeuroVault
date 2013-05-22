@@ -8,6 +8,12 @@
  * Designed and built with all the love in the world @twitter by @mdo and @fat.
  */
 
+.verticalLine {
+    border-left: thin solid #808080;
+		padding-left: 10px;
+		margin-top: 20px;
+}
+
 .clearfix {
   *zoom: 1;
 }
