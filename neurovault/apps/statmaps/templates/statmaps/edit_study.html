@@ -1,8 +1,87 @@
 {% extends "base.html" %}
 
 {% block content %}
-<form action="" method="post">{% csrf_token %}
-{{ form.as_p }}
-<input type="submit" value="Submit" />
-</form>
+<div class="span11">
+	<p>It is only necessary to include basic information...</p>
+	<form id="form1" runat="server">
+	    <div class="navbar">
+	        <div class="navbar-inner">
+	            <ul class="nav">
+				    <li id="tab1" class="activeTab" onclick="ShowHide('1');"><a href="#">Tab 1</a></li>
+				    <li id="tab2" onclick="ShowHide('2');"><a href="#">Tab 2</a></li>
+					<li id="tab3" onclick="ShowHide('3');"><a href="#">Tab 3</a></li>
+					<li id="tab4" onclick="ShowHide('4');"><a href="#">Tab 4</a></li>					
+				    <div style="clear: both;"></div>
+				</ul>
+			</div>
+		</div>
+		<form action="" method="post">{% csrf_token %}
+		<div class="divAreaTabsContent">
+			<div id="divtab1">
+				{{ form.as_p }}
+			</div>
+			<div id="divtab2">
+				TEST2
+			</div>
+			<div id="divtab3">
+				TEST3
+			</div>
+			<div id="divtab4">
+				TEST4
+			</div>
+		</div>
+		<script language="javascript" type="text/javascript">
+		    ShowHide();
+		</script>
+		<input type="submit" value="Submit" />
+	</form>
+</div>
+{% endblock %}
+
+{% block functions %}
+<script language="javascript" type="text/javascript">
+    function ShowHide(i) {
+        document.getElementById('divtab2').style.visibility = 'hidden';
+        document.getElementById('divtab3').style.visibility = 'hidden';
+        document.getElementById('divtab4').style.visibility = 'hidden';
+        if (i==1){
+           document.getElementById('divtab1').style.visibility = 'visible';
+           document.getElementById('divtab2').style.visibility = 'hidden';
+           document.getElementById('divtab3').style.visibility = 'hidden';
+           document.getElementById('divtab4').style.visibility = 'hidden';
+           }
+       if (i==2){
+           document.getElementById('divtab1').style.visibility = 'hidden';
+           document.getElementById('divtab2').style.visibility = 'visible';
+           document.getElementById('divtab3').style.visibility = 'hidden';
+           document.getElementById('divtab4').style.visibility = 'hidden';
+           }
+       if (i==3){
+           document.getElementById('divtab1').style.visibility = 'hidden';
+           document.getElementById('divtab2').style.visibility = 'hidden';
+           document.getElementById('divtab3').style.visibility = 'visible';
+           document.getElementById('divtab4').style.visibility = 'hidden';
+           }
+       if (i==4){
+           document.getElementById('divtab1').style.visibility = 'hidden';
+           document.getElementById('divtab2').style.visibility = 'hidden';
+           document.getElementById('divtab3').style.visibility = 'hidden';
+           document.getElementById('divtab4').style.visibility = 'visible';
+           }
+		   
+    }
+	function toggle(tabId) {
+		var tab= document.getElementById(tabId);
+		if (tab) {
+			switch (div.style.display) {
+				case '':
+				div.style.display = 'none'
+				break;
+				case 'none':
+				div.style.display = '';
+				break;
+			}
+		}
+	}
+</script>
 {% endblock %}
