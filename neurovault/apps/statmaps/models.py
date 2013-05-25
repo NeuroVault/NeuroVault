@@ -7,6 +7,7 @@ from neurosynth.base import imageutils
 import os
 from neurovault.apps.statmaps.storage import NiftiGzStorage
 from taggit.managers import TaggableManager
+from taggit.models import GenericTaggedItemBase, TagBase
 
 class Study(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False)
@@ -23,7 +24,13 @@ class Study(models.Model):
 
 def upload_to(instance, filename):
     return "statmaps/%s/%s"%(instance.study.name, filename)
-    
+
+class LowerCaseTag(TagBase):
+    value = models.CharField(max_length=200, blank=True)
+
+class ValueTaggedItem(GenericTaggedItemBase):
+    tag = models.ForeignKey(LowerCaseTag, related_name="tagged_items")
+
 class StatMap(models.Model):
     study = models.ForeignKey(Study)
     name = models.CharField(max_length=200, null=False, blank=False)
@@ -33,7 +40,7 @@ class StatMap(models.Model):
     json_path = models.CharField(max_length=200, null=False, blank=True)
     add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
-    tags = TaggableManager()
+    tags = TaggableManager(through=ValueTaggedItem, blank=True)
     
     def __unicode__(self):
         return self.name
