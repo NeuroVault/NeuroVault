@@ -143,6 +143,7 @@ INSTALLED_APPS = (
      #'django.contrib.admindocs',
     'social_auth',
     'rest_framework',
+    'taggit'
 )
 
 # A sample logging configuration. The only tangible logging

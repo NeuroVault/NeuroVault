@@ -2,6 +2,7 @@ from django.conf.urls import patterns, url
 from django.views.generic import DetailView, ListView
 from .models import Study
 from .views import edit_study, edit_statmaps, view_statmap
+from neurovault.apps.statmaps.views import view_statmaps_by_tag
 
 urlpatterns = patterns('',
     url(r'^$',
@@ -15,6 +16,9 @@ urlpatterns = patterns('',
             model=Study,
             template_name='statmaps/study_details.html'),
         name='study_details'),
+    url(r'^statmap/tag/(?P<tag>[A-Za-z0-9@/./+/-/_]+)/$',
+        view_statmaps_by_tag,
+        name='statmaps_by_tag'),
     url(r'^statmap/(?P<pk>\d+)/$',
         view_statmap,
         name='statmap_details'),

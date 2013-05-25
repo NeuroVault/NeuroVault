@@ -4,3 +4,4 @@ neurosynth
 djangorestframework
 markdown
 django-filter
+django-taggit

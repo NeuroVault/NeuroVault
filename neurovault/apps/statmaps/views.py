@@ -43,3 +43,8 @@ def view_statmap(request, pk):
     statmap = get_object_or_404(StatMap, pk=pk)
     #pass the JSON data here
     return render(request, 'statmaps/statmap_details.html', {'statmap': statmap})
+
+def view_statmaps_by_tag(request, tag):
+    statmaps = StatMap.objects.filter(tags__name__in=[tag])
+    context = {'statmaps': statmaps, 'tag': tag}
+    return render(request, 'statmaps/statmaps_by_tag.html', context)
