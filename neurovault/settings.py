@@ -142,6 +142,7 @@ INSTALLED_APPS = (
     # Uncomment the next line to enable admin documentation:
      #'django.contrib.admindocs',
     'social_auth',
+    'rest_framework',
 )
 
 # A sample logging configuration. The only tangible logging
@@ -181,6 +182,19 @@ AUTHENTICATION_BACKENDS = (
 FACEBOOK_APP_ID              = '523031064399854'
 FACEBOOK_API_SECRET          = '2fad2e1c24524bda42a0a488118ae680'
 FACEBOOK_EXTENDED_PERMISSIONS = ['email']
+
+REST_FRAMEWORK = {
+    # Use hyperlinked styles by default.
+    # Only used if the `serializer_class` attribute is not set on a view.
+    'DEFAULT_MODEL_SERIALIZER_CLASS':
+        'rest_framework.serializers.HyperlinkedModelSerializer',
+
+    # Use Django's standard `django.contrib.auth` permissions,
+    # or allow read-only access for unauthenticated users.
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+    ]
+}
 
 #LOGIN_URL          = '/login-form/'
 #LOGIN_REDIRECT_URL = '/logged-in/'
