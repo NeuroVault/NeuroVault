@@ -25,36 +25,48 @@ class StudyForm(ModelForm):
 
 class StatMapForm(ModelForm):
     # Add some custom validation to our file field
-    def clean_file(self):
-        file = self.cleaned_data['file']
+    def clean(self):
+        cleaned_data = super(StatMapForm, self).clean()
+        file = cleaned_data.get("file")
         if file:
             if not os.path.splitext(file.name)[1] in [".gz", ".nii", ".img"]:
-                raise ValidationError("Doesn't have proper extension")
+                self._errors["file"] = self.error_class(["Doesn't have proper extension"])
+                del cleaned_data["file"]
+                return cleaned_data
             # Here we need to now to read the file and see if it's actually
             # a valid audio file. I don't know what the best library is to
             # to do this
             fname = file.name.split("/")[-1]
             with NamedTemporaryFile(suffix=fname, delete=False) as f:
                 fname = f.name
+                if os.path.splitext(file.name)[1] == ".img":
+                    hdr_file = cleaned_data.get('hdr_file')
+                    if not os.path.splitext(hdr_file.name)[1] in [".hdr"]:
+                        self._errors["hdr_file"] = self.error_class(["Doesn't have proper extension"])
+                        del cleaned_data["hdr_file"]
+                        return cleaned_data
+                    else:
+                        hf = open(fname[:-3] + "hdr","wb")
+                        hf.write(hdr_file.file.read())
+                        hf.close()
+                
                 f.write(file.file.read())
                 f.close()
                 try:
                     nb.load(fname)
                 except Exception, e:
-                    raise ValidationError(e)
+                    self._errors["file"] = self.error_class([str(e)])
+                    del cleaned_data["file"]
                 finally:
                     os.remove(fname)
-            return file
+                    if os.path.splitext(file.name)[1] == ".img":
+                        if os.path.splitext(hdr_file.name)[1] in [".hdr"]:
+                            os.remove(fname[:-3] + "hdr")
         else:
             raise ValidationError("Couldn't read uploaded file")
-
-    def clean_hdr_file(self):
-        file = self.cleaned_data['hdr_file']
-        if file:
-            if not os.path.splitext(file.name)[1] in [".hdr"]:
-                raise ValidationError("Doesn't have proper extension")
-            return file
+        return cleaned_data
+        
 
 
 StudyFormSet = inlineformset_factory(
-    Study, StatMap, form=StatMapForm, exclude=['json_path'])
+    Study, StatMap, form=StatMapForm, exclude=['json_path'], extra=1)
