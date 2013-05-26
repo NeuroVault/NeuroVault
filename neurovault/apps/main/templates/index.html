@@ -20,7 +20,7 @@
 			<p>Most recently uploaded studies</p>
 			    <ul>
 			    {% for study in recent_studies %}
-			        <li><a href="{% url 'study_details' study.id %}">{{ study.name }}</a></li>
+			        <li><a href="{% url 'study_details' study.id %}">{{ study.name|truncatewords:5 }}</a></li>
 			    {% endfor %}
 			    </ul>
 			{% else %}

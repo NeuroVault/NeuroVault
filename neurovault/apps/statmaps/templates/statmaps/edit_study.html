@@ -16,8 +16,30 @@
 		</div>
 		<form action="" method="post">{% csrf_token %}
 		<div class="divAreaTabsContent">
-			<div id="divtab1">
-				{{ form.as_p }}
+			<div id="divtab1" class="row">
+				<div class="span3">
+					{{ form.non_field_errors }}
+	    			<div class="fieldWrapper">
+	        			{{ form.name.errors }}
+	        			<label for="id_name">Name:</label>
+	        			{{ form.name }}
+	    			</div>
+	    			<div class="fieldWrapper">
+	        			{{ form.description.errors }}
+	        			<label for="id_description">Description:</label>
+	        			{{ form.description }}
+	    			</div>
+    			</div>
+    			<div class="span1">
+    			or
+    			</div>
+    			<div class="span3">
+				    <div class="fieldWrapper">
+				        {{ form.DOI.errors }}
+				        <label for="id_DOI">DOI:</label>
+				        {{ form.DOI }}
+				    </div>
+			    </div>
 			</div>
 			<div id="divtab2">
 				TEST2

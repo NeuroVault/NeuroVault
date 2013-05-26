@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 import nibabel as nb
 from tempfile import mkstemp, NamedTemporaryFile
 import shutil
+from neurovault.apps.statmaps.models import getPaperProperties
 
 # Create the form class.
 
@@ -20,6 +21,11 @@ class StudyForm(ModelForm):
         doi = self.cleaned_data['DOI']
         if doi == '':
             doi = None
+        else:
+            try:
+                getPaperProperties(doi)
+            except:
+                raise ValidationError("Invalid DOI")
         return doi
 
 
