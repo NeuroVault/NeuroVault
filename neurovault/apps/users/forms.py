@@ -25,11 +25,14 @@ class UserEditForm(UserChangeForm):
         fields = ("username", "email")
 
     def save(self, commit=True):
-        user = super(UserCreateForm, self).save(commit=False)
+        user = super(UserChangeForm, self).save(commit=False)
         user.email = self.cleaned_data["email"]
         if commit:
             user.save()
         return user
+    
+    def clean_password(self):
+        return ""
     
 class BlankPasswordChangeForm(PasswordChangeForm):
     
