@@ -51,7 +51,6 @@ with open('metadata_neurovault.csv', 'rb') as csvfile:
         try:
             priority = int(field_infos['Priority (1=required, 2=recommended,3=optional)'])
         except:
-            print 'Oops, %s priority should be integer, defaulting to 3 (optional)' % field['field_name']
             priority = 3
 
         if priority == 1:
