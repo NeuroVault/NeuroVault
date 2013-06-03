@@ -79,10 +79,12 @@ class Study(models.Model):
     functional_coregistration_method = models.CharField(help_text="Method used to coregister functional to structural images", verbose_name="IntersubjectRegistration.functional_coregistration_method", max_length=200, null=True, blank=True)
     coordinate_space = models.CharField(choices=[('mni', 'MNI'), ('talairach', 'Talairach'), ('mni2tal', 'MNI2Tal'), ('other', 'other')], max_length=200, blank=False, help_text="Name of coordinate space for registration target", null=False, verbose_name="IntersubjectRegistration.coordinate_space")
     target_template_image = models.CharField(help_text="Name of target template image", verbose_name="IntersubjectRegistration.target_template_image", max_length=200, null=True, blank=True)
-    target_resolution = models.FloatField(help_text="Resolution of target template in millimeters", null=False, verbose_name="IntersubjectRegistration.target_resolution", blank=False)
+    target_resolution = models.FloatField(help_text="Voxel size of target template in millimeters", null=False, verbose_name="IntersubjectRegistration.target_resolution", blank=False)
     used_smoothing = models.NullBooleanField(help_text="Was spatial smoothing applied?", null=False, verbose_name="IntersubjectRegistration.used_smoothing", blank=False)
     smoothing_type = models.CharField(help_text="Describe the type of smoothing applied", verbose_name="IntersubjectRegistration.smoothing_type", max_length=200, null=False, blank=False)
     smoothing_fwhm = models.FloatField(help_text="The full-width at half-maximum of the smoothing kernel in millimeters", null=False, verbose_name="IntersubjectRegistration.smoothing_fwhm", blank=False)
+Oops, resampled_voxel_size priority should be integer, defaulting to 3 (optional)
+    resampled_voxel_size = models.FloatField(help_text="Voxel size in mm of the resampled, atlas-space images", null=True, verbose_name="IntersubjectRegistration.resampled_voxel_size", blank=True)
     intrasubject_model_type = models.CharField(help_text="Type of model used (e.g., regression)", verbose_name="IndividualSubjectModeling.intrasubject_model_type", max_length=200, null=False, blank=False)
     intrasubject_estimation_type = models.CharField(help_text="Estimation method used for model (e.g., OLS, generalized least squares)", verbose_name="IndividualSubjectModeling.intrasubject_estimation_type", max_length=200, null=False, blank=False)
     intrasubject_modeling_software = models.CharField(help_text="Software used for intrasubject modeling if different from overall package", verbose_name="IndividualSubjectModeling.intrasubject_modeling_software", max_length=200, null=True, blank=True)
@@ -105,14 +107,11 @@ class Study(models.Model):
     group_model_multilevel = models.CharField(help_text="If more than 2-levels, describe the levels and assumptions of the model (e.g. are variances assumed equal between groups)", verbose_name="GroupModeling.group_model_multilevel", max_length=200, null=True, blank=True)
     group_repeated_measures = models.NullBooleanField(help_text="Was this a repeated measures design at the group level?", null=False, verbose_name="GroupModeling.group_repeated_measures", blank=False)
     group_repeated_measures_method = models.CharField(help_text="If multiple measurements per subject, list method to account for within subject correlation, exact assumptions made about correlation/variance", verbose_name="GroupModeling.group_repeated_measures_method", max_length=200, null=True, blank=True)
-    group_search_volume = models.IntegerField(help_text="Number of voxels in search region for group analysis", null=True, verbose_name="GroupInference.group_search_volume", blank=True)
-    used_multiple_test_correction = models.NullBooleanField(help_text="Was a correction for multiple tests applied?", null=False, verbose_name="GroupInference.used_multiple_test_correction", blank=False)
-    multiple_test_correction_type = models.CharField(help_text="Describe the method used for multiple test correction", verbose_name="GroupInference.multiple_test_correction_type", max_length=200, null=False, blank=False)
-    multiple_test_correction_scope = models.CharField(choices=[('voxelwise', 'Voxelwise'), ('clusterbased', 'Cluster-based'), ('other', 'other')], max_length=200, blank=False, help_text="What type of correction was used?", null=False, verbose_name="GroupInference.multiple_test_correction_scope")
-    multiple_test_correction_type = models.CharField(choices=[('familywiseerror', 'Familywise error'), ('falsediscoveryrate', 'False discovery rate'), ('other', 'other')], max_length=200, blank=False, help_text="What was corrected for?", null=False, verbose_name="GroupInference.multiple_test_correction_type")
-    cluster_forming_threshold = models.CharField(help_text="If cluster-based correction was used, what was the cluster-forming threshold?", verbose_name="GroupInference.cluster_forming_threshold", max_length=200, null=False, blank=False)
-    corrected_significance_level = models.CharField(help_text="State the corrected significance level", verbose_name="GroupInference.corrected_significance_level", max_length=200, null=False, blank=False)
-
+    group_statistic_type = models.CharField(help_text="Type of statistic that is the basis of the inference; e.g. “Z”,“T”,”F”,”X2”,“PostProb”,
+“NonparametricP”,“MonteCarloP”", verbose_name="GroupInference.group_statistic_type", max_length=200, null=True, blank=True)
+Oops, group_statistic_parameters priority should be integer, defaulting to 3 (optional)
+    group_statistic_parameters = models.FloatField(help_text="Parameters of the null distribution of the test statisic, typically degrees of freedom (should be clear from the test statistic what these are).", null=True, verbose_name="GroupInference.group_statistic_parameters", blank=True)
+    group_smoothness_fwhm = models.CharField(help_text="Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.", verbose_name="GroupInference.group_smoothness_fwhm", max_length=200, null=False, blank=False)
 
     def get_absolute_url(self):
         return reverse('study_details', args=[str(self.id)])
