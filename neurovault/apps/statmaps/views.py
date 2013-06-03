@@ -12,7 +12,6 @@ def edit_statmaps(request, study_id):
         formset = StudyFormSet(request.POST, request.FILES, instance=study)
         if formset.is_valid():
             formset.save()
-            # Do something. Should generally end with a redirect. For example:
             return HttpResponseRedirect(study.get_absolute_url())
     else:
         formset = StudyFormSet(instance=study)
@@ -32,7 +31,6 @@ def edit_study(request, study_id=None):
         form = StudyForm(request.POST, request.FILES, instance=study)
         if form.is_valid():
             form.save()
-            # Do something. Should generally end with a redirect. For example:
             return HttpResponseRedirect(study.get_absolute_url())
     else:
         form = StudyForm(instance=study)
@@ -45,3 +43,8 @@ def view_statmap(request, pk):
     statmap = get_object_or_404(StatMap, pk=pk)
     #pass the JSON data here
     return render(request, 'statmaps/statmap_details.html', {'statmap': statmap})
+
+def view_statmaps_by_tag(request, tag):
+    statmaps = StatMap.objects.filter(tags__name__in=[tag])
+    context = {'statmaps': statmaps, 'tag': tag}
+    return render(request, 'statmaps/statmaps_by_tag.html', context)

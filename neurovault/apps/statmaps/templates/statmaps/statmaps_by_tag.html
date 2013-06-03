@@ -1,11 +1,15 @@
 {% extends "base.html" %}
+
 {% block includes %}
 	<script type="text/javascript">
-	var images = [{
+	var images = [
+	{% for statmap in statmaps %}
+	{
 		'name': '{{ statmap.name }}',
 		'url': '{{ statmap.json_path }}',
 		'colorPalette': 'hot and cold'
-	}]
+	},
+	{% endfor %}]
 	</script>
 	<link href="//netdna.bootstrapcdn.com/font-awesome/3.1.1/css/font-awesome.css" rel="stylesheet">
 	<link href="{% static "css/viewer.css"%}" media="screen" rel="stylesheet" type="text/css" />
@@ -18,7 +22,7 @@
 {% endblock %}
 
 {% block content %}
-	<h1>{{ statmap.name }}</h1>
+<h1>{{ tag }}</h1>
 	<!-- <a href="{{ statmap.file.url }}">{{ statmap.file.url }}</a> -->
 	<div id="views_left">
 		<div class='view' id='view_axial'>
@@ -56,4 +60,11 @@
 			Neg. threshold: <div class='slider layer_settings' id='neg-threshold'></div>
 		</div>
 	</div>
+
+<div>
+{% for statmap in statmaps %}
+    <li><a href="{% url 'statmap_details' statmap.id %}">{{ statmap.name }}</a></li>
+{% endfor %}
+
+</div>
 {% endblock %}

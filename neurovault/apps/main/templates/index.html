@@ -1,18 +1,32 @@
 {% extends "base.html" %}
 
 {% block content %}
-{% if recent_studies %}
-<p>5 most recently upladed studies</p>
-    <ul>
-    {% for study in recent_studies %}
-        <li><a href="{% url 'study_details' study.id %}">{{ study.name }}</a></li>
-    {% endfor %}
-    </ul>
-{% else %}
-    <p>No studies are available.</p>
-{% endif %}
+<div class="span7">
+	<br>
+	<h3>NeuroVault: a web database for sharing statistical parametric maps</h3>
+	<p>Neuroimaging studies are often small in number of participants due to their high cost. Neuroimaging also suffers from the same problems as other scientific domains: 1) researchers are being rewarded for publishing many surprising findings instead of doing few but thorough studies; and 2) it is also very hard to publish research that is a mere replication. It is therefore important to be able to pull together multiple studies through meta analyses and to relate findings.<br><br>
+		Neuroimaging has witnessed multiple successful developments with this regard. However, all of these methods have been limited by the available data. From the community point of view an outcome of a study is a paper reporting statistically significant results. Due to number of comparisons in a voxelwise study and the stress on controlling for false positives errors only (and disregarding false negative errors), only the strongest effects are being reported. In addition, researchers are forced to limit the quantitative description of their results to tables of suprathreshold peak coordinates. These tables are in general the source of information used by current meta-analysis techniques. However, by discarding all of the subthreshold information we are likely to miss important results [4]. After all most neuroimaging studies are underpowered, a subthreshold effect that is consistent across studies is most likely significant. Not reporting subthreshold effects and focusing only on strong effects is a wasteful practice.<br><br>
+		The obvious solution to this problem would be to make authors share their unthresholded statistical parametric maps (SPMs). This is, however, a non trivial social issue. Based on the past experience of other datasharing initiatives, we hypothesise that from an individual researcher perspective it is a question of cost/benefit ratio. In other words a successful datasharing initiative needs to not consume a lot of time and at the same time give something back to the researcher.<br><br>
+</p>
+</div>
 
-<a href="{% url 'new_study' %}">Add new study</a><br />
-
-<a href="{% url 'studies_list' %}">See all studies</a>
+<div class="offset7">
+	<div class="verticalLine">
+		<div class="container" id="sidebar">
+			<h5>News:</h5>
+			<p>material...</p><br>			
+			<h5>Recently added studies:</h5>	
+			{% if recent_studies %}
+			<p>Most recently uploaded studies</p>
+			    <ul>
+			    {% for study in recent_studies %}
+			        <li><a href="{% url 'study_details' study.id %}">{{ study.name|truncatewords:5 }}</a></li>
+			    {% endfor %}
+			    </ul>
+			{% else %}
+			    <p>Still waiting for first studies...</p>
+			{% endif %}
+		</div>
+	</div>
+</div>
 {% endblock %}
