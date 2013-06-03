@@ -30,7 +30,7 @@ class StudyForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(StudyForm, self).__init__(*args, **kwargs)
-self.fields.keyOrder = ['type_of_design', 'cluster_forming_threshold', 'corrected_significance_level',
+        self.fields.keyOrder = ['type_of_design', 'cluster_forming_threshold', 'corrected_significance_level',
                                 'multiple_test_correction_scope', 'multiple_test_correction_type',
                                 'multiple_test_correction_type', 'used_multiple_test_correction',
                                 'group_estimation_type', 'group_inference_type', 'group_model_type',
