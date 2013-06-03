@@ -1,0 +1,89 @@
+Source,Section,Item,Verbose description,Format,"Priority (1=required, 2=recommended,3=optional)"
+fmrimethods.org,ExperimentalDesign,type_of_design,"Blocked, event-related, hybrid, or other","['blocked','event_related','hybrid block/event','other']",1
+fmrimethods.org,ExperimentalDesign,number_of_imaging_runs,Number of imaging runs acquired,int,2
+fmrimethods.org,ExperimentalDesign,number_of_experimental_units,"Number of blocks, trials or experimental units per imaging run",int,2
+fmrimethods.org,ExperimentalDesign,length_of_runs,Length of each imaging run in seconds,float,2
+fmrimethods.org,ExperimentalDesign,length_of_blocks,"For blocked designs, length of blocks in seconds",float,2
+fmrimethods.org,ExperimentalDesign,length_of_trials,Length of individual trials in seconds,float,2
+fmrimethods.org,ExperimentalDesign,optimization,Was the design optimized for efficiency,Boolean,2
+fmrimethods.org,ExperimentalDesign,optimization_method,What method was used for optimization?,char,3
+fmrimethods.org,Participants,number_of_subjects,Number of subjects entering into the analysis,int,1
+fmrimethods.org,Participants,subject_age_mean,Mean age of subjects,float,1
+fmrimethods.org,Participants,subject_age_min,Minimum age of subjects,float,2
+fmrimethods.org,Participants,subject_age_max,Maximum age of subjects,float,2
+fmrimethods.org,Participants,handedness,Handedness of subjects,"['right','left','both']",2
+fmrimethods.org,Participants,proportion_male_subjects,The proportion of subjects who were male,float,2
+fmrimethods.org,Participants,inclusion_exclusion_criteria,"Additional inclusion/exclusion criteria, if any (including specific sampling strategies that limit inclusion to a specific group, such as laboratory members)",char,3
+fmrimethods.org,Participants,number_of_rejected_subjects,Number of subjects scanned but rejected from analysis,int,2
+fmrimethods.org,Participants,group_comparison,Was this study a comparison between subject groups?,Boolean,1
+fmrimethods.org,Participants,group_description,A description of the groups being compared,char,2
+fmrimethods.org,MRI_acquisition,scanner_make,Manufacturer of MRI scanner,char,1
+fmrimethods.org,MRI_acquisition,scanner_model,Model of MRI scanner,char,1
+fmrimethods.org,MRI_acquisition,field_strength,Field strength of MRI scanner (in Tesla),float,1
+fmrimethods.org,MRI_acquisition,pulse_sequence,Description of pulse sequence used for fMRI,char,1
+fmrimethods.org,MRI_acquisition,parallel_imaging,Description of parallel imaging method and parameters,char,3
+fmrimethods.org,MRI_acquisition,field_of_view,Imaging field of view in millimeters,float,2
+fmrimethods.org,MRI_acquisition,matrix_size,Matrix size for MRI acquisition,int,2
+fmrimethods.org,MRI_acquisition,slice_thickness,Distance between slices (includes skip or distance factor) in millimeters,float,1
+fmrimethods.org,MRI_acquisition,skip_factor,The size of the skipped area between slices in millimeters,float,2
+fmrimethods.org,MRI_acquisition,acquisition_orientation,The orientation of slices,char,2
+fmrimethods.org,MRI_acquisition,order_of_acquisition,"Order of acquisition of slices (ascending, descending, or interleaved)","['ascending','descending','interleaved']",3
+fmrimethods.org,MRI_acquisition,repetition_time,Repetition time (TR) in milliseconds,float,1
+fmrimethods.org,MRI_acquisition,echo_time,Echo time (TE) in milliseconds,float,1
+fmrimethods.org,MRI_acquisition,flip_angle,Flip angle in degrees,float,2
+fmrimethods.org,Preprocessing,software_package,"If a single software package was used for all analyses, specify that here",char,1
+fmrimethods.org,Preprocessing,software_version,Version of software package used,char,1
+fmrimethods.org,Preprocessing,order_of_preprocessing_operations,Specify order of preprocessing operations,char,2
+fmrimethods.org,Preprocessing,quality_control,Describe quality control measures,char,3
+fmrimethods.org,Preprocessing,used_b0_unwarping,Was B0 distortion correction used?,Boolean,2
+fmrimethods.org,Preprocessing,b0_unwarping_software,Specify software used for distortion correction if different from the main package,char,3
+fmrimethods.org,Preprocessing,used_slice_timing_correction,Was slice timing correction used?,Boolean,1
+fmrimethods.org,Preprocessing,slice_timing_correction_software,Specify software used for slice timing correction if different from the main package,char,3
+fmrimethods.org,Preprocessing,used_motion_correction,Was motion correction used?,Boolean,1
+fmrimethods.org,Preprocessing,motion_correction_software,Specify software used for motion correction if different from the main package,char,3
+fmrimethods.org,Preprocessing,motion_correction_reference,Reference scan used for motion correction,char,3
+fmrimethods.org,Preprocessing,motion_correction_metric,Similarity metric used for motion correction,char,3
+fmrimethods.org,Preprocessing,motion_correction_interpolation,Interpolation method used for motion correction,char,3
+fmrimethods.org,Preprocessing,used_motion_susceptibiity_correction,Was motion-susceptibility correction used?,Boolean,3
+fmrimethods.org,IntersubjectRegistration,used_intersubject_registration,Were subjects registered to a common stereotactic space?,Boolean,1
+fmrimethods.org,IntersubjectRegistration,intersubject_registration_software,Specify software used for intersubject registration if different from main package,char,2
+fmrimethods.org,IntersubjectRegistration,intersubject_transformation_type,Was linear or nonlinear registration used?,"['linear','nonlinear']",1
+fmrimethods.org,IntersubjectRegistration,nonlinear_transform_type,"If nonlinear registration was used, describe transform method",char,2
+fmrimethods.org,IntersubjectRegistration,transform_similarity_metric,Similarity metric used for intersubject registration,char,3
+fmrimethods.org,IntersubjectRegistration,interpolation_method,Interpolation method used for intersubject registration,char,2
+fmrimethods.org,IntersubjectRegistration,object_image_type,What type of image was used to determine the transformation to the atlas?,char,1
+fmrimethods.org,IntersubjectRegistration,functional_coregistered_to_structural,Were the functional images coregistered to the subject's structural image?,Boolean,2
+fmrimethods.org,IntersubjectRegistration,functional_coregistration_method,Method used to coregister functional to structural images,char,3
+fmrimethods.org,IntersubjectRegistration,coordinate_space,Name of coordinate space for registration target,"['MNI','Talairach','MNI2Tal','other']",1
+fmrimethods.org,IntersubjectRegistration,target_template_image,Name of target template image,char,2
+fmrimethods.org,IntersubjectRegistration,target_resolution,Voxel size of target template in millimeters,float,1
+fmrimethods.org,IntersubjectRegistration,used_smoothing,Was spatial smoothing applied?,Boolean,1
+fmrimethods.org,IntersubjectRegistration,smoothing_type,Describe the type of smoothing applied,char,1
+fmrimethods.org,IntersubjectRegistration,smoothing_fwhm,The full-width at half-maximum of the smoothing kernel in millimeters,float,1
+fmrimethods.org,IntersubjectRegistration,resampled_voxel_size,"Voxel size in mm of the resampled, atlas-space images",float,
+fmrimethods.org,IndividualSubjectModeling,intrasubject_model_type,"Type of model used (e.g., regression)",char,1
+fmrimethods.org,IndividualSubjectModeling,intrasubject_estimation_type,"Estimation method used for model (e.g., OLS, generalized least squares)",char,1
+fmrimethods.org,IndividualSubjectModeling,intrasubject_modeling_software,Software used for intrasubject modeling if different from overall package,char,2
+fmrimethods.org,IndividualSubjectModeling,hemodynamic_response_function,Nature of HRF model,char,2
+fmrimethods.org,IndividualSubjectModeling,used_temporal_derivatives,Were temporal derivatives included?,Boolean,2
+fmrimethods.org,IndividualSubjectModeling,used_dispersion_derivatives,Were dispersion derivatives included?,Boolean,3
+fmrimethods.org,IndividualSubjectModeling,used_motion_regressors,Were motion regressors included?,Boolean,2
+fmrimethods.org,IndividualSubjectModeling,used_reaction_time_regressor,Was a reaction time regressor included?,Boolean,2
+fmrimethods.org,IndividualSubjectModeling,used_orthogonalization,Were any regressors specifically orthogonalized with respect to others?,Boolean,1
+fmrimethods.org,IndividualSubjectModeling,orthogonalization_description,"If orthogonalization was used, describe here",char,2
+fmrimethods.org,IndividualSubjectModeling,used_high_pass_filter,Was high pass filtering applied?,Boolean,1
+fmrimethods.org,IndividualSubjectModeling,high_pass_filter_method,Describe method used for high pass filtering,char,2
+fmrimethods.org,IndividualSubjectModeling,autocorrelation_model,What autocorrelation model was used (or 'none' of none was used),char,2
+fmrimethods.org,IndividualSubjectModeling,contrast_definition,"Exactly what terms are subtracted from what? Define these in terms of task or stimulus conditions (e.g., 'one-back task with objects versus zero-back task with objects') instead of underlying psychological concepts (e.g., 'working memory').",char,1
+fmrimethods.org,IndividualSubjectModeling,contrast_definition_cogatlas,Link to Cognitive Atlas definition of this contrast,char,3
+fmrimethods.org,GroupModeling,group_model_type,"Type of group model used (e.g., regression)",char,1
+fmrimethods.org,GroupModeling,group_estimation_type,"Estimation method used for group model (e.g., OLS, generalized least squares)",char,1
+fmrimethods.org,GroupModeling,group_modeling_software,Software used for group modeling if different from overall package,char,2
+fmrimethods.org,GroupModeling,group_inference_type,Type of inference for group model,"['random/mixed effects','fixed effects']",1
+fmrimethods.org,GroupModeling,group_model_multilevel,"If more than 2-levels, describe the levels and assumptions of the model (e.g. are variances assumed equal between groups)",char,3
+fmrimethods.org,GroupModeling,group_repeated_measures,Was this a repeated measures design at the group level?,Boolean,1
+fmrimethods.org,GroupModeling,group_repeated_measures_method,"If multiple measurements per subject, list method to account for within subject correlation, exact assumptions made about correlation/variance",char,3
+fmrimethods.org,GroupInference,group_statistic_type,"Type of statistic that is the basis of the inference; e.g. “Z”,“T”,”F”,”X2”,“PostProb”,
+“NonparametricP”,“MonteCarloP”",char,2
+fmrimethods.org,GroupInference,group_statistic_parameters,"Parameters of the null distribution of the test statisic, typically degrees of freedom (should be clear from the test statistic what these are).",float,
+fmrimethods.org,GroupInference,group_smoothness_fwhm,Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.,,1
