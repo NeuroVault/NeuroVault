@@ -15,6 +15,7 @@ default_options = {
 
 fields_default_order = []
 fields_order = {}
+priorities = {}
 
 def get_field_type(field_format):
     extra_options = {}
@@ -48,18 +49,22 @@ with open('metadata_neurovault.csv', 'rb') as csvfile:
         field['field_name'] = field_infos['Item']
         field['field_type'] = field_type
 
+        # everything but name and DOI should be optional
+        field_options['null'] = True
+        field_options['blank'] = True
+
         try:
             priority = int(field_infos['Priority (1=required, 2=recommended,3=optional)'])
         except:
             priority = 3
 
-        if priority == 1:
-            field_options['null'] = False
-            field_options['blank'] = False
-        else:
-            field_options['null'] = True
-            field_options['blank'] = True
-
+        # if priority == 1:
+        #     field_options['null'] = False
+        #     field_options['blank'] = False
+        # else:
+        #     field_options['null'] = True
+        #     field_options['blank'] = True
+        priorities[field['field_name']] = priority
 
         field_options['help_text'] = '"%s"' % field_infos['Verbose description']
         field_options['verbose_name'] = '"%s.%s"' % (field_infos['Section'], field_infos['Item'])
@@ -82,3 +87,14 @@ for priority in sorted(fields_order.keys()):
 
 print template % ', '.join(["'%s'" % f for f in order])
 # print fields_order
+
+
+print 
+print '-' * 80
+print 'Priorities'
+print '-' * 80
+
+print 'priorities = {'
+for key in priorities:
+    print "    '%s' : %s," % (key, priorities[key])
+print '}'

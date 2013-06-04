@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load get_dict %}
 
 {% block content %}
 <div class="span11">
@@ -42,13 +43,38 @@
 			    </div>
 			</div>
 			<div id="divtab2">
-				TEST2
+			    {% for field in form %}
+			    {{ field.name }} {{ priorities|get_item:field.name }}
+			    {% if priorities|get_item:field.name == 1 %}
+	    			<div class="fieldWrapper">
+	        		  {{ field.label }}
+	        		  <label for="id_description">{{ field }}</label>
+				</div>
+			    {% endif %}
+			    {% endfor %}
 			</div>
 			<div id="divtab3">
-				TEST3
+			    {% for field in form %}
+			    {{ field.name }} {{ priorities|get_item:field.name }}
+			    {% if priorities|get_item:field.name == 2 %}
+	    			<div class="fieldWrapper">
+	        		  {{ field.label }}
+	        		  <label for="id_description">{{ field }}</label>
+				</div>
+			    {% endif %}
+			    {% endfor %}
 			</div>
 			<div id="divtab4">
-				TEST4
+			    {% for field in form %}
+			    {{ field.name }} {{ priorities|get_item:field.name }}
+			    {{ priorities|get_item:field.name }}
+			    {% if priorities|get_item:field.name == 3 %}
+	    			<div class="fieldWrapper">
+	        		  {{ field.label }}
+	        		  <label for="id_description">{{ field }}</label>
+				</div>
+			    {% endif %}
+			    {% endfor %}
 			</div>
 		</div>
 		<script language="javascript" type="text/javascript">

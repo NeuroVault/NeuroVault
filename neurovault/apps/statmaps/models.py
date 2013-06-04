@@ -108,8 +108,9 @@ class Study(models.Model):
     group_model_multilevel = models.CharField(help_text="If more than 2-levels, describe the levels and assumptions of the model (e.g. are variances assumed equal between groups)", verbose_name="GroupModeling.group_model_multilevel", max_length=200, null=True, blank=True)
     group_repeated_measures = models.NullBooleanField(help_text="Was this a repeated measures design at the group level?", null=False, verbose_name="GroupModeling.group_repeated_measures", blank=False)
     group_repeated_measures_method = models.CharField(help_text="If multiple measurements per subject, list method to account for within subject correlation, exact assumptions made about correlation/variance", verbose_name="GroupModeling.group_repeated_measures_method", max_length=200, null=True, blank=True)
-    group_statistic_type = models.CharField(help_text="Type of statistic that is the basis of the inference; e.g. 'Z','T','F','X2','PostProb',
-'NonparametricP','MonteCarloP'", verbose_name="GroupInference.group_statistic_type", max_length=200, null=True, blank=True)
+    group_statistic_type = models.CharField(help_text=("Type of statistic that is the basis of the inference; e.g. 'Z','T','F','X2','PostProb',"
+                                                       "'NonparametricP','MonteCarloP'"), verbose_name="GroupInference.group_statistic_type",
+                                                       max_length=200, null=True, blank=True)
     group_statistic_parameters = models.FloatField(help_text="Parameters of the null distribution of the test statisic, typically degrees of freedom (should be clear from the test statistic what these are).", null=True, verbose_name="GroupInference.group_statistic_parameters", blank=True)
     group_smoothness_fwhm = models.CharField(help_text="Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.", verbose_name="GroupInference.group_smoothness_fwhm", max_length=200, null=False, blank=False)
 

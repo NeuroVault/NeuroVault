@@ -1,4 +1,5 @@
 from django.forms import ModelForm
+
 from .models import Study, StatMap
 from django.forms.models import inlineformset_factory
 import os
@@ -9,6 +10,95 @@ import shutil
 from neurovault.apps.statmaps.models import getPaperProperties
 
 # Create the form class.
+priorities = {
+    'echo_time' : 1,
+    'number_of_rejected_subjects' : 2,
+    'inclusion_exclusion_criteria' : 3,
+    'group_comparison' : 1,
+    'contrast_definition_cogatlas' : 3,
+    'subject_age_max' : 2,
+    'used_dispersion_derivatives' : 3,
+    'used_intersubject_registration' : 1,
+    'intrasubject_estimation_type' : 1,
+    'field_of_view' : 2,
+    'order_of_preprocessing_operations' : 2,
+    'smoothing_type' : 1,
+    'subject_age_min' : 2,
+    'length_of_blocks' : 2,
+    'used_orthogonalization' : 1,
+    'used_b0_unwarping' : 2,
+    'used_temporal_derivatives' : 2,
+    'software_package' : 1,
+    'scanner_model' : 1,
+    'high_pass_filter_method' : 2,
+    'proportion_male_subjects' : 2,
+    'number_of_imaging_runs' : 2,
+    'interpolation_method' : 2,
+    'group_repeated_measures_method' : 3,
+    'motion_correction_software' : 3,
+    'used_motion_regressors' : 2,
+    'functional_coregistered_to_structural' : 2,
+    'motion_correction_interpolation' : 3,
+    'optimization_method' : 3,
+    'hemodynamic_response_function' : 2,
+    'group_model_type' : 1,
+    'used_slice_timing_correction' : 1,
+    'intrasubject_modeling_software' : 2,
+    'target_template_image' : 2,
+    'resampled_voxel_size' : 3,
+    'object_image_type' : 1,
+    'group_description' : 2,
+    'functional_coregistration_method' : 3,
+    'length_of_trials' : 2,
+    'handedness' : 2,
+    'number_of_subjects' : 1,
+    'used_motion_correction' : 1,
+    'pulse_sequence' : 1,
+    'used_high_pass_filter' : 1,
+    'orthogonalization_description' : 2,
+    'acquisition_orientation' : 2,
+    'order_of_acquisition' : 3,
+    'group_repeated_measures' : 1,
+    'motion_correction_reference' : 3,
+    'group_model_multilevel' : 3,
+    'number_of_experimental_units' : 2,
+    'type_of_design' : 1,
+    'coordinate_space' : 1,
+    'transform_similarity_metric' : 3,
+    'repetition_time' : 1,
+    'slice_thickness' : 1,
+    'length_of_runs' : 2,
+    'contrast_definition' : 1,
+    'software_version' : 1,
+    'autocorrelation_model' : 2,
+    'b0_unwarping_software' : 3,
+    'intersubject_transformation_type' : 1,
+    'quality_control' : 3,
+    'used_smoothing' : 1,
+    'smoothing_fwhm' : 1,
+    'intrasubject_model_type' : 1,
+    'matrix_size' : 2,
+    'optimization' : 2,
+    'group_inference_type' : 1,
+    'subject_age_mean' : 1,
+    'used_motion_susceptibiity_correction' : 3,
+    'group_statistic_type' : 2,
+    'skip_factor' : 2,
+    'used_reaction_time_regressor' : 2,
+    'group_modeling_software' : 2,
+    'parallel_imaging' : 3,
+    'intersubject_registration_software' : 2,
+    'nonlinear_transform_type' : 2,
+    'field_strength' : 1,
+    'group_estimation_type' : 1,
+    'target_resolution' : 1,
+    'slice_timing_correction_software' : 3,
+    'scanner_make' : 1,
+    'group_smoothness_fwhm' : 1,
+    'flip_angle' : 2,
+    'group_statistic_parameters' : 3,
+    'motion_correction_metric' : 3,
+}
 
 
 class StudyForm(ModelForm):
@@ -16,7 +106,10 @@ class StudyForm(ModelForm):
         exclude = ('owner',)
         model = Study
 
-# This allowsinserting null DOIs
+    def __init__(self, *args, **kwargs):
+        super(StudyForm, self).__init__(*args, **kwargs)
+
+    # This allowsinserting null DOIs
     def clean_DOI(self):
         doi = self.cleaned_data['DOI']
         if doi == '':
@@ -27,36 +120,7 @@ class StudyForm(ModelForm):
             except:
                 raise ValidationError("Invalid DOI")
         return doi
-
-    def __init__(self, *args, **kwargs):
-        super(StudyForm, self).__init__(*args, **kwargs)
-        self.fields.keyOrder = ['type_of_design', 'cluster_forming_threshold', 'corrected_significance_level',
-                                'multiple_test_correction_scope', 'multiple_test_correction_type',
-                                'multiple_test_correction_type', 'used_multiple_test_correction',
-                                'group_estimation_type', 'group_inference_type', 'group_model_type',
-                                'group_repeated_measures', 'contrast_definition', 'intrasubject_estimation_type',
-                                'intrasubject_model_type', 'used_high_pass_filter', 'used_orthogonalization',
-                                'coordinate_space', 'intersubject_transformation_type', 'object_image_type',
-                                'smoothing_fwhm', 'smoothing_type', 'target_resolution', 'used_intersubject_registration',
-                                'used_smoothing', 'echo_time', 'field_strength', 'pulse_sequence', 'repetition_time',
-                                'scanner_make', 'scanner_model', 'slice_thickness', 'group_comparison', 'number_of_subjects',
-                                'subject_age_mean', 'software_package', 'software_version', 'used_motion_correction',
-                                'used_slice_timing_correction', 'length_of_blocks', 'length_of_runs', 'length_of_trials',
-                                'number_of_experimental_units', 'number_of_imaging_runs', 'optimization', 'group_modeling_software',
-                                'autocorrelation_model', 'hemodynamic_response_function', 'high_pass_filter_method',
-                                'intrasubject_modeling_software', 'orthogonalization_description', 'used_motion_regressors',
-                                'used_reaction_time_regressor', 'used_temporal_derivatives', 'functional_coregistered_to_structural',
-                                'interpolation_method', 'intersubject_registration_software', 'nonlinear_transform_type',
-                                'target_template_image', 'acquisition_orientation', 'field_of_view', 'flip_angle',
-                                'matrix_size', 'skip_factor', 'group_description', 'handedness', 'number_of_rejected_subjects',
-                                'proportion_male_subjects', 'subject_age_max', 'subject_age_min', 'order_of_preprocessing_operations',
-                                'used_b0_unwarping', 'optimization_method', 'group_search_volume', 'group_model_multilevel',
-                                'group_repeated_measures_method', 'contrast_definition_cogatlas', 'used_dispersion_derivatives',
-                                'functional_coregistration_method', 'transform_similarity_metric', 'order_of_acquisition',
-                                'parallel_imaging', 'inclusion_exclusion_criteria', 'b0_unwarping_software',
-                                'motion_correction_interpolation', 'motion_correction_metric', 'motion_correction_reference',
-                                'motion_correction_software', 'quality_control', 'slice_timing_correction_software',
-                                'used_motion_susceptibiity_correction']
+        
 
 class StatMapForm(ModelForm):
     # Add some custom validation to our file field
