@@ -97,7 +97,7 @@ class StatMap(models.Model):
         if self.file and not os.path.exists(self.file.path):
             self.file.save(self.file.name, self.file, save = False)
         if self.hdr_file and not os.path.exists(self.hdr_file.path):
-            self.file.save(self.hdr_file.name, self.hdr_file, save = False)
+            self.hdr_file.save(self.hdr_file.name, self.hdr_file, save = False)
         # Convert binary image to JSON using neurosynth
 #         try:
         if os.path.exists(self.file.path):
