@@ -178,6 +178,7 @@ INSTALLED_APPS = (
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'social_auth.backends.facebook.FacebookBackend',
+    'social_auth.backends.google.GoogleBackend',
 )
 
 FACEBOOK_APP_ID              = '523031064399854'
