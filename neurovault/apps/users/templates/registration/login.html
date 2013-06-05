@@ -1,4 +1,17 @@
 {% extends "base.html" %}
+{% block includes %}
+<link rel="stylesheet" type="text/css" href="{% static "css/zocial.css"%}" />
+
+	<style>
+		body .zocial {
+			margin: 8px 4px;
+			font-size: 13px;
+			background: #f0f0eb;
+			font-family: "Pompiere","Helvetica Neue", sans-serif;
+		}
+	</style>
+{% endblock %}
+
 {% block content %}
 
 {% if form.errors %}
@@ -26,8 +39,8 @@
 
 <a href="{% url 'create_user' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">Register new account</a>
 <br \>
-<a href="{% url "socialauth_begin" "facebook" %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">Login using Facebook</a>
+<a class="zocial facebook"  href="{% url "socialauth_begin" "facebook" %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">Login using Facebook</a>
 <br \>
-<a href="{% url "socialauth_begin" "google" %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">Login using Google</a>
+<a class="zocial google" href="{% url "socialauth_begin" "google" %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">Login using Google</a>
 
 {% endblock %}
