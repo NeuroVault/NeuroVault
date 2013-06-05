@@ -25,7 +25,9 @@
 
 
 <a href="{% url 'create_user' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">Register new account</a>
-
+<br \>
 <a href="{% url "socialauth_begin" "facebook" %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">Login using Facebook</a>
+<br \>
+<a href="{% url "socialauth_begin" "google" %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">Login using Google</a>
 
 {% endblock %}
