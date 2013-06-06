@@ -3,8 +3,8 @@
 {% block content %}
 {% if all_collections_list %}
     <ul>
-    {% for collcetion in all_studies_list %}
-        <li><a href="{% url 'collection_details' collcetion.id %}">{{ collection.name }}</a></li>
+    {% for collection in all_collections_list %}
+        <li><a href="{% url 'collection_details' collection.id %}">{{ collection.name }}</a></li>
     {% endfor %}
     </ul>
 {% else %}
