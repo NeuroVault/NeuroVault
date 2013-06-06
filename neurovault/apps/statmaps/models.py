@@ -14,7 +14,7 @@ import urllib2
 from xml.etree import ElementTree
 import datetime
 
-class Study(models.Model):
+class Collection(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False)
     DOI = models.CharField(max_length=200, unique=True, blank=True, null=True, default=None)
     authors = models.CharField(max_length=200, blank=True, null=True)
@@ -115,7 +115,7 @@ class Study(models.Model):
     group_smoothness_fwhm = models.CharField(help_text="Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.", verbose_name="GroupInference.group_smoothness_fwhm", max_length=200, null=False, blank=False)
 
     def get_absolute_url(self):
-        return reverse('study_details', args=[str(self.id)])
+        return reverse('collection_details', args=[str(self.id)])
     
     def __unicode__(self):
         return self.name
@@ -129,7 +129,7 @@ class Study(models.Model):
             except:
                 pass
             
-        super(Study, self).save()
+        super(Collection, self).save()
         
 def getPaperProperties(doi):
     xmlurl = 'http://doi.crossref.org/servlet/query'
@@ -159,7 +159,7 @@ def getPaperProperties(doi):
     return title, authors, url, publication_date
 
 def upload_to(instance, filename):
-    return "statmaps/%s/%s"%(instance.study.name, filename)
+    return "statmaps/%s/%s"%(instance.collection.name, filename)
 
 class LowerCaseTag(TagBase):
     value = models.CharField(max_length=200, blank=True)
@@ -168,7 +168,7 @@ class ValueTaggedItem(GenericTaggedItemBase):
     tag = models.ForeignKey(LowerCaseTag, related_name="tagged_items")
 
 class StatMap(models.Model):
-    study = models.ForeignKey(Study)
+    collection = models.ForeignKey(Collection)
     name = models.CharField(max_length=200, null=False, blank=False)
     description = models.CharField(max_length=200, blank=True)
     file = models.FileField(upload_to=upload_to, null=False, blank=False, storage=NiftiGzStorage())
@@ -182,7 +182,7 @@ class StatMap(models.Model):
         return self.name
     
     class Meta:
-        unique_together = ("study", "name")
+        unique_together = ("collection", "name")
 
     def save(self):
 

@@ -3,7 +3,7 @@
 {% block includes %}
 	<script type="text/javascript">
 	var images = [
-	{% for statmap in study.statmap_set.all %}
+	{% for statmap in collection.statmap_set.all %}
 	{
 		'name': '{{ statmap.name }}',
 		'url': '{{ statmap.json_path }}',
@@ -22,7 +22,7 @@
 {% endblock %}
 
 {% block content %}
-<h1>{{ study.name }}</h1>
+<h1>{{ collection.name }}</h1>
 	<div>
 		<div id="views_left">
 			<div class='view' id='view_axial'>
@@ -62,12 +62,12 @@
 		</div>
 	<div>
 	<div>
-{% for statmap in study.statmap_set.all %}
+{% for statmap in collection.statmap_set.all %}
     <li><a href="{% url 'statmap_details' statmap.id %}">{{ statmap.name }}</a></li>
 {% endfor %}
 
-<a href="{{study.url}}">{{study.name}}</a> by {{study.authors}}
+<a href="{{collection.url}}">{{collection.name}}</a> by {{collection.authors}}
 
-<a href="{% url 'edit_statmaps' study.id %}">Add/edit files</a>
+<a href="{% url 'edit_statmaps' collection.id %}">Add/edit files</a>
 </div>
 {% endblock %}

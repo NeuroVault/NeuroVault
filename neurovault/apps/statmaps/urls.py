@@ -1,34 +1,35 @@
 from django.conf.urls import patterns, url
 from django.views.generic import DetailView, ListView
-from .models import Study
-from .views import edit_study, edit_statmaps, view_statmap
+from .models import Collection
+from .views import edit_collection, edit_statmaps, view_statmap
 from neurovault.apps.statmaps.views import view_statmaps_by_tag
 
 urlpatterns = patterns('',
-    url(r'^$',
+    url(r'^collections/$',
         ListView.as_view(
-            queryset=Study.objects.all(),
+            queryset=Collection.objects.all(),
             context_object_name='all_studies_list',
-            template_name='statmaps/studies_index.html'),
-        name='studies_list'),
-    url(r'^(?P<pk>\d+)/$',
+            template_name='statmaps/collections_index.html'),
+        name='collections_list'),
+    url(r'^collections/(?P<pk>\d+)/$',
         DetailView.as_view(
-            model=Study,
-            template_name='statmaps/study_details.html'),
-        name='study_details'),
+            model=Collection,
+            template_name='statmaps/collection_details.html'),
+        name='collection_details'),
+    url(r'^collections/new$',
+        edit_collection,
+        name='new_collection'),
+    url(r'^collections/(?P<pk>\d+)/edit$',
+        edit_collection,
+        name='edit_collection'), 
     url(r'^statmap/tag/(?P<tag>[A-Za-z0-9@/./+/-/_]+)/$',
         view_statmaps_by_tag,
         name='statmaps_by_tag'),
     url(r'^statmap/(?P<pk>\d+)/$',
         view_statmap,
         name='statmap_details'),
-    url(r'^new$',
-        edit_study,
-        name='new_study'),
-    url(r'^(?P<study_id>\d+)/edit$',
-        edit_study,
-        name='edit_study'),                   
-    url(r'^(?P<study_id>\d+)/editstatmaps$', 
+                  
+    url(r'^(?P<collection_pk>\d+)/editstatmaps$', 
         edit_statmaps, 
         name="edit_statmaps"),
 )

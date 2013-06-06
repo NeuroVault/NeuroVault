@@ -33,7 +33,7 @@ def get_field_type(field_format):
         return field_type_map[field_format], extra_options
 
 print '-' * 80
-print 'Study Model'
+print 'Collection Model'
 print '-' * 80
 
 with open('metadata_neurovault.csv', 'rb') as csvfile:
@@ -84,7 +84,7 @@ with open('metadata_neurovault.csv', 'rb') as csvfile:
 
 print 
 print '-' * 80
-print 'Study Form'
+print 'Collection Form'
 print '-' * 80
 
 template = "self.fields.keyOrder = [%s]"

@@ -10,10 +10,10 @@ from django.core.exceptions import ValidationError
 from form_utils.forms import BetterModelForm
 
 from neurovault.apps.statmaps.models import getPaperProperties
-from .models import Study, StatMap
+from .models import Collection, StatMap
 
 # Create the form class.
-study_fieldsets = [
+collection_fieldsets = [
     ('GroupInference', {'fields': ['group_statistic_type', 
                                  'group_statistic_parameters', 
                                  'group_smoothness_fwhm'], 
@@ -117,7 +117,7 @@ study_fieldsets = [
 ]
 
 
-study_row_attrs = {
+collection_row_attrs = {
     'echo_time' : {'priority': 1},
     'number_of_rejected_subjects' : {'priority': 2},
     'inclusion_exclusion_criteria' : {'priority': 3},
@@ -207,15 +207,15 @@ study_row_attrs = {
     'motion_correction_metric' : {'priority': 3},
 }
 
-class StudyForm(BetterModelForm):
+class CollectionForm(BetterModelForm):
     class Meta:
         exclude = ('owner',)
-        model = Study
-        fieldsets = study_fieldsets
-        row_attrs = study_row_attrs
+        model = Collection
+        fieldsets = collection_fieldsets
+        row_attrs = collection_row_attrs
 
     def __init__(self, *args, **kwargs):
-        super(StudyForm, self).__init__(*args, **kwargs)
+        super(CollectionForm, self).__init__(*args, **kwargs)
 
     # This allowsinserting null DOIs
     def clean_DOI(self):
@@ -275,5 +275,5 @@ class StatMapForm(ModelForm):
         
 
 
-StudyFormSet = inlineformset_factory(
-    Study, StatMap, form=StatMapForm, exclude=['json_path'], extra=1)
+CollectionFormSet = inlineformset_factory(
+    Collection, StatMap, form=StatMapForm, exclude=['json_path'], extra=1)
