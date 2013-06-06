@@ -43,38 +43,13 @@
 			    </div>
 			</div>
 			<div id="divtab2">
-			    {% for field in form %}
-			    {{ field.name }} {{ priorities|get_item:field.name }}
-			    {% if priorities|get_item:field.name == 1 %}
-	    			<div class="fieldWrapper">
-	        		  {{ field.label }}
-	        		  <label for="id_description">{{ field }}</label>
-				</div>
-			    {% endif %}
+			    {% for field in form.fieldsets.GroupInference %}
+			    {{ field.name }} {{ field.row_attrs }}
 			    {% endfor %}
 			</div>
 			<div id="divtab3">
-			    {% for field in form %}
-			    {{ field.name }} {{ priorities|get_item:field.name }}
-			    {% if priorities|get_item:field.name == 2 %}
-	    			<div class="fieldWrapper">
-	        		  {{ field.label }}
-	        		  <label for="id_description">{{ field }}</label>
-				</div>
-			    {% endif %}
-			    {% endfor %}
 			</div>
 			<div id="divtab4">
-			    {% for field in form %}
-			    {{ field.name }} {{ priorities|get_item:field.name }}
-			    {{ priorities|get_item:field.name }}
-			    {% if priorities|get_item:field.name == 3 %}
-	    			<div class="fieldWrapper">
-	        		  {{ field.label }}
-	        		  <label for="id_description">{{ field }}</label>
-				</div>
-			    {% endif %}
-			    {% endfor %}
 			</div>
 		</div>
 		<script language="javascript" type="text/javascript">

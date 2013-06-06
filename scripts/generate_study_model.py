@@ -16,6 +16,8 @@ default_options = {
 fields_default_order = []
 fields_order = {}
 priorities = {}
+fieldsets = {}
+row_attrs = {}
 
 def get_field_type(field_format):
     extra_options = {}
@@ -64,6 +66,13 @@ with open('metadata_neurovault.csv', 'rb') as csvfile:
         # else:
         #     field_options['null'] = True
         #     field_options['blank'] = True
+
+        fieldset = fieldsets.setdefault(field_infos['Section'], {})
+        fieldset.setdefault('fields', []).append(field['field_name'])
+        fieldset.setdefault('legend', field_infos['Section'])
+
+        row_attrs[field['field_name']] = {'priority': priority}
+
         priorities[field['field_name']] = priority
 
         field_options['help_text'] = '"%s"' % field_infos['Verbose description']
@@ -89,12 +98,23 @@ print template % ', '.join(["'%s'" % f for f in order])
 # print fields_order
 
 
-print 
-print '-' * 80
-print 'Priorities'
-print '-' * 80
+# print 
+# print '-' * 80
+# print 'Priorities'
+# print '-' * 80
 
-print 'priorities = {'
-for key in priorities:
-    print "    '%s' : %s," % (key, priorities[key])
+# print 'priorities = {'
+# for key in priorities:
+#     print "    '%s' : %s," % (key, priorities[key])
+# print '}'
+
+
+print 'fieldsets = ['
+for item in fieldsets.items():
+    print "    ('%s', %s)," % item
+print ']'
+
+print 'row_attrs = {'
+for row in row_attrs:
+    print "    '%s' : %s," % (row, row_attrs[row])
 print '}'

@@ -4,7 +4,6 @@ from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404
-from forms import priorities
 
 @login_required
 def edit_statmaps(request, study_id):
@@ -37,7 +36,6 @@ def edit_study(request, study_id=None):
         form = StudyForm(instance=study)
         
     context = {"form": form}
-    context.update({"priorities": priorities})
     return render(request, "statmaps/edit_study.html", context)
 
 def view_statmap(request, pk):
