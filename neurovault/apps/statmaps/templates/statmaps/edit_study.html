@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load get_dict %}
 
 {% block content %}
 <div class="span11">
@@ -42,13 +43,13 @@
 			    </div>
 			</div>
 			<div id="divtab2">
-				TEST2
+			    {% for field in form.fieldsets.GroupInference %}
+			    {{ field.name }} {{ field.row_attrs }}
+			    {% endfor %}
 			</div>
 			<div id="divtab3">
-				TEST3
 			</div>
 			<div id="divtab4">
-				TEST4
 			</div>
 		</div>
 		<script language="javascript" type="text/javascript">
