@@ -23,7 +23,7 @@
 
 {% block content %}
 <h1>{{ tag }}</h1>
-	<!-- <a href="{{ statmap.file.url }}">{{ statmap.file.url }}</a> -->
+	<!-- <a href="{{ image.file.url }}">{{ image.file.url }}</a> -->
 	<div id="views_left">
 		<div class='view' id='view_axial'>
 			<canvas height='264' id='axial_canvas' width='220'></canvas>
@@ -62,8 +62,8 @@
 	</div>
 
 <div>
-{% for statmap in statmaps %}
-    <li><a href="{% url 'statmap_details' statmap.id %}">{{ statmap.name }}</a></li>
+{% for image in images %}
+    <li><a href="{% url 'image_details' image.id %}">{{ image.name }}</a></li>
 {% endfor %}
 
 </div>

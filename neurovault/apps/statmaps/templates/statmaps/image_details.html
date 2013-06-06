@@ -2,8 +2,8 @@
 {% block includes %}
 	<script type="text/javascript">
 	var images = [{
-		'name': '{{ statmap.name }}',
-		'url': '{{ statmap.json_path }}',
+		'name': '{{ image.name }}',
+		'url': '{{ image.json_path }}',
 		'colorPalette': 'hot and cold'
 	}]
 	</script>
@@ -18,8 +18,8 @@
 {% endblock %}
 
 {% block content %}
-	<h1>{{ statmap.name }}</h1>
-	<!-- <a href="{{ statmap.file.url }}">{{ statmap.file.url }}</a> -->
+	<h1>{{ image.name }}</h1>
+	<!-- <a href="{{ image.file.url }}">{{ image.file.url }}</a> -->
 	<div id="views_left">
 		<div class='view' id='view_axial'>
 			<canvas height='264' id='axial_canvas' width='220'></canvas>

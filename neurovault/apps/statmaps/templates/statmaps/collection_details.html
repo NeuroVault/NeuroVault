@@ -62,12 +62,12 @@
 		</div>
 	<div>
 	<div>
-{% for statmap in collection.statmap_set.all %}
-    <li><a href="{% url 'statmap_details' statmap.id %}">{{ statmap.name }}</a></li>
+{% for image in collection.image_set.all %}
+    <li><a href="{% url 'image_details' image.id %}">{{ image.name }}</a></li>
 {% endfor %}
 
 <a href="{{collection.url}}">{{collection.name}}</a> by {{collection.authors}}
 
-<a href="{% url 'edit_statmaps' collection.id %}">Add/edit files</a>
+<a href="{% url 'edit_images' collection.id %}">Add/edit files</a>
 </div>
 {% endblock %}

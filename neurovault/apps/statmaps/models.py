@@ -159,7 +159,7 @@ def getPaperProperties(doi):
     return title, authors, url, publication_date
 
 def upload_to(instance, filename):
-    return "statmaps/%s/%s"%(instance.collection.name, filename)
+    return "images/%s/%s"%(instance.collection.name, filename)
 
 class LowerCaseTag(TagBase):
     value = models.CharField(max_length=200, blank=True)
@@ -167,7 +167,7 @@ class LowerCaseTag(TagBase):
 class ValueTaggedItem(GenericTaggedItemBase):
     tag = models.ForeignKey(LowerCaseTag, related_name="tagged_items")
 
-class StatMap(models.Model):
+class Image(models.Model):
     collection = models.ForeignKey(Collection)
     name = models.CharField(max_length=200, null=False, blank=False)
     description = models.CharField(max_length=200, blank=True)
@@ -202,5 +202,5 @@ class StatMap(models.Model):
 #                     pass
 #         except Exception, e:
 #             pass
-        super(StatMap, self).save()
+        super(Image, self).save()
 

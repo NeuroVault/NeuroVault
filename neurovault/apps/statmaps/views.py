@@ -1,4 +1,4 @@
-from .models import Collection, StatMap
+from .models import Collection, Image
 from .forms import CollectionFormSet, CollectionForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render
@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404
 
 @login_required
-def edit_statmaps(request, collection_pk):
+def edit_images(request, collection_pk):
     collection = Collection.objects.get(pk=collection_pk)
     if request.method == "POST":
         formset = CollectionFormSet(request.POST, request.FILES, instance=collection)
@@ -17,7 +17,7 @@ def edit_statmaps(request, collection_pk):
         formset = CollectionFormSet(instance=collection)
         
     context = {"formset": formset}
-    return render(request, "statmaps/edit_statmaps.html", context)
+    return render(request, "statmaps/edit_images.html", context)
 
 @login_required
 def edit_collection(request, pk=None):
@@ -41,13 +41,13 @@ def edit_collection(request, pk=None):
     context = {"form": form}
     return render(request, "statmaps/edit_collection.html", context)
 
-def view_statmap(request, pk):
+def view_image(request, pk):
     #Tal put logic for reading and transforming Nifti to JSON here
-    statmap = get_object_or_404(StatMap, pk=pk)
+    image = get_object_or_404(Image, pk=pk)
     #pass the JSON data here
-    return render(request, 'statmaps/statmap_details.html', {'statmap': statmap})
+    return render(request, 'statmaps/image_details.html', {'image': image})
 
-def view_statmaps_by_tag(request, tag):
-    statmaps = StatMap.objects.filter(tags__name__in=[tag])
-    context = {'statmaps': statmaps, 'tag': tag}
-    return render(request, 'statmaps/statmaps_by_tag.html', context)
+def view_images_by_tag(request, tag):
+    images = Image.objects.filter(tags__name__in=[tag])
+    context = {'images': images, 'tag': tag}
+    return render(request, 'statmaps/images_by_tag.html', context)

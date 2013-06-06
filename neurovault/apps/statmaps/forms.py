@@ -10,7 +10,7 @@ from django.core.exceptions import ValidationError
 from form_utils.forms import BetterModelForm
 
 from neurovault.apps.statmaps.models import getPaperProperties
-from .models import Collection, StatMap
+from .models import Collection, Image
 
 # Create the form class.
 collection_fieldsets = [
@@ -230,10 +230,10 @@ class CollectionForm(BetterModelForm):
         return doi
         
 
-class StatMapForm(ModelForm):
+class ImageMapForm(ModelForm):
     # Add some custom validation to our file field
     def clean(self):
-        cleaned_data = super(StatMapForm, self).clean()
+        cleaned_data = super(ImageMapForm, self).clean()
         file = cleaned_data.get("file")
         if file:
             if not os.path.splitext(file.name)[1] in [".gz", ".nii", ".img"]:
@@ -276,4 +276,4 @@ class StatMapForm(ModelForm):
 
 
 CollectionFormSet = inlineformset_factory(
-    Collection, StatMap, form=StatMapForm, exclude=['json_path'], extra=1)
+    Collection, Image, form=ImageMapForm, exclude=['json_path'], extra=1)
