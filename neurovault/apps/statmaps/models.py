@@ -161,11 +161,11 @@ def getPaperProperties(doi):
 def upload_to(instance, filename):
     return "images/%s/%s"%(instance.collection.id, filename)
 
-class LowerCaseTag(TagBase):
+class KeyValueTag(TagBase):
     value = models.CharField(max_length=200, blank=True)
 
 class ValueTaggedItem(GenericTaggedItemBase):
-    tag = models.ForeignKey(LowerCaseTag, related_name="tagged_items")
+    tag = models.ForeignKey(KeyValueTag, related_name="tagged_items")
 
 class Image(models.Model):
     collection = models.ForeignKey(Collection)
@@ -180,6 +180,9 @@ class Image(models.Model):
     
     def __unicode__(self):
         return self.name
+    
+    def get_absolute_url(self):
+        return reverse('image_details', args=[str(self.id)])
     
     class Meta:
         unique_together = ("collection", "name")

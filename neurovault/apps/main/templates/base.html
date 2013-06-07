@@ -23,7 +23,8 @@
                 <a class="brand" href="{% url 'index' %}">NeuroVault</a>
                 <ul class="nav">
                     <li><a href="{% url 'new_collection' %}">Add new collection</a></li>
-					<li><a href="{% url 'collections_list' %}">See all collections</a></li>    
+					<li><a href="{% url 'collections_list' %}">See all collections</a></li>
+					<li><a href="{% url 'tags_list' %}">See all tags</a></li>      
 				</ul>
 				<ul class="nav pull-right">
 					{% if user.is_authenticated %}

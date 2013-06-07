@@ -3,10 +3,10 @@
 {% block includes %}
 	<script type="text/javascript">
 	var images = [
-	{% for statmap in statmaps %}
+	{% for image in images %}
 	{
-		'name': '{{ statmap.name }}',
-		'url': '{{ statmap.json_path }}',
+		'name': '{{ image.name }}',
+		'url': '{{ image.json_path }}',
 		'colorPalette': 'hot and cold'
 	},
 	{% endfor %}]
