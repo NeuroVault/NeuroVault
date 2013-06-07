@@ -27,6 +27,20 @@ class GroupViewSet(viewsets.ModelViewSet):
     model = Group
 
 
+class APIHelper:
+    ''' Contains generic helper methods to call from various
+    serializers and viewsets. '''
+    @staticmethod
+    def wrap_for_datatables(data):
+        ''' A wrapper around standard retrieve() request that formats the 
+        object for the Datatables plugin. Takes a Model instance as input 
+        and returns a dict suitable for JSON dumping. '''
+        data = dict([(k,v) for k,v in data.items() if v])
+        return Response(
+            { 'aaData': zip(data.keys(), data.values()) }
+        )
+
+
 class ImageSerializer(serializers.HyperlinkedModelSerializer):
 
     file = HyperlinkedFileField(source='file')
@@ -44,15 +58,24 @@ class CollectionSerializer(serializers.ModelSerializer):
 
 
 class ImageViewSet(viewsets.ModelViewSet):
+
     queryset = Image.objects.all()
     serializer_class = ImageSerializer
+
+
+    @link()
+    def datatable(self, request, pk=None):
+        ''' A wrapper around standard retrieve() request that formats the 
+        object for the Datatables plugin. '''
+        image = self.get_object()
+        data = ImageSerializer(image, context={'request': request}).data
+        return APIHelper.wrap_for_datatables(data)
 
 
 class CollectionViewSet(viewsets.ModelViewSet):
 
     queryset = Collection.objects.all()
     serializer_class = CollectionSerializer
-    # model = Collection
 
     @link()
     def datatable(self, request, pk=None):
@@ -60,11 +83,8 @@ class CollectionViewSet(viewsets.ModelViewSet):
         object for the Datatables plugin. '''
         collection = self.get_object()
         data = CollectionSerializer(collection).data
-        data = dict([(k,v) for k,v in data.items() if v])
-        print data
-        return Response(
-            { 'aaData': zip(data.keys(), data.values()) }
-        )
+        return APIHelper.wrap_for_datatables(data)
+
 
 # Routers provide an easy way of automatically determining the URL conf
 router = routers.DefaultRouter()

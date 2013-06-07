@@ -11,14 +11,9 @@
             'colorPalette': 'red'
         },
         {% endfor %}]
-    <link href="//netdna.bootstrapcdn.com/font-awesome/3.1.1/css/font-awesome.css" rel="stylesheet">
-    <link href="{% static "css/viewer.css"%}" media="screen" rel="stylesheet" type="text/css" />
-    <script src="{% static "scripts/rainbow.js"%}" type="text/javascript"></script>
-    <script src="{% static "scripts/sylvester.js"%}" type="text/javascript"></script>
-    <script src="{% static "scripts/amplify.js"%}" type="text/javascript"></script>
-    <script src="{% static "scripts/panzoom.js"%}" type="text/javascript"></script>
-    <script src="{% static "scripts/viewer.js"%}" type="text/javascript"></script>
-    <script src="{% static "scripts/app.js"%}" type="text/javascript"></script>
+
+    {% include 'statmaps/_viewer_head.html.haml' %}
+    
     :javascript
         {% inlinecoffeescript %}
             $(document).ready ->
@@ -83,39 +78,7 @@
                                 %td= image.description
 
             #viewer.tab-pane
-                #views-left
-                    #view-axial.view
-                        %canvas{:height => "264", :width => "220"}
-                        #nav-zaxis.slider.nav-slider-vertical
-                    #view-coronal.view
-                        %canvas{:height => "220", :width => "220"}
-                        #nav-yaxis.slider.nav-slider-vertical
-                #views-right
-                    #view-sagittal.view
-                        %canvas{:height => "220", :width => "264"}
-                        #nav-xaxis.slider.nav-slider-horizontal
-                    #data-panel
-                        #data-current-coords
-                        #data-current-value
-                #layer-panel
-                    %div Layers
-                    #layer-list-panel
-                        #layer-visible-list
-                        %ul#layer-list.layer-settings
-                    #layer-settings-panel
-                        .layer-container-half-width
-                            Color palette:
-                            %select#select-color.layer-settings
-                            Positive/Negative:
-                            %select#select-sign.layer-settings
-                        #checkbox-list
-                        .layer-container-full-width
-                            Opacity:
-                            #opacity.slider.layer-settings
-                            Pos. threshold:
-                            #pos-threshold.slider.layer-settings
-                            Neg. threshold:
-                            #neg-threshold.slider.layer-settings
+                {% include 'statmaps/_viewer_content.html.haml' %}
 
 {% comment %}
 {% for image in collection.image_set.all %}

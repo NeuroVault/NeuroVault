@@ -1,0 +1,17 @@
+- Get metadata from pubmed rather than crossref, because crossref makes a lot of mistakes
+
+- Add a 'display_name' value for all model fields, because the verbose_names are ugly
+
+- Restructure the Collection model fields so it's not just about stuff relevant to published studies. E.g., we should add things like type of collection (study, meta-analysis database, etc.), publication status (published, in press, submitted, unpublished, etc.), etc.
+
+- Need to check image hash against existing one every time image is edited; we don't need to redo the JSON conversion each time.
+
+- JSON conversion may be unnecessary now that binary Nifti reader works, although may still be a good idea for other kinds of images (e.g., Analyze) that NiBabel will read
+
+- Add foreign key for User to Image model. This implies a bit of redundancy but it will make our life much easier.
+
+- Can we do a minor refactor to separate Images from Collections more cleanly? Users should be able to create images independently of Collections. Then when they create a Collection, they should have the option of adding any of the image they already own. So basically we want a many-to-many relationship rather than the current one-to-many (so that an Image can be in multiple collections).
+
+- Fix image downloading in the viewer
+
+- Add a lot more fields to Image model. Should contain any information necessary for basic interpretation of what the image means--e.g., intent (p values, t, z, etc.), min/max for convenience and color mapping (can set this during file processing), figure number if from a paper, etc.

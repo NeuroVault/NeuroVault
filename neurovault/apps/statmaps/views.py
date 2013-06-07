@@ -45,7 +45,8 @@ def view_image(request, pk):
     #Tal put logic for reading and transforming Nifti to JSON here
     image = get_object_or_404(Image, pk=pk)
     #pass the JSON data here
-    return render(request, 'statmaps/image_details.html', {'image': image})
+    context = {'image': image, 'user': image.collection.owner }
+    return render(request, 'statmaps/image_details.html.haml', context)
 
 @login_required
 def edit_image(request, pk):
@@ -66,5 +67,6 @@ def edit_image(request, pk):
 
 def view_images_by_tag(request, tag):
     images = Image.objects.filter(tags__name__in=[tag])
+    print images
     context = {'images': images, 'tag': tag}
-    return render(request, 'statmaps/images_by_tag.html', context)
+    return render(request, 'statmaps/images_by_tag.html.haml', context)
