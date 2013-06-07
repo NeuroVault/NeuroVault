@@ -1,5 +1,5 @@
 from .models import Collection, Image
-from .forms import CollectionFormSet, CollectionForm
+from .forms import CollectionFormSet, CollectionForm, ImageForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
@@ -29,10 +29,8 @@ def edit_collection(request, pk=None):
         collection = Collection(owner=request.user)
     if request.method == "POST":
         form = CollectionForm(request.POST, request.FILES, instance=collection)
-        print "post"
         print form.is_valid()
         if form.is_valid():
-            print "saving"
             form.save()
             return HttpResponseRedirect(collection.get_absolute_url())
     else:
@@ -46,6 +44,23 @@ def view_image(request, pk):
     image = get_object_or_404(Image, pk=pk)
     #pass the JSON data here
     return render(request, 'statmaps/image_details.html', {'image': image})
+
+@login_required
+def edit_image(request, pk):
+    image = Image.objects.get(pk=pk)
+    if image.collection.owner != request.user:
+        return HttpResponseForbidden()
+    if request.method == "POST":
+        form = ImageForm(request.POST, request.FILES, instance=image)
+        print form.is_valid()
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(image.get_absolute_url())
+    else:
+        form = ImageForm(instance=image)
+        
+    context = {"form": form}
+    return render(request, "statmaps/edit_image.html", context)
 
 def view_images_by_tag(request, tag):
     images = Image.objects.filter(tags__name__in=[tag])

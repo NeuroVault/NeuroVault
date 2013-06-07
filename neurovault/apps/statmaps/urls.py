@@ -1,7 +1,7 @@
 from django.conf.urls import patterns, url
 from django.views.generic import DetailView, ListView
 from .models import Collection
-from .views import edit_collection, edit_images, view_image
+from .views import edit_collection, edit_images, view_image, edit_image
 from neurovault.apps.statmaps.views import view_images_by_tag
 from neurovault.apps.statmaps.models import KeyValueTag
 
@@ -39,6 +39,9 @@ urlpatterns = patterns('',
     url(r'^images/(?P<pk>\d+)/$',
         view_image,
         name='image_details'),
+    url(r'^images/(?P<pk>\d+)/edit$',
+        edit_image,
+        name='image_details')
                        
     
 )

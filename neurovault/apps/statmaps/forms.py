@@ -230,10 +230,13 @@ class CollectionForm(BetterModelForm):
         return doi
         
 
-class ImageMapForm(ModelForm):
+class ImageForm(ModelForm):
+    class Meta:
+        model = Image
+        exclude = ('json_path', 'collection')
     # Add some custom validation to our file field
     def clean(self):
-        cleaned_data = super(ImageMapForm, self).clean()
+        cleaned_data = super(ImageForm, self).clean()
         file = cleaned_data.get("file")
         if file:
             if not os.path.splitext(file.name)[1] in [".gz", ".nii", ".img"]:
@@ -274,6 +277,5 @@ class ImageMapForm(ModelForm):
         return cleaned_data
         
 
-
 CollectionFormSet = inlineformset_factory(
-    Collection, Image, form=ImageMapForm, exclude=['json_path'], extra=1)
+    Collection, Image, form=ImageForm, exclude=['json_path'], extra=1)

@@ -181,6 +181,9 @@ class Image(models.Model):
     def __unicode__(self):
         return self.name
     
+    def get_absolute_url(self):
+        return reverse('image_details', args=[str(self.id)])
+    
     class Meta:
         unique_together = ("collection", "name")
 
