@@ -27,3 +27,7 @@
 - Add tooltips everywhere (already enabled through Bootstrap; just use 'title' attribute in any element to add)
 
 - Collection instances should probably prioritize the user-provided name over the paper title
+
+- To keep things tidier, I suggest we create a new "Publication" model that contains all public metadata associated with a paper, as opposed to all metadata added by the user. E.g., authors, paper title, PMID, MeSH keywords, etc. would all go in the Publication. That way we can display a "Publication" tab on the Collection details page for only those collections that have them, and it keeps a relatively clean separation between published and unpublished collections.
+
+- The *datatables methods in the API ViewSets could stand to be customized, so that, e.g., fields like add_date return better-formatted values.

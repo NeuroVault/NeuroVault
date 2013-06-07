@@ -4,13 +4,14 @@ from .models import Collection
 from .views import edit_collection, edit_images, view_image, edit_image
 from neurovault.apps.statmaps.views import view_images_by_tag
 from neurovault.apps.statmaps.models import KeyValueTag
+from django.db.models import Count
 
 urlpatterns = patterns('',
     url(r'^collections/$',
         ListView.as_view(
-            queryset=Collection.objects.all(),
-            context_object_name='all_collections_list',
-            template_name='statmaps/collections_index.html'),
+            queryset=Collection.objects.all().annotate(n_images=Count('image')),
+            context_object_name='collections',
+            template_name='statmaps/collections_index.html.haml'),
         name='collections_list'),
     url(r'^collections/(?P<pk>\d+)/$',
         DetailView.as_view(
@@ -30,7 +31,7 @@ urlpatterns = patterns('',
     url(r'^images/tags/$',
         ListView.as_view(
             queryset=KeyValueTag.objects.all(),
-            context_object_name='all_tags_list',
+            context_object_name='tags',
             template_name='statmaps/tags_index.html.haml'),
         name='tags_list'),
     url(r'^images/tags/(?P<tag>[A-Za-z0-9@\.\+\-\_\s]+)/$',

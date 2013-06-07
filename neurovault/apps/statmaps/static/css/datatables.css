@@ -23,6 +23,8 @@ table.dataTable tfoot th {
 }
 
 table.dataTable td {
+	border-right: 1px solid #ddd;
+	border-left: 1px solid #ddd;
 	padding: 3px 10px;
 }
 
