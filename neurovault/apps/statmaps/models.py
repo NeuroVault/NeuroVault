@@ -161,11 +161,11 @@ def getPaperProperties(doi):
 def upload_to(instance, filename):
     return "images/%s/%s"%(instance.collection.name, filename)
 
-class LowerCaseTag(TagBase):
+class KeyValueTag(TagBase):
     value = models.CharField(max_length=200, blank=True)
 
 class ValueTaggedItem(GenericTaggedItemBase):
-    tag = models.ForeignKey(LowerCaseTag, related_name="tagged_items")
+    tag = models.ForeignKey(KeyValueTag, related_name="tagged_items")
 
 class Image(models.Model):
     collection = models.ForeignKey(Collection)

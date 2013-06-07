@@ -3,6 +3,7 @@ from django.views.generic import DetailView, ListView
 from .models import Collection
 from .views import edit_collection, edit_images, view_image
 from neurovault.apps.statmaps.views import view_images_by_tag
+from neurovault.apps.statmaps.models import KeyValueTag
 
 urlpatterns = patterns('',
     url(r'^collections/$',
@@ -25,13 +26,19 @@ urlpatterns = patterns('',
     url(r'^collections/(?P<collection_pk>\d+)/editimages$', 
         edit_images, 
         name="edit_images"),
-
+                       
+    url(r'^images/tags/$',
+        ListView.as_view(
+            queryset=KeyValueTag.objects.all(),
+            context_object_name='all_tags_list',
+            template_name='statmaps/tags_index.html'),
+        name='tags_list'),
     url(r'^images/tags/(?P<tag>[A-Za-z0-9@/./+/-/_]+)/$',
         view_images_by_tag,
-        name='statmaps_by_tag'),
+        name='images_by_tag'),
     url(r'^images/(?P<pk>\d+)/$',
         view_image,
-        name='statmap_details'),
-                  
-
+        name='image_details'),
+                       
+    
 )
