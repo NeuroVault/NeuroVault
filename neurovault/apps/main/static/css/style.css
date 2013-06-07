@@ -15,3 +15,8 @@ body {
 #content {
 	padding: 20px;
 }
+
+
+.bigtext {
+	font-size: 16px;
+}

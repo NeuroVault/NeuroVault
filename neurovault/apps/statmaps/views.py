@@ -21,8 +21,10 @@ def edit_images(request, collection_pk):
 
 @login_required
 def edit_collection(request, pk=None):
+    page_header = "Add new collection"
     if pk:
         collection = Collection.objects.get(pk=pk)
+        page_header = 'Edit collection'
         if collection.owner != request.user:
             return HttpResponseForbidden()
     else:
@@ -36,7 +38,7 @@ def edit_collection(request, pk=None):
     else:
         form = CollectionForm(instance=collection)
         
-    context = {"form": form}
+    context = {"form": form, "page_header": page_header}
     return render(request, "statmaps/edit_collection.html.haml", context)
 
 def view_image(request, pk):
