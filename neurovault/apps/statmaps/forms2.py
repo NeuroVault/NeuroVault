@@ -1,25 +1,15 @@
-import os
-import shutil
-from tempfile import mkstemp, NamedTemporaryFile
-
-import nibabel as nb
-
-from django.forms import ModelForm
-from django.forms.models import inlineformset_factory
-from django.core.exceptions import ValidationError
-from form_utils.forms import BetterModelForm
-
-from neurovault.apps.statmaps.models import getPaperProperties
+from django import forms
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Div, Submit, HTML, Button, Row, Field
+from crispy_forms.bootstrap import AppendedText, PrependedText, FormActions, TabHolder, Tab
 from .models import Study, StatMap
 
 # Create the form class.
 study_fieldsets = [
-    # COMMENTED THIS OUT BECAUSE THESE FIELDS SHOULD PROBABLY GO IN
-    # STATMAP, AS THEY MAY VARY BY IMAGE.
-    # ('GroupInference', {'fields': ['group_statistic_type',
-    #                              'group_statistic_parameters',
-    #                              'group_smoothness_fwhm'],
-    #                   'legend': 'Group Inference'}),
+    ('Essentials', {'fields': [ 'name',
+                                'DOI',
+                                'description'],
+        'legend': 'Essentials'}),
     ('Participants', {'fields': ['number_of_subjects',
                                  'subject_age_mean',
                                  'subject_age_min',
@@ -75,8 +65,8 @@ study_fieldsets = [
                                   'resampled_voxel_size'],
                                   'legend': 'Registration'}),
     ('Preprocessing', {
-    'fields': ['software_package',
-                       'software_version',
+     'fields': ['software_package',
+                  'software_version',
                        'order_of_preprocessing_operations',
                        'quality_control',
                        'used_b0_unwarping',
@@ -210,75 +200,28 @@ study_row_attrs = {
 }
 
 
-class StudyForm(BetterModelForm):
+class StudyForm(forms.ModelForm):
 
     class Meta:
         exclude = ('owner',)
         model = Study
-        fieldsets = study_fieldsets
-        row_attrs = study_row_attrs
+        # fieldsets = study_fieldsets
+        # row_attrs = study_row_attrs
 
     def __init__(self, *args, **kwargs):
+
         super(StudyForm, self).__init__(*args, **kwargs)
 
-    # This allowsinserting null DOIs
-    def clean_DOI(self):
-        doi = self.cleaned_data['DOI']
-        if doi == '':
-            doi = None
-        else:
-            try:
-                getPaperProperties(doi)
-            except:
-                raise ValidationError("Invalid DOI")
-        return doi
+        self.helper = FormHelper(self)
+        self.helper.form_class = 'form-horizontal'
+        self.helper.layout = Layout()
+        tab_holder = TabHolder()
+        for fs in study_fieldsets:
+            tab_holder.append(Tab(
+                fs[1]['legend'],
+                *fs[1]['fields']
+                )
+            )
+        self.helper.layout.extend([tab_holder, Submit('Submit', 'submit')])
 
 
-class StatMapForm(ModelForm):
-    # Add some custom validation to our file field
-
-    def clean(self):
-        cleaned_data = super(StatMapForm, self).clean()
-        file = cleaned_data.get("file")
-        if file:
-            if not os.path.splitext(file.name)[1] in [".gz", ".nii", ".img"]:
-                self._errors["file"] = self.error_class(["Doesn't have proper extension"])
-                del cleaned_data["file"]
-                return cleaned_data
-            # Here we need to now to read the file and see if it's actually
-            # a valid audio file. I don't know what the best library is to
-            # to do this
-            fname = file.name.split("/")[-1]
-            with NamedTemporaryFile(suffix=fname, delete=False) as f:
-                fname = f.name
-                if os.path.splitext(file.name)[1] == ".img":
-                    hdr_file = cleaned_data.get('hdr_file')
-                    if not os.path.splitext(hdr_file.name)[1] in [".hdr"]:
-                        self._errors["hdr_file"] = self.error_class(
-                            ["Doesn't have proper extension"])
-                        del cleaned_data["hdr_file"]
-                        return cleaned_data
-                    else:
-                        hf = open(fname[:-3] + "hdr", "wb")
-                        hf.write(hdr_file.file.read())
-                        hf.close()
-
-                f.write(file.file.read())
-                f.close()
-                try:
-                    nb.load(fname)
-                except Exception as e:
-                    self._errors["file"] = self.error_class([str(e)])
-                    del cleaned_data["file"]
-                finally:
-                    os.remove(fname)
-                    if os.path.splitext(file.name)[1] == ".img":
-                        if os.path.splitext(hdr_file.name)[1] in [".hdr"]:
-                            os.remove(fname[:-3] + "hdr")
-        else:
-            raise ValidationError("Couldn't read uploaded file")
-        return cleaned_data
-
-
-StudyFormSet = inlineformset_factory(
-    Study, StatMap, form=StatMapForm, exclude=['json_path'], extra=1)

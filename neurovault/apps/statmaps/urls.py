@@ -14,7 +14,7 @@ urlpatterns = patterns('',
     url(r'^(?P<pk>\d+)/$',
         DetailView.as_view(
             model=Study,
-            template_name='statmaps/study_details.html'),
+            template_name='statmaps/study_details.html.haml'),
         name='study_details'),
     url(r'^statmap/tag/(?P<tag>[A-Za-z0-9@/./+/-/_]+)/$',
         view_statmaps_by_tag,

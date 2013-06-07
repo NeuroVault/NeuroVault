@@ -5,6 +5,7 @@
     <script src="{% static "scripts/jquery.min.js"%}" type="text/javascript"></script>
     <script src="{% static "scripts/jquery-ui.min.js"%}" type="text/javascript"></script>
     <script src="{% static "scripts/bootstrap.min.js"%}" type="text/javascript"></script>
+    <script src="{% static "scripts/base.js"%}" type="text/javascript"></script>
     <link rel="stylesheet" href="{% static "css/bootstrap.css" %}" />
     <link href="{% static "css/jquery-ui.css"%}" media="screen" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="{% static "css/style.css" %}" />
@@ -19,7 +20,7 @@
                 <a class="brand" href="{% url 'index' %}">NeuroVault</a>
                 <ul class="nav">
                     <li><a href="{% url 'new_study' %}">Add new study</a></li>
-					<li><a href="{% url 'studies_list' %}">See all studies</a></li>    
+					<li><a href="{% url 'studies_list' %}">See all studies</a></li>  
 				</ul>
 				<ul class="nav pull-right">
 					{% if user.is_authenticated %}
