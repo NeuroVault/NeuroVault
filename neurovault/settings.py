@@ -147,7 +147,8 @@ INSTALLED_APPS = (
     'rest_framework',
     'taggit',
     'crispy_forms',
-    'coffeescript'
+    'coffeescript',
+    'taggit_templatetags'
 )
 
 # A sample logging configuration. The only tangible logging

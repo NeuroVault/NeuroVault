@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load coffeescript %}
+{% block includes %}
+    :javascript
+        {% inlinecoffeescript %}
+            $(document).ready ->
+                $("table").dataTable
+                    sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
+                    sPaginationType: "bootstrap"
+                    iDisplayLength: 10
+                    fnRowCallback: (nRow, aData, iDisplayIndex) ->
+                        $cell=$('td:eq(0)', nRow)
+                        tag_name = $cell.text()
+                        val = '<a href="/images/' + tag_name + '">' + tag_name + '</a>'
+                        $cell.html(val)
+                        nRow
+        {% endinlinecoffeescript %}
+{% endblock %}
+{% block content %}
+.row
+    .span11
+        %h2 Image tags
+        .lead Browse or search NeuroVault images by tag.
+        .row
+            .span5
+                %table.table.table-condensed.table-striped.table-hover.tag-list-datatable
+                    %thead
+                        %tr
+                            %th Tag name
+                    %tbody
+                        - for tag in all_tags_list
+                            %tr
+                                %td= tag.name
+
+{% endblock %}

@@ -7,7 +7,7 @@ from django.contrib.auth.models import User, Group
 from rest_framework import viewsets, routers, serializers
 from rest_framework.decorators import link
 from rest_framework.response import Response
-
+from taggit.models import Tag
 
 class HyperlinkedFileField(serializers.FileField):
 
@@ -91,6 +91,17 @@ class CollectionViewSet(viewsets.ModelViewSet):
         collection = self.get_object()
         data = CollectionSerializer(collection).data
         return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date'])
+
+
+class TagViewSet(viewsets.ModelViewSet):
+
+    model = Tag
+
+    @link()
+    def datatable(self, request, pk=None):
+        from django.db.models import Count
+        data = Tag.objects.annotate(action_count=Count('action'))
+        return APIHelper.wrap_for_datatables(data)
 
 
 # Routers provide an easy way of automatically determining the URL conf

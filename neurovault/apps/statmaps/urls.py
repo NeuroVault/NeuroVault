@@ -31,7 +31,7 @@ urlpatterns = patterns('',
         ListView.as_view(
             queryset=KeyValueTag.objects.all(),
             context_object_name='all_tags_list',
-            template_name='statmaps/tags_index.html'),
+            template_name='statmaps/tags_index.html.haml'),
         name='tags_list'),
     url(r'^images/tags/(?P<tag>[A-Za-z0-9@\.\+\-\_\s]+)/$',
         view_images_by_tag,

@@ -25,3 +25,5 @@
 - Add help/FAQ section
 
 - Add tooltips everywhere (already enabled through Bootstrap; just use 'title' attribute in any element to add)
+
+- Collection instances should probably prioritize the user-provided name over the paper title
