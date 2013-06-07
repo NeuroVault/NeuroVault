@@ -29,17 +29,15 @@ def edit_collection(request, pk=None):
         collection = Collection(owner=request.user)
     if request.method == "POST":
         form = CollectionForm(request.POST, request.FILES, instance=collection)
-        print "post"
         print form.is_valid()
         if form.is_valid():
-            print "saving"
             form.save()
             return HttpResponseRedirect(collection.get_absolute_url())
     else:
         form = CollectionForm(instance=collection)
         
     context = {"form": form}
-    return render(request, "statmaps/edit_collection.html", context)
+    return render(request, "statmaps/edit_collection.html.haml", context)
 
 def view_image(request, pk):
     #Tal put logic for reading and transforming Nifti to JSON here

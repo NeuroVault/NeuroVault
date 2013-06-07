@@ -14,7 +14,7 @@ urlpatterns = patterns('',
     url(r'^collections/(?P<pk>\d+)/$',
         DetailView.as_view(
             model=Collection,
-            template_name='statmaps/collection_details.html'),
+            template_name='statmaps/collection_details.html.haml'),
         name='collection_details'),
     url(r'^collections/new$',
         edit_collection,
@@ -32,6 +32,4 @@ urlpatterns = patterns('',
     url(r'^images/(?P<pk>\d+)/$',
         view_image,
         name='statmap_details'),
-                  
-
 )

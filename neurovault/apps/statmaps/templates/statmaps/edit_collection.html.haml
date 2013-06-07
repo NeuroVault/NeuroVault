@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block includes %}
+    %link{ href:"{% static 'css/studies.css' %}", media:"screen", rel:"stylesheet", type:"text/css"}
+{% endblock %}
+
+{% block content %}
+.row
+    .span11
+        {% crispy form %}
+{% endblock %}

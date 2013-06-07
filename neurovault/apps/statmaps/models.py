@@ -159,7 +159,7 @@ def getPaperProperties(doi):
     return title, authors, url, publication_date
 
 def upload_to(instance, filename):
-    return "images/%s/%s"%(instance.collection.name, filename)
+    return "images/%s/%s"%(instance.collection.id, filename)
 
 class LowerCaseTag(TagBase):
     value = models.CharField(max_length=200, blank=True)

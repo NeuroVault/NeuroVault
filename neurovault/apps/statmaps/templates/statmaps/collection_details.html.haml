@@ -3,10 +3,11 @@
 {% block includes %}
     :javascript
         var images = [
-        {% for statmap in study.statmap_set.all %}
+        {% for image in collection.image_set.all %}
         {
-            'name': '{{ statmap.name }}',
-            'url': '{{ statmap.json_path }}',
+            'name': '{{ image.name }}',
+            'url': '{{ image.json_path }}',
+            'json': true,
             'colorPalette': 'red'
         },
         {% endfor %}]
@@ -27,14 +28,31 @@
                         window.viewer.paint()
                     , 1)
                 )
+
+                $("table[class*=collection-details-datatable]").dataTable
+                    sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
+                    sPaginationType: "bootstrap"
+                    sAjaxSource: "/api/collections/" + {{collection.id}} + "/datatable/?format=json"
+                    iDisplayLength: 10
+
+                $("table[class*=collection-images-datatable]").dataTable
+                    sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
+                    sPaginationType: "bootstrap"
+                    iDisplayLength: 10
+                    aoColumns: [ { sWidth: '15%'}, { sWidth: '15%' }, { sWidth: '70%'}]
+
+                $('#collection-tabs a:first').tab('show')
+
         {% endinlinecoffeescript %}
 {% endblock %}
 
 {% block content %}
-%h1 {{ study.name }}
 .row
     .span11
-        %ul.nav.nav-tabs
+        %h2 {{ collection.name }}
+        - if collection.authors
+            .lead {{collection.authors}}
+        %ul#collection-tabs.nav.nav-tabs
             %li
                 %a{href:'#details', data-toggle:'tab'} Details
             %li
@@ -44,11 +62,26 @@
 
         .tab-content
             #details.tab-pane.active
-
-        .tab-content
+                %table.table.table-condensed.table-striped.table-hover.collection-details-datatable
+                    %thead
+                        %tr
+                            %th Field
+                            %th Value
+                    %tbody
             #images.tab-pane
+                %table.table.table-striped.table-hover.collection-images-datatable
+                    %thead
+                        %tr
+                            %th Name
+                            %th Tags
+                            %th Description
+                    %tbody
+                        - for image in collection.image_set.all
+                            %tr
+                                %td= image.name
+                                %td Need to stringify tags
+                                %td= image.description
 
-        .tab-content
             #viewer.tab-pane
                 #views-left
                     #view-axial.view
@@ -84,13 +117,13 @@
                             Neg. threshold:
                             #neg-threshold.slider.layer-settings
 
-{% for statmap in study.statmap_set.all %}
-    <li><a href="{% url 'statmap_details' statmap.id %}">{{ statmap.name }}</a></li>
+{% comment %}
+{% for image in collection.image_set.all %}
+    <li><a href="{% url 'image_details' image.id %}">{{ image.name }}</a></li>
 {% endfor %}
 
-<a href="{{study.url}}">{{study.name}}</a> by {{study.authors}}
+<a href="{{collection.url}}">{{collection.name}}</a> by {{collection.authors}}
 
-<a href="{% url 'edit_statmaps' study.id %}">Add/edit files</a>
-</div>
+<a href="{% url 'edit_images' collection.id %}">Add/edit files</a>
+{% endcomment %}
 {% endblock %}
-
