@@ -10,7 +10,7 @@ from django.core.exceptions import ValidationError
 from form_utils.forms import BetterModelForm
 
 from neurovault.apps.statmaps.models import getPaperProperties
-from .models import Study, StatMap
+from .models import Collection, Image
 
 # Create the form class.
 study_fieldsets = [
@@ -119,107 +119,105 @@ study_fieldsets = [
 ]
 
 
-study_row_attrs = {
-    'echo_time': {'priority': 1},
-    'number_of_rejected_subjects': {'priority': 2},
-    'inclusion_exclusion_criteria': {'priority': 3},
-    'group_comparison': {'priority': 1},
-    'contrast_definition_cogatlas': {'priority': 3},
-    'subject_age_max': {'priority': 2},
-    'used_dispersion_derivatives': {'priority': 3},
-    'used_intersubject_registration': {'priority': 1},
-    'intrasubject_estimation_type': {'priority': 1},
-    'field_of_view': {'priority': 2},
-    'order_of_preprocessing_operations': {'priority': 2},
-    'smoothing_type': {'priority': 1},
-    'subject_age_min': {'priority': 2},
-    'length_of_blocks': {'priority': 2},
-    'used_orthogonalization': {'priority': 1},
-    'used_b0_unwarping': {'priority': 2},
-    'used_temporal_derivatives': {'priority': 2},
-    'software_package': {'priority': 1},
-    'scanner_model': {'priority': 1},
-    'high_pass_filter_method': {'priority': 2},
-    'proportion_male_subjects': {'priority': 2},
-    'number_of_imaging_runs': {'priority': 2},
-    'interpolation_method': {'priority': 2},
-    'group_repeated_measures_method': {'priority': 3},
-    'motion_correction_software': {'priority': 3},
-    'used_motion_regressors': {'priority': 2},
-    'functional_coregistered_to_structural': {'priority': 2},
-    'motion_correction_interpolation': {'priority': 3},
-    'optimization_method': {'priority': 3},
-    'hemodynamic_response_function': {'priority': 2},
-    'group_model_type': {'priority': 1},
-    'used_slice_timing_correction': {'priority': 1},
-    'intrasubject_modeling_software': {'priority': 2},
-    'target_template_image': {'priority': 2},
-    'resampled_voxel_size': {'priority': 3},
-    'object_image_type': {'priority': 1},
-    'group_description': {'priority': 2},
-    'functional_coregistration_method': {'priority': 3},
-    'length_of_trials': {'priority': 2},
-    'handedness': {'priority': 2},
-    'number_of_subjects': {'priority': 1},
-    'used_motion_correction': {'priority': 1},
-    'pulse_sequence': {'priority': 1},
-    'used_high_pass_filter': {'priority': 1},
-    'orthogonalization_description': {'priority': 2},
-    'acquisition_orientation': {'priority': 2},
-    'order_of_acquisition': {'priority': 3},
-    'group_repeated_measures': {'priority': 1},
-    'motion_correction_reference': {'priority': 3},
-    'group_model_multilevel': {'priority': 3},
-    'number_of_experimental_units': {'priority': 2},
-    'type_of_design': {'priority': 1},
-    'coordinate_space': {'priority': 1},
-    'transform_similarity_metric': {'priority': 3},
-    'repetition_time': {'priority': 1},
-    'slice_thickness': {'priority': 1},
-    'length_of_runs': {'priority': 2},
-    'contrast_definition': {'priority': 1},
-    'software_version': {'priority': 1},
-    'autocorrelation_model': {'priority': 2},
-    'b0_unwarping_software': {'priority': 3},
-    'intersubject_transformation_type': {'priority': 1},
-    'quality_control': {'priority': 3},
-    'used_smoothing': {'priority': 1},
-    'smoothing_fwhm': {'priority': 1},
-    'intrasubject_model_type': {'priority': 1},
-    'matrix_size': {'priority': 2},
-    'optimization': {'priority': 2},
-    'group_inference_type': {'priority': 1},
-    'subject_age_mean': {'priority': 1},
-    'used_motion_susceptibiity_correction': {'priority': 3},
-    'group_statistic_type': {'priority': 2},
-    'skip_factor': {'priority': 2},
-    'used_reaction_time_regressor': {'priority': 2},
-    'group_modeling_software': {'priority': 2},
-    'parallel_imaging': {'priority': 3},
-    'intersubject_registration_software': {'priority': 2},
-    'nonlinear_transform_type': {'priority': 2},
-    'field_strength': {'priority': 1},
-    'group_estimation_type': {'priority': 1},
-    'target_resolution': {'priority': 1},
-    'slice_timing_correction_software': {'priority': 3},
-    'scanner_make': {'priority': 1},
-    'group_smoothness_fwhm': {'priority': 1},
-    'flip_angle': {'priority': 2},
-    'group_statistic_parameters': {'priority': 3},
-    'motion_correction_metric': {'priority': 3},
+collection_row_attrs = {
+    'echo_time' : {'priority': 1},
+    'number_of_rejected_subjects' : {'priority': 2},
+    'inclusion_exclusion_criteria' : {'priority': 3},
+    'group_comparison' : {'priority': 1},
+    'contrast_definition_cogatlas' : {'priority': 3},
+    'subject_age_max' : {'priority': 2},
+    'used_dispersion_derivatives' : {'priority': 3},
+    'used_intersubject_registration' : {'priority': 1},
+    'intrasubject_estimation_type' : {'priority': 1},
+    'field_of_view' : {'priority': 2},
+    'order_of_preprocessing_operations' : {'priority': 2},
+    'smoothing_type' : {'priority': 1},
+    'subject_age_min' : {'priority': 2},
+    'length_of_blocks' : {'priority': 2},
+    'used_orthogonalization' : {'priority': 1},
+    'used_b0_unwarping' : {'priority': 2},
+    'used_temporal_derivatives' : {'priority': 2},
+    'software_package' : {'priority': 1},
+    'scanner_model' : {'priority': 1},
+    'high_pass_filter_method' : {'priority': 2},
+    'proportion_male_subjects' : {'priority': 2},
+    'number_of_imaging_runs' : {'priority': 2},
+    'interpolation_method' : {'priority': 2},
+    'group_repeated_measures_method' : {'priority': 3},
+    'motion_correction_software' : {'priority': 3},
+    'used_motion_regressors' : {'priority': 2},
+    'functional_coregistered_to_structural' : {'priority': 2},
+    'motion_correction_interpolation' : {'priority': 3},
+    'optimization_method' : {'priority': 3},
+    'hemodynamic_response_function' : {'priority': 2},
+    'group_model_type' : {'priority': 1},
+    'used_slice_timing_correction' : {'priority': 1},
+    'intrasubject_modeling_software' : {'priority': 2},
+    'target_template_image' : {'priority': 2},
+    'resampled_voxel_size' : {'priority': 3},
+    'object_image_type' : {'priority': 1},
+    'group_description' : {'priority': 2},
+    'functional_coregistration_method' : {'priority': 3},
+    'length_of_trials' : {'priority': 2},
+    'handedness' : {'priority': 2},
+    'number_of_subjects' : {'priority': 1},
+    'used_motion_correction' : {'priority': 1},
+    'pulse_sequence' : {'priority': 1},
+    'used_high_pass_filter' : {'priority': 1},
+    'orthogonalization_description' : {'priority': 2},
+    'acquisition_orientation' : {'priority': 2},
+    'order_of_acquisition' : {'priority': 3},
+    'group_repeated_measures' : {'priority': 1},
+    'motion_correction_reference' : {'priority': 3},
+    'group_model_multilevel' : {'priority': 3},
+    'number_of_experimental_units' : {'priority': 2},
+    'type_of_design' : {'priority': 1},
+    'coordinate_space' : {'priority': 1},
+    'transform_similarity_metric' : {'priority': 3},
+    'repetition_time' : {'priority': 1},
+    'slice_thickness' : {'priority': 1},
+    'length_of_runs' : {'priority': 2},
+    'contrast_definition' : {'priority': 1},
+    'software_version' : {'priority': 1},
+    'autocorrelation_model' : {'priority': 2},
+    'b0_unwarping_software' : {'priority': 3},
+    'intersubject_transformation_type' : {'priority': 1},
+    'quality_control' : {'priority': 3},
+    'used_smoothing' : {'priority': 1},
+    'smoothing_fwhm' : {'priority': 1},
+    'intrasubject_model_type' : {'priority': 1},
+    'matrix_size' : {'priority': 2},
+    'optimization' : {'priority': 2},
+    'group_inference_type' : {'priority': 1},
+    'subject_age_mean' : {'priority': 1},
+    'used_motion_susceptibiity_correction' : {'priority': 3},
+    'group_statistic_type' : {'priority': 2},
+    'skip_factor' : {'priority': 2},
+    'used_reaction_time_regressor' : {'priority': 2},
+    'group_modeling_software' : {'priority': 2},
+    'parallel_imaging' : {'priority': 3},
+    'intersubject_registration_software' : {'priority': 2},
+    'nonlinear_transform_type' : {'priority': 2},
+    'field_strength' : {'priority': 1},
+    'group_estimation_type' : {'priority': 1},
+    'target_resolution' : {'priority': 1},
+    'slice_timing_correction_software' : {'priority': 3},
+    'scanner_make' : {'priority': 1},
+    'group_smoothness_fwhm' : {'priority': 1},
+    'flip_angle' : {'priority': 2},
+    'group_statistic_parameters' : {'priority': 3},
+    'motion_correction_metric' : {'priority': 3},
 }
 
-
-class StudyForm(BetterModelForm):
-
+class CollectionForm(BetterModelForm):
     class Meta:
         exclude = ('owner',)
-        model = Study
-        fieldsets = study_fieldsets
-        row_attrs = study_row_attrs
+        model = Collection
+        fieldsets = collection_fieldsets
+        row_attrs = collection_row_attrs
 
     def __init__(self, *args, **kwargs):
-        super(StudyForm, self).__init__(*args, **kwargs)
+        super(CollectionForm, self).__init__(*args, **kwargs)
 
     # This allowsinserting null DOIs
     def clean_DOI(self):
@@ -234,11 +232,11 @@ class StudyForm(BetterModelForm):
         return doi
 
 
-class StatMapForm(ModelForm):
+class ImageMapForm(ModelForm):
     # Add some custom validation to our file field
 
     def clean(self):
-        cleaned_data = super(StatMapForm, self).clean()
+        cleaned_data = super(ImageMapForm, self).clean()
         file = cleaned_data.get("file")
         if file:
             if not os.path.splitext(file.name)[1] in [".gz", ".nii", ".img"]:
@@ -280,5 +278,6 @@ class StatMapForm(ModelForm):
         return cleaned_data
 
 
-StudyFormSet = inlineformset_factory(
-    Study, StatMap, form=StatMapForm, exclude=['json_path'], extra=1)
+
+CollectionFormSet = inlineformset_factory(
+    Collection, Image, form=ImageMapForm, exclude=['json_path'], extra=1)

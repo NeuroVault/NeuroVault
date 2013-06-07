@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if all_collections_list %}
+    <ul>
+    {% for collection in all_collections_list %}
+        <li><a href="{% url 'collection_details' collection.id %}">{{ collection.name }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No collections are available.</p>
+{% endif %}
+
+<a href="{% url 'new_collection' %}">Add new collection</a>
+{% endblock %}

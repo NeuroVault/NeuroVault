@@ -1,7 +1,7 @@
 from django.conf.urls import patterns, include, url
 from django.conf import settings
 from django.contrib import admin
-from neurovault.apps.statmaps.models import StatMap, Study
+from neurovault.apps.statmaps.models import Image, Collection
 admin.autodiscover()
 from django.contrib.auth.models import User, Group
 from rest_framework import viewsets, routers, serializers
@@ -19,32 +19,32 @@ class UserViewSet(viewsets.ModelViewSet):
 class GroupViewSet(viewsets.ModelViewSet):
     model = Group
     
-class StatMapSerializer(serializers.HyperlinkedModelSerializer):
+class ImageSerializer(serializers.HyperlinkedModelSerializer):
     
     file = HyperlinkedFileField(source='file')
     hdr_file = HyperlinkedFileField(source='hdr_file')
 
     class Meta:
-        model = StatMap
+        model = Image
         #fields = ('file', 'hdr_file')
         
-class StatMapViewSet(viewsets.ModelViewSet):
-    queryset = StatMap.objects.all()
-    serializer_class = StatMapSerializer
+class ImageViewSet(viewsets.ModelViewSet):
+    queryset = Image.objects.all()
+    serializer_class = ImageSerializer
     
-class StudyViewSet(viewsets.ModelViewSet):
-    model = Study
+class CollectionViewSet(viewsets.ModelViewSet):
+    model = Collection
 
 # Routers provide an easy way of automatically determining the URL conf
 router = routers.DefaultRouter()
 router.register(r'users', UserViewSet)
 router.register(r'groups', GroupViewSet)
-router.register(r'statmaps', StatMapViewSet)
-router.register(r'study', StudyViewSet)
+router.register(r'images', ImageViewSet)
+router.register(r'collection', CollectionViewSet)
 
 urlpatterns = patterns('',
     url(r'^$', include('neurovault.apps.main.urls')),
-    url(r'^studies/', include('neurovault.apps.statmaps.urls')),
+    url(r'^', include('neurovault.apps.statmaps.urls')),
     url(r'^accounts/', include('neurovault.apps.users.urls')),
     url(r'^admin/', include(admin.site.urls)),
     url(r'', include('social_auth.urls')),
