@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if all_tags_list %}
+    <ul>
+    {% for tag in all_tags_list %}
+        <li><a href="{% url 'images_by_tag' tag.name %}">{{ tag.name }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No tags are available.</p>
+{% endif %}
+
+{% endblock %}

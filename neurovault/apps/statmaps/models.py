@@ -170,7 +170,7 @@ class ValueTaggedItem(GenericTaggedItemBase):
 class Image(models.Model):
     collection = models.ForeignKey(Collection)
     name = models.CharField(max_length=200, null=False, blank=False)
-    description = models.CharField(max_length=200, blank=True)
+    description = models.TextField(blank=False)
     file = models.FileField(upload_to=upload_to, null=False, blank=False, storage=NiftiGzStorage())
     hdr_file = models.FileField(upload_to=upload_to, blank=True, storage=NiftiGzStorage())
     json_path = models.CharField(max_length=200, null=False, blank=True)

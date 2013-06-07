@@ -238,10 +238,18 @@ class CollectionForm(ModelForm):
 
 
 class ImageForm(ModelForm):
+
     class Meta:
         model = Image
         exclude = ('json_path', 'collection')
     # Add some custom validation to our file field
+
+    def __init__(self, *args, **kwargs):
+
+        super(ImageForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_class = 'form-horizontal'
+        self.helper.form_tag = False
 
     def clean(self):
         cleaned_data = super(ImageForm, self).clean()

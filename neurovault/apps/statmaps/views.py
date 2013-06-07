@@ -17,7 +17,7 @@ def edit_images(request, collection_pk):
         formset = CollectionFormSet(instance=collection)
         
     context = {"formset": formset}
-    return render(request, "statmaps/edit_images.html", context)
+    return render(request, "statmaps/edit_images.html.haml", context)
 
 @login_required
 def edit_collection(request, pk=None):
