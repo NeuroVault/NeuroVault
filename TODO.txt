@@ -15,3 +15,13 @@
 - Fix image downloading in the viewer
 
 - Add a lot more fields to Image model. Should contain any information necessary for basic interpretation of what the image means--e.g., intent (p values, t, z, etc.), min/max for convenience and color mapping (can set this during file processing), figure number if from a paper, etc.
+
+- Move from SQLite to something more suitable for production--MySQL, PostGreSQL, etc.
+
+- Create a Download model and track all image downloads by user (if logged in) and IP
+
+- Add better image management options within collection--e.g., 'delete' row within table if user is logged in and owns collection
+
+- Add help/FAQ section
+
+- Add tooltips everywhere (already enabled through Bootstrap; just use 'title' attribute in any element to add)
