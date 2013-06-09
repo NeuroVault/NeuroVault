@@ -42,7 +42,7 @@ urlpatterns = patterns('',
         name='image_details'),
     url(r'^images/(?P<pk>\d+)/edit$',
         edit_image,
-        name='image_details')
+        name='edit_image')
                        
     
 )
