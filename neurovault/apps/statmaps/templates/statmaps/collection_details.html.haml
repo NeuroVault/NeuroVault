@@ -8,7 +8,7 @@
             'name': '{{ image.name }}',
             'url': '{{ image.json_path }}',
             'json': true,
-            'colorPalette': 'red'
+            'colorPalette': "{% cycle 'red' 'blue' 'green' 'yellow' 'purple' 'aqua' 'lime' 'navy' %}"
         },
         {% endfor %}]
 
