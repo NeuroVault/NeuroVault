@@ -15,3 +15,82 @@ body {
 #content {
 	padding: 20px;
 }
+
+
+.bigtext {
+	font-size: 16px;
+}
+
+.massive {
+	font-size: 80px;
+	padding: 0px 0px 20px 0px;
+	line-height: 1em;
+	font-family: "HelveticaNeue-Light", Helvetica, Arial, sans-serif;
+	text-align: center;
+}
+
+.light-head {
+	font-size: 36px;
+	font-family: "HelveticaNeue-Light", Helvetica, Arial, sans-serif;
+	line-height: 1.4em;
+	margin-bottom: 10px;
+}
+
+.small-light-head {
+	font-size: 26px;
+	font-family: "HelveticaNeue-Light", Helvetica, Arial, sans-serif;
+	line-height: 1.4em;	
+}
+
+.center-text {
+	text-align: center;
+}
+
+.third {
+	width: 260px;
+}
+
+.two-thirds {
+	width: 570px;
+}
+
+.half {
+	width: 415px;
+}
+
+.slice {
+	float: left;
+	font-size: 20px;
+	font-family: "HelveticaNeue-Light", Helvetica, Arial, sans-serif;
+	line-height: 1.3em;
+	padding: 0px 15px 0px 35px;
+}
+
+.benefit-list li {
+	line-height: 1.3em;
+}
+
+.btn-gigantic {
+    padding: 18px 20px;
+    font-size: 20px;
+    line-height: normal;
+    -webkit-border-radius: 8px;
+       -moz-border-radius: 8px;
+            border-radius: 8px;
+    }
+
+.management-options {
+	clear: both;
+	padding-bottom: 30px;
+}
+
+.management-options .btn {
+	font-size: 18px;
+	font-family: "HelveticaNeue-Light", Helvetica, Arial, sans-serif;
+	padding: 11px;
+}
+
+ul.nav-tabs li {
+	font-size: 16px;
+	font-family: "HelveticaNeue-Light", Helvetica, Arial, sans-serif;
+}

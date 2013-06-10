@@ -5,3 +5,7 @@ djangorestframework
 markdown
 django-filter
 django-taggit
+django-form-utils
+haml-py
+django-crispy-forms
+django-coffeescript

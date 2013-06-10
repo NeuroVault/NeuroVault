@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load coffeescript %}
+{% block head %}
+    :javascript
+        var images = [{
+            'name': '{{ image.name }}',
+            'url': '{{ image.json_path }}',
+            'colorPalette': 'red',
+            'json': true
+        }]
+
+    {% include 'statmaps/_viewer_head.html.haml' %}
+    
+    :javascript
+        {% inlinecoffeescript %}
+            $(document).ready ->
+
+                $("table[class*=image-details-datatable]").dataTable
+                    sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
+                    sPaginationType: "bootstrap"
+                    sAjaxSource: "/api/images/" + {{image.id}} + "/datatable/?format=json"
+                    iDisplayLength: 10
+
+        {% endinlinecoffeescript %}
+{% endblock %}
+
+{% block content %}
+.row
+    .span11
+        %h2 {{ image.name }}
+        .lead
+            %p Contributed by {{ user.username }} on {{ image.add_date|date:"N j, Y" }}
+            %p <b>Description</b>: {{ image.description }}
+            %p <b>Tags</b>:             
+                - for tag in image.tags.all
+                    %a{ href: "/images/tags/{{tag.name}}" }= tag.name
+                    - if not forloop.last
+                        , 
+            - if user_owns_image
+                %a.btn.btn-primary.btn-large{href: "{% url 'edit_image' image.id %}" } Edit details
+
+        %ul#collection-tabs.nav.nav-tabs
+            %li
+                %a{href:'#viewer', data-toggle:'tab'} Viewer
+            %li
+                %a{href:'#details', data-toggle:'tab'} Details
+
+        .tab-content
+            #details.tab-pane
+                %table.table.table-condensed.table-striped.table-hover.image-details-datatable
+                    %thead
+                        %tr
+                            %th Field
+                            %th Value
+                    %tbody
+            #viewer.tab-pane.active
+                {% include 'statmaps/_viewer_content.html.haml' %}
+{% endblock %}

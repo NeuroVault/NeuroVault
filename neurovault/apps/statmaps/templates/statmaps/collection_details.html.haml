@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load coffeescript %}
+{% block head %}
+    :javascript
+        var images = [
+        {% for image in collection.image_set.all %}
+        {
+            'name': '{{ image.name }}',
+            'url': '{{ image.json_path }}',
+            'json': true,
+            'colorPalette': "{% cycle 'red' 'blue' 'green' 'yellow' 'purple' 'aqua' 'lime' 'navy' %}"
+        },
+        {% endfor %}]
+
+    {% include 'statmaps/_viewer_head.html.haml' %}
+
+    :javascript
+        {% inlinecoffeescript %}
+            $(document).ready ->
+                $('#show-viewer').click( () =>
+                    window.viewer.paint()
+                    setTimeout(() ->
+                        window.viewer.paint()
+                    , 1)
+                )
+
+                $("table[class*=collection-details-datatable]").dataTable
+                    sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
+                    sPaginationType: "bootstrap"
+                    sAjaxSource: "/api/collections/" + {{collection.id}} + "/datatable/?format=json"
+                    iDisplayLength: 10
+
+                $("table[class*=collection-images-datatable]").dataTable
+                    sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
+                    sPaginationType: "bootstrap"
+                    iDisplayLength: 10
+                    aoColumns: [ { sWidth: '8%'}, { sWidth: '20%'}, { sWidth: '20%' }, { sWidth: '52%'}]
+                    fnRowCallback: (nRow, aData, iDisplayIndex) ->
+                        $cell=$('td:eq(1)', nRow)
+                        image_id = $('td:eq(0)', nRow).text()
+                        image_name = $cell.text()
+                        val = '<a href="/images/' + image_id + '">' + image_name + '</a>'
+                        $cell.html(val)
+                        nRow
+
+                $('#collection-tabs a:first').tab('show')
+
+        {% endinlinecoffeescript %}
+{% endblock %}
+
+{% block content %}
+.row
+    .span11
+        %h2 {{ collection.name }}
+        - if collection.authors
+            .lead {{collection.authors}}
+        - if user_owns_collection
+            .management-options
+                %a.btn.btn-primary{href: "{% url 'edit_collection' collection.id %}" } Edit collection
+                %a.btn.btn-primary{href: "{% url 'edit_images' collection.id %}" } Add/edit images
+        %ul#collection-tabs.nav.nav-tabs
+            %li
+                %a{href:'#images', data-toggle:'tab'} Images
+            %li
+                %a{href:'#details', data-toggle:'tab'} Details
+            %li#show-viewer
+                %a{href:'#viewer', data-toggle:'tab'} Viewer
+
+        .tab-content
+            #images.tab-pane.active
+                %table.table.table-striped.table-hover.collection-images-datatable
+                    %thead
+                        %tr
+                            %th ID
+                            %th Name
+                            %th Tags
+                            %th Description
+                    %tbody
+                        - for image in collection.image_set.all
+                            %tr
+                                %td= image.id
+                                %td= image.name
+                                %td 
+                                    - for tag in image.tags.all
+                                        %a{ href: "/images/tags/{{tag.name}}" }= tag.name
+                                        - if not forloop.last
+                                            , 
+                                %td= image.description
+            #details.tab-pane
+                %table.table.table-condensed.table-striped.table-hover.collection-details-datatable
+                    %thead
+                        %tr
+                            %th Field
+                            %th Value
+                    %tbody
+            #viewer.tab-pane
+                {% include 'statmaps/_viewer_content.html.haml' %}
+
+{% comment %}
+{% for image in collection.image_set.all %}
+    <li><a href="{% url 'image_details' image.id %}">{{ image.name }}</a></li>
+{% endfor %}
+
+<a href="{{collection.url}}">{{collection.name}}</a> by {{collection.authors}}
+
+<a href="{% url 'edit_images' collection.id %}">Add/edit files</a>
+{% endcomment %}
+{% endblock %}

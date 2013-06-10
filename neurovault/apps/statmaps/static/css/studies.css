@@ -1,0 +1,21 @@
+.fieldWrapper {
+	clear: both;
+	width: 60%;
+}
+
+.fieldWrapper label {
+	width: 200px;
+	float: left;
+	text-align: right;
+	padding: 5px 20px 0px 0px;
+}
+
+.fieldWrapper input {
+	 display: inline-block;
+	 float: left;
+}
+
+/*.error {
+	color: red;
+	text-align: right;
+}*/

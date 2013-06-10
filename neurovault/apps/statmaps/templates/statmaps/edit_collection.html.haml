@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block head %}
+    %link{ href:"{% static 'css/studies.css' %}", media:"screen", rel:"stylesheet", type:"text/css"}
+{% endblock %}
+
+{% block content %}
+.row
+    .span11
+        %h2 {{page_header}}
+        .row
+            .span9
+                .lead
+                    %p A collection is a set of images grouped together for some sensible reason.
+                    %p Most commonly, a collection contains all of the images from a single study.
+                    %p Please provide information about this collection. Only the starred fields* are mandatory, but please try to provide as much information as you can.
+        %hr
+        {% crispy form %}
+{% endblock %}

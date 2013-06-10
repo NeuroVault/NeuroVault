@@ -1,23 +1,24 @@
-#views_left {
-	width: 265px;
+#views-left {
+	width: 260px;
 	float: left;
+	margin-left: 10px;
 }
 
-#views_right {
+#views-right {
 	width: 280px;
 	float: left;
 }
 
-#view_axial {
-  width: 280px;
+#view-axial {
+  width: 260px;
   height: 260px;
   margin-bottom: 20px; }
 
-#view_coronal {
-  width: 280px;
+#view-coronal {
+  width: 260px;
   height: 220px; }
 
-#view_sagittal {
+#view-sagittal {
   width: 264px;
   height: 260px; }
 
@@ -37,53 +38,101 @@
 canvas {
   float: left; }
 
-#layer_panel {
-	width: 190px;
+#layer-panel {
+	width: 290px;
 	float: left;
-	margin-left: 10px;
+	margin-left: 12px;
 }
 
-#layer_settings_panel {
+#layer-settings-panel {
 	font-size: 14px;
-	clear: left;
-	width: 185px;
+	width: 235px;
 	margin-top: 10px;
-	float: right;
-}
-
-#layer_list_panel {
-	width: 185px;
 	float: left;
 }
 
-#layer_list {
-	width: 150px;
+.layer-container-half-width {
+  width: 50%;
+  float: left;
+}
+
+.layer-container-full-width {
+  width: 100%;
+  float: left;
+}
+
+#checkbox-list {
+  float: left;
+  margin: 20px 0px 0px 30px;
+}
+
+.checkbox_row {
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.checkbox_row>input {
+    margin-right: 5px;
+}
+
+select.layer-settings {
+  width: 120px;
+}
+
+#layer-list-panel {
+	width: 285px;
 	float: left;
 }
 
-#layer_visible_list {
+#layer-list {
+	width: 280px;
+	float: left;
+}
+
+#layer-visible-list {
 	width: 25px;
 	float: left;
 }
 
-
-#color_palette {
-	width: 180px;
+.visibility_icon {
+  width: 20px;
+  float: left;
+  text-align: center;
+  padding: 5px 3px;
+  background: white;
+  border-left: 1px solid #999;
+  border-right: 1px solid #999;
 }
 
-.toggle_img {
-	width: 20px;
-	height: 20px;
-	margin: 6px 0px 3px 2px;
+.deletion_icon {
+  width: 20px;
+  // height: 20px;
+  float: left;
+  text-align: center;
+  padding: 5px 3px;
+  background: white;
+  border-left: 1px solid #999;
+  border-right: 1px solid #999;
 }
 
-#data_panel {
+.download_icon {
+  width: 20px;
+  // height: 20px;
+  float: left;
+  text-align: center;
+  padding: 5px 3px;
+  background: white;
+  border-left: 1px solid #999;
+  border-right: 1px solid #999;
+}
+
+#data-panel {
 	margin-top: 20px;
 	float: left;
 	font: 12px;
 }
 
-#data_current_coords {
+#data-current-coords {
 	font-size: 24px;
 	float: left;
 	width: 150px;
@@ -91,7 +140,7 @@ canvas {
 	text-align: center;
 }
 
-#data_current_value {
+#data-current-value {
 	font-size: 24px;
 	padding: 7px;
 	background: #ccc;
@@ -101,24 +150,35 @@ canvas {
 	text-align: center;
 }
 
-ul#layer_list li {
-	border-width: 1px 1px 1px 1px;
-	border-style: solid;
-	border-color: #ddb #999 #999 #ddb;
-	font-size: 12px;
-	background: #ffd;
-	padding: 3px;
-	margin: 0px;
-	width: 150px;
-	float: left;
+ul#layer-list li {
+    border-width: 1px 1px 1px 1px;
+    border-style: solid;
+    border-color: #ddb #999 #999 #ddb;
+    background: white;
+    border-radius: 3px;
+    -moz-border-radius: 3px;
+    margin: 0px;
+    float: left;
 }
 
-ul#layer_list {
+ul#layer-list {
 	margin: 0px;
 	padding: 0px;
 	list-style: none;
 }
 
-ul#layer_list li.selected {
+.layer_label {
+  float: left;
+  width: 180px;
+  background: #ccc;
+  padding: 5px 3px;
+  font-size: 12px;
+}
+
+.layer_label.selected {
 	background: #cff;
+}
+
+.ui-slider-range.ui-widget-header {
+	background: #ccc;
 }

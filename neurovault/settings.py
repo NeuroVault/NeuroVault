@@ -91,6 +91,8 @@ SECRET_KEY = '4a(l8%ljjluod%&eo50p^m2lb@zk7q%ts()t%yl%34)d6z1old'
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
+    'hamlpy.template.loaders.HamlPyFilesystemLoader',
+    'hamlpy.template.loaders.HamlPyAppDirectoriesLoader',
     'django.template.loaders.filesystem.Loader',
     'django.template.loaders.app_directories.Loader',
 #     'django.template.loaders.eggs.Loader',
@@ -143,7 +145,10 @@ INSTALLED_APPS = (
      #'django.contrib.admindocs',
     'social_auth',
     'rest_framework',
-    'taggit'
+    'taggit',
+    'crispy_forms',
+    'coffeescript',
+    'taggit_templatetags'
 )
 
 # A sample logging configuration. The only tangible logging
