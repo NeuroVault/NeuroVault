@@ -28,7 +28,15 @@
 .row
     .span11
         %h2 {{ image.name }}
-        .lead Contributed by {{ user.username }} on {{ image.add_date|date:"N j, Y" }}
+        .lead
+            %p Contributed by {{ user.username }} on {{ image.add_date|date:"N j, Y" }}
+            %p <b>Description</b>: {{ image.description }}
+            %p <b>Tags</b>:             
+                - for tag in image.tags.all
+                    %a{ href: "/images/tags/{{tag.name}}" }= tag.name
+                    - if not forloop.last
+                        , 
+
         %ul#collection-tabs.nav.nav-tabs
             %li
                 %a{href:'#viewer', data-toggle:'tab'} Viewer

@@ -76,7 +76,7 @@ class ImageViewSet(viewsets.ModelViewSet):
         object for the Datatables plugin. '''
         image = self.get_object()
         data = ImageSerializer(image, context={'request': request}).data
-        return APIHelper.wrap_for_datatables(data, ['name', 'modify_date'])
+        return APIHelper.wrap_for_datatables(data, ['name', 'modify_date', 'description', 'add_date'])
 
 
 class CollectionViewSet(viewsets.ModelViewSet):
