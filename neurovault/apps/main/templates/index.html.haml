@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load coffeescript %}
+{% block head %}
+<link href="{% static "css/viewer.css"%}" media="screen" rel="stylesheet" type="text/css" />
+<script src="{% static "scripts/rainbow.js"%}" type="text/javascript"></script>
+<script src="{% static "scripts/sylvester.js"%}" type="text/javascript"></script>
+<script src="{% static "scripts/amplify.js"%}" type="text/javascript"></script>
+<script src="{% static "scripts/panzoom.js"%}" type="text/javascript"></script>
+<script src="{% static "scripts/viewer.js"%}" type="text/javascript"></script>
+:javascript
+    {% inlinecoffeescript %}
+        images = [{
+            'name': '{{ recent_images.0.name }}'
+            'url': '{{ recent_images.0.json_path }}'
+            'json': true
+            'colorPalette': 'red'
+        }]
+
+        $(document).ready ->
+
+            anatomical = {
+                'url': '/media/anatomical/MNI152.nii.gz.json',
+                'name': 'MNI152 2mm',
+                'colorPalette': 'grayscale'
+                }
+            viewer = new Viewer('#dummy', '.dummy', true, {panzoomEnabled:false})
+            viewer.addView('#view-axial', Viewer.AXIAL)
+            viewer.addSlider("nav-zaxis", ".slider#nav-zaxis", "vertical", 0, 1, 0.5, 0.01, Viewer.ZAXIS)
+            images.unshift(anatomical)
+            viewer.loadImages(images)
+            window.viewer = viewer
+
+            $('.preview-image').click( (e) =>
+                e.preventDefault()
+                url = $(e.target).data('imageUrl')
+                images = [{
+                    'name': 'dummy'
+                    'url': url
+                    'json': true
+                    'colorPalette': 'red'                   
+                }]
+                images.unshift(anatomical)
+                viewer.clearImages()
+                viewer.loadImages(images)
+            )
+
+    {% endinlinecoffeescript %}
+{% endblock %}
+{% block content %}
+.row
+    .span11
+        .massive
+            %p NeuroVault
+            .lead A public repository of brain activation maps
+        %hr
+.row
+    .third.slice
+        .light-head.center-text What is it?
+        %p A place where researchers can publicly store and share activation maps produced by functional MRI studies.
+    .third.slice
+        .light-head.center-text Why use it?
+        %ul.benefit-list
+            %li Interactive visualization
+            %li A permanent URL
+            %li Publicly shareable
+            %li Free storage
+    .third.slice
+        .light-head.center-text Get started
+            %a.btn.btn-primary.btn-gigantic{href: '/collections/new', style: 'margin-top: 15px'} Upload an image
+.row
+    .span11
+        %hr
+.row
+    .two-thirds.slice
+        .light-head.center-text Latest images
+        %table.table.table-striped
+            %thead
+                %tr
+                    %th
+                    %th
+            %tbody
+                - for image in recent_images
+                    %tr
+                        %td
+                            %a{href: "{% url 'image_details' image.id %}"}= image.name
+                        %td
+                            %a.preview-image{href:'', data-image-url: '{{ image.json_path }}' } preview <i class="icon-circle-arrow-right"></i>
+    .third.slice
+        {% include '_index_viewer.html.haml' %}
+{% endblock %}

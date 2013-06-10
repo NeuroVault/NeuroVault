@@ -17,12 +17,14 @@ def edit_images(request, collection_pk):
         formset = CollectionFormSet(instance=collection)
         
     context = {"formset": formset}
-    return render(request, "statmaps/edit_images.html", context)
+    return render(request, "statmaps/edit_images.html.haml", context)
 
 @login_required
 def edit_collection(request, pk=None):
+    page_header = "Add new collection"
     if pk:
         collection = Collection.objects.get(pk=pk)
+        page_header = 'Edit collection'
         if collection.owner != request.user:
             return HttpResponseForbidden()
     else:
@@ -36,14 +38,20 @@ def edit_collection(request, pk=None):
     else:
         form = CollectionForm(instance=collection)
         
-    context = {"form": form}
-    return render(request, "statmaps/edit_collection.html", context)
+    context = {"form": form, "page_header": page_header}
+    return render(request, "statmaps/edit_collection.html.haml", context)
 
 def view_image(request, pk):
-    #Tal put logic for reading and transforming Nifti to JSON here
     image = get_object_or_404(Image, pk=pk)
-    #pass the JSON data here
-    return render(request, 'statmaps/image_details.html', {'image': image})
+    user_owns_image = True if image.collection.owner == request.user else False
+    context = {'image': image, 'user': image.collection.owner, 'user_owns_image': user_owns_image }
+    return render(request, 'statmaps/image_details.html.haml', context)
+
+def view_collection(request, pk):
+    collection = get_object_or_404(Collection, pk=pk)
+    user_owns_collection = True if collection.owner == request.user else False
+    context = {'collection': collection, 'user': request.user, 'user_owns_collection': user_owns_collection }
+    return render(request, 'statmaps/collection_details.html.haml', context)
 
 @login_required
 def edit_image(request, pk):
@@ -64,5 +72,6 @@ def edit_image(request, pk):
 
 def view_images_by_tag(request, tag):
     images = Image.objects.filter(tags__name__in=[tag])
+    print images
     context = {'images': images, 'tag': tag}
-    return render(request, 'statmaps/images_by_tag.html', context)
+    return render(request, 'statmaps/images_by_tag.html.haml', context)
