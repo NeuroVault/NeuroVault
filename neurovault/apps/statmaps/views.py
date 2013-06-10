@@ -42,11 +42,16 @@ def edit_collection(request, pk=None):
     return render(request, "statmaps/edit_collection.html.haml", context)
 
 def view_image(request, pk):
-    #Tal put logic for reading and transforming Nifti to JSON here
     image = get_object_or_404(Image, pk=pk)
-    #pass the JSON data here
-    context = {'image': image, 'user': image.collection.owner }
+    user_owns_image = True if image.collection.owner == request.user else False
+    context = {'image': image, 'user': image.collection.owner, 'user_owns_image': user_owns_image }
     return render(request, 'statmaps/image_details.html.haml', context)
+
+def view_collection(request, pk):
+    collection = get_object_or_404(Collection, pk=pk)
+    user_owns_collection = True if collection.owner == request.user else False
+    context = {'collection': collection, 'user': request.user, 'user_owns_collection': user_owns_collection }
+    return render(request, 'statmaps/collection_details.html.haml', context)
 
 @login_required
 def edit_image(request, pk):

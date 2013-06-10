@@ -1,5 +1,7 @@
 - Make sure API edit/delete/update methods respect user permissions; i.e., users should not be able to use the API to fuck with other users' images.
 
+- Modify datatables code to do server-side pagination, because eventually when number of images gets large, we don't want to send data for all images on each page load.
+
 - Get metadata from pubmed rather than crossref, because crossref makes a lot of mistakes
 
 - Add a 'display_name' value for all model fields, because the verbose_names are ugly

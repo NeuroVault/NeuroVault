@@ -1,7 +1,7 @@
 from django.conf.urls import patterns, url
 from django.views.generic import DetailView, ListView
 from .models import Collection
-from .views import edit_collection, edit_images, view_image, edit_image
+from .views import edit_collection, edit_images, view_image, edit_image, view_collection
 from neurovault.apps.statmaps.views import view_images_by_tag
 from neurovault.apps.statmaps.models import KeyValueTag
 from django.db.models import Count
@@ -14,9 +14,7 @@ urlpatterns = patterns('',
             template_name='statmaps/collections_index.html.haml'),
         name='collections_list'),
     url(r'^collections/(?P<pk>\d+)/$',
-        DetailView.as_view(
-            model=Collection,
-            template_name='statmaps/collection_details.html.haml'),
+        view_collection,
         name='collection_details'),
     url(r'^collections/new$',
         edit_collection,

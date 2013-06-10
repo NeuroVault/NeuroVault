@@ -78,3 +78,19 @@ body {
        -moz-border-radius: 8px;
             border-radius: 8px;
     }
+
+.management-options {
+	clear: both;
+	padding-bottom: 30px;
+}
+
+.management-options .btn {
+	font-size: 18px;
+	font-family: "HelveticaNeue-Light", Helvetica, Arial, sans-serif;
+	padding: 11px;
+}
+
+ul.nav-tabs li {
+	font-size: 16px;
+	font-family: "HelveticaNeue-Light", Helvetica, Arial, sans-serif;
+}

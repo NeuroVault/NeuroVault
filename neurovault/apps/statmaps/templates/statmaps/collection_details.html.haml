@@ -54,6 +54,10 @@
         %h2 {{ collection.name }}
         - if collection.authors
             .lead {{collection.authors}}
+        - if user_owns_collection
+            .management-options
+                %a.btn.btn-primary{href: "{% url 'edit_collection' collection.id %}" } Edit collection
+                %a.btn.btn-primary{href: "{% url 'edit_images' collection.id %}" } Add/edit images
         %ul#collection-tabs.nav.nav-tabs
             %li
                 %a{href:'#images', data-toggle:'tab'} Images

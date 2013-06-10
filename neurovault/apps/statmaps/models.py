@@ -161,14 +161,18 @@ def getPaperProperties(doi):
 def upload_to(instance, filename):
     return "images/%s/%s"%(instance.collection.id, filename)
 
+
 class KeyValueTag(TagBase):
     value = models.CharField(max_length=200, blank=True)
+
 
 class ValueTaggedItem(GenericTaggedItemBase):
     tag = models.ForeignKey(KeyValueTag, related_name="tagged_items")
 
+
 class Image(models.Model):
     collection = models.ForeignKey(Collection)
+    # collections = models.ManyToManyField(Collection)
     name = models.CharField(max_length=200, null=False, blank=False)
     description = models.TextField(blank=False)
     file = models.FileField(upload_to=upload_to, null=False, blank=False, storage=NiftiGzStorage())
@@ -177,7 +181,14 @@ class Image(models.Model):
     add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
     tags = TaggableManager(through=ValueTaggedItem, blank=True)
-    
+
+    # Additional properties--need to add choices list for most of these
+    # statistic_type = models.CharField(help_text="Type of statistic values in the image represent (t, z, p, r, % signal change, etc.)", max_length=200, blank=True, null=True, verbose_name="Statistic type")
+    # analysis_type = models.CharField(help_text="What kind of analysis does this map reflect?", max_length=200, verbose_name="Analysis type", blank=True, null=True, choices=[('single-subject', 'single-subject'), ('','')])
+    # figure_identifier  = models.CharField(help_text="If the image is associated with a figure in a published paper, the ID of the figure (e.g., 1, 2B, 7).", max_length=20, blank=True, null=True)
+    # table_identifier = models.CharField(help_text="If the image is associated with a table of activations in a published paper, the ID of the figure (e.g., 1, 2B, 7).", max_length=20, blank=True, null=True)
+    # allow_in_collections = models.BooleanField(help_text="Allow other users to add this image to their collections? (They will not be able to edit any image data.)", null=False, default=False)
+
     def __unicode__(self):
         return self.name
     
