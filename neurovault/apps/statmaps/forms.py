@@ -219,6 +219,27 @@ class CollectionForm(ModelForm):
         model = Collection
         # fieldsets = study_fieldsets
         # row_attrs = study_row_attrs
+        
+    def clean(self):
+        cleaned_data = super(CollectionForm, self).clean()
+        
+        doi = self.cleaned_data['DOI']
+        if doi.strip() == '':
+            self.cleaned_data['DOI'] = None
+        
+        if self.cleaned_data['DOI']:
+            try:
+                self.cleaned_data["name"], self.cleaned_data["authors"], self.cleaned_data["url"], _ = getPaperProperties(self.cleaned_data['DOI'])
+            except:
+                self._errors["DOI"] = self.error_class(["Could not resolve DOI"])
+            else:
+                if "name" in self._errors:
+                    del self._errors["name"]
+        elif not cleaned_data["name"]:
+            self._errors["name"] = self.error_class(["You need to set the name or the DOI"])
+            self._errors["DOI"] = self.error_class(["You need to set the name or the DOI"])
+        
+        return cleaned_data
 
     def __init__(self, *args, **kwargs):
 

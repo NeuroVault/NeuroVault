@@ -16,10 +16,10 @@ import urllib2
 
 class Collection(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False)
-    DOI = models.CharField(max_length=200, unique=True, blank=True, null=True, default=None)
+    DOI = models.CharField(max_length=200, unique=True, blank=True, null=True, default=None, verbose_name="DOI of the corresponding paper paper")
     authors = models.CharField(max_length=200, blank=True, null=True)
     url = models.CharField(max_length=200, blank=True, null=True)
-    description = models.TextField(blank=False)
+    description = models.TextField(blank=True, null=True)
     owner = models.ForeignKey(User)
     add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
