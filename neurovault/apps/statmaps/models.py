@@ -1,18 +1,18 @@
  # -*- coding: utf-8 -*-
 
-from django.db import models
-from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
-# from django.db.models.signals import post_save
-# from django.dispatch import receiver
+from django.core.urlresolvers import reverse
+from django.db import models
 from neurosynth.base import imageutils
-import os
 from neurovault.apps.statmaps.storage import NiftiGzStorage
 from taggit.managers import TaggableManager
 from taggit.models import GenericTaggedItemBase, TagBase
-import urllib2
 from xml.etree import ElementTree
 import datetime
+import os
+import urllib2
+# from django.db.models.signals import post_save
+# from django.dispatch import receiver
 
 class Collection(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False)
@@ -108,11 +108,7 @@ class Collection(models.Model):
     group_model_multilevel = models.CharField(help_text="If more than 2-levels, describe the levels and assumptions of the model (e.g. are variances assumed equal between groups)", verbose_name="GroupModeling.group_model_multilevel", max_length=200, null=True, blank=True)
     group_repeated_measures = models.NullBooleanField(help_text="Was this a repeated measures design at the group level?", null=True, verbose_name="GroupModeling.group_repeated_measures", blank=True)
     group_repeated_measures_method = models.CharField(help_text="If multiple measurements per subject, list method to account for within subject correlation, exact assumptions made about correlation/variance", verbose_name="GroupModeling.group_repeated_measures_method", max_length=200, null=True, blank=True)
-    group_statistic_type = models.CharField(help_text=("Type of statistic that is the basis of the inference; e.g. 'Z','T','F','X2','PostProb',"
-                                                       "'NonparametricP','MonteCarloP'"), verbose_name="GroupInference.group_statistic_type",
-                                                       max_length=200, null=True, blank=True)
-    group_statistic_parameters = models.FloatField(help_text="Parameters of the null distribution of the test statisic, typically degrees of freedom (should be clear from the test statistic what these are).", null=True, verbose_name="GroupInference.group_statistic_parameters", blank=True)
-    group_smoothness_fwhm = models.CharField(help_text="Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.", verbose_name="GroupInference.group_smoothness_fwhm", max_length=200, null=True, blank=True)
+    
 
     def get_absolute_url(self):
         return reverse('collection_details', args=[str(self.id)])
@@ -171,6 +167,20 @@ class ValueTaggedItem(GenericTaggedItemBase):
 
 
 class Image(models.Model):
+    Z = 'Z'
+    T = 'T'
+    F = 'F'
+    X2 = 'X2' 
+    P = 'P'
+    OTHER = 'Other'
+    MAP_TYPE_CHOICES = (
+        (T, 'T map'),
+        (Z, 'Z map'),
+        (F, 'F map'),
+        (X2, 'Chi squared map'),
+        (P, 'P map (given null hypothesis)'),
+        (OTHER, 'Other'),
+    )
     collection = models.ForeignKey(Collection)
     # collections = models.ManyToManyField(Collection)
     name = models.CharField(max_length=200, null=False, blank=False)
@@ -181,6 +191,10 @@ class Image(models.Model):
     add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
     tags = TaggableManager(through=ValueTaggedItem, blank=True)
+    map_type = models.CharField(help_text=("Type of statistic that is the basis of the inference"), verbose_name="Map type",
+                                                       max_length=200, null=False, blank=False, choices=MAP_TYPE_CHOICES)
+    statistic_parameters = models.FloatField(help_text="Parameters of the null distribution of the test statisic, typically degrees of freedom (should be clear from the test statistic what these are).", null=True, verbose_name="Statistic parameters", blank=True)
+    smoothness_fwhm = models.FloatField(help_text="Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.", verbose_name="Smoothness FWHM", null=True, blank=True)
 
     # Additional properties--need to add choices list for most of these
     # statistic_type = models.CharField(help_text="Type of statistic values in the image represent (t, z, p, r, % signal change, etc.)", max_length=200, blank=True, null=True, verbose_name="Statistic type")
