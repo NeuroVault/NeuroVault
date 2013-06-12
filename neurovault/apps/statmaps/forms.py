@@ -255,7 +255,7 @@ class CollectionForm(ModelForm):
                 *fs[1]['fields']
             )
             )
-        self.helper.layout.extend([tab_holder, Submit('Submit', 'submit')])
+        self.helper.layout.extend([tab_holder, Submit('submit', 'Save', css_class="btn-large offset2")])
 
 
 class ImageForm(ModelForm):

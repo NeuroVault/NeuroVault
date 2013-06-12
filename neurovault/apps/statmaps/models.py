@@ -15,8 +15,8 @@ import urllib2
 # from django.dispatch import receiver
 
 class Collection(models.Model):
-    name = models.CharField(max_length=200, unique = True, null=False)
-    DOI = models.CharField(max_length=200, unique=True, blank=True, null=True, default=None, verbose_name="DOI of the corresponding paper paper")
+    name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of collection")
+    DOI = models.CharField(max_length=200, unique=True, blank=True, null=True, default=None, verbose_name="DOI of the corresponding paper")
     authors = models.CharField(max_length=200, blank=True, null=True)
     url = models.CharField(max_length=200, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
