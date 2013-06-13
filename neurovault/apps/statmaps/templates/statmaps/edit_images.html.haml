@@ -1,12 +1,86 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
+{% load coffeescript %}
+{% block head %}
+<script src="{% static "scripts/clone-form.js"%}" type="text/javascript"></script>
+	:javascript
+		{% inlinecoffeescript %}
+
+			active_form = 0
+
+			$(document).ready ->
+
+				showForm = (id) ->
+					$('.image-form').hide()
+					active_form = id
+					# $('.image-form#image-' + active_form).show()
+					$(".image-form:eq(#{active_form})").show()
+					name = $("input#id_image_set-#{active_form}-name").val()
+					name = '[untitled image]' if !name? or !name
+					$('#current-image').text(name)
+
+					# Add key up handler to name field
+					$("input#id_image_set-#{active_form}-name").keyup((e) ->
+						val = $(e.target).val()
+						$('#current-image').text(val)
+						$("#image-select option[value='#{active_form}']").text(val)
+					)
+
+
+				# Show the first image on load
+				$('#image-' + active_form).show()
+
+				$('#image-select').change((e) ->
+					id = $(e.target).val()
+					showForm(id)
+				)
+
+				$('#submit-form').click((e) ->
+					e.preventDefault()
+					$('form').submit()
+				)
+
+				$('#add-image-form').click((e) ->
+					e.preventDefault()
+					cloneMore('div.image-form:last', 'image')
+					nextIndex = $('.image-form').length - 1
+					$('#image-select').append($('<option>', {value: nextIndex}).text('[untitled image]'))
+					$('.image-form:last').attr('id', 'image-' + nextIndex)
+					$('#image-select').val(nextIndex)
+					showForm(nextIndex)
+				)
+
+
+		{% endinlinecoffeescript %}
+{% endblock %}
 {% block content %}
 .row
-	.span11.offset1
-		%h2 Edit image
-		.lead Tell us about this image.
-<form class="form-horizontal" enctype="multipart/form-data" method="post" action="">{% csrf_token %}
-	{% crispy formset formset.form.helper %}
-	%input.btn.btn-large.btn-primary{type:"submit", value:"Save", style:"margin-left: 180px"}
-</form>
+	.span11
+		.row
+			.span9
+				%h2 Edit images
+				.lead Select an image from the list at left and edit its properties in the form at right.
+			.span2
+				%button#submit-form.btn.btn-large.btn-primary{style:"margin: 35px 0px 0px 20px; font-size: 24px; padding: 10px 20px; line-height: 1.4em"} Save
+		%hr
+.row
+	.span3
+		%h4 Images in collection:
+		%select{id: 'image-select', size: '10'}
+			- for form in formset
+				<option value='{{forloop.counter0}}'
+					- if forloop.first
+						selected="selected"
+				>{{ form.name.value }}</option>
+		%button#add-image-form.btn.btn-large.btn-secondary{style:"margin: 0px 0px 0px 20px;"} Add a new image
+	.span8{style: 'padding-left: 15px'}
+		#current-image{style: 'text-align: center; font-size: 40px; padding: 10px 0px 50px 0px;'}= formset.0.name.value
+		<form class="form-horizontal" enctype="multipart/form-data" method="post" action="">{% csrf_token %}
+			{{ formset.management_form }}
+				- for form in formset
+					<div id='image-{{forloop.counter0}}' class='image-form'>
+						<input id="id_image_set-{{forloop.counter0}}-id" name="image_set-{{forloop.counter0}}-id" type="hidden" value="{{form.id.value}}" />
+						{% crispy form %}
+					</div>
+		</form>
 {% endblock %}
