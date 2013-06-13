@@ -8,6 +8,8 @@ from django.shortcuts import render, get_object_or_404
 @login_required
 def edit_images(request, collection_pk):
     collection = Collection.objects.get(pk=collection_pk)
+    if collection.owner != request.user:
+        return HttpResponseForbidden()
     if request.method == "POST":
         formset = CollectionFormSet(request.POST, request.FILES, instance=collection)
         if formset.is_valid():
