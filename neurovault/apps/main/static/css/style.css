@@ -94,3 +94,7 @@ ul.nav-tabs li {
 	font-size: 16px;
 	font-family: "HelveticaNeue-Light", Helvetica, Arial, sans-serif;
 }
+
+.image-form {
+	display: none;
+}
