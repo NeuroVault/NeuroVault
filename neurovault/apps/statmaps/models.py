@@ -136,6 +136,8 @@ def getPaperProperties(doi):
     authors = [author.findall('given_name')[0].text + " " + author.findall('surname')[0].text for author in doc.findall('.//contributors/person_name')]
     if len(authors) > 1:
         authors = ", ".join(authors[:-1]) + " and " + authors[-1]
+    else:
+        authors = authors[0]
     url = doc.findall('.//doi_data/resource')[0].text
     date_node = doc.findall('.//publication_date')[0]
     if len(date_node.findall('day')) > 0:
