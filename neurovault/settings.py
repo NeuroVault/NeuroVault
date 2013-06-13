@@ -148,7 +148,8 @@ INSTALLED_APPS = (
     'taggit',
     'crispy_forms',
     'coffeescript',
-    'taggit_templatetags'
+    'taggit_templatetags',
+    'south'
 )
 
 # A sample logging configuration. The only tangible logging

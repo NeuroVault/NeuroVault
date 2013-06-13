@@ -9,3 +9,4 @@ django-form-utils
 haml-py
 django-crispy-forms
 django-coffeescript
+South
