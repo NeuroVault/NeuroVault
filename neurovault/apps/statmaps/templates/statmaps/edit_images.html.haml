@@ -3,10 +3,16 @@
 {% block content %}
 .row
 	.span11.offset1
-		%h2 Edit image
-		.lead Tell us about this image.
+		%h2 Add/edit multiple images
+		.lead Tell us about these images.
 <form class="form-horizontal" enctype="multipart/form-data" method="post" action="">{% csrf_token %}
-	{% crispy formset formset.form.helper %}
+	{{ formset.management_form }}
+	{% for form in formset %}
+    	{% crispy form %}
+    	{% if not forloop.last %}
+    	<hr width="89%" color="black" size=6 />
+    	{% endif %}
+	{% endfor %}
 	%input.btn.btn-large.btn-primary{type:"submit", value:"Save", style:"margin-left: 180px"}
 </form>
 {% endblock %}
