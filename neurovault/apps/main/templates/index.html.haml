@@ -13,7 +13,8 @@
             'name': '{{ recent_images.0.name }}'
             'url': '{{ recent_images.0.json_path }}'
             'json': true
-            'colorPalette': 'red'
+            'colorPalette': 'red-yellow-blue'
+            'sign': 'both'
         }]
 
         $(document).ready ->
@@ -37,7 +38,8 @@
                     'name': 'dummy'
                     'url': url
                     'json': true
-                    'colorPalette': 'red'                   
+                    'sign': 'both'
+                    'colorPalette': 'red-yellow-blue'                   
                 }]
                 images.unshift(anatomical)
                 viewer.clearImages()
