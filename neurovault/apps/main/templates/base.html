@@ -18,13 +18,18 @@
 </head>
 
 <body>
+<!-- UserVoice JavaScript SDK (only needed once on a page) -->
+<script>(function(){var uv=document.createElement('script');uv.type='text/javascript';uv.async=true;uv.src='//widget.uservoice.com/py7m8MbdHZIXptw3qAaw.js';var s=document.getElementsByTagName('script')[0];s.parentNode.insertBefore(uv,s)})()</script>
+
     <div class="container" id="main">
         <div class="navbar">
             <div class="navbar-inner">
                 <a class="brand" href="{% url 'index' %}">NeuroVault</a>
                 <ul class="nav">
                     <li><a href="{% url 'new_collection' %}">Add new collection</a></li>
-					<li><a href="{% url 'collections_list' %}">See all collections</a></li>    
+					<li><a href="{% url 'collections_list' %}">See all collections</a></li>
+					<li><a href="javascript:void(0)" data-uv-lightbox="classic_widget" data-uv-mode="full" data-uv-primary-color="#cc6d00" data-uv-link-color="#007dbf" data-uv-default-mode="feedback" data-uv-forum-id="210717">Give feedback</a>
+					</li>    
 				</ul>
 				<ul class="nav pull-right">
 					{% if request.user.is_authenticated %}
