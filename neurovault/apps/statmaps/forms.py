@@ -311,4 +311,4 @@ class ImageForm(ModelForm):
         return cleaned_data
 
 CollectionFormSet = inlineformset_factory(
-    Collection, Image, form=ImageForm, exclude=['json_path'], extra=1)
+    Collection, Image, form=ImageForm, exclude=['json_path'], extra=0)
