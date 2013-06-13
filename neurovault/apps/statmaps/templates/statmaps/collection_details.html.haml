@@ -54,6 +54,9 @@
         %h2 {{ collection.name }}
         - if collection.authors
             .lead {{collection.authors}}
+        - if collection.DOI
+        	.lead 
+        		%a{href:"{{ collection.url }}" } Link to the paper
         - if user_owns_collection
             .management-options
                 %a.btn.btn-primary{href: "{% url 'edit_collection' collection.id %}" } Edit collection
