@@ -70,6 +70,14 @@ def edit_image(request, pk):
     context = {"form": form}
     return render(request, "statmaps/edit_image.html", context)
 
+@login_required
+def delete_image(request, pk):
+    image = get_object_or_404(Image, pk=pk)
+    if image.collection.owner != request.user:
+        return HttpResponseForbidden()
+    image.delete()
+    return render(request, "statmaps/deleted_image.html")
+
 def view_images_by_tag(request, tag):
     images = Image.objects.filter(tags__name__in=[tag])
     context = {'images': images, 'tag': tag}

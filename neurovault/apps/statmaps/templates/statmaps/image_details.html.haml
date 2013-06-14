@@ -39,6 +39,7 @@
                         , 
             - if user_owns_image
                 %a.btn.btn-primary.btn-large{href: "{% url 'edit_image' image.id %}" } Edit details
+                %a.btn.btn-primary.btn-large{href: "{% url 'delete_image' image.id %}" } Delete image
 
         %ul#collection-tabs.nav.nav-tabs
             %li
