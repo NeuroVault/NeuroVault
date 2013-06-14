@@ -6,7 +6,7 @@ markdown
 django-filter
 django-taggit
 django-form-utils
-haml-py
+hamlpy
 django-crispy-forms
 django-coffeescript
-South
+Southdjango-taggit-templatetags
