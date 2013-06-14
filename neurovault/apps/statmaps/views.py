@@ -33,7 +33,6 @@ def edit_collection(request, pk=None):
         collection = Collection(owner=request.user)
     if request.method == "POST":
         form = CollectionForm(request.POST, request.FILES, instance=collection)
-        print form.is_valid()
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(collection.get_absolute_url())
@@ -62,7 +61,6 @@ def edit_image(request, pk):
         return HttpResponseForbidden()
     if request.method == "POST":
         form = ImageForm(request.POST, request.FILES, instance=image)
-        print form.is_valid()
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(image.get_absolute_url())
@@ -74,6 +72,5 @@ def edit_image(request, pk):
 
 def view_images_by_tag(request, tag):
     images = Image.objects.filter(tags__name__in=[tag])
-    print images
     context = {'images': images, 'tag': tag}
     return render(request, 'statmaps/images_by_tag.html.haml', context)

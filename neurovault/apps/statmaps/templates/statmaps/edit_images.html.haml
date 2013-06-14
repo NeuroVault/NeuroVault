@@ -13,22 +13,37 @@
 				showForm = (id) ->
 					$('.image-form').hide()
 					active_form = id
-					# $('.image-form#image-' + active_form).show()
-					$(".image-form:eq(#{active_form})").show()
+					$('.image-form#image-' + active_form).show()
 					name = $("input#id_image_set-#{active_form}-name").val()
-					name = '[untitled image]' if !name? or !name
-					$('#current-image').text(name)
+					name = '[untitled image]' if !name
+					updateImageName(name)
 
 					# Add key up handler to name field
 					$("input#id_image_set-#{active_form}-name").keyup((e) ->
 						val = $(e.target).val()
-						$('#current-image').text(val)
-						$("#image-select option[value='#{active_form}']").text(val)
+						updateImageName(val)
 					)
 
+				updateImageName = (name) ->
+					$('#current-image').text(name)
+					$("#image-select option[value='#{active_form}']").text(name)					
+
+				# Hackety-hack: we don't want an extra form if there are already images
+				# present, so remove the last div. If there are no existing images, we 
+				# need to unset the value in the ID field (for reasons that are completely
+				# unclear to me, crispy forms removes the id field for each form in the 
+				# formset, so I had to manually generate it. I'm sure there's a cleaner 
+				# way to solve this.)
+				num_forms = $('.image-form').length
+				if num_forms > 1
+					$('.image-form').last().remove()
+					$('#id_image_set-TOTAL_FORMS').val(num_forms-1)
+					$("#image-select option[value=#{num_forms-1}]").last().remove()
+				else
+					$("#id_image_set-#{num_forms-1}-id").val('')
 
 				# Show the first image on load
-				$('#image-' + active_form).show()
+				showForm(active_form)
 
 				$('#image-select').change((e) ->
 					id = $(e.target).val()

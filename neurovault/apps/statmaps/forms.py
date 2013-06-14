@@ -10,7 +10,7 @@ from django.core.exceptions import ValidationError
 # from form_utils.forms import BetterModelForm
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Div, Submit, HTML, Button, Row, Field
+from crispy_forms.layout import Layout, Div, Submit, HTML, Button, Row, Field, Hidden
 from crispy_forms.bootstrap import AppendedText, PrependedText, FormActions, TabHolder, Tab
 
 from neurovault.apps.statmaps.models import getPaperProperties
@@ -311,4 +311,4 @@ class ImageForm(ModelForm):
         return cleaned_data
 
 CollectionFormSet = inlineformset_factory(
-    Collection, Image, form=ImageForm, exclude=['json_path'], extra=0)
+    Collection, Image, form=ImageForm, exclude=['json_path'], extra=1)  
