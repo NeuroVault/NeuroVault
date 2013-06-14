@@ -36,5 +36,5 @@
 						%td {{collection.n_images}}
 						%td= collection.description
 
-<a href="{% url 'new_collection' %}">Add new collection</a>
+%a.btn.btn-primary{href: "{% url 'new_collection' %}" } Add new collection
 {% endblock %}
