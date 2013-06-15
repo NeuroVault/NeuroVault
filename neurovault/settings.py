@@ -104,6 +104,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'corsheaders.middleware.CorsMiddleware'
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
@@ -149,7 +150,8 @@ INSTALLED_APPS = (
     'crispy_forms',
     'coffeescript',
     'taggit_templatetags',
-    'south'
+    'south',
+    'corsheaders'
 )
 
 # A sample logging configuration. The only tangible logging
@@ -203,6 +205,12 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
     ]
 }
+
+# Allow cross-origin requests from approved sites
+CORS_ORIGIN_REGEX_WHITELIST = (
+    '(.*)?neurosynth.org',
+    'pilab.colorado.edu'
+    )
 
 #LOGIN_URL          = '/login-form/'
 #LOGIN_REDIRECT_URL = '/logged-in/'
