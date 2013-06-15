@@ -11,6 +11,7 @@ from xml.etree import ElementTree
 import datetime
 import os
 import urllib2
+from dirtyfields import DirtyFieldsMixin
 # from django.db.models.signals import post_save
 # from django.dispatch import receiver
 
@@ -166,7 +167,7 @@ class ValueTaggedItem(GenericTaggedItemBase):
     tag = models.ForeignKey(KeyValueTag, related_name="tagged_items")
 
 
-class Image(models.Model):
+class Image(DirtyFieldsMixin, models.Model):
     Z = 'Z'
     T = 'T'
     F = 'F'
@@ -216,21 +217,15 @@ class Image(models.Model):
 
     def save(self):
 
-        # Save the file before the rest of the data so we can convert it to json
-        if self.file and not os.path.exists(self.file.path):
+        # If a new file or header has been uploaded, redo the JSON conversion
+        if 'file' in self.get_dirty_fields() or 'hdr_file' in self.get_dirty_fields():
             self.file.save(self.file.name, self.file, save = False)
-        if self.hdr_file and not os.path.exists(self.hdr_file.path):
-            self.hdr_file.save(self.hdr_file.name, self.hdr_file, save = False)
-        # Convert binary image to JSON using neurosynth
-#         try:
-        if os.path.exists(self.file.path):
-            json_file = self.file.path + '.json'
-#                 try:
-            imageutils.img_to_json(self.file.path, swap=True, save=json_file)
-            self.json_path = self.file.url + '.json'
-#                 except Exception, e:
-#                     pass
-#         except Exception, e:
-#             pass
+            if self.hdr_file:
+                self.hdr_file.save(self.hdr_file.name, self.hdr_file, save = False)
+            if os.path.exists(self.file.path):
+                json_file = self.file.path + '.json'
+                imageutils.img_to_json(self.file.path, swap=True, save=json_file)
+                self.json_path = self.file.url + '.json'
+
         super(Image, self).save()
 
