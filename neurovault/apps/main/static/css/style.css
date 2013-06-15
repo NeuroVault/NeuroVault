@@ -98,3 +98,7 @@ ul.nav-tabs li {
 .image-form {
 	display: none;
 }
+
+.float-right-wrapper {
+	float: right;
+}
