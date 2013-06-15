@@ -12,3 +12,4 @@ django-coffeescript
 South
 django-taggit-templatetags
 django-cors-headers
+django-dirtyfields

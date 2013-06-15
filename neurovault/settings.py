@@ -208,7 +208,7 @@ REST_FRAMEWORK = {
 
 # Allow cross-origin requests from approved sites
 CORS_ORIGIN_REGEX_WHITELIST = (
-    '(.*)?neurosynth.org',
+    '.*neurosynth.org',
     'pilab.colorado.edu'
     )
 
