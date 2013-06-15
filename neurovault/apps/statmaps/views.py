@@ -55,6 +55,14 @@ def view_collection(request, pk):
     return render(request, 'statmaps/collection_details.html.haml', context)
 
 @login_required
+def delete_collection(request, pk):
+    collection = get_object_or_404(Collection, pk=pk)
+    if collection.owner != request.user:
+        return HttpResponseForbidden()
+    collection.delete()
+    return render(request, "statmaps/deleted_collection.html")
+
+@login_required
 def edit_image(request, pk):
     image = Image.objects.get(pk=pk)
     if image.collection.owner != request.user:
