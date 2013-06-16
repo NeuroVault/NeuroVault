@@ -45,6 +45,11 @@
 
                 $('#collection-tabs a:first').tab('show')
 
+                # Confirm deletion dialog, to prevent accidents
+                $('#delete_collection').click((e) ->
+                    confirm("Are you sure you want to delete this collection? This operation cannot be undone!")
+                )
+
         {% endinlinecoffeescript %}
 {% endblock %}
 
@@ -59,9 +64,10 @@
         		%a{href:"{{ collection.url }}" } Link to the paper
         - if user_owns_collection
             .management-options
-                %a.btn.btn-primary{href: "{% url 'edit_collection' collection.id %}" } Edit collection
-                %a.btn.btn-primary{href: "{% url 'delete_collection' collection.id %}" } Delete collection
+                %a.btn.btn-primary{href: "{% url 'edit_collection' collection.id %}" } Edit details
                 %a.btn.btn-primary{href: "{% url 'edit_images' collection.id %}" } Add/edit images
+                .float-right-wrapper
+                    %a.btn.btn-danger{href: "{% url 'delete_collection' collection.id %}", id:'delete_collection'} Delete collection
         %ul#collection-tabs.nav.nav-tabs
             %li
                 %a{href:'#images', data-toggle:'tab'} Images
