@@ -1,9 +1,10 @@
 from .models import Collection, Image
 from .forms import CollectionFormSet, CollectionForm, ImageForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
-from django.shortcuts import render
+from django.shortcuts import render, render_to_response
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404
+from neurovault.apps.statmaps.forms import UploadFileForm
 
 @login_required
 def edit_images(request, collection_pk):
@@ -77,6 +78,17 @@ def edit_image(request, pk):
         
     context = {"form": form}
     return render(request, "statmaps/edit_image.html", context)
+
+@login_required
+def upload_folder(request, collection_pk):
+    if request.method == 'POST':
+        form = UploadFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            #handle_uploaded_file(request.FILES['file'])
+            return HttpResponseRedirect('/success/url/')
+    else:
+        form = UploadFileForm()
+    return render_to_response("statmaps/upload_folder.html", {'form': form})
 
 @login_required
 def delete_image(request, pk):

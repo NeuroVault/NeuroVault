@@ -67,6 +67,7 @@
             .management-options
                 %a.btn.btn-primary{href: "{% url 'edit_collection' collection.id %}" } Edit details
                 %a.btn.btn-primary{href: "{% url 'edit_images' collection.id %}" } Add/edit images
+                %a.btn.btn-primary{href: "{% url 'upload_folder' collection.id %}" } Upload folder
                 .float-right-wrapper
                     %a.btn.btn-danger{href: "{% url 'delete_collection' collection.id %}", id:'delete_collection'} Delete collection
         %ul#collection-tabs.nav.nav-tabs

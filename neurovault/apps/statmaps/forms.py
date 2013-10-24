@@ -15,6 +15,8 @@ from crispy_forms.bootstrap import AppendedText, PrependedText, FormActions, Tab
 
 from neurovault.apps.statmaps.models import getPaperProperties
 from .models import Collection, Image
+from django.forms.forms import Form
+from django.forms.fields import FileField
 
 # Create the form class.
 collection_fieldsets = [
@@ -312,3 +314,6 @@ class ImageForm(ModelForm):
 
 CollectionFormSet = inlineformset_factory(
     Collection, Image, form=ImageForm, exclude=['json_path'], extra=1)  
+
+class UploadFileForm(Form):
+    file  = FileField()
