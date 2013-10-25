@@ -5,6 +5,7 @@ from django.shortcuts import render, render_to_response
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404
 from neurovault.apps.statmaps.forms import UploadFileForm
+from django.template.context import RequestContext
 
 @login_required
 def edit_images(request, collection_pk):
@@ -84,11 +85,11 @@ def upload_folder(request, collection_pk):
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
-            #handle_uploaded_file(request.FILES['file'])
+            print request.FILES['file']
             return HttpResponseRedirect('/success/url/')
     else:
         form = UploadFileForm()
-    return render_to_response("statmaps/upload_folder.html", {'form': form})
+    return render_to_response("statmaps/upload_folder.html", {'form': form},  RequestContext(request))
 
 @login_required
 def delete_image(request, pk):
