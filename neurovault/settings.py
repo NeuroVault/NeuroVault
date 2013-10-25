@@ -4,7 +4,7 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-DEBUG = False
+DEBUG = True#False
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -220,3 +220,5 @@ CORS_ORIGIN_REGEX_WHITELIST = (
 from django import template
 template.add_to_builtins('django.templatetags.future')
 template.add_to_builtins('django.contrib.staticfiles.templatetags.staticfiles')
+
+CRISPY_TEMPLATE_PACK = 'bootstrap'

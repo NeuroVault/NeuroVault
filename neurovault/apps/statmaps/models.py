@@ -211,6 +211,9 @@ class Image(DirtyFieldsMixin, models.Model):
     
     def get_absolute_url(self):
         return reverse('image_details', args=[str(self.id)])
+
+    def set_name(self, new_name):
+        self.name = new_name
     
     class Meta:
         unique_together = ("collection", "name")
