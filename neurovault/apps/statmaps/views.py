@@ -6,6 +6,12 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404
 from neurovault.apps.statmaps.forms import UploadFileForm
 from django.template.context import RequestContext
+from django.core.files.uploadedfile import InMemoryUploadedFile
+import tempfile
+import os
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from neurovault import settings
 
 @login_required
 def edit_images(request, collection_pk):
@@ -87,7 +93,16 @@ def upload_folder(request, collection_pk):
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
-            print request.FILES['file']
+            
+            if isinstance(request.FILES['file'],InMemoryUploadedFile):
+                data = request.FILES['file']
+                path = default_storage.save('tmp/archive.zip', ContentFile(data.read()))
+                tmp_file = os.path.join(settings.MEDIA_ROOT, path)
+            else:
+                tmp_file = request.FILES['file'].temporary_file_path
+                
+            print tmp_file
+                
             myImg = Image();
             myImg.set_name('test');
             # return HttpResponseRedirect('/success/url/')
