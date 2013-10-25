@@ -12,6 +12,13 @@ import os
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from neurovault import settings
+import zipfile
+import tarfile, gzip
+import fnmatch
+import shutil
+from nibabel.testing import data_path
+import nibabel as nib
+import re
 
 @login_required
 def edit_images(request, collection_pk):
@@ -93,18 +100,70 @@ def upload_folder(request, collection_pk):
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
-            
+
+            # Save archive (.zip or .tar.gz) to disk
+            archive_name = request.FILES['file'].name
+            _, archive_ext = os.path.splitext(archive_name);
+
             if isinstance(request.FILES['file'],InMemoryUploadedFile):
                 data = request.FILES['file']
-                path = default_storage.save('tmp/archive.zip', ContentFile(data.read()))
+                path = default_storage.save('tmp/archive%s' % archive_ext, ContentFile(data.read()))
                 tmp_file = os.path.join(settings.MEDIA_ROOT, path)
             else:
                 tmp_file = request.FILES['file'].temporary_file_path
+
+            # Uncompress archive in a temporary directory
+            directory_name = tempfile.mkdtemp()
+            if archive_ext == '.zip':
+                compressed = zipfile.ZipFile(tmp_file)
+            else:
+                compressed = tarfile.TarFile(fileobj=gzip.open(tmp_file))
+            compressed.extractall(path=directory_name);
+
+            # Retreive nifti files: .nii, .hdr, .nii.gz
+            niftiFiles = [];
+            for root, dirs, filenames in os.walk(directory_name, topdown=False):
+                # Ignore hidden directories 
+                filenames = [f for f in filenames if not f[0] == '.']
+                img = [];
+                i = 0;
+                for fname in filenames:
+                    filename, ext = os.path.splitext(fname)
+                    if ext == ".gz":
+                        filename, ext2 = os.path.splitext(fname[:-3])
+                        ext = ext2 + ext
+                    if ext in ['.nii', '.img', '.nii.gz']:
+                        # Read nifti file information
+                        img = nib.load(os.path.join(root, fname))
+                        hdr = img.get_header()
+                        raw_hdr = hdr.structarr
+
+                        # SPM only !!!
+                        # Check if filename corresponds to a T-map
+                        Tregexp = re.compile('spmT.*');
+                        Fregexp = re.compile('spmF.*');
+                        if Tregexp.search(fname) is not None:
+                            map_type = Image.T;
+                        else:
+                            if Tregexp.search(fname) is not None:
+                                map_type = Image.F;
+                            else:
+                                map_type = Image.OTHER;
+
+                        img = Image.create(os.path.join(root, fname), fname, filename, raw_hdr['descrip'], collection_pk, map_type);
+                        i = i+1;
+                        img.save();
+
+            # for fname in filenames:
+            #    _, ext = os.path.splitext(fname)
+            #    if ext == ".gz":
+            #        _, ext2 = os.path.splitext(fname[:-3])
+            #        ext = ext2 + ext
+            #    print ext
+
                 
-            print tmp_file
-                
-            myImg = Image();
-            myImg.set_name('test');
+            # myImg = Image();
+            # myImg.set_name('test');
             # return HttpResponseRedirect('/success/url/')
             return HttpResponseRedirect('editimages');
     else:
