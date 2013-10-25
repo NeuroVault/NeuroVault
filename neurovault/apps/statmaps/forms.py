@@ -316,4 +316,23 @@ CollectionFormSet = inlineformset_factory(
     Collection, Image, form=ImageForm, exclude=['json_path'], extra=1)  
 
 class UploadFileForm(Form):
-    file  = FileField()
+
+    # TODO Need to uplaod in a temp directory
+    file  = FileField();#(upload_to="images/%s/%s"%(instance.collection.id, filename))
+
+    # class Meta:
+    #     exclude = ('owner',)
+    #     model = Collection
+
+
+    def __init__(self, *args, **kwargs):
+        super(UploadFileForm, self).__init__(*args, **kwargs)
+        self.file = ''
+
+    def clean(self):
+        cleaned_data = super(UploadFileForm, self).clean()
+        file = cleaned_data.get("file")
+        ext = os.path.splitext(file.name)[1]
+        ext = ext.lower()
+        if ext not in ['.zip', '.gz']:
+            raise ValidationError("Not allowed filetype!")

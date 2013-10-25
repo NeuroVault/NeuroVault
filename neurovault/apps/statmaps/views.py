@@ -82,11 +82,16 @@ def edit_image(request, pk):
 
 @login_required
 def upload_folder(request, collection_pk):
+    collection = Collection.objects.get(pk=collection_pk)
+
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             print request.FILES['file']
-            return HttpResponseRedirect('/success/url/')
+            myImg = Image();
+            myImg.set_name('test');
+            # return HttpResponseRedirect('/success/url/')
+            return HttpResponseRedirect('editimages');
     else:
         form = UploadFileForm()
     return render_to_response("statmaps/upload_folder.html", {'form': form},  RequestContext(request))
