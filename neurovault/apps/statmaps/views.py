@@ -60,7 +60,13 @@ def view_collection(request, pk):
     collection = get_object_or_404(Collection, pk=pk)
     user_owns_collection = True if collection.owner == request.user else False
     context = {'collection': collection, 'user': request.user, 'user_owns_collection': user_owns_collection }
-    return render(request, 'statmaps/collection_details.html.haml', context)
+    if collection.owner == request.user:
+        form = UploadFileForm()
+        c = RequestContext(request)
+        c.update(context)
+        return render_to_response('statmaps/collection_details.html.haml', {'form': form}, c)
+    else:
+        return render(request, 'statmaps/collection_details.html.haml', context)
 
 @login_required
 def delete_collection(request, pk):
