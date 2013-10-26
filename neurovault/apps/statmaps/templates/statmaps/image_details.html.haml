@@ -1,33 +1,21 @@
 {% extends "base.html" %}
-{% load coffeescript %}
 {% block head %}
+{% include 'statmaps/_papaya_viewer_head.html.haml' %}
     :javascript
-        var images = [{
-            'name': '{{ image.name }}',
-            'url': '{{ image.json_path }}',
-            'colorPalette': 'red-yellow-blue',
-            'sign': 'both',
-            'json': true,
-            'download': '{{ image.file.url }}'
-        }]
+        
+        $( window ).load(function() {
+            papayaMain.papayaViewer.loadBaseImage('http://127.0.0.1:8000/media/anatomical/MNI152.nii.gz', 1, 0, 'anatomy');
+            papayaMain.papayaViewer.loadImage('{{image.file.url}}', 1, 0, '{{image.file.name}}');
+            var images = [{
+            	'name': '{{ image.name }}',
+            	'url': '{{ image.json_path }}',
+            	'colorPalette': 'red-yellow-blue',
+            	'sign': 'both',
+            	'json': true,
+            	'download': '{{ image.file.url }}'
+        		}]
+        });
 
-    {% include 'statmaps/_viewer_head.html.haml' %}
-    
-    :javascript
-        {% inlinecoffeescript %}
-            $(document).ready ->
-
-                $("table[class*=image-details-datatable]").dataTable
-                    sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
-                    sPaginationType: "bootstrap"
-                    sAjaxSource: "/api/images/" + {{image.id}} + "/datatable/?format=json"
-                    iDisplayLength: 10
-
-                $('#delete_image').click( () ->
-                    confirm("Are you sure you want to delete this image? This operation cannot be undone!")
-                )
-
-        {% endinlinecoffeescript %}
 {% endblock %}
 
 {% block content %}
@@ -49,7 +37,9 @@
 
         %ul#collection-tabs.nav.nav-tabs
             %li
-                %a{href:'#viewer', data-toggle:'tab'} Viewer
+                %a{href:'#neurosynth_viewer', data-toggle:'tab'} Neurosynth viewer
+            %li
+                %a{href:'#papaya_viewer', data-toggle:'tab'} Papaya viewer
             %li
                 %a{href:'#details', data-toggle:'tab'} Details
 
@@ -61,6 +51,7 @@
                             %th Field
                             %th Value
                     %tbody
-            #viewer.tab-pane.active
-                {% include 'statmaps/_viewer_content.html.haml' %}
+            #neurosynth_viewer.tab-pane.active
+            #papaya_viewer.tab-pane.active
+                {% include 'statmaps/_papaya_viewer_content.html.haml' %}
 {% endblock %}

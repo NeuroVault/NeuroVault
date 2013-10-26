@@ -13,7 +13,7 @@
         },
         {% endfor %}]
 
-    {% include 'statmaps/_viewer_head.html.haml' %}
+    {% include 'statmaps/_neurosynth_viewer_head.html.haml' %}
 
     :javascript
         {% inlinecoffeescript %}
@@ -58,6 +58,8 @@
                 $('#{{form.file.auto_id}}').change((e) ->
                 	document.upload_folder_form.submit();
                 )
+                
+       
 
         {% endinlinecoffeescript %}
 {% endblock %}
@@ -122,7 +124,7 @@
                             %th Value
                     %tbody
             #viewer.tab-pane
-                {% include 'statmaps/_viewer_content.html.haml' %}
+                {% include 'statmaps/_neurosynth_viewer_content.html.haml' %}
 
 {% comment %}
 {% for image in collection.image_set.all %}
