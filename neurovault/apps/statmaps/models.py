@@ -253,7 +253,12 @@ class Image(DirtyFieldsMixin, models.Model):
             image.hdr_file.save(my_file_name[:-3] + "hdr", hdrFile);
 
         image.map_type = my_map_type;
-
+        
+        if os.path.exists(image.file.path):
+            json_file = image.file.path + '.json'
+            imageutils.img_to_json(image.file.path, swap=True, save=json_file)
+            image.json_path = image.file.url + '.json'
+            
         image.save();
 
         return image
