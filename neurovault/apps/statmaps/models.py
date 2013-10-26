@@ -254,4 +254,6 @@ class Image(DirtyFieldsMixin, models.Model):
 
         image.map_type = my_map_type;
 
+        image.save();
+
         return image

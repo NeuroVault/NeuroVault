@@ -128,6 +128,8 @@ def upload_folder(request, collection_pk):
                 img = [];
                 i = 0;
                 for fname in filenames:
+                    # if fname == 'SPM.mat':
+                    #     spmmatfile = fname;
                     filename, ext = os.path.splitext(fname)
                     if ext == ".gz":
                         filename, ext2 = os.path.splitext(fname[:-3])
@@ -145,10 +147,12 @@ def upload_folder(request, collection_pk):
                         if Tregexp.search(fname) is not None:
                             map_type = Image.T;
                         else:
+                            # Check if filename corresponds to a F-map
                             if Tregexp.search(fname) is not None:
                                 map_type = Image.F;
                             else:
                                 map_type = Image.OTHER;
+
 
                         img = Image.create(os.path.join(root, fname), fname, filename, raw_hdr['descrip'], collection_pk, map_type);
                         i = i+1;
