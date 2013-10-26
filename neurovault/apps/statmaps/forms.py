@@ -318,7 +318,7 @@ CollectionFormSet = inlineformset_factory(
 class UploadFileForm(Form):
 
     # TODO Need to uplaod in a temp directory
-    file  = FileField();#(upload_to="images/%s/%s"%(instance.collection.id, filename))
+    file  = FileField(required=False);#(upload_to="images/%s/%s"%(instance.collection.id, filename))
 
     # class Meta:
     #     exclude = ('owner',)
@@ -332,7 +332,8 @@ class UploadFileForm(Form):
     def clean(self):
         cleaned_data = super(UploadFileForm, self).clean()
         file = cleaned_data.get("file")
-        ext = os.path.splitext(file.name)[1]
-        ext = ext.lower()
-        if ext not in ['.zip', '.gz']:
-            raise ValidationError("Not allowed filetype!")
+        if file:
+            ext = os.path.splitext(file.name)[1]
+            ext = ext.lower()
+            if ext not in ['.zip', '.gz']:
+                raise ValidationError("Not allowed filetype!")
