@@ -254,6 +254,7 @@ class Image(DirtyFieldsMixin, models.Model):
 
         image.map_type = my_map_type;
         
+        #create JSON file for neurosynth viewer
         if os.path.exists(image.file.path):
             json_file = image.file.path + '.json'
             imageutils.img_to_json(image.file.path, swap=True, save=json_file)
