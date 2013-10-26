@@ -25,6 +25,12 @@
                     , 1)
                 )
 
+                getFile = ->
+                    document.getElementById("upfile").click()
+                sub = (obj) ->
+                    document.upload_folder_form.submit()
+                    event.preventDefault()
+
                 $("table[class*=collection-details-datatable]").dataTable
                     sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
                     sPaginationType: "bootstrap"
@@ -67,9 +73,12 @@
             .management-options
                 %a.btn.btn-primary{href: "{% url 'edit_collection' collection.id %}" } Edit details
                 %a.btn.btn-primary{href: "{% url 'edit_images' collection.id %}" } Add/edit images
-                %a.btn.btn-primary{href: "{% url 'upload_folder' collection.id %}" } Upload folder
+                %form{action: "bla", enctype: "multipart/form-data", method: "POST", name: "upload_folder_form"}
+	            %a.btn.btn-primary{id:"upload_folder", onclick: "getFile()"} Upload folder
+	            %div{style: "height: 0px;width: 0px; overflow:hidden;"}
+	                %input#upfile{onchange: "sub(this)", type: "file", value: "upload"}
                 .float-right-wrapper
-                    %a.btn.btn-danger{href: "{% url 'delete_collection' collection.id %}", id:'delete_collection'} Delete collection
+                    %a.btn.btn-danger{href: "{% url 'delete_collection' collection.id %}", id:"delete_collection"} Delete collection
         %ul#collection-tabs.nav.nav-tabs
             %li
                 %a{href:'#images', data-toggle:'tab'} Images
