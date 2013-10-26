@@ -50,6 +50,14 @@
                 $('#delete_collection').click((e) ->
                     confirm("Are you sure you want to delete this collection? This operation cannot be undone!")
                 )
+                
+                $('#upload_folder').click((e) ->
+                	document.getElementById("{{form.file.auto_id}}").click()
+                )
+                
+                $('#{{form.file.auto_id}}').change((e) ->
+                	document.upload_folder_form.submit();
+                )
 
         {% endinlinecoffeescript %}
 {% endblock %}
@@ -67,9 +75,16 @@
             .management-options
                 %a.btn.btn-primary{href: "{% url 'edit_collection' collection.id %}" } Edit details
                 %a.btn.btn-primary{href: "{% url 'edit_images' collection.id %}" } Add/edit images
-                %a.btn.btn-primary{href: "{% url 'upload_folder' collection.id %}" } Upload folder
-                .float-right-wrapper
-                    %a.btn.btn-danger{href: "{% url 'delete_collection' collection.id %}", id:'delete_collection'} Delete collection
+                %form{action: "upload_folder", enctype: "multipart/form-data", method: "POST", name: "upload_folder_form"}
+                  {% csrf_token %}
+                  %div{style: "height: 0px;width: 0px; overflow:hidden;"}
+                     {{ form.file }}
+                %a.btn.btn-primary{id:"upload_folder"} Upload folder
+	              
+	              
+	            
+             	.float-right-wrapper
+                    %a.btn.btn-danger{href: "{% url 'delete_collection' collection.id %}", id:"delete_collection"} Delete collection
         %ul#collection-tabs.nav.nav-tabs
             %li
                 %a{href:'#images', data-toggle:'tab'} Images
