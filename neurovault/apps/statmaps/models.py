@@ -12,6 +12,7 @@ import datetime
 import os
 import urllib2
 from dirtyfields import DirtyFieldsMixin
+from django.core.files import File
 # from django.db.models.signals import post_save
 # from django.dispatch import receiver
 
@@ -232,3 +233,27 @@ class Image(DirtyFieldsMixin, models.Model):
 
         super(Image, self).save()
 
+
+    @classmethod
+    def create(cls, my_file, my_file_name, my_name, my_desc, my_collection_pk, my_map_type):
+        my_collection = Collection.objects.get(pk=my_collection_pk)
+
+        # Copy the nifti file into the proper location
+        image = cls(description=my_desc, name=my_name, collection=my_collection)
+        f = open(my_file)
+        niftiFile = File(f);
+        image.file.save(my_file_name, niftiFile);
+
+        # If a .img file was loaded then load the correspoding .hdr file as well
+        _, ext = os.path.splitext(my_file_name)
+        print ext
+        if ext in ['.img']:
+            f = open(my_file[:-3] + "hdr")
+            hdrFile = File(f);
+            image.hdr_file.save(my_file_name[:-3] + "hdr", hdrFile);
+
+        image.map_type = my_map_type;
+
+        image.save();
+
+        return image
