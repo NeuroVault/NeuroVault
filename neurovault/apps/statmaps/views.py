@@ -19,6 +19,7 @@ import shutil
 from nibabel.testing import data_path
 import nibabel as nib
 import re
+from neurovault.apps.statmaps.storage import NiftiGzStorage
 
 @login_required
 def edit_images(request, collection_pk):
@@ -146,16 +147,19 @@ def upload_folder(request, collection_pk):
                             niftiFiles.append(os.path.join(root, fname))
                             
             elif "file_input[]" in request.FILES:
-                if not isinstance(request.FILES["file_input[]"], list):
-                    request.FILES["file_input[]"] = [request.FILES["file_input[]"]]
+                print request.FILES
+#                 if not isinstance(request.FILES["file_input[]"], list):
+#                     request.FILES["file_input[]"] = [request.FILES["file_input[]"],]
                     
-                for file in request.FILES["file_input[]"]:
-                    archive_name = file.name
-                    _, archive_ext = os.path.splitext(archive_name);
-                    path = default_storage.save('tmp/archive%s' % archive_ext, ContentFile(file.read()))
+                print request.FILES
+                    
+                for file in request.FILES.getlist("file_input[]"):
+                    print file
+                    default_storage = NiftiGzStorage()
+                    path = default_storage.save('tmp/%s' % file.name, ContentFile(file.read()))
                     niftiFiles.append(os.path.join(settings.MEDIA_ROOT, path))
                                       
-                            
+            print niftiFiles       
             for fname in niftiFiles:
                 # Read nifti file information
                 img = nib.load(fname)
@@ -175,13 +179,9 @@ def upload_folder(request, collection_pk):
                     else:
                         map_type = Image.OTHER;
                         
-                filename, ext = os.path.splitext(fname)
-                if ext == ".gz":
-                    filename, ext2 = os.path.splitext(fname[:-3])
-                    ext = ext2 + ext
 
 
-                img = Image.create(fname, fname.split(os.path.sep)[-1], filename, raw_hdr['descrip'], collection_pk, map_type);
+                img = Image.create(fname, fname.split(os.path.sep)[-1], fname.split(os.path.sep)[-1], raw_hdr['descrip'], collection_pk, map_type);
                 img.save();
 
             # for fname in filenames:
