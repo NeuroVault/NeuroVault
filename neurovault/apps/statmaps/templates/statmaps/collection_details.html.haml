@@ -64,7 +64,12 @@
                 )
                 
                 $('#folder_input').change((e) ->
-                	document.upload_folder_form.submit();
+                	paths = ""
+                	files = e.target.files
+                	for file in files
+                		paths += file.webkitRelativePath + "###"
+                	$('#paths').val(paths)
+                	document.upload_folder_form.submit()
                 )
 
         {% endinlinecoffeescript %}
@@ -93,7 +98,8 @@
                   {% csrf_token %}
                   %div{style: "height: 0px;width: 0px; overflow:hidden;"}
                      {{ form.file }}
-                     %input{type: "file", name: "file_input[]", id: "folder_input", multiple:"", directory:"", mozdirectory:"", webkitdirectory:""}  
+                     %input{type: "file", name: "file_input[]", id: "folder_input", multiple:"", directory:"", mozdirectory:"", webkitdirectory:""}
+                     %input{type: "hidden", name: "paths", id: "paths"}  
                      
 	              
 	              

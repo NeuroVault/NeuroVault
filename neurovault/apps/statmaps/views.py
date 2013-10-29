@@ -134,7 +134,8 @@ def upload_folder(request, collection_pk):
                             if ext in ['.nii', '.img', '.nii.gz']:
                                 niftiFiles.append(os.path.join(root, fname))
 
-                elif "file_input[]" in request.FILES:                        
+                elif "file_input[]" in request.FILES:
+                    print request.POST["paths"]                        
                     for file in request.FILES.getlist("file_input[]"):
                         filename = os.path.join(tmp_directory,file.name)
                         tmp_file = open(filename, 'w')
