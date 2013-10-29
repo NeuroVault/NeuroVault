@@ -100,12 +100,19 @@ def edit_image(request, pk):
     context = {"form": form}
     return render(request, "statmaps/edit_image.html", context)
 
+
+def splitext_nii_gz(fname):
+    head, ext = os.path.splitext(fname)
+    if ext.lower() == ".gz":
+        _, ext2 = os.path.splitext(fname[:-3])
+        ext = ext2 + ext
+    return head, ext
+
+
 @login_required
 def upload_folder(request, collection_pk):
-    collection = Collection.objects.get(pk=collection_pk)
-    default_storage = NiftiGzStorage()
+    allowed_extensions = ['.nii', '.img', '.nii.gz']
     niftiFiles = []
-    
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
@@ -121,18 +128,7 @@ def upload_folder(request, collection_pk):
                         compressed = zipfile.ZipFile(request.FILES['file'])
                     else:
                         compressed = tarfile.TarFile(fileobj=gzip.open(request.FILES['file']))  
-                        
                     compressed.extractall(path=tmp_directory)
-                    
-                    for root, _, filenames in os.walk(tmp_directory, topdown=False):
-                        filenames = [f for f in filenames if not f[0] == '.']
-                        for fname in filenames:
-                            _, ext = os.path.splitext(fname)
-                            if ext == ".gz":
-                                _, ext2 = os.path.splitext(fname[:-3])
-                                ext = ext2 + ext
-                            if ext in ['.nii', '.img', '.nii.gz']:
-                                niftiFiles.append(os.path.join(root, fname))
 
                 elif "file_input[]" in request.FILES:
                     print request.POST["paths"]                        
@@ -141,7 +137,13 @@ def upload_folder(request, collection_pk):
                         tmp_file = open(filename, 'w')
                         tmp_file.write(file.read())
                         tmp_file.close()
-                        niftiFiles.append(filename)
+                        
+                for root, _, filenames in os.walk(tmp_directory, topdown=False):
+                    filenames = [f for f in filenames if not f[0] == '.']
+                    for fname in filenames:
+                        _, ext = splitext_nii_gz(fname)             
+                        if ext in allowed_extensions:
+                            niftiFiles.append(os.path.join(root, fname))
                                               
                 for fname in niftiFiles:
                     # Read nifti file information
