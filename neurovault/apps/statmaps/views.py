@@ -103,7 +103,7 @@ def edit_image(request, pk):
 @login_required
 def upload_folder(request, collection_pk):
     collection = Collection.objects.get(pk=collection_pk)
-
+    default_storage = NiftiGzStorage()
     niftiFiles = []
     
     if request.method == 'POST':
@@ -155,7 +155,6 @@ def upload_folder(request, collection_pk):
                     
                 for file in request.FILES.getlist("file_input[]"):
                     print file
-                    default_storage = NiftiGzStorage()
                     path = default_storage.save('tmp/%s' % file.name, ContentFile(file.read()))
                     niftiFiles.append(os.path.join(settings.MEDIA_ROOT, path))
                                       
