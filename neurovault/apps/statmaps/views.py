@@ -109,91 +109,63 @@ def upload_folder(request, collection_pk):
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
-
-            # Save archive (.zip or .tar.gz) to disk
-            if "file" in request.FILES:
-                archive_name = request.FILES['file'].name
-                _, archive_ext = os.path.splitext(archive_name);
-    
-                if isinstance(request.FILES['file'],InMemoryUploadedFile):
-                    data = request.FILES['file']
-                    path = default_storage.save('tmp/archive%s' % archive_ext, ContentFile(data.read()))
-                    tmp_file = os.path.join(settings.MEDIA_ROOT, path)
-                else:
-                    tmp_file = request.FILES['file'].temporary_file_path
-    
-                # Uncompress archive in a temporary directory
-                directory_name = tempfile.mkdtemp()
-                if archive_ext == '.zip':
-                    compressed = zipfile.ZipFile(tmp_file)
-                else:
-                    compressed = tarfile.TarFile(fileobj=gzip.open(tmp_file))
-                compressed.extractall(path=directory_name);
-    
-                # Retreive nifti files: .nii, .hdr, .nii.gz
-                
-                for root, dirs, filenames in os.walk(directory_name, topdown=False):
-                    # Ignore hidden directories 
-                    filenames = [f for f in filenames if not f[0] == '.']
-                    img = [];
-                    for fname in filenames:
-                        # if fname == 'SPM.mat':
-                        #     spmmatfile = fname;
-                        filename, ext = os.path.splitext(fname)
-                        if ext == ".gz":
-                            filename, ext2 = os.path.splitext(fname[:-3])
-                            ext = ext2 + ext
-                        if ext in ['.nii', '.img', '.nii.gz']:
-                            niftiFiles.append(os.path.join(root, fname))
-                            
-            elif "file_input[]" in request.FILES:
-                print request.FILES
-#                 if not isinstance(request.FILES["file_input[]"], list):
-#                     request.FILES["file_input[]"] = [request.FILES["file_input[]"],]
-                    
-                print request.FILES
-                    
-                for file in request.FILES.getlist("file_input[]"):
-                    print file
-                    path = default_storage.save('tmp/%s' % file.name, ContentFile(file.read()))
-                    niftiFiles.append(os.path.join(settings.MEDIA_ROOT, path))
-                                      
-            print niftiFiles       
-            for fname in niftiFiles:
-                # Read nifti file information
-                img = nib.load(fname)
-                hdr = img.get_header()
-                raw_hdr = hdr.structarr
-
-                # SPM only !!!
-                # Check if filename corresponds to a T-map
-                Tregexp = re.compile('spmT.*');
-                Fregexp = re.compile('spmF.*');
-                if Tregexp.search(fname) is not None:
-                    map_type = Image.T;
-                else:
-                    # Check if filename corresponds to a F-map
-                    if Tregexp.search(fname) is not None:
-                        map_type = Image.F;
+            
+            tmp_directory = tempfile.mkdtemp()
+            print tmp_directory
+            try:
+                # Save archive (.zip or .tar.gz) to disk
+                if "file" in request.FILES:
+                    archive_name = request.FILES['file'].name
+                    _, archive_ext = os.path.splitext(archive_name)
+                    if archive_ext == '.zip':
+                        compressed = zipfile.ZipFile(request.FILES['file'])
                     else:
-                        map_type = Image.OTHER;
+                        compressed = tarfile.TarFile(fileobj=gzip.open(request.FILES['file']))  
                         
+                    compressed.extractall(path=tmp_directory)
+                    
+                    for root, _, filenames in os.walk(tmp_directory, topdown=False):
+                        filenames = [f for f in filenames if not f[0] == '.']
+                        for fname in filenames:
+                            _, ext = os.path.splitext(fname)
+                            if ext == ".gz":
+                                _, ext2 = os.path.splitext(fname[:-3])
+                                ext = ext2 + ext
+                            if ext in ['.nii', '.img', '.nii.gz']:
+                                niftiFiles.append(os.path.join(root, fname))
 
+                elif "file_input[]" in request.FILES:                        
+                    for file in request.FILES.getlist("file_input[]"):
+                        filename = os.path.join(tmp_directory,file.name)
+                        tmp_file = open(filename, 'w')
+                        tmp_file.write(file.read())
+                        tmp_file.close()
+                        niftiFiles.append(filename)
+                                              
+                for fname in niftiFiles:
+                    # Read nifti file information
+                    img = nib.load(fname)
+                    hdr = img.get_header()
+                    raw_hdr = hdr.structarr
+    
+                    # SPM only !!!
+                    # Check if filename corresponds to a T-map
+                    Tregexp = re.compile('spmT.*');
+                    Fregexp = re.compile('spmF.*');
+                    if Tregexp.search(fname) is not None:
+                        map_type = Image.T;
+                    else:
+                        # Check if filename corresponds to a F-map
+                        if Tregexp.search(fname) is not None:
+                            map_type = Image.F;
+                        else:
+                            map_type = Image.OTHER;
+                    img = Image.create(fname, fname.split(os.path.sep)[-1], fname.split(os.path.sep)[-1], raw_hdr['descrip'], collection_pk, map_type);
+                    img.save();
+                    
+            finally:
+                shutil.rmtree(tmp_directory)
 
-                img = Image.create(fname, fname.split(os.path.sep)[-1], fname.split(os.path.sep)[-1], raw_hdr['descrip'], collection_pk, map_type);
-                img.save();
-
-            # for fname in filenames:
-            #    _, ext = os.path.splitext(fname)
-            #    if ext == ".gz":
-            #        _, ext2 = os.path.splitext(fname[:-3])
-            #        ext = ext2 + ext
-            #    print ext
-
-                
-            # myImg = Image();
-            # myImg.set_name('test');
-            # return HttpResponseRedirect('/success/url/')
             return HttpResponseRedirect('editimages');
     else:
         form = UploadFileForm()
