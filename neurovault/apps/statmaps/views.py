@@ -20,6 +20,7 @@ from nibabel.testing import data_path
 import nibabel as nib
 import re
 from neurovault.apps.statmaps.storage import NiftiGzStorage
+import errno
 
 @login_required
 def edit_images(request, collection_pk):
@@ -108,6 +109,14 @@ def splitext_nii_gz(fname):
         ext = ext2 + ext
     return head, ext
 
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc: # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else: raise
+
 
 @login_required
 def upload_folder(request, collection_pk):
@@ -132,10 +141,12 @@ def upload_folder(request, collection_pk):
 
                 elif "file_input[]" in request.FILES:
                     print request.POST["paths"]                        
-                    for file in request.FILES.getlist("file_input[]"):
-                        filename = os.path.join(tmp_directory,file.name)
+                    for f, path in zip(request.FILES.getlist("file_input[]"), request.POST["paths"].split("###")):
+                        new_path = os.path.join(tmp_directory, path)
+                        mkdir_p(new_path)
+                        filename = os.path.join(new_path,f.name)
                         tmp_file = open(filename, 'w')
-                        tmp_file.write(file.read())
+                        tmp_file.write(f.read())
                         tmp_file.close()
                         
                 for root, _, filenames in os.walk(tmp_directory, topdown=False):

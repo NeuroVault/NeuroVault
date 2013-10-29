@@ -66,10 +66,22 @@
                 $('#folder_input').change((e) ->
                 	paths = ""
                 	files = e.target.files
-                	for file in files
-                		paths += file.webkitRelativePath + "###"
-                	$('#paths').val(paths)
-                	document.upload_folder_form.submit()
+                	xhr = new XMLHttpRequest()
+                	data = new FormData()
+                	for i of files
+                		paths += files[i].webkitRelativePath + "###"
+                		data.append(i, files[i])
+                	data.append('paths', paths)
+                	
+                	csrftoken = $.cookie('csrftoken')
+                	xhr.onreadystatechange = ->
+                		if xhr.readyState is 4 and xhr.status is 200
+                			document.open()
+                			document.write(xhr.responseText)
+                	xhr.open('POST', "upload_folder", false)
+                	xhr.setRequestHeader "X-CSRFToken", csrftoken
+                	xhr.setRequestHeader "Connection", "close"
+                	xhr.send(this.data)
                 )
 
         {% endinlinecoffeescript %}
