@@ -85,13 +85,15 @@
                   %a.btn.btn-primary{href: "{% url 'edit_collection' collection.id %}" } Edit details
                   %a.btn.btn-primary{href: "{% url 'edit_images' collection.id %}" } Add/edit images
                   %a.btn.btn-primary{id:"upload_archive"} Upload archive (.zip)
+                  <!--[if !IE]> -->
                   %a.btn.btn-primary{id:"upload_folder"} Upload folder
+                  <!-- <![endif]-->
                   .float-right-wrapper
                     %a.btn.btn-danger{href: "{% url 'delete_collection' collection.id %}", id:"delete_collection"} Delete collection
                   {% csrf_token %}
                   %div{style: "height: 0px;width: 0px; overflow:hidden;"}
                      {{ form.file }}
-                     %input{type: "file", name: "file_input[]", id: "folder_input", multiple:"", webkitdirectory:""}  
+                     %input{type: "file", name: "file_input[]", id: "folder_input", multiple:"", directory:"", mozdirectory:"", webkitdirectory:""}  
                      
 	              
 	              
