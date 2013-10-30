@@ -69,19 +69,18 @@
                 	xhr = new XMLHttpRequest()
                 	data = new FormData()
                 	for i of files
-                		paths += files[i].webkitRelativePath + "###"
-                		data.append(i, files[i])
-                	data.append('paths', paths)
+                		if files[i].name != "." && files[i].webkitRelativePath != undefined
+                			data.append('paths[]', files[i].webkitRelativePath)
+                	for i of files
+                		if files[i].name != "." && files[i].webkitRelativePath != undefined
+                			data.append('file_input[]', files[i])
+                	
                 	
                 	csrftoken = $.cookie('csrftoken')
-                	xhr.onreadystatechange = ->
-                		if xhr.readyState is 4 and xhr.status is 200
-                			document.open()
-                			document.write(xhr.responseText)
-                	xhr.open('POST', "upload_folder", false)
+                	xhr.open 'POST', "upload_folder", false
                 	xhr.setRequestHeader "X-CSRFToken", csrftoken
-                	xhr.setRequestHeader "Connection", "close"
-                	xhr.send(this.data)
+                	xhr.send(data)
+                	document.location = "editimages"
                 )
 
         {% endinlinecoffeescript %}

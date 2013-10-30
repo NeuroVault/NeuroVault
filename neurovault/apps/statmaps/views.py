@@ -123,9 +123,10 @@ def upload_folder(request, collection_pk):
     allowed_extensions = ['.nii', '.img', '.nii.gz']
     niftiFiles = []
     if request.method == 'POST':
+        print request.POST
+        print request.FILES
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
-            
             tmp_directory = tempfile.mkdtemp()
             print tmp_directory
             try:
@@ -140,14 +141,15 @@ def upload_folder(request, collection_pk):
                     compressed.extractall(path=tmp_directory)
 
                 elif "file_input[]" in request.FILES:
-                    print request.POST["paths"]                        
-                    for f, path in zip(request.FILES.getlist("file_input[]"), request.POST["paths"].split("###")):
-                        new_path = os.path.join(tmp_directory, path)
+                    for f, path in zip(request.FILES.getlist("file_input[]"), request.POST.getlist("paths[]")):
+                        new_path, _ = os.path.split(os.path.join(tmp_directory, path))
                         mkdir_p(new_path)
                         filename = os.path.join(new_path,f.name)
                         tmp_file = open(filename, 'w')
                         tmp_file.write(f.read())
                         tmp_file.close()
+                else:
+                    raise
                         
                 for root, _, filenames in os.walk(tmp_directory, topdown=False):
                     filenames = [f for f in filenames if not f[0] == '.']
@@ -175,8 +177,7 @@ def upload_folder(request, collection_pk):
                         else:
                             map_type = Image.OTHER;
                     img = Image.create(fname, fname.split(os.path.sep)[-1], fname.split(os.path.sep)[-1], raw_hdr['descrip'], collection_pk, map_type);
-                    img.save();
-                    
+                    img.save()
             finally:
                 shutil.rmtree(tmp_directory)
 
