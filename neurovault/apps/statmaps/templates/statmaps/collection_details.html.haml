@@ -90,6 +90,7 @@
 .row
     .span11
         %h2 {{ collection.name }}
+        %p Contributed by {{ collection.owner }}
         - if collection.authors
             .lead {{collection.authors}}
         - if collection.DOI
