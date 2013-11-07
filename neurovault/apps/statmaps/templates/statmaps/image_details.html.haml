@@ -5,7 +5,8 @@
          var params = [];
          params["worldSpace"] = true;
          params["images"] = ["/media/anatomical/MNI152.nii.gz", "{{ image.file.url }}"];
-         params["{{ image.file.url }}"] = {"min": 0, "max": 10};
+         var filename = "{{ image.file.url }}".replace(/^.*[\\\/]/, '')
+         params[filename] = {"min": 0, "max": 1, "parametric": true};
          
          var images = [{
             'name': '{{ image.name }}',
