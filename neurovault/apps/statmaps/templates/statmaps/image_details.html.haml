@@ -36,6 +36,7 @@
         %h2 {{ image.name }}
         .lead
             %p Contributed by {{ user.username }} on {{ image.add_date|date:"N j, Y" }}
+            %p <b>Collection</b>: <a href="{% url 'collection_details' image.collection.id %}">{{ image.collection.name }}</a>
             %p <b>Description</b>: {{ image.description }}
             %p <b>Tags</b>:             
                 - for tag in image.tags.all
