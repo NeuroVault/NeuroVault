@@ -232,7 +232,8 @@ class Image(DirtyFieldsMixin, models.Model):
                 nifti_gz_file = ".".join(self.file.path.split(".")[:-1]) + '.nii.gz'
                 nii = nb.load(self.file.path)
                 nb.save(nii, nifti_gz_file)
-                self.nifti_gz_file = nifti_gz_file
+                f = open(nifti_gz_file)
+                self.nifti_gz_file.save(nifti_gz_file.split(os.path.sep)[-1], File(f), save=False)
                 
  
         super(Image, self).save()
@@ -263,7 +264,8 @@ class Image(DirtyFieldsMixin, models.Model):
             nifti_gz_file = ".".join(image.file.path.split(".")[:-1]) + '.nii.gz'
             nii = nb.load(image.file.path)
             nb.save(nii, nifti_gz_file)
-            image.nifti_gz_file = nifti_gz_file
+            f = open(nifti_gz_file)
+            image.nifti_gz_file.save(nifti_gz_file.split(os.path.sep)[-1], File(f), save=False)
             
         image.save();
 
