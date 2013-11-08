@@ -1,5 +1,8 @@
 {% extends "base.html" %}
 {% load coffeescript %}
+{% block includes %}
+<script type="text/javascript" src="{% static "scripts/papaya.js"%}"/>
+{% endblock %}
 {% block head %}
     :javascript
          var params = [];
