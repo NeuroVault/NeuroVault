@@ -260,7 +260,7 @@ class ImageForm(ModelForm):
 
     class Meta:
         model = Image
-        exclude = ('json_path', 'collection')
+        exclude = ('json_path', 'collection', 'nifti_gz_file')
     # Add some custom validation to our file field
 
     def __init__(self, *args, **kwargs):
@@ -313,12 +313,12 @@ class ImageForm(ModelForm):
         return cleaned_data
 
 CollectionFormSet = inlineformset_factory(
-    Collection, Image, form=ImageForm, exclude=['json_path'], extra=1)  
+    Collection, Image, form=ImageForm, exclude=['json_path', 'nifti_gz_file'], extra=1)  
 
 class UploadFileForm(Form):
 
     # TODO Need to uplaod in a temp directory
-    file  = FileField();#(upload_to="images/%s/%s"%(instance.collection.id, filename))
+    file  = FileField(required=False);#(upload_to="images/%s/%s"%(instance.collection.id, filename))
 
     # class Meta:
     #     exclude = ('owner',)
@@ -332,7 +332,8 @@ class UploadFileForm(Form):
     def clean(self):
         cleaned_data = super(UploadFileForm, self).clean()
         file = cleaned_data.get("file")
-        ext = os.path.splitext(file.name)[1]
-        ext = ext.lower()
-        if ext not in ['.zip', '.gz']:
-            raise ValidationError("Not allowed filetype!")
+        if file:
+            ext = os.path.splitext(file.name)[1]
+            ext = ext.lower()
+            if ext not in ['.zip', '.gz']:
+                raise ValidationError("Not allowed filetype!")
