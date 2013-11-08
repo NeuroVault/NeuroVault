@@ -31,7 +31,6 @@
 
         {% endinlinecoffeescript %}
 {% include 'statmaps/_papaya_viewer_head.html.haml' %}
-{% include 'statmaps/_neurosynth_viewer_head.html.haml' %}
 
 {% endblock %}
 
@@ -55,8 +54,6 @@
 
         %ul#collection-tabs.nav.nav-tabs
             %li
-                %a{href:'#neurosynth_viewer', data-toggle:'tab'} Neurosynth viewer
-            %li
                 %a{href:'#papaya_viewer', data-toggle:'tab'} Papaya viewer
             %li
                 %a{href:'#details', data-toggle:'tab'} Details
@@ -69,8 +66,6 @@
                             %th Field
                             %th Value
                     %tbody
-            #neurosynth_viewer.tab-pane.active
-
             #papaya_viewer.tab-pane.active
                 {% include 'statmaps/_papaya_viewer_content.html.haml' %}
 {% endblock %}
