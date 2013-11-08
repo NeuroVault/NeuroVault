@@ -260,7 +260,7 @@ class ImageForm(ModelForm):
 
     class Meta:
         model = Image
-        exclude = ('json_path', 'collection')
+        exclude = ('json_path', 'collection', 'nifti_gz_file')
     # Add some custom validation to our file field
 
     def __init__(self, *args, **kwargs):

@@ -189,6 +189,7 @@ class Image(DirtyFieldsMixin, models.Model):
     description = models.TextField(blank=False)
     file = models.FileField(upload_to=upload_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='Image file')
     hdr_file = models.FileField(upload_to=upload_to, blank=True, storage=NiftiGzStorage(), verbose_name='.hdr file (if applicable)')
+    nifti_gz_file = models.FileField(upload_to=upload_to, blank=True, storage=NiftiGzStorage(), verbose_name='Auto generated nii.gz file')
     json_path = models.CharField(max_length=200, null=False, blank=True)
     add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
@@ -220,7 +221,7 @@ class Image(DirtyFieldsMixin, models.Model):
         unique_together = ("collection", "name")
 
     def save(self):
-
+ 
         # If a new file or header has been uploaded, redo the JSON conversion
         if 'file' in self.get_dirty_fields() or 'hdr_file' in self.get_dirty_fields():
             self.file.save(self.file.name, self.file, save = False)
@@ -230,7 +231,7 @@ class Image(DirtyFieldsMixin, models.Model):
                 json_file = self.file.path + '.json'
                 imageutils.img_to_json(self.file.path, swap=True, save=json_file)
                 self.json_path = self.file.url + '.json'
-
+ 
         super(Image, self).save()
 
 
