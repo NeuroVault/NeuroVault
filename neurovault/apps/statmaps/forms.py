@@ -17,6 +17,10 @@ from neurovault.apps.statmaps.models import getPaperProperties
 from .models import Collection, Image
 from django.forms.forms import Form
 from django.forms.fields import FileField
+import tempfile
+from neurovault.apps.statmaps.utils import split_filename
+from django.core.files.base import File, ContentFile
+from django.core.files.uploadedfile import InMemoryUploadedFile
 
 # Create the form class.
 collection_fieldsets = [
@@ -257,57 +261,98 @@ class CollectionForm(ModelForm):
 
 
 class ImageForm(ModelForm):
-
+    hdr_file = FileField(required=False, label='.hdr file (if applicable)')
+    
     class Meta:
         model = Image
-        exclude = ('json_path', 'collection', 'nifti_gz_file')
+        exclude = ('json_path', 'collection')
+        fields = ('name', 'description', 'map_type', 'file' , 'hdr_file',  
+                                'statistic_parameters', 'smoothness_fwhm', 'contrast_definition', 
+                                'contrast_definition_cogatlas', 'tags')
     # Add some custom validation to our file field
 
     def __init__(self, *args, **kwargs):
-
         super(ImageForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
         self.helper.form_tag = False
+        
+        
+#     def save(self, *args, **kwargs):
+#         commit = kwargs.pop('commit', True)
+#         instance = super(ImageForm, self).save(*args, commit = False, **kwargs)
+#         if not instance.file.name.lower().endswith(".nii.gz"):
+#             tmp_directory = tempfile.mkdtemp()
+#             try:
+#                 filename = os.path.join(tmp_directory, instance.file.name)
+#                 tmp_file = open(filename, 'w')
+#                 tmp_file.write(instance.file.read())
+#                 tmp_file.close()
+#                 
+#                 if self.hdr_file:
+#                     hdr_filename = os.path.join(tmp_directory, instance.hdr_file.name)
+#                     tmp_file = open(hdr_filename, 'w')
+#                     tmp_file.write(instance.hdr_file.read())
+#                     tmp_file.close()
+#                     
+#                 _, name, _ = split_filename(instance.file.name)
+#                 converted_name = os.path.join(tmp_directory, name + ".nii.gz")
+#                 nb.save(nb.load(filename), converted_name)
+#                 
+#                 instance.file = File(open(converted_name))
+#                 
+#             finally:
+#                 shutil.rmtree(tmp_directory)
+#         if commit:
+#             instance.save()
+#         return instance
 
     def clean(self):
         cleaned_data = super(ImageForm, self).clean()
         file = cleaned_data.get("file")
         if file:
-            if not os.path.splitext(file.name)[1] in [".gz", ".nii", ".img"]:
+            _, fname, ext = split_filename(file.name)
+            if not ext.lower() in [".nii.gz", ".nii", ".img"]:
                 self._errors["file"] = self.error_class(["Doesn't have proper extension"])
                 del cleaned_data["file"]
                 return cleaned_data
             # Here we need to now to read the file and see if it's actually
             # a valid audio file. I don't know what the best library is to
             # to do this
-            fname = file.name.split("/")[-1]
-            with NamedTemporaryFile(suffix=fname, delete=False) as f:
-                fname = f.name
-                if os.path.splitext(file.name)[1] == ".img":
-                    hdr_file = cleaned_data.get('hdr_file')
-                    if not os.path.splitext(hdr_file.name)[1] in [".hdr"]:
+            tmp_dir = tempfile.mkdtemp()
+            if ext.lower() == ".img":
+                hdr_file = cleaned_data.get('hdr_file')
+                if hdr_file:
+                    _, _, hdr_ext = split_filename(hdr_file.name)
+                    if not hdr_ext.lower() in [".hdr"]:
                         self._errors["hdr_file"] = self.error_class(
                             ["Doesn't have proper extension"])
                         del cleaned_data["hdr_file"]
                         return cleaned_data
                     else:
-                        hf = open(fname[:-3] + "hdr", "wb")
+                        hf = open(os.path.join(tmp_dir, file.name[:-3] + "hdr"), "wb")
                         hf.write(hdr_file.file.read())
                         hf.close()
-
-                f.write(file.file.read())
-                f.close()
-                try:
-                    nb.load(fname)
-                except Exception as e:
-                    self._errors["file"] = self.error_class([str(e)])
-                    del cleaned_data["file"]
-                finally:
-                    os.remove(fname)
-                    if os.path.splitext(file.name)[1] == ".img":
-                        if os.path.splitext(hdr_file.name)[1] in [".hdr"]:
-                            os.remove(fname[:-3] + "hdr")
+                else:
+                    self._errors["hdr_file"] = self.error_class(
+                            [".img files require .hdr"])
+                    del cleaned_data["hdr_file"]
+            f = open(os.path.join(tmp_dir,file.name), "wb")
+            f.write(file.file.read())
+            f.close()
+            try:
+                nii = nb.load(os.path.join(tmp_dir,file.name))
+            except Exception as e:
+                self._errors["file"] = self.error_class([str(e)])
+                del cleaned_data["file"]
+            finally:
+                if ext.lower() != ".nii.gz":
+                    _,name,_ = split_filename(file.name)
+                    nb.save(nii, os.path.join(tmp_dir,name + ".nii.gz"))
+                    f = ContentFile(open(os.path.join(tmp_dir,name + ".nii.gz")).read())
+                    cleaned_data["file"] = InMemoryUploadedFile(f, cleaned_data["file"].field_name, name + ".nii.gz",
+                                                               cleaned_data["file"].content_type, f.size, cleaned_data["file"].charset)
+                shutil.rmtree(tmp_dir)
         else:
             raise ValidationError("Couldn't read uploaded file")
         return cleaned_data
