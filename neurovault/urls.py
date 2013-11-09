@@ -51,7 +51,6 @@ class APIHelper:
 class ImageSerializer(serializers.HyperlinkedModelSerializer):
 
     file = HyperlinkedFileField(source='file')
-    hdr_file = HyperlinkedFileField(source='hdr_file')
 
     class Meta:
         model = Image
