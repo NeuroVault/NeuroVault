@@ -178,16 +178,21 @@ def upload_folder(request, collection_pk):
                         else:
                             map_type = Image.OTHER;
                     
-                    path, bname, _ = split_filename(fname)
-                    new_name = bname + ".nii.gz"
-                    name = os.path.join(path.replace(tmp_directory,""), new_name)
-                    new_file_tmp_directory = tempfile.mkdtemp()
-                    nib.save(nii, os.path.join(new_file_tmp_directory, new_name))
-                    f = ContentFile(open(os.path.join(new_file_tmp_directory, new_name)).read(), name=new_name)
-                    shutil.rmtree(new_file_tmp_directory)
+                    path, name, ext = split_filename(fname)
+                    name += ".nii.gz"
+                    db_name = os.path.join(path.replace(tmp_directory,""), name)
+                    db_name = os.path.sep.join(db_name.split(os.path.sep)[2:])
+                    if ext.lower() != ".nii.gz":
+                        new_file_tmp_directory = tempfile.mkdtemp()
+                        nib.save(nii, os.path.join(new_file_tmp_directory, name))
+                        f = ContentFile(open(os.path.join(new_file_tmp_directory, name)).read(), name=name)
+                        shutil.rmtree(new_file_tmp_directory)
+                        db_name += " (old ext: %s)"%ext
+                    else:
+                        f = ContentFile(open(fname).read(), name=name)
                     
                     collection = Collection.objects.get(pk=collection_pk)
-                    new_image = Image(name=name, description=raw_hdr['descrip'], collection=collection)
+                    new_image = Image(name=db_name, description=raw_hdr['descrip'], collection=collection)
                     new_image.file = f
                     new_image.map_type = map_type
                     new_image.save()
