@@ -21,6 +21,7 @@ import nibabel as nib
 import re
 from neurovault.apps.statmaps.storage import NiftiGzStorage
 import errno
+from neurovault.apps.statmaps.utils import split_filename
 
 @login_required
 def edit_images(request, collection_pk):
@@ -160,8 +161,8 @@ def upload_folder(request, collection_pk):
                                               
                 for fname in niftiFiles:
                     # Read nifti file information
-                    img = nib.load(fname)
-                    hdr = img.get_header()
+                    nii = nib.load(fname)
+                    hdr = nii.get_header()
                     raw_hdr = hdr.structarr
     
                     # SPM only !!!
@@ -176,8 +177,21 @@ def upload_folder(request, collection_pk):
                             map_type = Image.F;
                         else:
                             map_type = Image.OTHER;
-                    img = Image.create(fname, fname.split(os.path.sep)[-1], fname.split(os.path.sep)[-1], raw_hdr['descrip'], collection_pk, map_type);
-                    img.save()
+                    
+                    _, bname, _ = split_filename(fname)
+                    new_name = bname + ".nii.gz"
+                    new_file_tmp_directory = tempfile.mkdtemp()
+                    nib.save(nii, os.path.join(new_file_tmp_directory, new_name))
+                    f = ContentFile(open(os.path.join(new_file_tmp_directory, new_name).read()), name=new_name)
+                    shutil.rmtree(new_file_tmp_directory)
+                    
+                    new_image = Image()
+                    new_image.file = f
+                    new_image.description = raw_hdr['descrip']
+                    new_image.map_type = map_type
+                    collection = get_object_or_404(Collection, pk=collection_pk)
+                    new_image.collection = collection
+                    new_image.save()
             finally:
                 shutil.rmtree(tmp_directory)
 
