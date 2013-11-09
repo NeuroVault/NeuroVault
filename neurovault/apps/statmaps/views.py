@@ -178,19 +178,18 @@ def upload_folder(request, collection_pk):
                         else:
                             map_type = Image.OTHER;
                     
-                    _, bname, _ = split_filename(fname)
+                    path, bname, _ = split_filename(fname)
                     new_name = bname + ".nii.gz"
+                    name = os.path.join(path.replace(tmp_directory,""), new_name)
                     new_file_tmp_directory = tempfile.mkdtemp()
                     nib.save(nii, os.path.join(new_file_tmp_directory, new_name))
-                    f = ContentFile(open(os.path.join(new_file_tmp_directory, new_name).read()), name=new_name)
+                    f = ContentFile(open(os.path.join(new_file_tmp_directory, new_name)).read(), name=new_name)
                     shutil.rmtree(new_file_tmp_directory)
                     
-                    new_image = Image()
+                    collection = Collection.objects.get(pk=collection_pk)
+                    new_image = Image(name=name, description=raw_hdr['descrip'], collection=collection)
                     new_image.file = f
-                    new_image.description = raw_hdr['descrip']
                     new_image.map_type = map_type
-                    collection = get_object_or_404(Collection, pk=collection_pk)
-                    new_image.collection = collection
                     new_image.save()
             finally:
                 shutil.rmtree(tmp_directory)
