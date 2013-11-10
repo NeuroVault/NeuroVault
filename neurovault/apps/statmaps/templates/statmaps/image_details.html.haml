@@ -7,18 +7,9 @@
     :javascript
          var params = [];
          params["worldSpace"] = true;
-         params["images"] = ["/media/anatomical/MNI152.nii.gz", "{{ image.nifti_gz_file.url }}"];
-         var filename = "{{ image.nifti_gz_file.url }}".replace(/^.*[\\\/]/, '')
+         params["images"] = ["/media/anatomical/MNI152.nii.gz", "{{ image.file.url }}"];
+         var filename = "{{ image.file.url }}".replace(/^.*[\\\/]/, '')
          params[filename] = {"parametric": true};
-         
-         var images = [{
-            'name': '{{ image.name }}',
-            'url': '{{ image.json_path }}',
-            'colorPalette': 'red-yellow-blue',
-            'sign': 'both',
-            'json': true,
-            'download': '{{ image.file.url }}'
-        }]
     :javascript
         {% inlinecoffeescript %}
             $(document).ready ->
