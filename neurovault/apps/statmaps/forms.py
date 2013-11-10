@@ -330,18 +330,18 @@ class ImageForm(ModelForm):
                         del cleaned_data["hdr_file"]
                         return cleaned_data
                     else:
-                        hf = open(os.path.join(tmp_dir, file.name[:-3] + "hdr"), "wb")
+                        hf = open(os.path.join(tmp_dir, fname + ".hdr"), "wb")
                         hf.write(hdr_file.file.read())
                         hf.close()
                 else:
                     self._errors["hdr_file"] = self.error_class(
                             [".img files require .hdr"])
                     del cleaned_data["hdr_file"]
-            f = open(os.path.join(tmp_dir,file.name), "wb")
+            f = open(os.path.join(tmp_dir,fname + ext), "wb")
             f.write(file.file.read())
             f.close()
             try:
-                nii = nb.load(os.path.join(tmp_dir,file.name))
+                nii = nb.load(os.path.join(tmp_dir,fname + ext))
             except Exception as e:
                 self._errors["file"] = self.error_class([str(e)])
                 del cleaned_data["file"]
