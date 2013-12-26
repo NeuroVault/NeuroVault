@@ -25,8 +25,7 @@ class Migration(DataMigration):
                 new_path = os.path.join(tmp_directory, name)
                 nb.save(nii, new_path)
                 print new_path
-                f = ContentFile(open(new_path).read(), name=name)
-                image.file = f
+                image.file = ContentFile(open(new_path).read(), name=os.path.join(path, name))
                 image.save()
                 shutil.rmtree(tmp_directory)
 
