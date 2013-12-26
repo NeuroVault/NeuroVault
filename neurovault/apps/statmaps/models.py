@@ -13,6 +13,7 @@ import os
 import urllib2
 from dirtyfields import DirtyFieldsMixin
 from django.core.files import File
+import nibabel as nb
 # from django.db.models.signals import post_save
 # from django.dispatch import receiver
 
@@ -188,7 +189,6 @@ class Image(DirtyFieldsMixin, models.Model):
     name = models.CharField(max_length=200, null=False, blank=False)
     description = models.TextField(blank=False)
     file = models.FileField(upload_to=upload_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='Image file')
-    hdr_file = models.FileField(upload_to=upload_to, blank=True, storage=NiftiGzStorage(), verbose_name='.hdr file (if applicable)')
     json_path = models.CharField(max_length=200, null=False, blank=True)
     add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
@@ -219,19 +219,22 @@ class Image(DirtyFieldsMixin, models.Model):
     class Meta:
         unique_together = ("collection", "name")
 
-    def save(self):
-
-        # If a new file or header has been uploaded, redo the JSON conversion
-        if 'file' in self.get_dirty_fields() or 'hdr_file' in self.get_dirty_fields():
-            self.file.save(self.file.name, self.file, save = False)
-            if self.hdr_file:
-                self.hdr_file.save(self.hdr_file.name, self.hdr_file, save = False)
-            if os.path.exists(self.file.path):
-                json_file = self.file.path + '.json'
-                imageutils.img_to_json(self.file.path, swap=True, save=json_file)
-                self.json_path = self.file.url + '.json'
-
-        super(Image, self).save()
+#     def save(self):
+#  
+#         # If a new file or header has been uploaded, redo the JSON conversion
+#         if 'file' in self.get_dirty_fields() or 'hdr_file' in self.get_dirty_fields():
+#             self.file.save(self.file.name, self.file, save = False)
+#             if self.hdr_file:
+#                 self.hdr_file.save(self.hdr_file.name, self.hdr_file, save = False)
+#             if os.path.exists(self.file.path):
+#                 nifti_gz_file = ".".join(self.file.path.split(".")[:-1]) + '.nii.gz'
+#                 nii = nb.load(self.file.path)
+#                 nb.save(nii, nifti_gz_file)
+#                 f = open(nifti_gz_file)
+#                 self.nifti_gz_file.save(nifti_gz_file.split(os.path.sep)[-1], File(f), save=False)
+#                 
+#  
+#         super(Image, self).save()
 
 
     @classmethod
@@ -256,9 +259,11 @@ class Image(DirtyFieldsMixin, models.Model):
         
         #create JSON file for neurosynth viewer
         if os.path.exists(image.file.path):
-            json_file = image.file.path + '.json'
-            imageutils.img_to_json(image.file.path, swap=True, save=json_file)
-            image.json_path = image.file.url + '.json'
+            nifti_gz_file = ".".join(image.file.path.split(".")[:-1]) + '.nii.gz'
+            nii = nb.load(image.file.path)
+            nb.save(nii, nifti_gz_file)
+            f = open(nifti_gz_file)
+            image.nifti_gz_file.save(nifti_gz_file.split(os.path.sep)[-1], File(f), save=False)
             
         image.save();
 

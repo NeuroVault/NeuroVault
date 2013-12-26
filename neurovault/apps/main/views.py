@@ -1,7 +1,7 @@
 from django.shortcuts import render
-from ..statmaps.models import Image
+from ..statmaps.models import Collection
 
 def index_view(request):
-    recent_images = Image.objects.all().order_by('-add_date')[:5]
-    context = {'recent_images': recent_images}
+    recent_collections = Collection.objects.all().order_by('-add_date')[:5]
+    context = {'recent_collections': recent_collections}
     return render(request, 'index.html.haml', context)

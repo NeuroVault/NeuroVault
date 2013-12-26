@@ -73,22 +73,23 @@
     .span11
         %hr
 .row
-    .two-thirds.slice
-        .light-head.center-text Latest images
-        %table.table.table-striped
+    .span11
+        .light-head.center-text Latest collections of images
+        %table.table.table-striped.span12
             %thead
                 %tr
-                    %th
-                    %th
+                    %th.span6
+                        Name
+                    %th.span1
+                        Number of images
             %tbody
-                - for image in recent_images
+                - for collection in recent_collections
                     %tr
-                        %td
-                            %a{href: "{% url 'image_details' image.id %}"}= image.name
-                        %td
-                            %a.preview-image{href:'', data-image-url: '{{ image.json_path }}' } preview <i class="icon-circle-arrow-right"></i>
-    .third.slice
-    	{% include '_index_viewer.html.haml' %}
+                        %td.span6
+                            %a{href: "{% url 'collection_details' collection.id %}"}= collection.name
+                        %td.span1
+                            {{ collection.image_set.all.count }}
+                        
 .row
     .span11.text-center
     	.massive

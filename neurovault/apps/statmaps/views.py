@@ -21,6 +21,7 @@ import nibabel as nib
 import re
 from neurovault.apps.statmaps.storage import NiftiGzStorage
 import errno
+from neurovault.apps.statmaps.utils import split_filename
 
 @login_required
 def edit_images(request, collection_pk):
@@ -160,8 +161,8 @@ def upload_folder(request, collection_pk):
                                               
                 for fname in niftiFiles:
                     # Read nifti file information
-                    img = nib.load(fname)
-                    hdr = img.get_header()
+                    nii = nib.load(fname)
+                    hdr = nii.get_header()
                     raw_hdr = hdr.structarr
     
                     # SPM only !!!
@@ -176,8 +177,25 @@ def upload_folder(request, collection_pk):
                             map_type = Image.F;
                         else:
                             map_type = Image.OTHER;
-                    img = Image.create(fname, fname.split(os.path.sep)[-1], fname.split(os.path.sep)[-1], raw_hdr['descrip'], collection_pk, map_type);
-                    img.save()
+                    
+                    path, name, ext = split_filename(fname)
+                    name += ".nii.gz"
+                    db_name = os.path.join(path.replace(tmp_directory,""), name)
+                    db_name = os.path.sep.join(db_name.split(os.path.sep)[2:])
+                    if ext.lower() != ".nii.gz":
+                        new_file_tmp_directory = tempfile.mkdtemp()
+                        nib.save(nii, os.path.join(new_file_tmp_directory, name))
+                        f = ContentFile(open(os.path.join(new_file_tmp_directory, name)).read(), name=name)
+                        shutil.rmtree(new_file_tmp_directory)
+                        db_name += " (old ext: %s)"%ext
+                    else:
+                        f = ContentFile(open(fname).read(), name=name)
+                    
+                    collection = Collection.objects.get(pk=collection_pk)
+                    new_image = Image(name=db_name, description=raw_hdr['descrip'], collection=collection)
+                    new_image.file = f
+                    new_image.map_type = map_type
+                    new_image.save()
             finally:
                 shutil.rmtree(tmp_directory)
 

@@ -13,7 +13,7 @@
         },
         {% endfor %}]
 
-    {% include 'statmaps/_viewer_head.html.haml' %}
+    {% include 'statmaps/_neurosynth_viewer_head.html.haml' %}
 
     :javascript
         {% inlinecoffeescript %}
@@ -82,6 +82,8 @@
                 	xhr.send(data)
                 	document.location = "editimages"
                 )
+                
+       
 
         {% endinlinecoffeescript %}
 {% endblock %}
@@ -153,7 +155,7 @@
                             %th Value
                     %tbody
             #viewer.tab-pane
-                {% include 'statmaps/_viewer_content.html.haml' %}
+                {% include 'statmaps/_neurosynth_viewer_content.html.haml' %}
 
 {% comment %}
 {% for image in collection.image_set.all %}
