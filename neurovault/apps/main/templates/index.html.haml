@@ -75,20 +75,20 @@
 .row
     .span11
         .light-head.center-text Latest collections of images
-        %table.table.table-striped
+        %table.table.table-striped.span12
             %thead
                 %tr
-                    %th
+                    %th.span6
                         Name
-                    %th
+                    %th.span1
                         Number of images
             %tbody
                 - for collection in recent_collections
                     %tr
-                        %td
+                        %td.span6
                             %a{href: "{% url 'collection_details' collection.id %}"}= collection.name
-                        %td
-                            12
+                        %td.span1
+                            {{ collection.image_set.all.count }}
                         
 .row
     .span11.text-center
