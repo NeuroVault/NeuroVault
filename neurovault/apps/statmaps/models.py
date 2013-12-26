@@ -189,7 +189,6 @@ class Image(DirtyFieldsMixin, models.Model):
     name = models.CharField(max_length=200, null=False, blank=False)
     description = models.TextField(blank=False)
     file = models.FileField(upload_to=upload_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='Image file')
-    json_path = models.CharField(max_length=200, null=False, blank=True)
     add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
     tags = TaggableManager(through=ValueTaggedItem, blank=True)
