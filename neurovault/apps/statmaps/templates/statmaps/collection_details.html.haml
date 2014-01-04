@@ -1,19 +1,6 @@
 {% extends "base.html" %}
 {% load coffeescript %}
 {% block head %}
-    :javascript
-        var images = [
-        {% for image in collection.image_set.all %}
-        {
-            'name': '{{ image.name }}',
-            'url': '{{ image.json_path }}',
-            'json': true,
-            'colorPalette': "{% cycle 'red' 'blue' 'green' 'yellow' 'purple' 'aqua' 'lime' 'navy' %}",
-            'download': '{{ image.file.url }}'
-        },
-        {% endfor %}]
-
-    {% include 'statmaps/_neurosynth_viewer_head.html.haml' %}
 
     :javascript
         {% inlinecoffeescript %}
@@ -124,8 +111,6 @@
                 %a{href:'#images', data-toggle:'tab'} Images
             %li
                 %a{href:'#details', data-toggle:'tab'} Details
-            %li#show-viewer
-                %a{href:'#viewer', data-toggle:'tab'} Viewer
 
         .tab-content
             #images.tab-pane.active
