@@ -9,6 +9,10 @@ from rest_framework.decorators import link
 from rest_framework.response import Response
 from taggit.models import Tag
 
+from django import template
+template.add_to_builtins('django.templatetags.future')
+template.add_to_builtins('django.contrib.staticfiles.templatetags.staticfiles')
+
 class HyperlinkedFileField(serializers.FileField):
 
     def to_native(self, value):

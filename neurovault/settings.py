@@ -4,7 +4,7 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-DEBUG = True#False
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -85,9 +85,6 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
-
-# Make this unique, and don't share it with anybody.
-SECRET_KEY = '4a(l8%ljjluod%&eo50p^m2lb@zk7q%ts()t%yl%34)d6z1old'
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
@@ -189,8 +186,6 @@ AUTHENTICATION_BACKENDS = (
     'social_auth.backends.google.GoogleBackend',
 )
 
-FACEBOOK_APP_ID              = '523031064399854'
-FACEBOOK_API_SECRET          = '2fad2e1c24524bda42a0a488118ae680'
 FACEBOOK_EXTENDED_PERMISSIONS = ['email']
 
 REST_FRAMEWORK = {
@@ -216,9 +211,18 @@ CORS_ORIGIN_REGEX_WHITELIST = (
 #LOGIN_REDIRECT_URL = '/logged-in/'
 #LOGIN_ERROR_URL    = '/login-error/'
 
-# Probably not the best place for this...
-from django import template
-template.add_to_builtins('django.templatetags.future')
-template.add_to_builtins('django.contrib.staticfiles.templatetags.staticfiles')
-
 CRISPY_TEMPLATE_PACK = 'bootstrap'
+
+DBBACKUP_STORAGE = 'dbbackup.storage.dropbox_storage'
+DBBACKUP_TOKENS_FILEPATH = '/home/filo/dbtokens'
+DBBACKUP_POSTGRES_BACKUP_COMMAND='export PGPASSWORD=neurovault\n pg_dump --username={adminuser} --host={host} --port={port} {databasename} >'
+
+# Bogus secret key.
+
+
+from secrets import *
+
+try:
+    from local_settings import *
+except ImportError:
+    pass
