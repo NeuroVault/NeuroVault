@@ -3,7 +3,6 @@
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db import models
-from neurosynth.base import imageutils
 from neurovault.apps.statmaps.storage import NiftiGzStorage
 from taggit.managers import TaggableManager
 from taggit.models import GenericTaggedItemBase, TagBase
