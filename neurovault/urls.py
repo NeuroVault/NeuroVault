@@ -115,7 +115,7 @@ router.register(r'images', ImageViewSet)
 router.register(r'collections', CollectionViewSet)
 
 urlpatterns = patterns('',
-                       url(r'^$', include('neurovault.apps.main.urls')),
+                       url(r'^', include('neurovault.apps.main.urls')),
                        url(r'^', include('neurovault.apps.statmaps.urls')),
                        url(r'^accounts/', include('neurovault.apps.users.urls')),
                        url(r'^admin/', include(admin.site.urls)),
