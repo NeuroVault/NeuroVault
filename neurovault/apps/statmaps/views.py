@@ -162,6 +162,8 @@ def upload_folder(request, collection_pk):
                 for fname in niftiFiles:
                     # Read nifti file information
                     nii = nib.load(fname)
+                    if len(nii.get_shape()) > 3 and nii.get_shape()[3] > 1:
+                        continue
                     hdr = nii.get_header()
                     raw_hdr = hdr.structarr
     
