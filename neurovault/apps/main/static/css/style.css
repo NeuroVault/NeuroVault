@@ -50,12 +50,20 @@ body {
 	width: 260px;
 }
 
+.sixth {
+    width: 130px;
+}
+
 .two-thirds {
 	width: 570px;
 }
 
 .half {
 	width: 415px;
+}
+
+.middle {
+    vertical-align: middle;
 }
 
 .slice {
