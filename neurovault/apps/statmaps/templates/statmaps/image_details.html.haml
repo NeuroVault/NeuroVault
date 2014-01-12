@@ -44,6 +44,7 @@
                     %a{ href: "/images/tags/{{tag.name}}" }= tag.name
                     - if not forloop.last
             %a.btn.btn-primary.btn-large{href: "{{ image.file.url }}" } Download
+            %a.btn.btn-primary.btn-large{href: "http://neurosynth.org/decode/{{ image.id }}" } Decode with neurosynth
             - if user_owns_image
                 %a.btn.btn-primary.btn-large{href: "{% url 'edit_image' image.id %}" } Edit details
                 .float-right-wrapper
