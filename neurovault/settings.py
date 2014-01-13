@@ -188,6 +188,8 @@ AUTHENTICATION_BACKENDS = (
 
 FACEBOOK_EXTENDED_PERMISSIONS = ['email']
 
+SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
+
 REST_FRAMEWORK = {
     # Use hyperlinked styles by default.
     # Only used if the `serializer_class` attribute is not set on a view.
