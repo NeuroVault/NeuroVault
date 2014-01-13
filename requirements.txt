@@ -12,3 +12,6 @@ South
 django-taggit-templatetags
 django-cors-headers
 django-dirtyfields
+numpy
+nibabel
+psycopg2
