@@ -3,7 +3,8 @@ from django.views.generic import DetailView, ListView
 from .models import Collection
 from .views import edit_collection, edit_images, view_image, delete_image, edit_image, view_collection, \
                     delete_collection, upload_folder
-from neurovault.apps.statmaps.views import view_images_by_tag
+from neurovault.apps.statmaps.views import view_images_by_tag,\
+    view_image_with_pycortex
 from neurovault.apps.statmaps.models import KeyValueTag
 from django.db.models import Count
 
@@ -45,6 +46,9 @@ urlpatterns = patterns('',
     url(r'^images/(?P<pk>\d+)/$',
         view_image,
         name='image_details'),
+    url(r'^images/(?P<pk>\d+)/pycortex$',
+        view_image_with_pycortex,
+        name='pycortex_view_image'),
     url(r'^images/(?P<pk>\d+)/edit$',
         edit_image,
         name='edit_image'),
