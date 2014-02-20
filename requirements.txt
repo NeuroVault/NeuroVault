@@ -15,3 +15,4 @@ django-dirtyfields
 numpy
 nibabel
 psycopg2
+pycortex
