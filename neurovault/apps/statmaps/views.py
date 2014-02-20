@@ -1,27 +1,21 @@
 from .models import Collection, Image
 from .forms import CollectionFormSet, CollectionForm, ImageForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
-from django.shortcuts import render, render_to_response
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404, render_to_response, render
 from neurovault.apps.statmaps.forms import UploadFileForm
 from django.template.context import RequestContext
-from django.core.files.uploadedfile import InMemoryUploadedFile
-import tempfile
-import os
-from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from neurovault import settings
+from neurovault.apps.statmaps.utils import split_filename
+
 import zipfile
 import tarfile, gzip
-import fnmatch
 import shutil
-from nibabel.testing import data_path
 import nibabel as nib
 import re
-from neurovault.apps.statmaps.storage import NiftiGzStorage
 import errno
-from neurovault.apps.statmaps.utils import split_filename
+import tempfile
+import os
 
 @login_required
 def edit_images(request, collection_pk):
