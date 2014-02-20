@@ -17,6 +17,14 @@ django-dbbackup
 numpy
 nibabel
 psycopg2
+cython
+h5py
+matplotlib
+scipy
+numexpr
+PIL
+lxml
+shapely
 pycortex
 cython
 h5py
