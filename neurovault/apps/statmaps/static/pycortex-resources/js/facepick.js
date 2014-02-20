@@ -1,7 +1,7 @@
 function FacePick(viewer, left, right) {
     this.viewer = viewer;
 
-    var worker = new Worker("resources/js/facepick_worker.js");
+    var worker = new Worker("/static/pycortex-resources/js/facepick_worker.js");
     worker.addEventListener("message", function(e) {
         var dist = function (a, b) {
             return Math.sqrt((a[0]-b[0])*(a[0]-b[0]) + (a[1]-b[1])*(a[1]-b[1]) + (a[2]-b[2])*(a[2]-b[2]));
