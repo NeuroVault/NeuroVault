@@ -15,4 +15,12 @@ django-dirtyfields
 numpy
 nibabel
 psycopg2
+cython
+h5py
+matplotlib
+scipy
+numexpr
+PIL
+lxml
+shapely
 pycortex
