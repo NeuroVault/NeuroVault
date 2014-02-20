@@ -1,4 +1,6 @@
 import os
+import tempfile
+import subprocess
 def split_filename(fname):
     """Split a filename into parts: path, base filename and extension.
 
@@ -50,3 +52,25 @@ def split_filename(fname):
         fname, ext = os.path.splitext(fname)
 
     return pth, fname, ext
+
+    
+def generate_pycortex_dir(nifti_file, output_dir):
+    import cortex
+    outfilename = tempfile.mktemp(".nii")
+    try:
+        exit_code = subprocess.call(["mri_vol2vol", 
+                         "--mov", 
+                         nifti_file,
+                         "--targ",
+                         os.path.join(os.environ['FREESURFER_HOME'], 'subjects', 'fsaverage', 'mri', 'brain.mgz'),
+                         "--o",
+                         outfilename,
+                         "--mni152reg",
+                         "--no-save-reg"])
+        if exit_code:
+            raise RuntimeError("mri_vol2vol exited with status %d"%exit_code)
+        dv = cortex.DataView((outfilename, "fsaverage", "identity"))
+        cortex.webgl.make_static(output_dir, dv)
+    finally:
+        if os.path.exists(outfilename):
+            os.remove(outfilename)

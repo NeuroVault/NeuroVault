@@ -2,12 +2,14 @@ from .models import Collection, Image
 from .forms import CollectionFormSet, CollectionForm, ImageForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, render_to_response, render
+from django.shortcuts import get_object_or_404, render_to_response, render,\
+    redirect
 from neurovault.apps.statmaps.forms import UploadFileForm
 from django.template.context import RequestContext
 from django.core.files.base import ContentFile
-from neurovault.apps.statmaps.utils import split_filename
+from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_dir
 
+import neurovault.settings as settings
 import zipfile
 import tarfile, gzip
 import shutil
@@ -212,3 +214,17 @@ def view_images_by_tag(request, tag):
     images = Image.objects.filter(tags__name__in=[tag])
     context = {'images': images, 'tag': tag}
     return render(request, 'statmaps/images_by_tag.html.haml', context)
+
+def view_image_with_pycortex(request, pk):
+    image = get_object_or_404(Image, pk=pk)
+    base, fname, _ = split_filename(image.file.path)
+    pycortex_dir = os.path.join(base, fname + "_pycortex")
+    print image.file.path, pycortex_dir, pk
+    
+    if not os.path.exists(pycortex_dir):
+        generate_pycortex_dir(image.file.path, pycortex_dir)
+        
+    base, fname, _ = split_filename(image.file.url)
+    pycortex_url = os.path.join(base, fname + "_pycortex/index.html")
+    print pycortex_url
+    return redirect('http://' + request.get_host() + pycortex_url)
