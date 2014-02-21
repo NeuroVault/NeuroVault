@@ -58,7 +58,7 @@ def generate_pycortex_dir(nifti_file, output_dir):
     import cortex
     outfilename = tempfile.mktemp(".nii")
     try:
-        exit_code = subprocess.call(["mri_vol2vol", 
+        exit_code = subprocess.call([os.path.join(os.environ['FREESURFER_HOME'],"bin","mri_vol2vol"), 
                          "--mov", 
                          nifti_file,
                          "--targ",
