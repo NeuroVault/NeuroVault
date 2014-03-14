@@ -350,7 +350,7 @@ class ImageForm(ModelForm):
                     _,name,_ = split_filename(file.name)
                     nb.save(nii, os.path.join(tmp_dir,name + ".nii.gz"))
                     f = ContentFile(open(os.path.join(tmp_dir,name + ".nii.gz")).read())
-                    cleaned_data["file"] = InMemoryUploadedFile(f, cleaned_data["file"].field_name, name + ".nii.gz",
+                    cleaned_data["file"] = InMemoryUploadedFile(f, "file", name + ".nii.gz",
                                                                cleaned_data["file"].content_type, f.size, cleaned_data["file"].charset)
                 shutil.rmtree(tmp_dir)
         else:
