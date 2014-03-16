@@ -3,6 +3,7 @@ import shutil
 from tempfile import mkstemp, NamedTemporaryFile
 
 import nibabel as nb
+import numpy as np
 
 from django.forms import ModelForm
 from django.forms.models import inlineformset_factory
@@ -311,51 +312,69 @@ class ImageForm(ModelForm):
         cleaned_data = super(ImageForm, self).clean()
         file = cleaned_data.get("file")
         if file:
+            # check extension of the data filr
             _, fname, ext = split_filename(file.name)
             if not ext.lower() in [".nii.gz", ".nii", ".img"]:
                 self._errors["file"] = self.error_class(["Doesn't have proper extension"])
                 del cleaned_data["file"]
                 return cleaned_data
-            # Here we need to now to read the file and see if it's actually
-            # a valid audio file. I don't know what the best library is to
-            # to do this
-            tmp_dir = tempfile.mkdtemp()
-            if ext.lower() == ".img":
-                hdr_file = cleaned_data.get('hdr_file')
-                if hdr_file:
-                    _, _, hdr_ext = split_filename(hdr_file.name)
-                    if not hdr_ext.lower() in [".hdr"]:
-                        self._errors["hdr_file"] = self.error_class(
-                            ["Doesn't have proper extension"])
+            
+            try:
+                tmp_dir = tempfile.mkdtemp()
+                if ext.lower() == ".img":
+                    hdr_file = cleaned_data.get('hdr_file')
+                    if hdr_file:
+                        
+                        # check extension of the hdr file
+                        _, _, hdr_ext = split_filename(hdr_file.name)
+                        if not hdr_ext.lower() in [".hdr"]:
+                            self._errors["hdr_file"] = self.error_class(
+                                ["Doesn't have proper extension"])
+                            del cleaned_data["hdr_file"]
+                            return cleaned_data
+                        else:
+                            # write the header file to a temporary directory
+                            hf = open(os.path.join(tmp_dir, fname + ".hdr"), "wb")
+                            hf.write(hdr_file.file.read())
+                            hf.close()
+                    else:
+                        self._errors["hdr_file"] = self.error_class([".img files require .hdr"])
                         del cleaned_data["hdr_file"]
                         return cleaned_data
-                    else:
-                        hf = open(os.path.join(tmp_dir, fname + ".hdr"), "wb")
-                        hf.write(hdr_file.file.read())
-                        hf.close()
-                else:
-                    self._errors["hdr_file"] = self.error_class(
-                            [".img files require .hdr"])
-                    del cleaned_data["hdr_file"]
-            f = open(os.path.join(tmp_dir,fname + ext), "wb")
-            f.write(file.file.read())
-            f.close()
-            try:
-                nii = nb.load(os.path.join(tmp_dir,fname + ext))
-            except Exception as e:
-                self._errors["file"] = self.error_class([str(e)])
-                del cleaned_data["file"]
+                        
+                # write the data file to a temporary directory
+                f = open(os.path.join(tmp_dir,fname + ext), "wb")
+                f.write(file.file.read())
+                f.close()
+                
+                # check if it is really nifti
+                try:
+                    nii = nb.load(os.path.join(tmp_dir,fname + ext))
+                except Exception as e:
+                    self._errors["file"] = self.error_class([str(e)])
+                    del cleaned_data["file"]
+                    return cleaned_data
+                
+                # convert to nii.gz if needed
+                if ext.lower() != ".nii.gz": 
+                    #Papaya does not handle flaot64, but by converting files we loose precision
+#                     if nii.get_data_dtype() == np.float64:
+#                         nii.set_data_dtype(np.float32)
+                    nb.save(nii, os.path.join(tmp_dir,fname + ".nii.gz"))
+                    f = ContentFile(open(os.path.join(tmp_dir,fname + ".nii.gz")).read())
+                    print cleaned_data["file"].__class__.__name__
+                    cleaned_data["file"] = InMemoryUploadedFile(f, "file", fname + ".nii.gz",
+                                                                cleaned_data["file"].content_type, f.size, cleaned_data["file"].charset)
             finally:
-                if ext.lower() != ".nii.gz":
-                    _,name,_ = split_filename(file.name)
-                    nb.save(nii, os.path.join(tmp_dir,name + ".nii.gz"))
-                    f = ContentFile(open(os.path.join(tmp_dir,name + ".nii.gz")).read())
-                    cleaned_data["file"] = InMemoryUploadedFile(f, "file", name + ".nii.gz",
-                                                               cleaned_data["file"].content_type, f.size, cleaned_data["file"].charset)
-                shutil.rmtree(tmp_dir)
+                try:
+                    shutil.rmtree(tmp_dir)  # delete directory
+                except OSError as exc:
+                    if exc.errno != 2:  # code 2 - no such file or directory
+                        raise  # re-raise exception
         else:
             raise ValidationError("Couldn't read uploaded file")
         return cleaned_data
+
 
 CollectionFormSet = inlineformset_factory(
     Collection, Image, form=ImageForm, exclude=['json_path', 'nifti_gz_file'], extra=1)  
