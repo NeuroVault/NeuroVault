@@ -106,3 +106,7 @@ ul.nav-tabs li {
 .float-right-wrapper {
 	float: right;
 }
+
+.papaya-menu-input {
+    padding: 0;
+}
