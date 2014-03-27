@@ -148,7 +148,8 @@ INSTALLED_APPS = (
     'coffeescript',
     'taggit_templatetags',
     'south',
-    'corsheaders'
+    'corsheaders',
+    'dbbackup'
 )
 
 # A sample logging configuration. The only tangible logging
