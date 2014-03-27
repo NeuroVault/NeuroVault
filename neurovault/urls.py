@@ -115,11 +115,11 @@ router.register(r'images', ImageViewSet)
 router.register(r'collections', CollectionViewSet)
 
 urlpatterns = patterns('',
+                       url('', include('social.apps.django_app.urls', namespace='social')),
                        url(r'^', include('neurovault.apps.main.urls')),
                        url(r'^', include('neurovault.apps.statmaps.urls')),
                        url(r'^accounts/', include('neurovault.apps.users.urls')),
                        url(r'^admin/', include(admin.site.urls)),
-                       url('', include('social.apps.django_app.urls', namespace='social')),
                        url(r'^api/', include(router.urls)),
                        url(r'^api-auth/', include(
                            'rest_framework.urls', namespace='rest_framework'))
