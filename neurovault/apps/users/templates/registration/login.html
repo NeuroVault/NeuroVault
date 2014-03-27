@@ -63,7 +63,7 @@
 
 <a href="{% url 'create_user' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">Register new account</a>
 <br \>
-<a class="zocial facebook"  href="{% url "socialauth_begin" "facebook" %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">Login using Facebook</a>
+<a class="zocial facebook"  href="{% url "social:begin" "facebook" %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">Login using Facebook</a>
 <br \>
 <div id="signinButton">
     <span class="g-signin" data-scope="https://www.googleapis.com/auth/plus.login https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile"
