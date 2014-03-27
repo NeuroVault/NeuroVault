@@ -141,7 +141,7 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
      #'django.contrib.admindocs',
-    'social_auth',
+    'social.apps.django_app.default',
     'rest_framework',
     'taggit',
     'crispy_forms',
@@ -183,7 +183,7 @@ INSTALLED_APPS = (
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'social_auth.backends.facebook.FacebookBackend',
-    'social_auth.backends.google.GoogleBackend',
+    'social_auth.backends.google.GooglePlusAuth',
 )
 
 FACEBOOK_EXTENDED_PERMISSIONS = ['email']

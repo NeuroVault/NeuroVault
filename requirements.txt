@@ -1,5 +1,5 @@
 Django>=1.5
-django-social-auth>=0.7.23
+python-social-auth>=0.1.23
 djangorestframework
 markdown
 django-filter
