@@ -141,7 +141,7 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
      #'django.contrib.admindocs',
-    'social_auth',
+    'social.apps.django_app.default',
     'rest_framework',
     'taggit',
     'crispy_forms',
