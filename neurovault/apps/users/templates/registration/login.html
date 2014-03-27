@@ -1,5 +1,29 @@
 {% extends "base.html" %}
 {% block head %}
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js" type="text/javascript"></script>
+<script type="text/javascript">
+    (function () {
+        var po = document.createElement('script');
+        po.type = 'text/javascript';
+        po.async = true;
+        po.src = 'https://plus.google.com/js/client:plusone.js?onload=start';
+        var s = document.getElementsByTagName('script')[0];
+        s.parentNode.insertBefore(po, s);
+    })();
+</script>
+
+<script type="text/javascript">
+    var signInCallback = function (result) {
+        if (result['error']) {
+            alert('An error happened:', result['error']);
+        } else {
+            $('#code').attr('value', result['code']);
+            $('#at').attr('value', result['access_token']);
+            $('#google-plus').submit();
+        }
+    };
+</script>
+
 <link rel="stylesheet" type="text/css" href="{% static "css/zocial.css"%}" />
 
 	<style>
@@ -41,6 +65,17 @@
 <br \>
 <a class="zocial facebook"  href="{% url "socialauth_begin" "facebook" %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">Login using Facebook</a>
 <br \>
-<a class="zocial google" href="{% url "socialauth_begin" "google" %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">Login using Google</a>
-
+<div id="signinButton">
+    <span class="g-signin" data-scope="https://www.googleapis.com/auth/plus.login https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile"
+                           data-clientid="573692122187-bt7cb8ve5c2cfirhpnrfq8h48v8iro6k.apps.googleusercontent.com"
+                           data-redirecturi="postmessage"
+                           data-accesstype="offline"
+                           data-cookiepolicy="single_host_origin"
+                           data-callback="signInCallback">
+    </span>
+</div>
+<form id="google-plus" method="post" action="{% url 'social:complete' "google-plus" %}">{% csrf_token %}
+    <input id="at" type="hidden" name="access_token" value="" />
+    <input id="code" type="hidden" name="code" value="" />
+</form>
 {% endblock %}
