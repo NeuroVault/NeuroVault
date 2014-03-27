@@ -200,7 +200,7 @@ SOCIAL_AUTH_PIPELINE = (
     'social.pipeline.user.user_details'
 )
 
-FACEBOOK_EXTENDED_PERMISSIONS = ['email']
+SOCIAL_AUTH_FACEBOOK_SCOPE = ['email']
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
