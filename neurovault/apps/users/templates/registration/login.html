@@ -13,11 +13,12 @@
 
 <script type="text/javascript">
   var signInCallback = function (result) {
-      if (result['error']) {
-      } else {
+      if(result['g-oauth-window']){
         $('#code').attr('value', result['code']);
         $('#at').attr('value', result['access_token']);
         $('#google-plus').submit();
+      }
+      else if (result['error']) {
       }
   };
 </script>
