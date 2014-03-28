@@ -3,12 +3,14 @@ from django.conf import settings
 from django.contrib import admin
 from .views import view_profile, edit_user, create_user
 from .forms import BlankPasswordChangeForm
-from django.contrib.auth.views import password_change, password_change_done
+from django.contrib.auth.views import password_change, password_change_done, login
 admin.autodiscover()
 
 urlpatterns = patterns('',
-    url(r'^login/$', 'django.contrib.auth.views.login', 
-        {'template_name': 'registration/login.html'}, name="login"),
+    url(r'^login/$', login,
+        {'extra_context': {'plus_id': getattr(settings, 'SOCIAL_AUTH_GOOGLE_PLUS_KEY', None),
+                           'plus_scope': 'profile email'}}, 
+        name="login"),
     url(r'^logout/$', 'django.contrib.auth.views.logout', 
         {'template_name': 'registration/logout.html', 'next_page': '/'}, name="logout"),
     url(r'^create/$',

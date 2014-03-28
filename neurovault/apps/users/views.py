@@ -48,3 +48,8 @@ def edit_user(request):
     return render_to_response("registration/edit_user.html",
                              {'form':edit_form},
                              context_instance=RequestContext(request))
+    
+# def login(request):
+#     return render_to_response('home.html', {
+#         'plus_id': getattr(settings, 'SOCIAL_AUTH_GOOGLE_PLUS_KEY', None)
+#     }, RequestContext(request))
