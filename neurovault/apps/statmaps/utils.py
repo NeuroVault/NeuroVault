@@ -64,6 +64,7 @@ def generate_pycortex_dir(nifti_file, output_dir, transform_name):
         mni_mat = os.path.join(tempfile.mkdtemp(), "mni152reg.mat")
         reference = os.path.join(os.environ['FREESURFER_HOME'], 'subjects', 'fsaverage', 'mri', 'brain.mgz')
         shutil.copy(os.path.join(os.environ['FREESURFER_HOME'], 'average', 'mni152.register.dat'), new_mni_dat)
+        os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
         exit_code = subprocess.call([os.path.join(os.environ['FREESURFER_HOME'],"bin", "tkregister2"),
                                      "--mov",
                                      nifti_file,
