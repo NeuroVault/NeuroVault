@@ -17,3 +17,14 @@ django-dbbackup
 numpy
 nibabel
 psycopg2
+cython
+h5py
+matplotlib
+scipy
+numexpr
+Pillow
+lxml
+shapely
+pycortex
+requests
+python-openid
