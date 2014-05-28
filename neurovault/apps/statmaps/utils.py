@@ -1,6 +1,8 @@
 import os
 import tempfile
 import subprocess
+import shutil
+import numpy as np
 def split_filename(fname):
     """Split a filename into parts: path, base filename and extension.
 
@@ -54,23 +56,31 @@ def split_filename(fname):
     return pth, fname, ext
 
     
-def generate_pycortex_dir(nifti_file, output_dir):
+def generate_pycortex_dir(nifti_file, output_dir, transform_name):
     import cortex
-    outfilename = tempfile.mktemp(".nii")
+    temp_dir = tempfile.mkdtemp()
     try:
-        exit_code = subprocess.call([os.path.join(os.environ['FREESURFER_HOME'],"bin","mri_vol2vol"), 
-                         "--mov", 
-                         nifti_file,
-                         "--targ",
-                         os.path.join(os.environ['FREESURFER_HOME'], 'subjects', 'fsaverage', 'mri', 'brain.mgz'),
-                         "--o",
-                         outfilename,
-                         "--mni152reg",
-                         "--no-save-reg"])
+        new_mni_dat = os.path.join(tempfile.mkdtemp(), "mni152reg.dat")
+        mni_mat = os.path.join(tempfile.mkdtemp(), "mni152reg.mat")
+        reference = os.path.join(os.environ['FREESURFER_HOME'], 'subjects', 'fsaverage', 'mri', 'brain.mgz')
+        shutil.copy(os.path.join(os.environ['FREESURFER_HOME'], 'average', 'mni152.register.dat'), new_mni_dat)
+        exit_code = subprocess.call([os.path.join(os.environ['FREESURFER_HOME'],"bin", "tkregister2"),
+                                     "--mov",
+                                     nifti_file,
+                                     "--targ",
+                                     reference,
+                                     "--reg",
+                                     new_mni_dat,
+                                     "--noedit",
+                                     "--nofix",
+                                     "--fslregout",
+                                     mni_mat])
         if exit_code:
-            raise RuntimeError("mri_vol2vol exited with status %d"%exit_code)
-        dv = cortex.DataView((outfilename, "fsaverage", "identity"))
+            raise RuntimeError("tkregister2 exited with status %d"%exit_code)
+        x = np.loadtxt(mni_mat)
+        xfm = cortex.xfm.Transform.from_fsl(x, nifti_file, reference)
+        xfm.save("fsaverage", transform_name,'coord')
+        dv = cortex.DataView((nifti_file, "fsaverage", transform_name))
         cortex.webgl.make_static(output_dir, dv)
     finally:
-        if os.path.exists(outfilename):
-            os.remove(outfilename)
+        shutil.rmtree(temp_dir)

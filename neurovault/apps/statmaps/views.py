@@ -222,7 +222,7 @@ def view_image_with_pycortex(request, pk):
     print image.file.path, pycortex_dir, pk
     
     if not os.path.exists(pycortex_dir):
-        generate_pycortex_dir(image.file.path, pycortex_dir)
+        generate_pycortex_dir(str(image.file.path), str(pycortex_dir), "trans_%s"%pk)
         
     base, fname, _ = split_filename(image.file.url)
     pycortex_url = os.path.join(base, fname + "_pycortex/index.html")
