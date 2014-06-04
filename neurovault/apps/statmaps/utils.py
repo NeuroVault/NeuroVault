@@ -60,14 +60,17 @@ def generate_pycortex_dir(nifti_file, output_dir, transform_name):
     import cortex
     temp_dir = tempfile.mkdtemp()
     try:
-        new_mni_dat = os.path.join(tempfile.mkdtemp(), "mni152reg.dat")
-        mni_mat = os.path.join(tempfile.mkdtemp(), "mni152reg.mat")
+        new_mni_dat = os.path.join(temp_dir, "mni152reg.dat")
+        mni_mat = os.path.join(temp_dir, "mni152reg.mat")
         reference = os.path.join(os.environ['FREESURFER_HOME'], 'subjects', 'fsaverage', 'mri', 'brain.mgz')
         shutil.copy(os.path.join(os.environ['FREESURFER_HOME'], 'average', 'mni152.register.dat'), new_mni_dat)
+        #this avoids problems with white spaces in file names
+        tmp_link = os.path.join(temp_dir, "tmp.nii.gz")
+        os.symlink(nifti_file, tmp_link)
         os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
         exit_code = subprocess.call([os.path.join(os.environ['FREESURFER_HOME'],"bin", "tkregister2"),
                                      "--mov",
-                                     '"%s"'%nifti_file,
+                                     tmp_link,
                                      "--targ",
                                      reference,
                                      "--reg",
