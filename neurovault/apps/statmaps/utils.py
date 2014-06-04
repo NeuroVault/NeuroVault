@@ -67,7 +67,7 @@ def generate_pycortex_dir(nifti_file, output_dir, transform_name):
         os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
         exit_code = subprocess.call([os.path.join(os.environ['FREESURFER_HOME'],"bin", "tkregister2"),
                                      "--mov",
-                                     nifti_file,
+                                     '"%s"'%nifti_file,
                                      "--targ",
                                      reference,
                                      "--reg",
