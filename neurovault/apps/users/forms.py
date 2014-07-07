@@ -33,15 +33,3 @@ class UserEditForm(UserChangeForm):
     
     def clean_password(self):
         return ""
-    
-class BlankPasswordChangeForm(PasswordChangeForm):
-    
-    old_password = forms.CharField(label="Old password",
-                                   widget=forms.PasswordInput,
-                                   required=False)
-
-    def clean_old_password(self):
-        if self.user.has_usable_password():
-            return super(BlankPasswordChangeForm, self).clean_old_password()
-        else:
-            return self.cleaned_data["old_password"]
