@@ -27,4 +27,5 @@ shapely
 pycortex
 Pillow
 requests
+requests-oauthlib
 python-openid
