@@ -1,9 +1,9 @@
-from django.conf.urls import patterns, include, url
+from django.conf.urls import patterns, url
 from django.conf import settings
 from django.contrib import admin
 from .views import view_profile, edit_user, create_user
-from .forms import BlankPasswordChangeForm
-from django.contrib.auth.views import password_change, password_change_done, login
+from django.contrib.auth.views import login
+from django.contrib.auth import views as auth_views
 admin.autodiscover()
 
 urlpatterns = patterns('',
@@ -16,28 +16,39 @@ urlpatterns = patterns('',
     url(r'^create/$',
         create_user,
         name="create_user"),
+    url(r'^profile/password/$',
+                    auth_views.password_change,
+                    name='password_change'),
+    url(r'^password/change/done/$',
+                    auth_views.password_change_done,
+                    name='password_change_done'),
+    url(r'^password/reset/$',
+                    auth_views.password_reset,
+                    name='password_reset'),
+    url(r'^password/reset/done/$',
+                    auth_views.password_reset_done,
+                    name='password_reset_done'),
+    url(r'^password/reset/complete/$',
+                    auth_views.password_reset_complete,
+                    name='password_reset_complete'),
+    url(r'^password/reset/confirm/(?P<uidb64>[0-9A-Za-z]+)-(?P<token>.+)/$',
+                    auth_views.password_reset_confirm,
+                    name='password_reset_confirm'),
     url(r'^profile/edit$',
         edit_user,
         name="edit_user"
         ),
-    url(r'^profile/password/done$',
-        password_change_done,
-        name="password_change_done"
-        ),        
-    url(r'^profile/password/$',
-        password_change,
-        {'post_change_redirect': "done", "password_change_form":BlankPasswordChangeForm},
-        name="password_change"
-        ),   
-    url(r'^profile/.*$',
-        view_profile,
-        name="my_profile"
-        ),    
+     url(r'^profile/.*$',
+         view_profile,
+         name="my_profile"
+         ),    
     url(r'^(?P<username>[A-Za-z0-9@/./+/-/_]+)/$',
         view_profile,
         name="profile"
         )        
 )
+
+
 
 if settings.DEBUG:
     # static files (images, css, javascript, etc.)
