@@ -232,13 +232,13 @@ class CollectionForm(ModelForm):
         
         if self.cleaned_data['DOI']:
             try:
-                self.cleaned_data["name"], self.cleaned_data["authors"], self.cleaned_data["url"], _ = getPaperProperties(self.cleaned_data['DOI'])
+                self.cleaned_data["name"], self.cleaned_data["authors"], self.cleaned_data["url"], _ = getPaperProperties(self.cleaned_data['DOI'].strip())
             except:
                 self._errors["DOI"] = self.error_class(["Could not resolve DOI"])
             else:
                 if "name" in self._errors:
                     del self._errors["name"]
-        elif not cleaned_data["name"]:
+        elif "name" not in cleaned_data or not cleaned_data["name"]:
             self._errors["name"] = self.error_class(["You need to set the name or the DOI"])
             self._errors["DOI"] = self.error_class(["You need to set the name or the DOI"])
         
