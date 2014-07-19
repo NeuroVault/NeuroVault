@@ -7,6 +7,7 @@ from neurovault.apps.statmaps.views import view_images_by_tag,\
     view_image_with_pycortex
 from neurovault.apps.statmaps.models import KeyValueTag
 from django.db.models import Count
+from django.contrib.auth.decorators import login_required
 
 
 class MyCollectionsListView(ListView):
@@ -18,7 +19,7 @@ class MyCollectionsListView(ListView):
 
 urlpatterns = patterns('',
     url(r'^my_collections/$',
-        MyCollectionsListView.as_view(),
+        login_required(MyCollectionsListView.as_view()),
         name='my_collections'),
     url(r'^collections/$',
         ListView.as_view(
