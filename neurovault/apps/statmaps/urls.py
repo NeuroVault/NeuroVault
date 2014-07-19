@@ -7,8 +7,20 @@ from neurovault.apps.statmaps.views import view_images_by_tag,\
     view_image_with_pycortex
 from neurovault.apps.statmaps.models import KeyValueTag
 from django.db.models import Count
+from django.contrib.auth.decorators import login_required
+
+
+class MyCollectionsListView(ListView):
+    template_name='statmaps/my_collections.html.haml'
+    context_object_name = 'collections'
+
+    def get_queryset(self):
+        return Collection.objects.filter(owner=self.request.user).annotate(n_images=Count('image'))
 
 urlpatterns = patterns('',
+    url(r'^my_collections/$',
+        login_required(MyCollectionsListView.as_view()),
+        name='my_collections'),
     url(r'^collections/$',
         ListView.as_view(
             queryset=Collection.objects.all().annotate(n_images=Count('image')),
