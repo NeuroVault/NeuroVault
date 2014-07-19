@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load coffeescript %}
+
+{% block head %}
+    :javascript
+        {% inlinecoffeescript %}
+            $(document).ready ->
+                $("#collections-table").dataTable
+                    sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
+                    sPaginationType: "bootstrap"
+                    iDisplayLength: 10
+                    aoColumns: [ { sWidth: '45%' }, { sWidth: '10%'}, { sWidth: '45%'}]
+        {% endinlinecoffeescript %}
+{% endblock %}
+
+{% block content %}
+.row
+	.span11
+		%h2 My collections
+		.lead
+			%p A collection is a set of images grouped together for some sensible reason.
+			%p Most commonly, a collection contains all of the images from a single study.
+			%p The NeuroVault is currently tracking <span style="font-size: 32px">{{ collections|length }}</span> collections.
+
+		%table#collections-table.table.table-condensed.table-striped.table-hover
+			%thead
+				%tr
+					%th Name
+					%th Num. images
+					%th Description
+			%tbody
+				- for collection in collections
+					%tr
+						%td
+							%a{ href: "/collections/{{collection.id}}" }= collection.name
+						%td {{collection.n_images}}
+						%td= collection.description
+
+%a.btn.btn-primary{href: "{% url 'new_collection' %}" } Add new collection
+{% endblock %}
