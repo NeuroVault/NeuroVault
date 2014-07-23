@@ -8,7 +8,7 @@ from neurovault.apps.statmaps.forms import UploadFileForm, SimplifiedImageForm
 from django.template.context import RequestContext
 from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_dir
-from django.utils.http import quote
+from django.utils.http import quote, urlquote
 
 import neurovault.settings as settings
 import zipfile
@@ -115,7 +115,7 @@ def add_image_for_neurosynth(request):
         form = SimplifiedImageForm(request.user, request.POST, request.FILES, instance=image)
         if form.is_valid():
             image = form.save()
-            return HttpResponseRedirect("http://neurosynth.org/decode/?url=%s"%image.file.url)
+            return HttpResponseRedirect("http://neurosynth.org/decode/?url=%s"%(urlquote(image.file.url)))
     else:
         form = SimplifiedImageForm(request.user, instance=image)
         
