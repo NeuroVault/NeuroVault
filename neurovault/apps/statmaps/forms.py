@@ -275,8 +275,6 @@ class ImageForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(ImageForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
-        self.helper.form_class = 'form-horizontal'
-        self.helper.form_tag = False
         self.helper.add_input(Submit('submit', 'Submit'))
         
         
