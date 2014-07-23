@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block head %}
+    %link{ href:"{% static 'css/studies.css' %}", media:"screen", rel:"stylesheet", type:"text/css"}
+{% endblock %}
+
+{% block content %}
+    .span11
+        %h2 Upload a map to decode it with Neurosynth
+        .row
+            .span9
+                %p
+                    :markdown
+                        Welcome to NeuroVault - a web repository for statistical 
+                        maps of the human brain. After filling in the minimum
+                        information outlined below (only the fields with an 
+                        asteriks [*] are compulsory) your map will be redirected back
+                        to <a href="http://neurosynth.org">Neurosynth.org</a> for
+                        decoding. <b>Remeber that your map needs to be in MNI152
+                        space for decoding to work correctly!</b>.
+                        
+			            You can always come back to 
+			            <a href="http://neurovault.org">NeuroVault.org</a> to 
+			            inspect, modify, and/or delete your maps. At the time
+			            being all maps upladed to NeuroVault are publicly 
+			            visible. In the near future we will ability to create 
+			            private collections.
+ 
+    .span11
+        %hr
+        {% crispy form %}
+{% endblock %}

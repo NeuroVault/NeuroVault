@@ -375,6 +375,12 @@ class ImageForm(ModelForm):
             raise ValidationError("Couldn't read uploaded file")
         return cleaned_data
 
+class SimplifiedImageForm(ImageForm):
+    class Meta:
+        model = Image
+        exclude = ('json_path', 'collection')
+        fields = ('name', 'description', 'map_type', 
+                  'file' , 'hdr_file', 'tags')
 
 CollectionFormSet = inlineformset_factory(
     Collection, Image, form=ImageForm, exclude=['json_path', 'nifti_gz_file'], extra=1)  

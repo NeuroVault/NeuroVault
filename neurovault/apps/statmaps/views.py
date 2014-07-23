@@ -4,10 +4,11 @@ from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render,\
     redirect
-from neurovault.apps.statmaps.forms import UploadFileForm
+from neurovault.apps.statmaps.forms import UploadFileForm, SimplifiedImageForm
 from django.template.context import RequestContext
 from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_dir
+from django.utils.http import quote
 
 import neurovault.settings as settings
 import zipfile
@@ -84,7 +85,7 @@ def delete_collection(request, pk):
 
 @login_required
 def edit_image(request, pk):
-    image = Image.objects.get(pk=pk)
+    image = get_object_or_404(Image, pk=pk)
     if image.collection.owner != request.user:
         return HttpResponseForbidden()
     if request.method == "POST":
@@ -98,6 +99,30 @@ def edit_image(request, pk):
     context = {"form": form}
     return render(request, "statmaps/edit_image.html", context)
 
+@login_required
+def add_image_for_neurosynth(request):
+    if request.method == "POST":
+        form = SimplifiedImageForm(request.POST, request.FILES)
+        if form.is_valid():
+            temp_collection_name = "%s's temporary collection"%request.user.username
+            #this is a hack we need to make sure this collection can be only 
+            #owned by the same user
+            try:
+                temp_collection = Collection.objects.get(name=temp_collection_name)
+            except Collection.DoesNotExist:
+                temp_collection = Collection(name=temp_collection_name, 
+                                             owner=request.user)
+                temp_collection.save()
+            
+            new_image = form.save(commit=False)
+            new_image.collection = temp_collection
+            new_image.save()
+            return HttpResponseRedirect("http://neurosynth.org/decode/?url=%s"%quote(new_image.file.url))
+    else:
+        form = SimplifiedImageForm()
+        
+    context = {"form": form}
+    return render(request, "statmaps/add_image_for_neurosynth.html.haml", context)
 
 def splitext_nii_gz(fname):
     head, ext = os.path.splitext(fname)
