@@ -89,37 +89,35 @@ def edit_image(request, pk):
     if image.collection.owner != request.user:
         return HttpResponseForbidden()
     if request.method == "POST":
-        form = ImageForm(request.POST, request.FILES, instance=image)
+        form = ImageForm(request.user, request.POST, request.FILES, instance=image)
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(image.get_absolute_url())
     else:
-        form = ImageForm(instance=image)
+        form = ImageForm(request.user, instance=image)
         
     context = {"form": form}
     return render(request, "statmaps/edit_image.html.haml", context)
 
 @login_required
 def add_image_for_neurosynth(request):
+    temp_collection_name = "%s's temporary collection"%request.user.username
+    #this is a hack we need to make sure this collection can be only 
+    #owned by the same user
+    try:
+        temp_collection = Collection.objects.get(name=temp_collection_name)
+    except Collection.DoesNotExist:
+        temp_collection = Collection(name=temp_collection_name, 
+                                     owner=request.user)
+        temp_collection.save()
+    image = Image(collection=temp_collection)
     if request.method == "POST":
-        form = SimplifiedImageForm(request.POST, request.FILES)
+        form = SimplifiedImageForm(request.user, request.POST, request.FILES, instance=image)
         if form.is_valid():
-            temp_collection_name = "%s's temporary collection"%request.user.username
-            #this is a hack we need to make sure this collection can be only 
-            #owned by the same user
-            try:
-                temp_collection = Collection.objects.get(name=temp_collection_name)
-            except Collection.DoesNotExist:
-                temp_collection = Collection(name=temp_collection_name, 
-                                             owner=request.user)
-                temp_collection.save()
-            
-            new_image = form.save(commit=False)
-            new_image.collection = temp_collection
-            new_image.save()
-            return HttpResponseRedirect("http://neurosynth.org/decode/?url=%s"%quote(new_image.file.url))
+            image = form.save()
+            return HttpResponseRedirect("http://neurosynth.org/decode/?url=%s"%image.file.url)
     else:
-        form = SimplifiedImageForm()
+        form = SimplifiedImageForm(request.user, instance=image)
         
     context = {"form": form}
     return render(request, "statmaps/add_image_for_neurosynth.html.haml", context)

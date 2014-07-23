@@ -13,6 +13,7 @@ import urllib2
 from dirtyfields import DirtyFieldsMixin
 from django.core.files import File
 import nibabel as nb
+from django.core.exceptions import ValidationError
 # from django.db.models.signals import post_save
 # from django.dispatch import receiver
 
@@ -216,6 +217,7 @@ class Image(DirtyFieldsMixin, models.Model):
     
     class Meta:
         unique_together = ("collection", "name")
+        
 
 #     def save(self):
 #  

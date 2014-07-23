@@ -22,6 +22,7 @@ import tempfile
 from neurovault.apps.statmaps.utils import split_filename
 from django.core.files.base import File, ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django import forms
 
 # Create the form class.
 collection_fieldsets = [
@@ -266,14 +267,15 @@ class ImageForm(ModelForm):
     
     class Meta:
         model = Image
-        exclude = ('json_path', 'collection')
-        fields = ('name', 'description', 'map_type', 'file' , 'hdr_file',  
-                                'statistic_parameters', 'smoothness_fwhm', 'contrast_definition', 
-                                'contrast_definition_cogatlas', 'tags')
+        exclude = ('json_path', )
+#         fields = ('name', 'description', 'map_type', 'file' , 'hdr_file',  
+#                                 'statistic_parameters', 'smoothness_fwhm', 'contrast_definition', 
+#                                 'contrast_definition_cogatlas', 'tags')
     # Add some custom validation to our file field
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, user, *args, **kwargs):
         super(ImageForm, self).__init__(*args, **kwargs)
+        self.fields['collection'].queryset = Collection.objects.filter(owner=user)
         self.helper = FormHelper(self)
         self.helper.add_input(Submit('submit', 'Submit'))
         
@@ -310,6 +312,16 @@ class ImageForm(ModelForm):
     def clean(self):
         cleaned_data = super(ImageForm, self).clean()
         file = cleaned_data.get("file")
+
+#         try:
+#             Image.objects.get(name=cleaned_data['name'], collection=cleaned_data['collection'])
+#         except Image.DoesNotExist:
+#             pass
+#         else:
+#             self._errors["name"] = self.error_class(['Image with this name already exists for this Collection ("%s")'%self.collection.name])
+#             del cleaned_data["name"]
+#             return cleaned_data
+
         if file:
             # check extension of the data filr
             _, fname, ext = split_filename(file.name)
@@ -377,8 +389,8 @@ class ImageForm(ModelForm):
 class SimplifiedImageForm(ImageForm):
     class Meta:
         model = Image
-        exclude = ('json_path', 'collection')
-        fields = ('name', 'description', 'map_type', 
+        exclude = ('json_path', )
+        fields = ('name', 'collection', 'description', 'map_type', 
                   'file' , 'hdr_file', 'tags')
 
 CollectionFormSet = inlineformset_factory(
