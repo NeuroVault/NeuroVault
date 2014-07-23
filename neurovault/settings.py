@@ -184,7 +184,7 @@ INSTALLED_APPS = (
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'social.backends.facebook.FacebookOAuth2',
-    'social.backends.google.GooglePlusAuth',
+    'social.backends.google.GoogleOAuth2',
 )
 
 SOCIAL_AUTH_PIPELINE = (
