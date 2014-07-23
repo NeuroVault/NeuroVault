@@ -2,7 +2,7 @@ from django.conf.urls import patterns, url
 from django.views.generic import DetailView, ListView
 from .models import Collection
 from .views import edit_collection, edit_images, view_image, delete_image, edit_image, view_collection, \
-                    delete_collection, upload_folder
+                    delete_collection, upload_folder, add_image_for_neurosynth
 from neurovault.apps.statmaps.views import view_images_by_tag,\
     view_image_with_pycortex
 from neurovault.apps.statmaps.models import KeyValueTag
@@ -66,7 +66,10 @@ urlpatterns = patterns('',
         name='edit_image'),
     url(r'^images/(?P<pk>\d+)/delete$',
         delete_image,
-        name='delete_image')
+        name='delete_image'),
+    url(r'^images/add_for_neurosynth$',
+        add_image_for_neurosynth,
+        name='add_for_neurosynth'),
                        
     
 )
