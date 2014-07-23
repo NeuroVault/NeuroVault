@@ -97,7 +97,7 @@ def edit_image(request, pk):
         form = ImageForm(instance=image)
         
     context = {"form": form}
-    return render(request, "statmaps/edit_image.html", context)
+    return render(request, "statmaps/edit_image.html.haml", context)
 
 @login_required
 def add_image_for_neurosynth(request):
