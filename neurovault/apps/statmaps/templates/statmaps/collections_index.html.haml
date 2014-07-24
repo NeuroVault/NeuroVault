@@ -28,6 +28,7 @@
 					%th Name
 					%th Num. images
 					%th Description
+					%th Has DOI?
 			%tbody
 				- for collection in collections
 					%tr
@@ -35,6 +36,7 @@
 							%a{ href: "/collections/{{collection.id}}" }= collection.name
 						%td {{collection.n_images}}
 						%td= collection.description
+						%td {% if collection.DOI %} Yes {% endif %}
 
 %a.btn.btn-primary{href: "{% url 'new_collection' %}" } Add new collection
 {% endblock %}
