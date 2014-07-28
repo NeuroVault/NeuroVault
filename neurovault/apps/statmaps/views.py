@@ -247,7 +247,6 @@ def view_image_with_pycortex(request, pk):
     if not os.path.exists(pycortex_dir):
         generate_pycortex_dir(str(image.file.path), str(pycortex_dir), "trans_%s"%pk)
         
-    base, fname, _ = split_filename(image.file.url)
-    pycortex_url = os.path.join(base, fname + "_pycortex/index.html")
-    print pycortex_url
-    return redirect('http://' + request.get_host() + pycortex_url)
+    _, _, ext = split_filename(image.file.url)
+    pycortex_url = image.file.url[:-len(ext)] + "_pycortex/index.html"
+    return redirect(pycortex_url)
