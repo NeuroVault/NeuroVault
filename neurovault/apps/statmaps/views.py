@@ -115,7 +115,7 @@ def add_image_for_neurosynth(request):
         form = SimplifiedImageForm(request.user, request.POST, request.FILES, instance=image)
         if form.is_valid():
             image = form.save()
-            return HttpResponseRedirect("http://neurosynth.org/decode/?neurovault=%s"%image.id)
+            return HttpResponseRedirect("http://beta.neurosynth.org/decode/?neurovault=%s"%image.id)
     else:
         form = SimplifiedImageForm(request.user, instance=image)
         

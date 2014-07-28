@@ -48,7 +48,7 @@
 	                    - if not forloop.last
             %a.btn.btn-primary.btn-large{href: "pycortex" } 3D View
             %a.btn.btn-primary.btn-large{href: "{{ image.file.url }}" } Download
-            %a.btn.btn-primary.btn-large{href: "http://neurosynth.org/decode/{{ image.id }}" } Decode with neurosynth
+            %a.btn.btn-primary.btn-large{href: "http://beta.neurosynth.org/decode/?neurovault={{ image.id }}" } Decode with neurosynth
             - if user_owns_image
                 %a.btn.btn-primary.btn-large{href: "{% url 'edit_image' image.id %}" } Edit details
                 .float-right-wrapper
