@@ -263,7 +263,7 @@ class CollectionForm(ModelForm):
 
 
 class ImageForm(ModelForm):
-    hdr_file = FileField(required=False, label='.hdr file (if applicable)')
+    hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
     
     class Meta:
         model = Image
