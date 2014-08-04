@@ -20,6 +20,7 @@ import errno
 import tempfile
 import os
 
+
 @login_required
 def edit_images(request, collection_pk):
     collection = Collection.objects.get(pk=collection_pk)
@@ -32,9 +33,10 @@ def edit_images(request, collection_pk):
             return HttpResponseRedirect(collection.get_absolute_url())
     else:
         formset = CollectionFormSet(instance=collection)
-        
+
     context = {"formset": formset}
     return render(request, "statmaps/edit_images.html.haml", context)
+
 
 @login_required
 def edit_collection(request, pk=None):
