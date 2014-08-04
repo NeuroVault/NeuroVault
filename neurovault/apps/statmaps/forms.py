@@ -223,14 +223,14 @@ class CollectionForm(ModelForm):
         model = Collection
         # fieldsets = study_fieldsets
         # row_attrs = study_row_attrs
-        
+
     def clean(self):
         cleaned_data = super(CollectionForm, self).clean()
-        
+
         doi = self.cleaned_data['DOI']
         if doi.strip() == '':
             self.cleaned_data['DOI'] = None
-        
+
         if self.cleaned_data['DOI']:
             try:
                 self.cleaned_data["name"], self.cleaned_data["authors"], self.cleaned_data["url"], _ = getPaperProperties(self.cleaned_data['DOI'].strip())
@@ -242,7 +242,7 @@ class CollectionForm(ModelForm):
         elif "name" not in cleaned_data or not cleaned_data["name"]:
             self._errors["name"] = self.error_class(["You need to set the name or the DOI"])
             self._errors["DOI"] = self.error_class(["You need to set the name or the DOI"])
-        
+
         return cleaned_data
 
     def __init__(self, *args, **kwargs):
@@ -261,8 +261,15 @@ class CollectionForm(ModelForm):
             )
         self.helper.layout.extend([tab_holder, Submit('submit', 'Save', css_class="btn-large offset2")])
 
+
 class ImageForm(ModelForm):
     hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
+
+    def __init__(self, *args, **kwargs):
+        super(ImageForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_class = 'form-horizontal'
+        self.helper.form_tag = False
 
     class Meta:
         model = Image
@@ -304,13 +311,13 @@ class ImageForm(ModelForm):
                         return cleaned_data
 
                 # write the data file to a temporary directory
-                f = open(os.path.join(tmp_dir,fname + ext), "wb")
+                f = open(os.path.join(tmp_dir, fname + ext), "wb")
                 f.write(file.file.read())
                 f.close()
 
                 # check if it is really nifti
                 try:
-                    nii = nb.load(os.path.join(tmp_dir,fname + ext))
+                    nii = nb.load(os.path.join(tmp_dir, fname + ext))
                 except Exception as e:
                     self._errors["file"] = self.error_class([str(e)])
                     del cleaned_data["file"]
@@ -321,8 +328,8 @@ class ImageForm(ModelForm):
                     #Papaya does not handle flaot64, but by converting files we loose precision
 #                     if nii.get_data_dtype() == np.float64:
 #                         nii.set_data_dtype(np.float32)
-                    nb.save(nii, os.path.join(tmp_dir,fname + ".nii.gz"))
-                    f = ContentFile(open(os.path.join(tmp_dir,fname + ".nii.gz")).read())
+                    nb.save(nii, os.path.join(tmp_dir, fname + ".nii.gz"))
+                    f = ContentFile(open(os.path.join(tmp_dir, fname + ".nii.gz")).read())
                     print cleaned_data["file"].__class__.__name__
                     cleaned_data["file"] = InMemoryUploadedFile(f, "file", fname + ".nii.gz",
                                                                 cleaned_data["file"].content_type, f.size, cleaned_data["file"].charset)
@@ -343,13 +350,9 @@ class SingleImageForm(ImageForm):
     class Meta:
         model = Image
         exclude = ('json_path', )
-#         fields = ('name', 'description', 'map_type', 'file' , 'hdr_file',  
-#                                 'statistic_parameters', 'smoothness_fwhm', 'contrast_definition', 
-#                                 'contrast_definition_cogatlas', 'tags')
-    # Add some custom validation to our file field
 
     def __init__(self, user, *args, **kwargs):
-        super(ImageForm, self).__init__(*args, **kwargs)
+        super(SingleImageForm, self).__init__(*args, **kwargs)
         self.fields['collection'].queryset = Collection.objects.filter(owner=user)
         self.helper = FormHelper(self)
         self.helper.add_input(Submit('submit', 'Submit'))
@@ -359,23 +362,19 @@ class SimplifiedImageForm(SingleImageForm):
     class Meta:
         model = Image
         exclude = ('json_path', )
-        fields = ('name', 'collection', 'description', 'map_type', 
-                  'file' , 'hdr_file', 'tags')
+        fields = ('name', 'collection', 'description', 'map_type',
+                  'file', 'hdr_file', 'tags')
 
 CollectionFormSet = inlineformset_factory(
     Collection, Image, form=ImageForm,
     exclude=['json_path', 'nifti_gz_file', 'collection'],
     extra=1)
 
+
 class UploadFileForm(Form):
 
     # TODO Need to uplaod in a temp directory
-    file  = FileField(required=False);#(upload_to="images/%s/%s"%(instance.collection.id, filename))
-
-    # class Meta:
-    #     exclude = ('owner',)
-    #     model = Collection
-
+    file = FileField(required=False);#(upload_to="images/%s/%s"%(instance.collection.id, filename))
 
     def __init__(self, *args, **kwargs):
         super(UploadFileForm, self).__init__(*args, **kwargs)
