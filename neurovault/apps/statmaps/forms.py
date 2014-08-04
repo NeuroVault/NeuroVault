@@ -261,66 +261,16 @@ class CollectionForm(ModelForm):
             )
         self.helper.layout.extend([tab_holder, Submit('submit', 'Save', css_class="btn-large offset2")])
 
-
 class ImageForm(ModelForm):
     hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
-    
+
     class Meta:
         model = Image
-        exclude = ('json_path', )
-#         fields = ('name', 'description', 'map_type', 'file' , 'hdr_file',  
-#                                 'statistic_parameters', 'smoothness_fwhm', 'contrast_definition', 
-#                                 'contrast_definition_cogatlas', 'tags')
-    # Add some custom validation to our file field
-
-    def __init__(self, user, *args, **kwargs):
-        super(ImageForm, self).__init__(*args, **kwargs)
-        self.fields['collection'].queryset = Collection.objects.filter(owner=user)
-        self.helper = FormHelper(self)
-        self.helper.add_input(Submit('submit', 'Submit'))
-        
-        
-#     def save(self, *args, **kwargs):
-#         commit = kwargs.pop('commit', True)
-#         instance = super(ImageForm, self).save(*args, commit = False, **kwargs)
-#         if not instance.file.name.lower().endswith(".nii.gz"):
-#             tmp_directory = tempfile.mkdtemp()
-#             try:
-#                 filename = os.path.join(tmp_directory, instance.file.name)
-#                 tmp_file = open(filename, 'w')
-#                 tmp_file.write(instance.file.read())
-#                 tmp_file.close()
-#                 
-#                 if self.hdr_file:
-#                     hdr_filename = os.path.join(tmp_directory, instance.hdr_file.name)
-#                     tmp_file = open(hdr_filename, 'w')
-#                     tmp_file.write(instance.hdr_file.read())
-#                     tmp_file.close()
-#                     
-#                 _, name, _ = split_filename(instance.file.name)
-#                 converted_name = os.path.join(tmp_directory, name + ".nii.gz")
-#                 nb.save(nb.load(filename), converted_name)
-#                 
-#                 instance.file = File(open(converted_name))
-#                 
-#             finally:
-#                 shutil.rmtree(tmp_directory)
-#         if commit:
-#             instance.save()
-#         return instance
+        exclude = ('json_path', 'collection')
 
     def clean(self):
         cleaned_data = super(ImageForm, self).clean()
         file = cleaned_data.get("file")
-
-#         try:
-#             Image.objects.get(name=cleaned_data['name'], collection=cleaned_data['collection'])
-#         except Image.DoesNotExist:
-#             pass
-#         else:
-#             self._errors["name"] = self.error_class(['Image with this name already exists for this Collection ("%s")'%self.collection.name])
-#             del cleaned_data["name"]
-#             return cleaned_data
 
         if file:
             # check extension of the data filr
@@ -329,13 +279,13 @@ class ImageForm(ModelForm):
                 self._errors["file"] = self.error_class(["Doesn't have proper extension"])
                 del cleaned_data["file"]
                 return cleaned_data
-            
+
             try:
                 tmp_dir = tempfile.mkdtemp()
                 if ext.lower() == ".img":
                     hdr_file = cleaned_data.get('hdr_file')
                     if hdr_file:
-                        
+
                         # check extension of the hdr file
                         _, _, hdr_ext = split_filename(hdr_file.name)
                         if not hdr_ext.lower() in [".hdr"]:
@@ -352,12 +302,12 @@ class ImageForm(ModelForm):
                         self._errors["hdr_file"] = self.error_class([".img files require .hdr"])
                         del cleaned_data["hdr_file"]
                         return cleaned_data
-                        
+
                 # write the data file to a temporary directory
                 f = open(os.path.join(tmp_dir,fname + ext), "wb")
                 f.write(file.file.read())
                 f.close()
-                
+
                 # check if it is really nifti
                 try:
                     nii = nb.load(os.path.join(tmp_dir,fname + ext))
@@ -365,9 +315,9 @@ class ImageForm(ModelForm):
                     self._errors["file"] = self.error_class([str(e)])
                     del cleaned_data["file"]
                     return cleaned_data
-                
+
                 # convert to nii.gz if needed
-                if ext.lower() != ".nii.gz": 
+                if ext.lower() != ".nii.gz":
                     #Papaya does not handle flaot64, but by converting files we loose precision
 #                     if nii.get_data_dtype() == np.float64:
 #                         nii.set_data_dtype(np.float32)
@@ -386,7 +336,26 @@ class ImageForm(ModelForm):
             raise ValidationError("Couldn't read uploaded file")
         return cleaned_data
 
-class SimplifiedImageForm(ImageForm):
+
+class SingleImageForm(ImageForm):
+    hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
+
+    class Meta:
+        model = Image
+        exclude = ('json_path', )
+#         fields = ('name', 'description', 'map_type', 'file' , 'hdr_file',  
+#                                 'statistic_parameters', 'smoothness_fwhm', 'contrast_definition', 
+#                                 'contrast_definition_cogatlas', 'tags')
+    # Add some custom validation to our file field
+
+    def __init__(self, user, *args, **kwargs):
+        super(ImageForm, self).__init__(*args, **kwargs)
+        self.fields['collection'].queryset = Collection.objects.filter(owner=user)
+        self.helper = FormHelper(self)
+        self.helper.add_input(Submit('submit', 'Submit'))
+
+
+class SimplifiedImageForm(SingleImageForm):
     class Meta:
         model = Image
         exclude = ('json_path', )

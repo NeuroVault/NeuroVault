@@ -1,5 +1,5 @@
 from .models import Collection, Image
-from .forms import CollectionFormSet, CollectionForm, ImageForm
+from .forms import CollectionFormSet, CollectionForm, SingleImageForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render,\
@@ -89,12 +89,12 @@ def edit_image(request, pk):
     if image.collection.owner != request.user:
         return HttpResponseForbidden()
     if request.method == "POST":
-        form = ImageForm(request.user, request.POST, request.FILES, instance=image)
+        form = SingleImageForm(request.user, request.POST, request.FILES, instance=image)
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(image.get_absolute_url())
     else:
-        form = ImageForm(request.user, instance=image)
+        form = SingleImageForm(request.user, instance=image)
         
     context = {"form": form}
     return render(request, "statmaps/edit_image.html.haml", context)
