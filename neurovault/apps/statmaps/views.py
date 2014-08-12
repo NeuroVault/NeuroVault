@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404, render_to_response, render,\
 from neurovault.apps.statmaps.forms import UploadFileForm, SimplifiedImageForm
 from django.template.context import RequestContext
 from django.core.files.base import ContentFile
-from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_dir
+from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_dir, generate_url_token
 from django.utils.http import quote, urlquote
 
 import neurovault.settings as settings
@@ -21,9 +21,19 @@ import tempfile
 import os
 
 
+def get_collection(cid,mode=None):
+    keyargs = {'pk':cid}
+    if re.match(r'^[A-Z]{8}$',cid) is not None:
+        keyargs = {'private_token':cid}
+    if mode == 'get_obj_or_404':
+        return get_object_or_404(Collection,**keyargs)
+    else:
+        return Collection.objects.get(**keyargs)
+
+
 @login_required
-def edit_images(request, collection_pk):
-    collection = Collection.objects.get(pk=collection_pk)
+def edit_images(request, collection_cid):
+    collection = get_collection(collection_cid)
     if collection.owner != request.user:
         return HttpResponseForbidden()
     if request.method == "POST":
@@ -39,10 +49,10 @@ def edit_images(request, collection_pk):
 
 
 @login_required
-def edit_collection(request, pk=None):
+def edit_collection(request, cid=None):
     page_header = "Add new collection"
-    if pk:
-        collection = Collection.objects.get(pk=pk)
+    if cid:
+        collection = get_collection(cid)
         page_header = 'Edit collection'
         if collection.owner != request.user:
             return HttpResponseForbidden()
@@ -51,11 +61,15 @@ def edit_collection(request, pk=None):
     if request.method == "POST":
         form = CollectionForm(request.POST, request.FILES, instance=collection)
         if form.is_valid():
-            form.save()
+            collection = form.save(commit=False)
+            if collection.private and collection.private_token is None:
+                collection.private_token = generate_url_token()
+            collection.save()
+
             return HttpResponseRedirect(collection.get_absolute_url())
     else:
         form = CollectionForm(instance=collection)
-        
+
     context = {"form": form, "page_header": page_header}
     return render(request, "statmaps/edit_collection.html.haml", context)
 
@@ -65,10 +79,13 @@ def view_image(request, pk):
     context = {'image': image, 'user': image.collection.owner, 'user_owns_image': user_owns_image }
     return render(request, 'statmaps/image_details.html.haml', context)
 
-def view_collection(request, pk):
-    collection = get_object_or_404(Collection, pk=pk)
+def view_collection(request, cid):
+    collection = get_collection(cid)
     user_owns_collection = True if collection.owner == request.user else False
-    context = {'collection': collection, 'user': request.user, 'user_owns_collection': user_owns_collection }
+    context = { 'collection': collection,
+                'user': request.user,
+                'user_owns_collection': user_owns_collection,
+                'cid':cid}
     if collection.owner == request.user:
         form = UploadFileForm()
         c = RequestContext(request)
@@ -78,8 +95,8 @@ def view_collection(request, pk):
         return render(request, 'statmaps/collection_details.html.haml', context)
 
 @login_required
-def delete_collection(request, pk):
-    collection = get_object_or_404(Collection, pk=pk)
+def delete_collection(request, cid):
+    collection = get_collection(cid,'get_obj_or_404')
     if collection.owner != request.user:
         return HttpResponseForbidden()
     collection.delete()
@@ -97,19 +114,19 @@ def edit_image(request, pk):
             return HttpResponseRedirect(image.get_absolute_url())
     else:
         form = SingleImageForm(request.user, instance=image)
-        
+
     context = {"form": form}
     return render(request, "statmaps/edit_image.html.haml", context)
 
 @login_required
 def add_image_for_neurosynth(request):
     temp_collection_name = "%s's temporary collection"%request.user.username
-    #this is a hack we need to make sure this collection can be only 
+    #this is a hack we need to make sure this collection can be only
     #owned by the same user
     try:
         temp_collection = Collection.objects.get(name=temp_collection_name)
     except Collection.DoesNotExist:
-        temp_collection = Collection(name=temp_collection_name, 
+        temp_collection = Collection(name=temp_collection_name,
                                      owner=request.user)
         temp_collection.save()
     image = Image(collection=temp_collection)
@@ -120,7 +137,7 @@ def add_image_for_neurosynth(request):
             return HttpResponseRedirect("http://beta.neurosynth.org/decode/?neurovault=%s"%image.id)
     else:
         form = SimplifiedImageForm(request.user, instance=image)
-        
+
     context = {"form": form}
     return render(request, "statmaps/add_image_for_neurosynth.html.haml", context)
 
@@ -141,7 +158,7 @@ def mkdir_p(path):
 
 
 @login_required
-def upload_folder(request, collection_pk):
+def upload_folder(request, collection_cid):
     allowed_extensions = ['.nii', '.img', '.nii.gz']
     niftiFiles = []
     if request.method == 'POST':
@@ -159,7 +176,7 @@ def upload_folder(request, collection_pk):
                     if archive_ext == '.zip':
                         compressed = zipfile.ZipFile(request.FILES['file'])
                     else:
-                        compressed = tarfile.TarFile(fileobj=gzip.open(request.FILES['file']))  
+                        compressed = tarfile.TarFile(fileobj=gzip.open(request.FILES['file']))
                     compressed.extractall(path=tmp_directory)
 
                 elif "file_input[]" in request.FILES:
@@ -172,14 +189,14 @@ def upload_folder(request, collection_pk):
                         tmp_file.close()
                 else:
                     raise
-                        
+
                 for root, _, filenames in os.walk(tmp_directory, topdown=False):
                     filenames = [f for f in filenames if not f[0] == '.']
                     for fname in filenames:
-                        _, ext = splitext_nii_gz(fname)             
+                        _, ext = splitext_nii_gz(fname)
                         if ext in allowed_extensions:
                             niftiFiles.append(os.path.join(root, fname))
-                                              
+
                 for fname in niftiFiles:
                     # Read nifti file information
                     nii = nib.load(fname)
@@ -187,7 +204,7 @@ def upload_folder(request, collection_pk):
                         continue
                     hdr = nii.get_header()
                     raw_hdr = hdr.structarr
-    
+
                     # SPM only !!!
                     # Check if filename corresponds to a T-map
                     Tregexp = re.compile('spmT.*');
@@ -200,7 +217,7 @@ def upload_folder(request, collection_pk):
                             map_type = Image.F;
                         else:
                             map_type = Image.OTHER;
-                    
+
                     path, name, ext = split_filename(fname)
                     name += ".nii.gz"
                     db_name = os.path.join(path.replace(tmp_directory,""), name)
@@ -213,8 +230,8 @@ def upload_folder(request, collection_pk):
                         db_name += " (old ext: %s)"%ext
                     else:
                         f = ContentFile(open(fname).read(), name=name)
-                    
-                    collection = Collection.objects.get(pk=collection_pk)
+
+                    collection = get_collection(collection_cid)
                     new_image = Image(name=db_name, description=raw_hdr['descrip'], collection=collection)
                     new_image.file = f
                     new_image.map_type = map_type
@@ -245,10 +262,10 @@ def view_image_with_pycortex(request, pk):
     base, fname, _ = split_filename(image.file.path)
     pycortex_dir = os.path.join(base, fname + "_pycortex")
     print image.file.path, pycortex_dir, pk
-    
+
     if not os.path.exists(pycortex_dir):
         generate_pycortex_dir(str(image.file.path), str(pycortex_dir), "trans_%s"%pk)
-        
+
     _, _, ext = split_filename(image.file.url)
     pycortex_url = image.file.url[:-len(ext)] + "_pycortex/index.html"
     return redirect(pycortex_url)

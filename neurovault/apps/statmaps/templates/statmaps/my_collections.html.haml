@@ -31,10 +31,20 @@
 			%tbody
 				- for collection in collections
 					%tr
+                        {% if collection.private %}
 						%td
-							%a{ href: "/collections/{{collection.id}}" }= collection.name
+							%a{ href: "/collections/{{collection.private_token}}" }= collection.name
 						%td {{collection.n_images}}
-						%td= collection.description
+						%td
+                            %em Private Collection.
+                            {{ collection.description }}
+                        {% else %}
+                        %td
+                            %a{ href: "/collections/{{collection.id}}" }= collection.name
+                        %td {{collection.n_images}}
+                        %td= collection.description
+                        {% endif %}
+
 
 %a.btn.btn-primary{href: "{% url 'new_collection' %}" } Add new collection
 {% endblock %}

@@ -3,6 +3,8 @@ import tempfile
 import subprocess
 import shutil
 import numpy as np
+import string
+import random
 def split_filename(fname):
     """Split a filename into parts: path, base filename and extension.
 
@@ -55,7 +57,7 @@ def split_filename(fname):
 
     return pth, fname, ext
 
-    
+
 def generate_pycortex_dir(nifti_file, output_dir, transform_name):
     import cortex
     temp_dir = tempfile.mkdtemp()
@@ -88,3 +90,9 @@ def generate_pycortex_dir(nifti_file, output_dir, transform_name):
         cortex.webgl.make_static(output_dir, dv)
     finally:
         shutil.rmtree(temp_dir)
+
+
+def generate_url_token(length=8):
+    # TODO: check for a collision, just in case
+    chars = string.ascii_uppercase
+    return ''.join(random.choice(chars) for v in range(length))
