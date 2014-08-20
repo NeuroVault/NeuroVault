@@ -24,11 +24,6 @@
                     iDisplayLength: 10
                     aoColumns: [ { sWidth: '8%'}, { sWidth: '20%'}, { sWidth: '20%' }, { sWidth: '52%'}]
                     fnRowCallback: (nRow, aData, iDisplayIndex) ->
-                        $cell=$('td:eq(1)', nRow)
-                        image_id = $('td:eq(0)', nRow).text()
-                        image_name = $cell.text()
-                        val = '<a href="/images/' + image_id + '">' + image_name + '</a>'
-                        $cell.html(val)
                         nRow
 
                 $('#collection-tabs a:first').tab('show')
@@ -128,7 +123,8 @@
                         - for image in collection.image_set.all
                             %tr
                                 %td= image.id
-                                %td= image.name
+                                %td
+                                    %a{ href: "{{image.get_absolute_url}}" }= image.name
                                 %td
                                     - for tag in image.tags.all
                                         %a{ href: "/images/tags/{{tag.name}}" }= tag.name

@@ -214,7 +214,12 @@ class Image(DirtyFieldsMixin, models.Model):
         return self.name
 
     def get_absolute_url(self):
-        return reverse('image_details', args=[str(self.id)])
+        return_args = [str(self.id)]
+        url_name = 'image_details'
+        if self.collection.private:
+            return_args.insert(0,str(self.collection.private_token))
+            url_name = 'private_image_details'
+        return reverse(url_name, args=return_args)
 
     def set_name(self, new_name):
         self.name = new_name

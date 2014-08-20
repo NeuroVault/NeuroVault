@@ -5,6 +5,14 @@ import shutil
 import numpy as np
 import string
 import random
+from .models import Collection
+
+
+# see CollectionRedirectMiddleware
+class HttpRedirectException(Exception):
+    pass
+
+
 def split_filename(fname):
     """Split a filename into parts: path, base filename and extension.
 
@@ -93,6 +101,10 @@ def generate_pycortex_dir(nifti_file, output_dir, transform_name):
 
 
 def generate_url_token(length=8):
-    # TODO: check for a collision, just in case
     chars = string.ascii_uppercase
-    return ''.join(random.choice(chars) for v in range(length))
+    token = ''.join(random.choice(chars) for v in range(length))
+    if Collection.objects.filter(private_token=token).exists():
+        return generate_url_token()
+    else:
+        return token
+
