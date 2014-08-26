@@ -1,13 +1,15 @@
 from django.conf.urls import patterns, url
 from django.views.generic import DetailView, ListView
 from .models import Collection
-from .views import edit_collection, edit_images, view_image, delete_image, edit_image, view_collection, \
-                    delete_collection, upload_folder, add_image_for_neurosynth
+from .views import edit_collection, edit_images, view_image, delete_image, edit_image, \
+                    view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
+                    serve_image
 from neurovault.apps.statmaps.views import view_images_by_tag,\
     view_image_with_pycortex
 from neurovault.apps.statmaps.models import KeyValueTag
 from django.db.models import Count
 from django.contrib.auth.decorators import login_required
+from neurovault import settings
 
 
 class MyCollectionsListView(ListView):
@@ -77,5 +79,8 @@ urlpatterns = patterns('',
         add_image_for_neurosynth,
         name='add_for_neurosynth'),
 
+    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<img_name>[A-Za-z0-9\.\+\-\_\s]+)$',
+        serve_image,
+        name='serve_image'),
 
 )

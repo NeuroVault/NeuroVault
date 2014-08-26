@@ -1,6 +1,6 @@
 from .models import Collection, Image
 from .forms import CollectionFormSet, CollectionForm, SingleImageForm
-from django.http.response import HttpResponseRedirect, HttpResponseForbidden
+from django.http.response import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from neurovault.apps.statmaps.forms import UploadFileForm, SimplifiedImageForm
@@ -11,6 +11,7 @@ from neurovault.apps.statmaps.utils import split_filename,generate_pycortex_dir,
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.db.models import Q
+from neurovault import settings
 
 import zipfile
 import tarfile
@@ -23,7 +24,7 @@ import tempfile
 import os
 
 
-def get_collection(cid,request):
+def get_collection(cid,request,mode=None):
     keyargs = {'pk':cid}
     private_url = re.match(r'^[A-Z]{8}$',cid)
     if private_url is not None:
@@ -32,7 +33,10 @@ def get_collection(cid,request):
         collection = Collection.objects.get(**keyargs)
         if private_url is None and collection.private:
             if collection.owner == request.user:
-                raise HttpRedirectException(collection.get_absolute_url())
+                if mode == 'file' or mode == 'api':
+                    raise PermissionDenied()
+                else:
+                    raise HttpRedirectException(collection.get_absolute_url())
             else:
                 raise PermissionDenied()
     except Collection.DoesNotExist:
@@ -41,11 +45,14 @@ def get_collection(cid,request):
         return collection
 
 
-def get_image(pk,collection_cid,request):
+def get_image(pk,collection_cid,request,mode=None):
     image = get_object_or_404(Image, pk=pk)
     if image.collection.private and image.collection.private_token != collection_cid:
         if image.collection.owner == request.user:
-            raise HttpRedirectException(image.get_absolute_url())
+            if mode == 'api':
+                raise PermissionDenied()
+            else:
+                raise HttpRedirectException(image.get_absolute_url())
         else:
             raise PermissionDenied()
     else:
@@ -98,7 +105,11 @@ def edit_collection(request, cid=None):
 def view_image(request, pk, collection_cid=None):
     image = get_image(pk,collection_cid,request)
     user_owns_image = True if image.collection.owner == request.user else False
-    context = {'image': image, 'user': image.collection.owner, 'user_owns_image': user_owns_image}
+    nv_cid = pk
+    if image.collection.private:
+        nv_cid = '%s-%s' % (image.collection.private_token,pk)
+    context = {'image': image, 'user': image.collection.owner, 'user_owns_image': user_owns_image,
+            'nv_cid':nv_cid}
     return render(request, 'statmaps/image_details.html.haml', context)
 
 
@@ -146,22 +157,22 @@ def edit_image(request, pk):
 
 @login_required
 def add_image_for_neurosynth(request):
-    temp_collection_name = "%s's temporary collection" % request.user.username
-    #this is a hack we need to make sure this collection can be only
-    #owned by the same user
-    try:
-        temp_collection = Collection.objects.get(name=temp_collection_name)
-    except Collection.DoesNotExist:
-        temp_collection = Collection(name=temp_collection_name,
-                                     owner=request.user)
-        temp_collection.save()
+    priv_token = generate_url_token()
+    collection_name = "Neurosynth Private Collection: %s " % priv_token
+    temp_collection = Collection(name=collection_name,
+                                 owner=request.user,
+                                 private=True,
+                                 private_token=priv_token)
+    temp_collection.save()
     image = Image(collection=temp_collection)
     if request.method == "POST":
         form = SimplifiedImageForm(request.user, request.POST, request.FILES, instance=image)
         if form.is_valid():
             image = form.save()
-            return HttpResponseRedirect(
-                        "http://beta.neurosynth.org/decode/?neurovault=%s" % image.id)
+            #return HttpResponseRedirect(
+            #            "http://beta.neurosynth.org/decode/?neurovault=%s-%s" % (
+            #            priv_token,image.id))
+            return HttpResponse('ok')
     else:
         form = SimplifiedImageForm(request.user, instance=image)
 
@@ -309,3 +320,12 @@ def view_image_with_pycortex(request, pk, collection_cid=None):
     _, _, ext = split_filename(image.file.url)
     pycortex_url = image.file.url[:-len(ext)] + "_pycortex/index.html"
     return redirect(pycortex_url)
+
+
+def serve_image(request, collection_cid, img_name):
+    collection = get_collection(collection_cid,request,mode='file')
+    fullpath = os.path.join(settings.PRIVATE_MEDIA_ROOT, str(collection.id), img_name)
+    response = HttpResponse(mimetype='application/force-download')
+    response[settings.PRIVATE_MEDIA_REDIRECT_HEADER] = fullpath
+    return response
+

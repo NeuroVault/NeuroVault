@@ -14,6 +14,7 @@ from dirtyfields import DirtyFieldsMixin
 from django.core.files import File
 import nibabel as nb
 from django.core.exceptions import ValidationError
+from neurovault import settings
 # from django.db.models.signals import post_save
 # from django.dispatch import receiver
 
@@ -132,6 +133,9 @@ class Collection(models.Model):
 
         super(Collection, self).save()
 
+    class Meta:
+        app_label = 'statmaps'
+
 def getPaperProperties(doi):
     xmlurl = 'http://doi.crossref.org/servlet/query'
     xmlpath = xmlurl + '?pid=k.j.gorgolewski@sms.ed.ac.uk&format=unixref&id=' + urllib2.quote(doi)
@@ -161,8 +165,9 @@ def getPaperProperties(doi):
                                          1)
     return title, authors, url, publication_date
 
+
 def upload_to(instance, filename):
-    return "images/%s/%s"%(instance.collection.id, filename)
+    return "%s/%s/%s" % (settings.PRIVATE_MEDIA_ROOT,instance.collection.id, filename)
 
 
 class KeyValueTag(TagBase):
