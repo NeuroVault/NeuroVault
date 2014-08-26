@@ -15,7 +15,7 @@
                 $("table[class*=collection-details-datatable]").dataTable
                     sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
                     sPaginationType: "bootstrap"
-                    sAjaxSource: "/api/collections/" + {{collection.id}} + "/datatable/?format=json"
+                    sAjaxSource: "/api/collections/" + "{{cid}}" + "/datatable/?format=json"
                     iDisplayLength: 10
 
                 $("table[class*=collection-images-datatable]").dataTable

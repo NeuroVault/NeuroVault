@@ -105,11 +105,11 @@ def edit_collection(request, cid=None):
 def view_image(request, pk, collection_cid=None):
     image = get_image(pk,collection_cid,request)
     user_owns_image = True if image.collection.owner == request.user else False
-    nv_cid = pk
+    api_cid = pk
     if image.collection.private:
-        nv_cid = '%s-%s' % (image.collection.private_token,pk)
+        api_cid = '%s-%s' % (image.collection.private_token,pk)
     context = {'image': image, 'user': image.collection.owner, 'user_owns_image': user_owns_image,
-            'nv_cid':nv_cid}
+            'api_cid':api_cid}
     return render(request, 'statmaps/image_details.html.haml', context)
 
 
