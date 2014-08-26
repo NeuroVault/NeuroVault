@@ -15,6 +15,7 @@ from django import template
 template.add_to_builtins('django.templatetags.future')
 template.add_to_builtins('django.contrib.staticfiles.templatetags.staticfiles')
 
+
 class HyperlinkedFileField(serializers.FileField):
 
     def to_native(self, value):
@@ -22,7 +23,21 @@ class HyperlinkedFileField(serializers.FileField):
             request = self.context.get('request', None)
             return request.build_absolute_uri(value.url)
 
-# ViewSets define the view behavior.
+
+class HyperlinkedRelatedURL(serializers.RelatedField):
+
+    def to_native(self, value):
+        if value:
+            request = self.context.get('request', None)
+            return request.build_absolute_uri(value.get_absolute_url())
+
+
+class HyperlinkedImageURL(serializers.CharField):
+
+    def to_native(self, value):
+        if value:
+            request = self.context.get('request', None)
+            return request.build_absolute_uri(value)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -50,17 +65,18 @@ class APIHelper:
             values (and no keys) in tabular format. '''
         data = dict([(k,v) for k,v in data.items() if v and k not in fields_to_strip])
         return Response(
-            { 'aaData': zip(data.keys(), data.values()) }
+            {'aaData': zip(data.keys(), data.values())}
         )
 
 
 class ImageSerializer(serializers.HyperlinkedModelSerializer):
 
     file = HyperlinkedFileField(source='file')
+    collection = HyperlinkedRelatedURL(source='collection')
+    url = HyperlinkedImageURL(source='get_absolute_url')
 
     class Meta:
         model = Image
-        exclude = ['url']
 
 
 class CollectionSerializer(serializers.ModelSerializer):
@@ -74,24 +90,29 @@ class ImageViewSet(viewsets.ModelViewSet):
     queryset = Image.objects.all()
     serializer_class = ImageSerializer
 
+    def _get_api_image(self,request,pk=None):
+        private_url = re.match(r'^[A-Z]{8}\-\d+$',pk)
+        if private_url:
+            collection_cid,pk = pk.split('-')
+        else:
+            base_image = self.get_object()
+            collection_cid = base_image.collection.id
+        return get_image(pk,collection_cid,request,mode='api')
 
     @link()
     def datatable(self, request, pk=None):
         ''' A wrapper around standard retrieve() request that formats the
         object for the Datatables plugin. '''
-        image = self.get_object()
+        image = self._get_api_image(request,pk)
         data = ImageSerializer(image, context={'request': request}).data
-        return APIHelper.wrap_for_datatables(data, ['name', 'modify_date', 'description', 'add_date'])
+        return APIHelper.wrap_for_datatables(data, ['name', 'modify_date',
+                                                    'description', 'add_date'])
 
     def retrieve(self, request, pk=None):
-        private_url = re.match(r'^[A-Z]{8}\-\d+$',pk)
-        if private_url:
-            collection_cid,pk = pk.split('-')
-        else:
-            collection_cid = 46
-        image = get_image(pk,collection_cid,request,mode='api')
+        image = self._get_api_image(request,pk)
         data = ImageSerializer(image, context={'request': request}).data
         return Response(data)
+
 
 class CollectionViewSet(viewsets.ModelViewSet):
 
@@ -100,9 +121,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
     @link()
     def datatable(self, request, pk=None):
-        ''' A wrapper around standard retrieve() request that formats the
-        object for the Datatables plugin. '''
-        collection = self.get_object()
+        collection = get_collection(pk,request,mode='api')
         data = CollectionSerializer(collection).data
         return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date'])
 
