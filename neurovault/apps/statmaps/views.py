@@ -33,7 +33,7 @@ def get_collection(cid,request,mode=None):
         collection = Collection.objects.get(**keyargs)
         if private_url is None and collection.private:
             if collection.owner == request.user:
-                if mode == 'file' or mode == 'api':
+                if mode in ['file','api']:
                     raise PermissionDenied()
                 else:
                     raise HttpRedirectException(collection.get_absolute_url())
@@ -169,10 +169,8 @@ def add_image_for_neurosynth(request):
         form = SimplifiedImageForm(request.user, request.POST, request.FILES, instance=image)
         if form.is_valid():
             image = form.save()
-            #return HttpResponseRedirect(
-            #            "http://beta.neurosynth.org/decode/?neurovault=%s-%s" % (
-            #            priv_token,image.id))
-            return HttpResponse('ok')
+            return HttpResponseRedirect("http://beta.neurosynth.org/decode/?neurovault=%s-%s" % (
+                priv_token,image.id))
     else:
         form = SimplifiedImageForm(request.user, instance=image)
 
@@ -312,7 +310,6 @@ def view_image_with_pycortex(request, pk, collection_cid=None):
     image = get_image(pk,collection_cid,request)
     base, fname, _ = split_filename(image.file.path)
     pycortex_dir = os.path.join(base, fname + "_pycortex")
-    print image.file.path, pycortex_dir, pk
 
     if not os.path.exists(pycortex_dir):
         generate_pycortex_dir(str(image.file.path), str(pycortex_dir), "trans_%s" % pk)
@@ -324,8 +321,17 @@ def view_image_with_pycortex(request, pk, collection_cid=None):
 
 def serve_image(request, collection_cid, img_name):
     collection = get_collection(collection_cid,request,mode='file')
-    fullpath = os.path.join(settings.PRIVATE_MEDIA_ROOT, str(collection.id), img_name)
+    image = Image.objects.get(collection=collection,file__endswith=img_name)
     response = HttpResponse(mimetype='application/force-download')
-    response[settings.PRIVATE_MEDIA_REDIRECT_HEADER] = fullpath
+    response[settings.PRIVATE_MEDIA_REDIRECT_HEADER] = image.file.path
+    return response
+
+
+def serve_pycortex(request, collection_cid, pycortex_dir, path):
+    collection = get_collection(collection_cid,request,mode='file')
+    int_path = os.path.join(settings.PRIVATE_MEDIA_ROOT,
+                            'images',str(collection.id),pycortex_dir,path)
+    response = HttpResponse()
+    response[settings.PRIVATE_MEDIA_REDIRECT_HEADER] = int_path
     return response
 

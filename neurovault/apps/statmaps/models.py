@@ -167,7 +167,7 @@ def getPaperProperties(doi):
 
 
 def upload_to(instance, filename):
-    return "%s/%s/%s" % (settings.PRIVATE_MEDIA_ROOT,instance.collection.id, filename)
+    return os.path.join('images',str(instance.collection.id), filename)
 
 
 class KeyValueTag(TagBase):

@@ -3,7 +3,7 @@ from django.views.generic import DetailView, ListView
 from .models import Collection
 from .views import edit_collection, edit_images, view_image, delete_image, edit_image, \
                     view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
-                    serve_image
+                    serve_image, serve_pycortex
 from neurovault.apps.statmaps.views import view_images_by_tag,\
     view_image_with_pycortex
 from neurovault.apps.statmaps.models import KeyValueTag
@@ -82,5 +82,9 @@ urlpatterns = patterns('',
     url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<img_name>[A-Za-z0-9\.\+\-\_\s]+)$',
         serve_image,
         name='serve_image'),
+
+    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<pycortex_dir>[A-Za-z0-9\.\+\-\_\s]+\_pycortex/)(?P<path>.*)$',
+        serve_pycortex,
+        name='serve_pycortex'),
 
 )

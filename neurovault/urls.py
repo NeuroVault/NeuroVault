@@ -83,6 +83,7 @@ class CollectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Collection
+        exclude = ['private_token']
 
 
 class ImageViewSet(viewsets.ModelViewSet):
@@ -165,8 +166,10 @@ urlpatterns = patterns('',
                            'rest_framework.urls', namespace='rest_framework'))
                        )
 
-#if settings.DEBUG:
+
+if settings.DEBUG:
 #    # static files (images, css, javascript, etc.)
-#    urlpatterns += patterns('',
-#                           (r'^pub/media/(?P<path>.*)$', 'django.views.static.serve', {
-#                            'document_root': settings.MEDIA_ROOT}))
+    urlpatterns += patterns('',
+                           (r'^pub/media/(?P<path>.*)$', 'django.views.static.serve', {
+                            'document_root': settings.MEDIA_ROOT}))
+
