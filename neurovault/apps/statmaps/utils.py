@@ -3,6 +3,16 @@ import tempfile
 import subprocess
 import shutil
 import numpy as np
+import string
+import random
+from .models import Collection
+
+
+# see CollectionRedirectMiddleware
+class HttpRedirectException(Exception):
+    pass
+
+
 def split_filename(fname):
     """Split a filename into parts: path, base filename and extension.
 
@@ -55,7 +65,7 @@ def split_filename(fname):
 
     return pth, fname, ext
 
-    
+
 def generate_pycortex_dir(nifti_file, output_dir, transform_name):
     import cortex
     temp_dir = tempfile.mkdtemp()
@@ -88,3 +98,13 @@ def generate_pycortex_dir(nifti_file, output_dir, transform_name):
         cortex.webgl.make_static(output_dir, dv)
     finally:
         shutil.rmtree(temp_dir)
+
+
+def generate_url_token(length=8):
+    chars = string.ascii_uppercase
+    token = ''.join(random.choice(chars) for v in range(length))
+    if Collection.objects.filter(private_token=token).exists():
+        return generate_url_token()
+    else:
+        return token
+

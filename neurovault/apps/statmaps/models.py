@@ -14,6 +14,7 @@ from dirtyfields import DirtyFieldsMixin
 from django.core.files import File
 import nibabel as nb
 from django.core.exceptions import ValidationError
+from neurovault import settings
 # from django.db.models.signals import post_save
 # from django.dispatch import receiver
 
@@ -24,9 +25,10 @@ class Collection(models.Model):
     url = models.CharField(max_length=200, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     owner = models.ForeignKey(User)
+    private = models.BooleanField(default=False,verbose_name="Private Collection?",help_text="Is this collection private?  (Private collections are not listed in the NeuroVault index.  These collections can be shared with others at a private URL.)")
+    private_token = models.CharField(max_length=8,blank=True,null=True,unique=True,db_index=True)
     add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
-
     type_of_design = models.CharField(choices=[('blocked', 'blocked'), ('eventrelated', 'event_related'), ('hybridblockevent', 'hybrid block/event'), ('other', 'other')], max_length=200, blank=True, help_text="Blocked, event-related, hybrid, or other", null=True, verbose_name="Type of design")
     number_of_imaging_runs = models.IntegerField(help_text="Number of imaging runs acquired", null=True, verbose_name="No. of imaging runs", blank=True)
     number_of_experimental_units = models.IntegerField(help_text="Number of blocks, trials or experimental units per imaging run", null=True, verbose_name="No. of experimental units", blank=True)
@@ -109,14 +111,17 @@ class Collection(models.Model):
     group_model_multilevel = models.CharField(help_text="If more than 2-levels, describe the levels and assumptions of the model (e.g. are variances assumed equal between groups)", verbose_name="Multilevel modeling", max_length=200, null=True, blank=True)
     group_repeated_measures = models.NullBooleanField(help_text="Was this a repeated measures design at the group level?", null=True, verbose_name="Repeated measures", blank=True)
     group_repeated_measures_method = models.CharField(help_text="If multiple measurements per subject, list method to account for within subject correlation, exact assumptions made about correlation/variance", verbose_name="Repeated measures method", max_length=200, null=True, blank=True)
-    
+
 
     def get_absolute_url(self):
-        return reverse('collection_details', args=[str(self.id)])
-    
+        return_cid = self.id
+        if self.private:
+            return_cid = self.private_token
+        return reverse('collection_details', args=[str(return_cid)])
+
     def __unicode__(self):
         return self.name
-    
+
     def save(self):
 
         # Save the file before the rest of the data so we can convert it to json
@@ -125,9 +130,12 @@ class Collection(models.Model):
                 self.name, self.authors, self.url, _ = getPaperProperties(self.DOI)
             except:
                 pass
-            
+
         super(Collection, self).save()
-        
+
+    class Meta:
+        app_label = 'statmaps'
+
 def getPaperProperties(doi):
     xmlurl = 'http://doi.crossref.org/servlet/query'
     xmlpath = xmlurl + '?pid=k.j.gorgolewski@sms.ed.ac.uk&format=unixref&id=' + urllib2.quote(doi)
@@ -157,8 +165,9 @@ def getPaperProperties(doi):
                                          1)
     return title, authors, url, publication_date
 
+
 def upload_to(instance, filename):
-    return "images/%s/%s"%(instance.collection.id, filename)
+    return os.path.join('images',str(instance.collection.id), filename)
 
 
 class KeyValueTag(TagBase):
@@ -173,7 +182,7 @@ class Image(DirtyFieldsMixin, models.Model):
     Z = 'Z'
     T = 'T'
     F = 'F'
-    X2 = 'X2' 
+    X2 = 'X2'
     P = 'P'
     OTHER = 'Other'
     MAP_TYPE_CHOICES = (
@@ -198,7 +207,7 @@ class Image(DirtyFieldsMixin, models.Model):
     smoothness_fwhm = models.FloatField(help_text="Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.", verbose_name="Smoothness FWHM", null=True, blank=True)
     contrast_definition = models.CharField(help_text="Exactly what terms are subtracted from what? Define these in terms of task or stimulus conditions (e.g., 'one-back task with objects versus zero-back task with objects') instead of underlying psychological concepts (e.g., 'working memory').", verbose_name="Contrast definition", max_length=200, null=True, blank=True)
     contrast_definition_cogatlas = models.CharField(help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast", verbose_name="Cognitive Atlas definition", max_length=200, null=True, blank=True)
-    
+
     # Additional properties--need to add choices list for most of these
     # statistic_type = models.CharField(help_text="Type of statistic values in the image represent (t, z, p, r, % signal change, etc.)", max_length=200, blank=True, null=True, verbose_name="Statistic type")
     # analysis_type = models.CharField(help_text="What kind of analysis does this map reflect?", max_length=200, verbose_name="Analysis type", blank=True, null=True, choices=[('single-subject', 'single-subject'), ('','')])
@@ -208,19 +217,24 @@ class Image(DirtyFieldsMixin, models.Model):
 
     def __unicode__(self):
         return self.name
-    
+
     def get_absolute_url(self):
-        return reverse('image_details', args=[str(self.id)])
+        return_args = [str(self.id)]
+        url_name = 'image_details'
+        if self.collection.private:
+            return_args.insert(0,str(self.collection.private_token))
+            url_name = 'private_image_details'
+        return reverse(url_name, args=return_args)
 
     def set_name(self, new_name):
         self.name = new_name
-    
+
     class Meta:
         unique_together = ("collection", "name")
-        
+
 
 #     def save(self):
-#  
+#
 #         # If a new file or header has been uploaded, redo the JSON conversion
 #         if 'file' in self.get_dirty_fields() or 'hdr_file' in self.get_dirty_fields():
 #             self.file.save(self.file.name, self.file, save = False)
@@ -232,8 +246,8 @@ class Image(DirtyFieldsMixin, models.Model):
 #                 nb.save(nii, nifti_gz_file)
 #                 f = open(nifti_gz_file)
 #                 self.nifti_gz_file.save(nifti_gz_file.split(os.path.sep)[-1], File(f), save=False)
-#                 
-#  
+#
+#
 #         super(Image, self).save()
 
 
@@ -256,7 +270,7 @@ class Image(DirtyFieldsMixin, models.Model):
             image.hdr_file.save(my_file_name[:-3] + "hdr", hdrFile);
 
         image.map_type = my_map_type;
-        
+
         #create JSON file for neurosynth viewer
         if os.path.exists(image.file.path):
             nifti_gz_file = ".".join(image.file.path.split(".")[:-1]) + '.nii.gz'
@@ -264,7 +278,7 @@ class Image(DirtyFieldsMixin, models.Model):
             nb.save(nii, nifti_gz_file)
             f = open(nifti_gz_file)
             image.nifti_gz_file.save(nifti_gz_file.split(os.path.sep)[-1], File(f), save=False)
-            
+
         image.save();
 
         return image

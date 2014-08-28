@@ -5,6 +5,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DEBUG = False
+
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -24,6 +25,7 @@ DATABASES = {
         #'PORT': '',        # Set to empty string for default.
     }
 }
+
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False
 # See https://docs.djangoproject.com/en/1.5/ref/settings/#allowed-hosts
@@ -54,7 +56,8 @@ USE_TZ = True
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/var/www/example.com/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR,'media')
+MEDIA_ROOT = os.path.join(BASE_DIR,'pub-media')
+MEDIA_URL = '/pub/media/'
 
 # Absolute path to the directory static files should be collected to.
 # Don't put anything in this directory yourself; store your static files
@@ -96,7 +99,8 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'corsheaders.middleware.CorsMiddleware'
+    'corsheaders.middleware.CorsMiddleware',
+    'neurovault.apps.statmaps.middleware.CollectionRedirectMiddleware',
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
@@ -226,10 +230,17 @@ CRISPY_TEMPLATE_PACK = 'bootstrap'
 
 DBBACKUP_STORAGE = 'dbbackup.storage.dropbox_storage'
 DBBACKUP_TOKENS_FILEPATH = '/home/filo/dbtokens'
-DBBACKUP_POSTGRES_BACKUP_COMMAND='export PGPASSWORD=neurovault\n pg_dump --username={adminuser} --host={host} --port={port} {databasename} >'
+DBBACKUP_POSTGRES_BACKUP_COMMAND = 'export PGPASSWORD=neurovault\n pg_dump --username={adminuser} --host={host} --port={port} {databasename} >'
+
+PRIVATE_MEDIA_ROOT = '/opt/nv-env/NeuroVault/image_data'
+PRIVATE_MEDIA_URL = '/media/images'  # set to media/images for backwards compat. with old links
+
+# For Apache, use 'X-Sendfile'
+# For Nginx, use 'X-Accel-Redirect'
+PRIVATE_MEDIA_REDIRECT_HEADER = 'X-Sendfile'
+
 
 # Bogus secret key.
-
 
 from secrets import *
 

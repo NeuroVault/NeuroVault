@@ -8,10 +8,13 @@ from rest_framework import viewsets, routers, serializers
 from rest_framework.decorators import link
 from rest_framework.response import Response
 from taggit.models import Tag
+from neurovault.apps.statmaps.views import get_image,get_collection
+import re
 
 from django import template
 template.add_to_builtins('django.templatetags.future')
 template.add_to_builtins('django.contrib.staticfiles.templatetags.staticfiles')
+
 
 class HyperlinkedFileField(serializers.FileField):
 
@@ -20,7 +23,21 @@ class HyperlinkedFileField(serializers.FileField):
             request = self.context.get('request', None)
             return request.build_absolute_uri(value.url)
 
-# ViewSets define the view behavior.
+
+class HyperlinkedRelatedURL(serializers.RelatedField):
+
+    def to_native(self, value):
+        if value:
+            request = self.context.get('request', None)
+            return request.build_absolute_uri(value.get_absolute_url())
+
+
+class HyperlinkedImageURL(serializers.CharField):
+
+    def to_native(self, value):
+        if value:
+            request = self.context.get('request', None)
+            return request.build_absolute_uri(value)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -37,34 +54,36 @@ class APIHelper:
     @staticmethod
     def wrap_for_datatables(data, fields_to_strip=[]):
         '''
-        Formats a model instance for the Datatables JQuery plugin. 
+        Formats a model instance for the Datatables JQuery plugin.
 
         Args:
             data: A Model instance retrieved from the database.
             fields_to_strip: A list of named attributes to exclude.
-        
+
         Returns:
-            A dict with an aaData field containing all of the 
+            A dict with an aaData field containing all of the
             values (and no keys) in tabular format. '''
         data = dict([(k,v) for k,v in data.items() if v and k not in fields_to_strip])
         return Response(
-            { 'aaData': zip(data.keys(), data.values()) }
+            {'aaData': zip(data.keys(), data.values())}
         )
 
 
 class ImageSerializer(serializers.HyperlinkedModelSerializer):
 
     file = HyperlinkedFileField(source='file')
+    collection = HyperlinkedRelatedURL(source='collection')
+    url = HyperlinkedImageURL(source='get_absolute_url')
 
     class Meta:
         model = Image
-        # fields = ('file', 'hdr_file')
 
 
 class CollectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Collection
+        exclude = ['private_token']
 
 
 class ImageViewSet(viewsets.ModelViewSet):
@@ -72,28 +91,50 @@ class ImageViewSet(viewsets.ModelViewSet):
     queryset = Image.objects.all()
     serializer_class = ImageSerializer
 
+    def _get_api_image(self,request,pk=None):
+        private_url = re.match(r'^[A-Z]{8}\-\d+$',pk)
+        if private_url:
+            collection_cid,pk = pk.split('-')
+        else:
+            base_image = self.get_object()
+            collection_cid = base_image.collection.id
+        return get_image(pk,collection_cid,request,mode='api')
 
     @link()
     def datatable(self, request, pk=None):
-        ''' A wrapper around standard retrieve() request that formats the 
+        ''' A wrapper around standard retrieve() request that formats the
         object for the Datatables plugin. '''
-        image = self.get_object()
+        image = self._get_api_image(request,pk)
         data = ImageSerializer(image, context={'request': request}).data
-        return APIHelper.wrap_for_datatables(data, ['name', 'modify_date', 'description', 'add_date'])
+        return APIHelper.wrap_for_datatables(data, ['name', 'modify_date',
+                                                    'description', 'add_date'])
+
+    def retrieve(self, request, pk=None):
+        image = self._get_api_image(request,pk)
+        data = ImageSerializer(image, context={'request': request}).data
+        return Response(data)
 
 
 class CollectionViewSet(viewsets.ModelViewSet):
 
-    queryset = Collection.objects.all()
+    queryset = Collection.objects.filter()
     serializer_class = CollectionSerializer
 
     @link()
     def datatable(self, request, pk=None):
-        ''' A wrapper around standard retrieve() request that formats the 
-        object for the Datatables plugin. '''
-        collection = self.get_object()
+        collection = get_collection(pk,request,mode='api')
         data = CollectionSerializer(collection).data
         return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date'])
+
+    def retrieve(self, request, pk=None):
+        collection = get_collection(pk,request,mode='api')
+        data = CollectionSerializer(collection).data
+        return Response(data)
+
+    def list(self, request):
+        queryset = Collection.objects.filter(private=False)
+        data = CollectionSerializer(queryset).data
+        return Response(data)
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -125,8 +166,10 @@ urlpatterns = patterns('',
                            'rest_framework.urls', namespace='rest_framework'))
                        )
 
+
 if settings.DEBUG:
-    # static files (images, css, javascript, etc.)
+#    # static files (images, css, javascript, etc.)
     urlpatterns += patterns('',
-                           (r'^media/(?P<path>.*)$', 'django.views.static.serve', {
+                           (r'^pub/media/(?P<path>.*)$', 'django.views.static.serve', {
                             'document_root': settings.MEDIA_ROOT}))
+
