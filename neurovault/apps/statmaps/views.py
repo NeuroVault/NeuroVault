@@ -322,14 +322,21 @@ def view_image_with_pycortex(request, pk, collection_cid=None):
 def serve_image(request, collection_cid, img_name):
     collection = get_collection(collection_cid,request,mode='file')
     image = Image.objects.get(collection=collection,file__endswith=img_name)
+    # use a URI for Nginx, and a filesystem path for Apache
+    redir_path = '/private{0}'.format(image.file.url)
+    if settings.PRIVATE_MEDIA_REDIRECT_HEADER == 'X-Sendfile':
+        redir_path = image.file.path
     response = HttpResponse(mimetype='application/force-download')
-    response[settings.PRIVATE_MEDIA_REDIRECT_HEADER] = image.file.path
+    response[settings.PRIVATE_MEDIA_REDIRECT_HEADER] = redir_path
     return response
 
 
 def serve_pycortex(request, collection_cid, pycortex_dir, path):
     collection = get_collection(collection_cid,request,mode='file')
-    int_path = os.path.join(settings.PRIVATE_MEDIA_ROOT,
+    int_path = '/private{0}'.format(os.path.join(settings.PRIVATE_MEDIA_URL,
+                                    str(collection.id),pycortex_dir,path))
+    if settings.PRIVATE_MEDIA_REDIRECT_HEADER == 'X-Sendfile':
+        int_path = os.path.join(settings.PRIVATE_MEDIA_ROOT,
                             'images',str(collection.id),pycortex_dir,path)
     response = HttpResponse()
     response[settings.PRIVATE_MEDIA_REDIRECT_HEADER] = int_path

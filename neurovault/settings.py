@@ -232,12 +232,18 @@ DBBACKUP_STORAGE = 'dbbackup.storage.dropbox_storage'
 DBBACKUP_TOKENS_FILEPATH = '/home/filo/dbtokens'
 DBBACKUP_POSTGRES_BACKUP_COMMAND = 'export PGPASSWORD=neurovault\n pg_dump --username={adminuser} --host={host} --port={port} {databasename} >'
 
+# the the original image paths are retained to support old links.
+# Nginx will serve the PRIVATE_MEDIA_URL with private/ prepended to the path
+# e.g. for PRIVATE_MEDIA_URL 'media/images', configure internal location '/private/media/images'
+PRIVATE_MEDIA_URL = '/media/images'
+
+# Location of secured files on filesystem
 PRIVATE_MEDIA_ROOT = '/opt/nv-env/NeuroVault/image_data'
-PRIVATE_MEDIA_URL = '/media/images'  # set to media/images for backwards compat. with old links
 
 # For Apache, use 'X-Sendfile'
 # For Nginx, use 'X-Accel-Redirect'
-PRIVATE_MEDIA_REDIRECT_HEADER = 'X-Sendfile'
+PRIVATE_MEDIA_REDIRECT_HEADER = 'X-Accel-Redirect'
+
 
 
 # Bogus secret key.
