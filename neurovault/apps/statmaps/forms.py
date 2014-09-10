@@ -218,10 +218,13 @@ collection_row_attrs = {
 
 
 class CollectionForm(ModelForm):
-
+    
     class Meta:
         exclude = ('owner','private_token')
         model = Collection
+        widgets = {
+            'private': forms.RadioSelect
+        }
         # fieldsets = study_fieldsets
         # row_attrs = study_row_attrs
 

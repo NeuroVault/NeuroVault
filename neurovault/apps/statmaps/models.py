@@ -25,7 +25,8 @@ class Collection(models.Model):
     url = models.CharField(max_length=200, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     owner = models.ForeignKey(User)
-    private = models.BooleanField(default=False,verbose_name="Private Collection?",help_text="Is this collection private?  (Private collections are not listed in the NeuroVault index.  These collections can be shared with others at a private URL.)")
+    private = models.BooleanField(choices=((False, 'Public (The collection will be accessible by anyone and all the data in it will be distributed under CC0 license)'), 
+                                           (True, 'Private (The collection will be not listed in the NeuroVault index. It will be possible to shared it with others at a private URL.)')), default=False,verbose_name="Accesibility")
     private_token = models.CharField(max_length=8,blank=True,null=True,unique=True,db_index=True)
     add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
