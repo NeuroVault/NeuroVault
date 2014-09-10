@@ -157,20 +157,25 @@ def edit_image(request, pk):
 
 @login_required
 def add_image_for_neurosynth(request):
-    priv_token = generate_url_token()
-    collection_name = "Neurosynth Private Collection: %s " % priv_token
-    temp_collection = Collection(name=collection_name,
-                                 owner=request.user,
-                                 private=True,
-                                 private_token=priv_token)
-    temp_collection.save()
+    temp_collection_name = "%s's temporary collection"%request.user.username
+    #this is a hack we need to make sure this collection can be only 
+    #owned by the same user
+    try:
+        temp_collection = Collection.objects.get(name=temp_collection_name)
+    except Collection.DoesNotExist:
+        priv_token = generate_url_token()
+        temp_collection = Collection(name=collection_name,
+                                     owner=request.user,
+                                     private=True,
+                                     private_token=priv_token)
+        temp_collection.save()
     image = Image(collection=temp_collection)
     if request.method == "POST":
         form = SimplifiedImageForm(request.user, request.POST, request.FILES, instance=image)
         if form.is_valid():
             image = form.save()
             return HttpResponseRedirect("http://beta.neurosynth.org/decode/?neurovault=%s-%s" % (
-                priv_token,image.id))
+                temp_collection.priv_token,image.id))
     else:
         form = SimplifiedImageForm(request.user, instance=image)
 
@@ -321,7 +326,7 @@ def view_image_with_pycortex(request, pk, collection_cid=None):
 
 def serve_image(request, collection_cid, img_name):
     collection = get_collection(collection_cid,request,mode='file')
-    image = Image.objects.get(collection=collection,file__exact=img_name)
+    image = Image.objects.get(collection=collection,file__endswith='/'+img_name)
     # use a URI for Nginx, and a filesystem path for Apache
     redir_path = '/private{0}'.format(format(os.path.join(settings.PRIVATE_MEDIA_URL,
                                       str(collection.id), img_name)))
