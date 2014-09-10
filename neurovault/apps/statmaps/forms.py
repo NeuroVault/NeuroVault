@@ -28,7 +28,8 @@ from django import forms
 collection_fieldsets = [
     ('Essentials', {'fields': ['name',
                                'DOI',
-                               'description'],
+                               'description',
+                               'private'],
                     'legend': 'Essentials'}),
     ('Participants', {'fields': ['number_of_subjects',
                                  'subject_age_mean',
@@ -217,10 +218,13 @@ collection_row_attrs = {
 
 
 class CollectionForm(ModelForm):
-
+    
     class Meta:
-        exclude = ('owner',)
+        exclude = ('owner','private_token')
         model = Collection
+        widgets = {
+            'private': forms.RadioSelect
+        }
         # fieldsets = study_fieldsets
         # row_attrs = study_row_attrs
 
