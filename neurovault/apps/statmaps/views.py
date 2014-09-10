@@ -321,7 +321,7 @@ def view_image_with_pycortex(request, pk, collection_cid=None):
 
 def serve_image(request, collection_cid, img_name):
     collection = get_collection(collection_cid,request,mode='file')
-    image = Image.objects.get(collection=collection,file__endswith=img_name)
+    image = Image.objects.get(collection=collection,file__exact=img_name)
     # use a URI for Nginx, and a filesystem path for Apache
     redir_path = '/private{0}'.format(format(os.path.join(settings.PRIVATE_MEDIA_URL,
                                       str(collection.id), img_name)))
