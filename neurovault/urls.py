@@ -40,14 +40,6 @@ class HyperlinkedImageURL(serializers.CharField):
             return request.build_absolute_uri(value)
 
 
-class UserViewSet(viewsets.ModelViewSet):
-    model = User
-
-
-class GroupViewSet(viewsets.ModelViewSet):
-    model = Group
-
-
 class APIHelper:
     ''' Contains generic helper methods to call from various
     serializers and viewsets. '''
@@ -155,8 +147,6 @@ class TagViewSet(viewsets.ModelViewSet):
 
 # Routers provide an easy way of automatically determining the URL conf
 router = routers.DefaultRouter()
-router.register(r'users', UserViewSet)
-router.register(r'groups', GroupViewSet)
 router.register(r'images', ImageViewSet)
 router.register(r'collections', CollectionViewSet)
 
