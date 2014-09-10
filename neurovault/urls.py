@@ -113,6 +113,11 @@ class ImageViewSet(viewsets.ModelViewSet):
         image = self._get_api_image(request,pk)
         data = ImageSerializer(image, context={'request': request}).data
         return Response(data)
+    
+    def list(self, request):
+        queryset = Image.objects.filter(collection__private=False)
+        data = ImageSerializer(queryset, context={'request': request}).data
+        return Response(data)
 
 
 class CollectionViewSet(viewsets.ModelViewSet):
@@ -170,6 +175,6 @@ urlpatterns = patterns('',
 if settings.DEBUG:
 #    # static files (images, css, javascript, etc.)
     urlpatterns += patterns('',
-                           (r'^pub/media/(?P<path>.*)$', 'django.views.static.serve', {
+                           (r'^'+settings.MEDIA_URL+'/(?P<path>.*)$', 'django.views.static.serve', {
                             'document_root': settings.MEDIA_ROOT}))
 
