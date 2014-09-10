@@ -29,7 +29,7 @@ DATABASES = {
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False
 # See https://docs.djangoproject.com/en/1.5/ref/settings/#allowed-hosts
-ALLOWED_HOSTS = ["django-dbbackup"]
+ALLOWED_HOSTS = ["*"]
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -56,8 +56,8 @@ USE_TZ = True
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/var/www/example.com/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR,'pub-media')
-MEDIA_URL = '/pub/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR,'media')
+MEDIA_URL = '/public/media/'
 
 # Absolute path to the directory static files should be collected to.
 # Don't put anything in this directory yourself; store your static files
@@ -236,9 +236,6 @@ DBBACKUP_POSTGRES_BACKUP_COMMAND = 'export PGPASSWORD=neurovault\n pg_dump --use
 # Nginx will serve the PRIVATE_MEDIA_URL with private/ prepended to the path
 # e.g. for PRIVATE_MEDIA_URL 'media/images', configure internal location '/private/media/images'
 PRIVATE_MEDIA_URL = '/media/images'
-
-# Location of secured files on filesystem
-PRIVATE_MEDIA_ROOT = '/opt/nv-env/NeuroVault/image_data'
 
 # For Apache, use 'X-Sendfile'
 # For Nginx, use 'X-Accel-Redirect'
