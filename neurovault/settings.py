@@ -244,7 +244,9 @@ PRIVATE_MEDIA_ROOT = '/opt/nv-env/NeuroVault/image_data'
 # For Nginx, use 'X-Accel-Redirect'
 PRIVATE_MEDIA_REDIRECT_HEADER = 'X-Accel-Redirect'
 
-
+SOUTH_MIGRATION_MODULES = {
+        'taggit': 'taggit.south_migrations',
+    }
 
 # Bogus secret key.
 
