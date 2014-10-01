@@ -1,329 +1,177 @@
 # -*- coding: utf-8 -*-
-import datetime
-from south.db import db
-from south.v2 import SchemaMigration
-from django.db import models
+from __future__ import unicode_literals
+
+from django.db import models, migrations
+import taggit.managers
+import dirtyfields.dirtyfields
+import neurovault.apps.statmaps.models
+from django.conf import settings
+import neurovault.apps.statmaps.storage
 
 
-class Migration(SchemaMigration):
+class Migration(migrations.Migration):
 
-    def forwards(self, orm):
-        # Adding model 'Collection'
-        db.create_table(u'statmaps_collection', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=200)),
-            ('DOI', self.gf('django.db.models.fields.CharField')(default=None, max_length=200, unique=True, null=True, blank=True)),
-            ('authors', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('url', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
-            ('owner', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'])),
-            ('add_date', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
-            ('modify_date', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
-            ('type_of_design', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('number_of_imaging_runs', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('number_of_experimental_units', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('length_of_runs', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('length_of_blocks', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('length_of_trials', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('optimization', self.gf('django.db.models.fields.NullBooleanField')(null=True, blank=True)),
-            ('optimization_method', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('number_of_subjects', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('subject_age_mean', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('subject_age_min', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('subject_age_max', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('handedness', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('proportion_male_subjects', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('inclusion_exclusion_criteria', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('number_of_rejected_subjects', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('group_comparison', self.gf('django.db.models.fields.NullBooleanField')(null=True, blank=True)),
-            ('group_description', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('scanner_make', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('scanner_model', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('field_strength', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('pulse_sequence', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('parallel_imaging', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('field_of_view', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('matrix_size', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('slice_thickness', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('skip_factor', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('acquisition_orientation', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('order_of_acquisition', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('repetition_time', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('echo_time', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('flip_angle', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('software_package', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('software_version', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('order_of_preprocessing_operations', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('quality_control', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('used_b0_unwarping', self.gf('django.db.models.fields.NullBooleanField')(null=True, blank=True)),
-            ('b0_unwarping_software', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('used_slice_timing_correction', self.gf('django.db.models.fields.NullBooleanField')(null=True, blank=True)),
-            ('slice_timing_correction_software', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('used_motion_correction', self.gf('django.db.models.fields.NullBooleanField')(null=True, blank=True)),
-            ('motion_correction_software', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('motion_correction_reference', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('motion_correction_metric', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('motion_correction_interpolation', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('used_motion_susceptibiity_correction', self.gf('django.db.models.fields.NullBooleanField')(null=True, blank=True)),
-            ('used_intersubject_registration', self.gf('django.db.models.fields.NullBooleanField')(null=True, blank=True)),
-            ('intersubject_registration_software', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('intersubject_transformation_type', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('nonlinear_transform_type', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('transform_similarity_metric', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('interpolation_method', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('object_image_type', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('functional_coregistered_to_structural', self.gf('django.db.models.fields.NullBooleanField')(null=True, blank=True)),
-            ('functional_coregistration_method', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('coordinate_space', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('target_template_image', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('target_resolution', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('used_smoothing', self.gf('django.db.models.fields.NullBooleanField')(null=True, blank=True)),
-            ('smoothing_type', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('smoothing_fwhm', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('resampled_voxel_size', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('intrasubject_model_type', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('intrasubject_estimation_type', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('intrasubject_modeling_software', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('hemodynamic_response_function', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('used_temporal_derivatives', self.gf('django.db.models.fields.NullBooleanField')(null=True, blank=True)),
-            ('used_dispersion_derivatives', self.gf('django.db.models.fields.NullBooleanField')(null=True, blank=True)),
-            ('used_motion_regressors', self.gf('django.db.models.fields.NullBooleanField')(null=True, blank=True)),
-            ('used_reaction_time_regressor', self.gf('django.db.models.fields.NullBooleanField')(null=True, blank=True)),
-            ('used_orthogonalization', self.gf('django.db.models.fields.NullBooleanField')(null=True, blank=True)),
-            ('orthogonalization_description', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('used_high_pass_filter', self.gf('django.db.models.fields.NullBooleanField')(null=True, blank=True)),
-            ('high_pass_filter_method', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('autocorrelation_model', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('group_model_type', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('group_estimation_type', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('group_modeling_software', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('group_inference_type', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('group_model_multilevel', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('group_repeated_measures', self.gf('django.db.models.fields.NullBooleanField')(null=True, blank=True)),
-            ('group_repeated_measures_method', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-        ))
-        db.send_create_signal(u'statmaps', ['Collection'])
+    dependencies = [
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ('contenttypes', '0001_initial'),
+    ]
 
-        # Adding model 'KeyValueTag'
-        db.create_table(u'statmaps_keyvaluetag', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=100)),
-            ('slug', self.gf('django.db.models.fields.SlugField')(unique=True, max_length=100)),
-            ('value', self.gf('django.db.models.fields.CharField')(max_length=200, blank=True)),
-        ))
-        db.send_create_signal(u'statmaps', ['KeyValueTag'])
-
-        # Adding model 'ValueTaggedItem'
-        db.create_table(u'statmaps_valuetaggeditem', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('object_id', self.gf('django.db.models.fields.IntegerField')(db_index=True)),
-            ('content_type', self.gf('django.db.models.fields.related.ForeignKey')(related_name=u'statmaps_valuetaggeditem_tagged_items', to=orm['contenttypes.ContentType'])),
-            ('tag', self.gf('django.db.models.fields.related.ForeignKey')(related_name='tagged_items', to=orm['statmaps.KeyValueTag'])),
-        ))
-        db.send_create_signal(u'statmaps', ['ValueTaggedItem'])
-
-        # Adding model 'Image'
-        db.create_table(u'statmaps_image', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('collection', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['statmaps.Collection'])),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=200)),
-            ('description', self.gf('django.db.models.fields.TextField')()),
-            ('file', self.gf('django.db.models.fields.files.FileField')(max_length=100)),
-            ('hdr_file', self.gf('django.db.models.fields.files.FileField')(max_length=100, blank=True)),
-            ('json_path', self.gf('django.db.models.fields.CharField')(max_length=200, blank=True)),
-            ('add_date', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
-            ('modify_date', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
-            ('map_type', self.gf('django.db.models.fields.CharField')(max_length=200)),
-            ('statistic_parameters', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('smoothness_fwhm', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-            ('contrast_definition', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-            ('contrast_definition_cogatlas', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
-        ))
-        db.send_create_signal(u'statmaps', ['Image'])
-
-        # Adding unique constraint on 'Image', fields ['collection', 'name']
-        db.create_unique(u'statmaps_image', ['collection_id', 'name'])
-
-
-    def backwards(self, orm):
-        # Removing unique constraint on 'Image', fields ['collection', 'name']
-        db.delete_unique(u'statmaps_image', ['collection_id', 'name'])
-
-        # Deleting model 'Collection'
-        db.delete_table(u'statmaps_collection')
-
-        # Deleting model 'KeyValueTag'
-        db.delete_table(u'statmaps_keyvaluetag')
-
-        # Deleting model 'ValueTaggedItem'
-        db.delete_table(u'statmaps_valuetaggeditem')
-
-        # Deleting model 'Image'
-        db.delete_table(u'statmaps_image')
-
-
-    models = {
-        u'auth.group': {
-            'Meta': {'object_name': 'Group'},
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '80'}),
-            'permissions': ('django.db.models.fields.related.ManyToManyField', [], {'to': u"orm['auth.Permission']", 'symmetrical': 'False', 'blank': 'True'})
-        },
-        u'auth.permission': {
-            'Meta': {'ordering': "(u'content_type__app_label', u'content_type__model', u'codename')", 'unique_together': "((u'content_type', u'codename'),)", 'object_name': 'Permission'},
-            'codename': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'content_type': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['contenttypes.ContentType']"}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '50'})
-        },
-        u'auth.user': {
-            'Meta': {'object_name': 'User'},
-            'date_joined': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'email': ('django.db.models.fields.EmailField', [], {'max_length': '75', 'blank': 'True'}),
-            'first_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
-            'groups': ('django.db.models.fields.related.ManyToManyField', [], {'to': u"orm['auth.Group']", 'symmetrical': 'False', 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'is_active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
-            'is_staff': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'is_superuser': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'last_login': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'last_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
-            'password': ('django.db.models.fields.CharField', [], {'max_length': '128'}),
-            'user_permissions': ('django.db.models.fields.related.ManyToManyField', [], {'to': u"orm['auth.Permission']", 'symmetrical': 'False', 'blank': 'True'}),
-            'username': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '30'})
-        },
-        u'contenttypes.contenttype': {
-            'Meta': {'ordering': "('name',)", 'unique_together': "(('app_label', 'model'),)", 'object_name': 'ContentType', 'db_table': "'django_content_type'"},
-            'app_label': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'model': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '100'})
-        },
-        u'statmaps.collection': {
-            'DOI': ('django.db.models.fields.CharField', [], {'default': 'None', 'max_length': '200', 'unique': 'True', 'null': 'True', 'blank': 'True'}),
-            'Meta': {'object_name': 'Collection'},
-            'acquisition_orientation': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'add_date': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'authors': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'autocorrelation_model': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'b0_unwarping_software': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'coordinate_space': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            'echo_time': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'field_of_view': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'field_strength': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'flip_angle': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'functional_coregistered_to_structural': ('django.db.models.fields.NullBooleanField', [], {'null': 'True', 'blank': 'True'}),
-            'functional_coregistration_method': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'group_comparison': ('django.db.models.fields.NullBooleanField', [], {'null': 'True', 'blank': 'True'}),
-            'group_description': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'group_estimation_type': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'group_inference_type': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'group_model_multilevel': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'group_model_type': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'group_modeling_software': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'group_repeated_measures': ('django.db.models.fields.NullBooleanField', [], {'null': 'True', 'blank': 'True'}),
-            'group_repeated_measures_method': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'handedness': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'hemodynamic_response_function': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'high_pass_filter_method': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'inclusion_exclusion_criteria': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'interpolation_method': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'intersubject_registration_software': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'intersubject_transformation_type': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'intrasubject_estimation_type': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'intrasubject_model_type': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'intrasubject_modeling_software': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'length_of_blocks': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'length_of_runs': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'length_of_trials': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'matrix_size': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'modify_date': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
-            'motion_correction_interpolation': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'motion_correction_metric': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'motion_correction_reference': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'motion_correction_software': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '200'}),
-            'nonlinear_transform_type': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'number_of_experimental_units': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'number_of_imaging_runs': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'number_of_rejected_subjects': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'number_of_subjects': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'object_image_type': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'optimization': ('django.db.models.fields.NullBooleanField', [], {'null': 'True', 'blank': 'True'}),
-            'optimization_method': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'order_of_acquisition': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'order_of_preprocessing_operations': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'orthogonalization_description': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'owner': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['auth.User']"}),
-            'parallel_imaging': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'proportion_male_subjects': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'pulse_sequence': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'quality_control': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'repetition_time': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'resampled_voxel_size': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'scanner_make': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'scanner_model': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'skip_factor': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'slice_thickness': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'slice_timing_correction_software': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'smoothing_fwhm': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'smoothing_type': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'software_package': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'software_version': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'subject_age_max': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'subject_age_mean': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'subject_age_min': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'target_resolution': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'target_template_image': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'transform_similarity_metric': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'type_of_design': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'url': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'used_b0_unwarping': ('django.db.models.fields.NullBooleanField', [], {'null': 'True', 'blank': 'True'}),
-            'used_dispersion_derivatives': ('django.db.models.fields.NullBooleanField', [], {'null': 'True', 'blank': 'True'}),
-            'used_high_pass_filter': ('django.db.models.fields.NullBooleanField', [], {'null': 'True', 'blank': 'True'}),
-            'used_intersubject_registration': ('django.db.models.fields.NullBooleanField', [], {'null': 'True', 'blank': 'True'}),
-            'used_motion_correction': ('django.db.models.fields.NullBooleanField', [], {'null': 'True', 'blank': 'True'}),
-            'used_motion_regressors': ('django.db.models.fields.NullBooleanField', [], {'null': 'True', 'blank': 'True'}),
-            'used_motion_susceptibiity_correction': ('django.db.models.fields.NullBooleanField', [], {'null': 'True', 'blank': 'True'}),
-            'used_orthogonalization': ('django.db.models.fields.NullBooleanField', [], {'null': 'True', 'blank': 'True'}),
-            'used_reaction_time_regressor': ('django.db.models.fields.NullBooleanField', [], {'null': 'True', 'blank': 'True'}),
-            'used_slice_timing_correction': ('django.db.models.fields.NullBooleanField', [], {'null': 'True', 'blank': 'True'}),
-            'used_smoothing': ('django.db.models.fields.NullBooleanField', [], {'null': 'True', 'blank': 'True'}),
-            'used_temporal_derivatives': ('django.db.models.fields.NullBooleanField', [], {'null': 'True', 'blank': 'True'})
-        },
-        u'statmaps.image': {
-            'Meta': {'unique_together': "(('collection', 'name'),)", 'object_name': 'Image'},
-            'add_date': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'collection': ('django.db.models.fields.related.ForeignKey', [], {'to': u"orm['statmaps.Collection']"}),
-            'contrast_definition': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'contrast_definition_cogatlas': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'description': ('django.db.models.fields.TextField', [], {}),
-            'file': ('django.db.models.fields.files.FileField', [], {'max_length': '100'}),
-            'hdr_file': ('django.db.models.fields.files.FileField', [], {'max_length': '100', 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'json_path': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'}),
-            'map_type': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
-            'modify_date': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
-            'smoothness_fwhm': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'statistic_parameters': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'})
-        },
-        u'statmaps.keyvaluetag': {
-            'Meta': {'object_name': 'KeyValueTag'},
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '100'}),
-            'slug': ('django.db.models.fields.SlugField', [], {'unique': 'True', 'max_length': '100'}),
-            'value': ('django.db.models.fields.CharField', [], {'max_length': '200', 'blank': 'True'})
-        },
-        u'statmaps.valuetaggeditem': {
-            'Meta': {'object_name': 'ValueTaggedItem'},
-            'content_type': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "u'statmaps_valuetaggeditem_tagged_items'", 'to': u"orm['contenttypes.ContentType']"}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'object_id': ('django.db.models.fields.IntegerField', [], {'db_index': 'True'}),
-            'tag': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'tagged_items'", 'to': u"orm['statmaps.KeyValueTag']"})
-        }
-    }
-
-    complete_apps = ['statmaps']
+    operations = [
+        migrations.CreateModel(
+            name='Collection',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('name', models.CharField(unique=True, max_length=200, verbose_name=b'Name of collection')),
+                ('DOI', models.CharField(null=True, default=None, max_length=200, blank=True, unique=True, verbose_name=b'DOI of the corresponding paper')),
+                ('authors', models.CharField(max_length=200, null=True, blank=True)),
+                ('url', models.CharField(max_length=200, null=True, blank=True)),
+                ('description', models.TextField(null=True, blank=True)),
+                ('private', models.BooleanField(default=False, verbose_name=b'Accesibility', choices=[(False, b'Public (The collection will be accessible by anyone and all the data in it will be distributed under CC0 license)'), (True, b'Private (The collection will be not listed in the NeuroVault index. It will be possible to shared it with others at a private URL.)')])),
+                ('private_token', models.CharField(db_index=True, max_length=8, unique=True, null=True, blank=True)),
+                ('add_date', models.DateTimeField(auto_now_add=True, verbose_name=b'date published')),
+                ('modify_date', models.DateTimeField(auto_now=True, verbose_name=b'date modified')),
+                ('type_of_design', models.CharField(choices=[(b'blocked', b'blocked'), (b'eventrelated', b'event_related'), (b'hybridblockevent', b'hybrid block/event'), (b'other', b'other')], max_length=200, blank=True, help_text=b'Blocked, event-related, hybrid, or other', null=True, verbose_name=b'Type of design')),
+                ('number_of_imaging_runs', models.IntegerField(help_text=b'Number of imaging runs acquired', null=True, verbose_name=b'No. of imaging runs', blank=True)),
+                ('number_of_experimental_units', models.IntegerField(help_text=b'Number of blocks, trials or experimental units per imaging run', null=True, verbose_name=b'No. of experimental units', blank=True)),
+                ('length_of_runs', models.FloatField(help_text=b'Length of each imaging run in seconds', null=True, verbose_name=b'Length of runs', blank=True)),
+                ('length_of_blocks', models.FloatField(help_text=b'For blocked designs, length of blocks in seconds', null=True, verbose_name=b'Length of blocks', blank=True)),
+                ('length_of_trials', models.FloatField(help_text=b'Length of individual trials in seconds', null=True, verbose_name=b'Length of trials', blank=True)),
+                ('optimization', models.NullBooleanField(help_text=b'Was the design optimized for efficiency', verbose_name=b'Optimization?')),
+                ('optimization_method', models.CharField(help_text=b'What method was used for optimization?', max_length=200, null=True, verbose_name=b'Optimization method', blank=True)),
+                ('number_of_subjects', models.IntegerField(help_text=b'Number of subjects entering into the analysis', null=True, verbose_name=b'No. of subjects', blank=True)),
+                ('subject_age_mean', models.FloatField(help_text=b'Mean age of subjects', null=True, verbose_name=b'Subject age mean', blank=True)),
+                ('subject_age_min', models.FloatField(help_text=b'Minimum age of subjects', null=True, verbose_name=b'Subject age min', blank=True)),
+                ('subject_age_max', models.FloatField(help_text=b'Maximum age of subjects', null=True, verbose_name=b'Subject age max', blank=True)),
+                ('handedness', models.CharField(choices=[(b'right', b'right'), (b'left', b'left'), (b'both', b'both')], max_length=200, blank=True, help_text=b'Handedness of subjects', null=True, verbose_name=b'Handedness')),
+                ('proportion_male_subjects', models.FloatField(help_text=b'The proportion of subjects who were male', null=True, verbose_name=b'Prop. male subjects', blank=True)),
+                ('inclusion_exclusion_criteria', models.CharField(help_text=b'Additional inclusion/exclusion criteria, if any (including specific sampling strategies that limit inclusion to a specific group, such as laboratory members)', max_length=200, null=True, verbose_name=b'Inclusion / exclusion criteria', blank=True)),
+                ('number_of_rejected_subjects', models.IntegerField(help_text=b'Number of subjects scanned but rejected from analysis', null=True, verbose_name=b'No. of rejected subjects', blank=True)),
+                ('group_comparison', models.NullBooleanField(help_text=b'Was this study a comparison between subject groups?', verbose_name=b'Group comparison?')),
+                ('group_description', models.CharField(help_text=b'A description of the groups being compared', max_length=200, null=True, verbose_name=b'Group description', blank=True)),
+                ('scanner_make', models.CharField(help_text=b'Manufacturer of MRI scanner', max_length=200, null=True, verbose_name=b'Scanner make', blank=True)),
+                ('scanner_model', models.CharField(help_text=b'Model of MRI scanner', max_length=200, null=True, verbose_name=b'Scanner model', blank=True)),
+                ('field_strength', models.FloatField(help_text=b'Field strength of MRI scanner (in Tesla)', null=True, verbose_name=b'Field strength', blank=True)),
+                ('pulse_sequence', models.CharField(help_text=b'Description of pulse sequence used for fMRI', max_length=200, null=True, verbose_name=b'Pulse sequence', blank=True)),
+                ('parallel_imaging', models.CharField(help_text=b'Description of parallel imaging method and parameters', max_length=200, null=True, verbose_name=b'Parallel imaging', blank=True)),
+                ('field_of_view', models.FloatField(help_text=b'Imaging field of view in millimeters', null=True, verbose_name=b'Field of view', blank=True)),
+                ('matrix_size', models.IntegerField(help_text=b'Matrix size for MRI acquisition', null=True, verbose_name=b'Matrix size', blank=True)),
+                ('slice_thickness', models.FloatField(help_text=b'Distance between slices (includes skip or distance factor) in millimeters', null=True, verbose_name=b'Slice thickness', blank=True)),
+                ('skip_factor', models.FloatField(help_text=b'The size of the skipped area between slices in millimeters', null=True, verbose_name=b'Skip factor', blank=True)),
+                ('acquisition_orientation', models.CharField(help_text=b'The orientation of slices', max_length=200, null=True, verbose_name=b'Acquisition orientation', blank=True)),
+                ('order_of_acquisition', models.CharField(choices=[(b'ascending', b'ascending'), (b'descending', b'descending'), (b'interleaved', b'interleaved')], max_length=200, blank=True, help_text=b'Order of acquisition of slices (ascending, descending, or interleaved)', null=True, verbose_name=b'Order of acquisition')),
+                ('repetition_time', models.FloatField(help_text=b'Repetition time (TR) in milliseconds', null=True, verbose_name=b'Repetition time', blank=True)),
+                ('echo_time', models.FloatField(help_text=b'Echo time (TE) in milliseconds', null=True, verbose_name=b'Echo time', blank=True)),
+                ('flip_angle', models.FloatField(help_text=b'Flip angle in degrees', null=True, verbose_name=b'Flip angle', blank=True)),
+                ('software_package', models.CharField(help_text=b'If a single software package was used for all analyses, specify that here', max_length=200, null=True, verbose_name=b'Software package', blank=True)),
+                ('software_version', models.CharField(help_text=b'Version of software package used', max_length=200, null=True, verbose_name=b'Software version', blank=True)),
+                ('order_of_preprocessing_operations', models.CharField(help_text=b'Specify order of preprocessing operations', max_length=200, null=True, verbose_name=b'Order of preprocessing', blank=True)),
+                ('quality_control', models.CharField(help_text=b'Describe quality control measures', max_length=200, null=True, verbose_name=b'Quality control', blank=True)),
+                ('used_b0_unwarping', models.NullBooleanField(help_text=b'Was B0 distortion correction used?', verbose_name=b'Used B0 unwarping?')),
+                ('b0_unwarping_software', models.CharField(help_text=b'Specify software used for distortion correction if different from the main package', max_length=200, null=True, verbose_name=b'B0 unwarping software', blank=True)),
+                ('used_slice_timing_correction', models.NullBooleanField(help_text=b'Was slice timing correction used?', verbose_name=b'Slice timing correction?')),
+                ('slice_timing_correction_software', models.CharField(help_text=b'Specify software used for slice timing correction if different from the main package', max_length=200, null=True, verbose_name=b'Slice timing correction software', blank=True)),
+                ('used_motion_correction', models.NullBooleanField(help_text=b'Was motion correction used?', verbose_name=b'Motion correction?')),
+                ('motion_correction_software', models.CharField(help_text=b'Specify software used for motion correction if different from the main package', max_length=200, null=True, verbose_name=b'Motion correction software', blank=True)),
+                ('motion_correction_reference', models.CharField(help_text=b'Reference scan used for motion correction', max_length=200, null=True, verbose_name=b'Motion correction reference', blank=True)),
+                ('motion_correction_metric', models.CharField(help_text=b'Similarity metric used for motion correction', max_length=200, null=True, verbose_name=b'Motion correction metric', blank=True)),
+                ('motion_correction_interpolation', models.CharField(help_text=b'Interpolation method used for motion correction', max_length=200, null=True, verbose_name=b'Motion correction interpolation', blank=True)),
+                ('used_motion_susceptibiity_correction', models.NullBooleanField(help_text=b'Was motion-susceptibility correction used?', verbose_name=b'Motion susceptibility correction?')),
+                ('used_intersubject_registration', models.NullBooleanField(help_text=b'Were subjects registered to a common stereotactic space?', verbose_name=b'Intersubject registration?')),
+                ('intersubject_registration_software', models.CharField(help_text=b'Specify software used for intersubject registration if different from main package', max_length=200, null=True, verbose_name=b'Registration software', blank=True)),
+                ('intersubject_transformation_type', models.CharField(choices=[(b'linear', b'linear'), (b'nonlinear', b'nonlinear')], max_length=200, blank=True, help_text=b'Was linear or nonlinear registration used?', null=True, verbose_name=b'Intersubject transformation type')),
+                ('nonlinear_transform_type', models.CharField(help_text=b'If nonlinear registration was used, describe transform method', max_length=200, null=True, verbose_name=b'Nonlinear transform type', blank=True)),
+                ('transform_similarity_metric', models.CharField(help_text=b'Similarity metric used for intersubject registration', max_length=200, null=True, verbose_name=b'Transform similarity metric', blank=True)),
+                ('interpolation_method', models.CharField(help_text=b'Interpolation method used for intersubject registration', max_length=200, null=True, verbose_name=b'Interpolation method', blank=True)),
+                ('object_image_type', models.CharField(help_text=b'What type of image was used to determine the transformation to the atlas?', max_length=200, null=True, verbose_name=b'Object image type', blank=True)),
+                ('functional_coregistered_to_structural', models.NullBooleanField(help_text=b"Were the functional images coregistered to the subject's structural image?", verbose_name=b'Coregistered to structural?')),
+                ('functional_coregistration_method', models.CharField(help_text=b'Method used to coregister functional to structural images', max_length=200, null=True, verbose_name=b'Coregistration method', blank=True)),
+                ('coordinate_space', models.CharField(choices=[(b'mni', b'MNI'), (b'talairach', b'Talairach'), (b'mni2tal', b'MNI2Tal'), (b'other', b'other')], max_length=200, blank=True, help_text=b'Name of coordinate space for registration target', null=True, verbose_name=b'Coordinate space')),
+                ('target_template_image', models.CharField(help_text=b'Name of target template image', max_length=200, null=True, verbose_name=b'Target template image', blank=True)),
+                ('target_resolution', models.FloatField(help_text=b'Voxel size of target template in millimeters', null=True, verbose_name=b'Target resolution', blank=True)),
+                ('used_smoothing', models.NullBooleanField(help_text=b'Was spatial smoothing applied?', verbose_name=b'Used smoothing?')),
+                ('smoothing_type', models.CharField(help_text=b'Describe the type of smoothing applied', max_length=200, null=True, verbose_name=b'Type of smoothing', blank=True)),
+                ('smoothing_fwhm', models.FloatField(help_text=b'The full-width at half-maximum of the smoothing kernel in millimeters', null=True, verbose_name=b'Smoothing FWHM', blank=True)),
+                ('resampled_voxel_size', models.FloatField(help_text=b'Voxel size in mm of the resampled, atlas-space images', null=True, verbose_name=b'Resampled voxel size', blank=True)),
+                ('intrasubject_model_type', models.CharField(help_text=b'Type of model used (e.g., regression)', max_length=200, null=True, verbose_name=b'Model type', blank=True)),
+                ('intrasubject_estimation_type', models.CharField(help_text=b'Estimation method used for model (e.g., OLS, generalized least squares)', max_length=200, null=True, verbose_name=b'Estimation type', blank=True)),
+                ('intrasubject_modeling_software', models.CharField(help_text=b'Software used for intrasubject modeling if different from overall package', max_length=200, null=True, verbose_name=b'Modeling software', blank=True)),
+                ('hemodynamic_response_function', models.CharField(help_text=b'Nature of HRF model', max_length=200, null=True, verbose_name=b'Hemodynamic response function', blank=True)),
+                ('used_temporal_derivatives', models.NullBooleanField(help_text=b'Were temporal derivatives included?', verbose_name=b'Temporal derivatives?')),
+                ('used_dispersion_derivatives', models.NullBooleanField(help_text=b'Were dispersion derivatives included?', verbose_name=b'Dispersion derivatives?')),
+                ('used_motion_regressors', models.NullBooleanField(help_text=b'Were motion regressors included?', verbose_name=b'Motion regressors?')),
+                ('used_reaction_time_regressor', models.NullBooleanField(help_text=b'Was a reaction time regressor included?', verbose_name=b'Reaction time regressor?')),
+                ('used_orthogonalization', models.NullBooleanField(help_text=b'Were any regressors specifically orthogonalized with respect to others?', verbose_name=b'Orthogonalization?')),
+                ('orthogonalization_description', models.CharField(help_text=b'If orthogonalization was used, describe here', max_length=200, null=True, verbose_name=b'Orthogonalization description', blank=True)),
+                ('used_high_pass_filter', models.NullBooleanField(help_text=b'Was high pass filtering applied?', verbose_name=b'High-pass filter?')),
+                ('high_pass_filter_method', models.CharField(help_text=b'Describe method used for high pass filtering', max_length=200, null=True, verbose_name=b'High-pass filtering method', blank=True)),
+                ('autocorrelation_model', models.CharField(help_text=b"What autocorrelation model was used (or 'none' of none was used)", max_length=200, null=True, verbose_name=b'Autocorrelation method', blank=True)),
+                ('group_model_type', models.CharField(help_text=b'Type of group model used (e.g., regression)', max_length=200, null=True, verbose_name=b'Group model type', blank=True)),
+                ('group_estimation_type', models.CharField(help_text=b'Estimation method used for group model (e.g., OLS, generalized least squares)', max_length=200, null=True, verbose_name=b'Group estimation type', blank=True)),
+                ('group_modeling_software', models.CharField(help_text=b'Software used for group modeling if different from overall package', max_length=200, null=True, verbose_name=b'Group modeling software', blank=True)),
+                ('group_inference_type', models.CharField(choices=[(b'randommixedeffects', b'random/mixed effects'), (b'fixedeffects', b'fixed effects')], max_length=200, blank=True, help_text=b'Type of inference for group model', null=True, verbose_name=b'Group inference type')),
+                ('group_model_multilevel', models.CharField(help_text=b'If more than 2-levels, describe the levels and assumptions of the model (e.g. are variances assumed equal between groups)', max_length=200, null=True, verbose_name=b'Multilevel modeling', blank=True)),
+                ('group_repeated_measures', models.NullBooleanField(help_text=b'Was this a repeated measures design at the group level?', verbose_name=b'Repeated measures')),
+                ('group_repeated_measures_method', models.CharField(help_text=b'If multiple measurements per subject, list method to account for within subject correlation, exact assumptions made about correlation/variance', max_length=200, null=True, verbose_name=b'Repeated measures method', blank=True)),
+                ('owner', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='Image',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('name', models.CharField(max_length=200)),
+                ('description', models.TextField()),
+                ('file', models.FileField(upload_to=neurovault.apps.statmaps.models.upload_to, storage=neurovault.apps.statmaps.storage.NiftiGzStorage(), verbose_name=b'File with the unthresholded map (.img, .nii, .nii.gz)')),
+                ('add_date', models.DateTimeField(auto_now_add=True, verbose_name=b'date published')),
+                ('modify_date', models.DateTimeField(auto_now=True, verbose_name=b'date modified')),
+                ('map_type', models.CharField(help_text=b'Type of statistic that is the basis of the inference', max_length=200, verbose_name=b'Map type', choices=[(b'T', b'T map'), (b'Z', b'Z map'), (b'F', b'F map'), (b'X2', b'Chi squared map'), (b'P', b'P map (given null hypothesis)'), (b'Other', b'Other')])),
+                ('statistic_parameters', models.FloatField(help_text=b'Parameters of the null distribution of the test statisic, typically degrees of freedom (should be clear from the test statistic what these are).', null=True, verbose_name=b'Statistic parameters', blank=True)),
+                ('smoothness_fwhm', models.FloatField(help_text=b'Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.', null=True, verbose_name=b'Smoothness FWHM', blank=True)),
+                ('contrast_definition', models.CharField(help_text=b"Exactly what terms are subtracted from what? Define these in terms of task or stimulus conditions (e.g., 'one-back task with objects versus zero-back task with objects') instead of underlying psychological concepts (e.g., 'working memory').", max_length=200, null=True, verbose_name=b'Contrast definition', blank=True)),
+                ('contrast_definition_cogatlas', models.CharField(help_text=b"Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast", max_length=200, null=True, verbose_name=b'Cognitive Atlas definition', blank=True)),
+                ('collection', models.ForeignKey(to='statmaps.Collection')),
+            ],
+            options={
+            },
+            bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, models.Model),
+        ),
+        migrations.CreateModel(
+            name='KeyValueTag',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('name', models.CharField(unique=True, max_length=100, verbose_name='Name')),
+                ('slug', models.SlugField(unique=True, max_length=100, verbose_name='Slug')),
+                ('value', models.CharField(max_length=200, blank=True)),
+            ],
+            options={
+                'abstract': False,
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='ValueTaggedItem',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('object_id', models.IntegerField(verbose_name='Object id', db_index=True)),
+                ('content_type', models.ForeignKey(related_name='statmaps_valuetaggeditem_tagged_items', verbose_name='Content type', to='contenttypes.ContentType')),
+                ('tag', models.ForeignKey(related_name=b'tagged_items', to='statmaps.KeyValueTag')),
+            ],
+            options={
+                'abstract': False,
+            },
+            bases=(models.Model,),
+        ),
+        migrations.AddField(
+            model_name='image',
+            name='tags',
+            field=taggit.managers.TaggableManager(to='statmaps.KeyValueTag', through='statmaps.ValueTaggedItem', blank=True, help_text='A comma-separated list of tags.', verbose_name='Tags'),
+            preserve_default=True,
+        ),
+        migrations.AlterUniqueTogether(
+            name='image',
+            unique_together=set([('collection', 'name')]),
+        ),
+    ]

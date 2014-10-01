@@ -147,7 +147,7 @@ INSTALLED_APPS = (
     'crispy_forms',
     'coffeescript',
     'taggit_templatetags',
-    'south',
+    #'south',
     'corsheaders',
     'dbbackup'
 )
@@ -242,9 +242,9 @@ PRIVATE_MEDIA_URL = '/media/images'
 # For Nginx, use 'X-Accel-Redirect'
 PRIVATE_MEDIA_REDIRECT_HEADER = 'X-Accel-Redirect'
 
-SOUTH_MIGRATION_MODULES = {
-        'taggit': 'taggit.south_migrations',
-    }
+#SOUTH_MIGRATION_MODULES = {
+#        'taggit': 'taggit.south_migrations',
+#    }
 
 # Bogus secret key.
 
