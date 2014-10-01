@@ -124,14 +124,10 @@ class Collection(models.Model):
         return self.name
 
     def save(self):
-
-        # Save the file before the rest of the data so we can convert it to json
-        if self.DOI:
-            try:
-                self.name, self.authors, self.url, _ = getPaperProperties(self.DOI)
-            except:
-                pass
-
+        if self.DOI != None and self.DOI.strip() == "":
+            self.DOI = None
+        if self.private_token != None and self.private_token.strip() == "":
+            self.private_token = None
         super(Collection, self).save()
 
     class Meta:
