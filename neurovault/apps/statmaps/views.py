@@ -335,7 +335,8 @@ def serve_image(request, collection_cid, img_name):
                                       str(collection.id), img_name)))
     if settings.PRIVATE_MEDIA_REDIRECT_HEADER == 'X-Sendfile':
         redir_path = image.file.path
-    response = HttpResponse(mimetype='application/force-download')
+    response = HttpResponse()
+    response['Content-Type'] = 'application/force-download'
     response[settings.PRIVATE_MEDIA_REDIRECT_HEADER] = redir_path
     return response
 
@@ -352,7 +353,7 @@ def serve_pycortex(request, collection_cid, pycortex_dir, path):
                             'images',str(collection.id),pycortex_dir,path)
     response = HttpResponse()
     if int_path.endswith(".png"):
-    	response['Content-Type'] = 'image/png'
+        response['Content-Type'] = 'image/png'
     elif int_path.endswith(".json"):
         response['Content-Type'] = 'application/json'
     elif int_path.endswith(".ctm"):
