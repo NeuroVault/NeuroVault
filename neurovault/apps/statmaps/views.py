@@ -370,11 +370,13 @@ def serve_pycortex(request, collection_cid, pycortex_dir, path):
 def stats_view(request):
     collections_by_journals = {}
     for collection in Collection.objects.filter(private=False).exclude(Q(DOI__isnull=True) | Q(DOI__exact='')):
-        _,_,_,_,journal = get_paper_properties(collection.DOI)
-        if journal not in collections_by_journals.keys():
-            collections_by_journals[journal] = 1
+        if not collection.journal_name:
+            _,_,_,_, collection.journal_name = get_paper_properties(collection.DOI)
+            collection.save()
+        if collection.journal_name not in collections_by_journals.keys():
+            collections_by_journals[collection.journal_name] = 1
         else:
-            collections_by_journals[journal] +=1
+            collections_by_journals[collection.journal_name] +=1
     collections_by_journals = OrderedDict(sorted(collections_by_journals.items(), key=lambda t: t[1], reverse=True))
     context = {'collections_by_journals': collections_by_journals}
     return render(request, 'statmaps/stats.html.haml', context)
