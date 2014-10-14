@@ -5,7 +5,7 @@ from .views import edit_collection, edit_images, view_image, delete_image, edit_
                     view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
                     serve_image, serve_pycortex
 from neurovault.apps.statmaps.views import view_images_by_tag,\
-    view_image_with_pycortex
+    view_image_with_pycortex, stats_view
 from neurovault.apps.statmaps.models import KeyValueTag
 from django.db.models import Count
 from django.contrib.auth.decorators import login_required
@@ -29,6 +29,9 @@ urlpatterns = patterns('',
             context_object_name='collections',
             template_name='statmaps/collections_index.html.haml'),
         name='collections_list'),
+    url(r'^collections/stats$',
+        stats_view,
+        name='collections_stats'),
     url(r'^collections/(?P<cid>\d+|[A-Z]{8})/$',
         view_collection,
         name='collection_details'),

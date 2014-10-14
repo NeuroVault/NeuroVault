@@ -7,7 +7,7 @@ from neurovault.apps.statmaps.forms import UploadFileForm, SimplifiedImageForm
 from django.template.context import RequestContext
 from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename,generate_pycortex_dir, \
-    generate_url_token, HttpRedirectException
+    generate_url_token, HttpRedirectException, get_paper_properties
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.db.models import Q
@@ -22,6 +22,7 @@ import re
 import errno
 import tempfile
 import os
+from collections import OrderedDict
 
 
 def get_collection(cid,request,mode=None):
@@ -365,3 +366,15 @@ def serve_pycortex(request, collection_cid, pycortex_dir, path):
     response[settings.PRIVATE_MEDIA_REDIRECT_HEADER] = int_path
     return response
 
+
+def stats_view(request):
+    collections_by_journals = {}
+    for collection in Collection.objects.filter(private=False).exclude(Q(DOI__isnull=True) | Q(DOI__exact='')):
+        _,_,_,_,journal = get_paper_properties(collection.DOI)
+        if journal not in collections_by_journals.keys():
+            collections_by_journals[journal] = 1
+        else:
+            collections_by_journals[journal] +=1
+    collections_by_journals = OrderedDict(sorted(collections_by_journals.items(), key=lambda t: t[1], reverse=True))
+    context = {'collections_by_journals': collections_by_journals}
+    return render(request, 'statmaps/stats.html.haml', context)

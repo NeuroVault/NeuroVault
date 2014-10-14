@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load coffeescript %}
+{% block head %}
+<script type="text/javascript"> 
+var addthis_config = {
+     data_track_clickback: false 
+} 
+</script>
+{% endblock %}
+{% block content %}
+
+.row
+    .span11{:style => "padding: 0 0 0 0px;"}
+        %h4 Latest collections of images
+        %table.table.table-striped
+            %thead
+                %tr
+                    %th.span9
+                        Name
+                    %th.span1
+                        Number of collections
+            %tbody
+                - for journal_name, journal_count in collections_by_journals.items
+                    %tr
+                        %td.span9
+                            {{ journal_name }}
+                        %td.span1
+                            {{ journal_count }}
+
+{% endblock %}
