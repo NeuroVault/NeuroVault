@@ -6,7 +6,7 @@ from django.db import models
 from neurovault.apps.statmaps.storage import NiftiGzStorage
 from taggit.managers import TaggableManager
 from taggit.models import GenericTaggedItemBase, TagBase
-from xml.etree import ElementTree
+from xml import etree
 import datetime
 import os
 import urllib2

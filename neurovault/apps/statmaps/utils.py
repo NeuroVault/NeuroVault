@@ -6,6 +6,9 @@ import numpy as np
 import string
 import random
 from .models import Collection
+import urllib2
+from lxml import etree 
+import datetime
 
 
 # see CollectionRedirectMiddleware
@@ -113,7 +116,7 @@ def get_paper_properties(doi):
     xmlpath = xmlurl + '?pid=k.j.gorgolewski@sms.ed.ac.uk&format=unixref&id=' + urllib2.quote(doi)
     print xmlpath
     xml_str = urllib2.urlopen(xmlpath).read()
-    doc = ElementTree.fromstring(xml_str)
+    doc = etree.fromstring(xml_str)
     if len(doc.getchildren()) == 0 or len(doc.findall('.//crossref/error')) > 0:
         raise Exception("DOI %s was not found" % doi)
     journal_name = doc.findall(".//journal/journal_metadata/full_title")[0].text
