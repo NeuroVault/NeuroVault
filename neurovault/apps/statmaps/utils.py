@@ -7,6 +7,9 @@ import string
 import random
 from .models import Collection
 from neurovault import settings
+import urllib2
+from lxml import etree
+import datetime
 
 
 # see CollectionRedirectMiddleware
@@ -119,3 +122,33 @@ def generate_url_token(length=8):
     else:
         return token
 
+def get_paper_properties(doi):
+    xmlurl = 'http://doi.crossref.org/servlet/query'
+    xmlpath = xmlurl + '?pid=k.j.gorgolewski@sms.ed.ac.uk&format=unixref&id=' + urllib2.quote(doi)
+    print xmlpath
+    xml_str = urllib2.urlopen(xmlpath).read()
+    doc = etree.fromstring(xml_str)
+    if len(doc.getchildren()) == 0 or len(doc.findall('.//crossref/error')) > 0:
+        raise Exception("DOI %s was not found" % doi)
+    journal_name = doc.findall(".//journal/journal_metadata/full_title")[0].text
+    title = doc.findall('.//title')[0].text
+    authors = [author.findall('given_name')[0].text + " " + author.findall('surname')[0].text for author in doc.findall('.//contributors/person_name')]
+    if len(authors) > 1:
+        authors = ", ".join(authors[:-1]) + " and " + authors[-1]
+    else:
+        authors = authors[0]
+    url = doc.findall('.//doi_data/resource')[0].text
+    date_node = doc.findall('.//publication_date')[0]
+    if len(date_node.findall('day')) > 0:
+        publication_date = datetime.date(int(date_node.findall('year')[0].text),
+                                         int(date_node.findall('month')[0].text),
+                                         int(date_node.findall('day')[0].text))
+    elif len(date_node.findall('month')) > 0:
+        publication_date = datetime.date(int(date_node.findall('year')[0].text),
+                                         int(date_node.findall('month')[0].text),
+                                         1)
+    else:
+        publication_date = datetime.date(int(date_node.findall('year')[0].text),
+                                         1,
+                                         1)
+    return title, authors, url, publication_date, journal_name

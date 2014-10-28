@@ -14,12 +14,11 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Submit, HTML, Button, Row, Field, Hidden
 from crispy_forms.bootstrap import AppendedText, PrependedText, FormActions, TabHolder, Tab
 
-from neurovault.apps.statmaps.models import getPaperProperties
 from .models import Collection, Image
 from django.forms.forms import Form
 from django.forms.fields import FileField
 import tempfile
-from neurovault.apps.statmaps.utils import split_filename
+from neurovault.apps.statmaps.utils import split_filename, get_paper_properties
 from django.core.files.base import File, ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django import forms
@@ -237,7 +236,7 @@ class CollectionForm(ModelForm):
 
         if self.cleaned_data['DOI']:
             try:
-                self.cleaned_data["name"], self.cleaned_data["authors"], self.cleaned_data["url"], _ = getPaperProperties(self.cleaned_data['DOI'].strip())
+                self.cleaned_data["name"], self.cleaned_data["authors"], self.cleaned_data["url"], _, self.cleaned_data["journal_name"] = get_paper_properties(self.cleaned_data['DOI'].strip())
             except:
                 self._errors["DOI"] = self.error_class(["Could not resolve DOI"])
             else:
