@@ -6,6 +6,7 @@ import numpy as np
 import string
 import random
 from .models import Collection
+from neurovault import settings
 
 
 # see CollectionRedirectMiddleware
@@ -67,18 +68,26 @@ def split_filename(fname):
 
 
 def generate_pycortex_dir(nifti_file, output_dir, transform_name):
+    os.environ["XDG_CONFIG_HOME"] = settings.PYCORTEX_CONFIG_HOME
+    os.environ["FREESURFER_HOME"] = "/opt/freesurfer"
+    os.environ["SUBJECTS_DIR"] = os.path.join(os.environ["FREESURFER_HOME"],"subjects")
+    os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
+
     import cortex
-    temp_dir = tempfile.mkdtemp()
+    temp_dir = tempfile.mkdtemp(dir=settings.PYCORTEX_CONFIG_HOME)
     try:
         new_mni_dat = os.path.join(temp_dir, "mni152reg.dat")
         mni_mat = os.path.join(temp_dir, "mni152reg.mat")
-        reference = os.path.join(os.environ['FREESURFER_HOME'], 'subjects', 'fsaverage', 'mri', 'brain.mgz')
-        shutil.copy(os.path.join(os.environ['FREESURFER_HOME'], 'average', 'mni152.register.dat'), new_mni_dat)
+        reference = os.path.join(os.environ['FREESURFER_HOME'],
+                                 'subjects', 'fsaverage', 'mri', 'brain.nii.gz')
+        shutil.copy(os.path.join(os.environ['FREESURFER_HOME'],
+                                 'average', 'mni152.register.dat'), new_mni_dat)
         #this avoids problems with white spaces in file names
         tmp_link = os.path.join(temp_dir, "tmp.nii.gz")
         os.symlink(nifti_file, tmp_link)
-        os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
-        exit_code = subprocess.call([os.path.join(os.environ['FREESURFER_HOME'],"bin", "tkregister2"),
+        tklog = open(os.path.join(temp_dir,'tkreg2.log'),'w')
+        exit_code = subprocess.call([os.path.join(os.environ['FREESURFER_HOME'],
+                                     "bin", "tkregister2"),
                                      "--mov",
                                      tmp_link,
                                      "--targ",
@@ -88,13 +97,15 @@ def generate_pycortex_dir(nifti_file, output_dir, transform_name):
                                      "--noedit",
                                      "--nofix",
                                      "--fslregout",
-                                     mni_mat])
+                                     mni_mat],stdout=tklog)
         if exit_code:
-            raise RuntimeError("tkregister2 exited with status %d"%exit_code)
+            raise RuntimeError("tkregister2 exited with status %d" % exit_code)
         x = np.loadtxt(mni_mat)
         xfm = cortex.xfm.Transform.from_fsl(x, nifti_file, reference)
         xfm.save("fsaverage", transform_name,'coord')
-        dv = cortex.DataView((nifti_file, "fsaverage", transform_name))
+        dv = cortex.Volume(nifti_file, "fsaverage", transform_name,
+                         cmap="RdBu_r", vmin=-3, vmax=3, dfilter="trilinear")
+
         cortex.webgl.make_static(output_dir, dv)
     finally:
         shutil.rmtree(temp_dir)

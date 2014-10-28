@@ -48,6 +48,7 @@ THREE.LandscapeControls = function ( cover, camera ) {
     var _indblpick = false; // In double-click and hold?
     var _picktimer = false; // timer that runs pick event
     this._momentumtimer = false; // time that glide has been going on post mouse-release
+    var _nomove_timer;
 
     // events
 
@@ -62,7 +63,7 @@ THREE.LandscapeControls = function ( cover, camera ) {
         } else 
             mouseChange = _end.clone().subSelf(_start);
 
-        if (mouseChange.length() > 0 && statefunc[_state]) {
+        if (statefunc[_state]) {
             if (statefunc[_state])
                 statefunc[_state](mouseChange);
         }
@@ -152,6 +153,18 @@ THREE.LandscapeControls = function ( cover, camera ) {
         } else {
             _end = this.getMouse(event);
         }
+
+        var nomove_evt = function() {
+            if ( _state === STATE.NONE ) {
+                return;
+            } else {
+                _end = _start.clone();
+                this.update(this.flatmix);
+            }
+        };
+        clearTimeout(_nomove_timer);
+        _nomove_timer = setTimeout(nomove_evt.bind(this), 100);
+
         this.dispatchEvent( changeEvent );
     };
 
@@ -239,6 +252,7 @@ THREE.LandscapeControls.prototype = {
     resize: function(w, h) {
         this.domElement.style.width = w+"px";
         this.domElement.style.height = h+"px";
+        this._zoom(1.0) // To set orthographic zoom correctly
     },
 
     getMouse: function ( event ) {
@@ -262,7 +276,7 @@ THREE.LandscapeControls.prototype = {
         }
 
         this._limitview();
-
+        this._zoom(1.0) // Establish zoom (?)
         var altrad = this.altitude*Math.PI / 180;
         var azirad = (this.azimuth+90)*Math.PI / 180;
 
@@ -323,19 +337,34 @@ THREE.LandscapeControls.prototype = {
     },
  
     zoom: function( mouseChange ) {
-        var factor = 1.0 + mouseChange.y*this.zoomSpeed;
-        this.radius *= factor;
-        if (this.radius > this.maxRadius) { 
-            this.radius = this.maxRadius; 
-        }
-        if (this.radius < this.minRadius(this.flatmix)) { 
-            this.radius = this.minRadius(this.flatmix); 
-        }
+        this._zoom(1.0 + mouseChange.y*this.zoomSpeed);
     },
     
     wheelzoom: function( wheelEvent ) {
-        var factor = 1.0 + this.zoomSpeed * -1 * wheelEvent.wheelDelta/10.0;
+        this._zoom(1.0 + this.zoomSpeed * -1 * wheelEvent.wheelDelta/10.0);
+    },
+
+    _zoom: function( factor ) {
         this.radius *= factor;
+        if (this.camera.inPerspectiveMode) {
+            // Perspective mode, zoom by changing radius from camera to object
+            if (this.radius > this.maxRadius) { 
+                this.radius = this.maxRadius; 
+            }
+            if (this.radius < this.minRadius(this.flatmix)) { 
+                this.radius = this.minRadius(this.flatmix); 
+            }
+        } else {
+            // Orthographic mode, zoom by changing frustrum limits
+            var aspect = this.camera.cameraP.aspect
+            var height = 2.0*this.radius*Math.tan(this.camera.cameraP.fov/2.0)
+            var width = aspect*height
+            this.camera.cameraO.top = height/2.0
+            this.camera.cameraO.bottom = -height/2.0
+            this.camera.cameraO.right = width/2.0
+            this.camera.cameraO.left = -width/2.0
+            this.camera.cameraO.updateProjectionMatrix();
+        }
     },
 
     schedule: function( force ) {
