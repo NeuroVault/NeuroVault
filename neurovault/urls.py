@@ -163,8 +163,8 @@ urlpatterns = patterns('',
                            'rest_framework.urls', namespace='rest_framework'))
                        )
 
-if settings.DEBUG == True:
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+#if settings.DEBUG == True:
+#    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # if settings.DEBUG:
 # #    # static files (images, css, javascript, etc.)
