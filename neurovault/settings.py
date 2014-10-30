@@ -64,7 +64,7 @@ MEDIA_URL = '/public/media/'
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/var/www/example.com/static/"
-#STATIC_ROOT = os.path.join(BASE_DIR,'static')
+STATIC_ROOT = os.path.join(BASE_DIR,'static')
 
 # URL prefix for static files.
 # Example: "http://example.com/static/", "http://static.example.com/"
@@ -239,8 +239,8 @@ DBBACKUP_POSTGRES_BACKUP_COMMAND = 'export PGPASSWORD=neurovault\n pg_dump --use
 PRIVATE_MEDIA_ROOT = os.path.join(BASE_DIR,'private_media')
 PRIVATE_MEDIA_URL = '/media/images'
 
-# For Apache, use 'X-Sendfile'
-# For Nginx, use 'X-Accel-Redirect'
+# For Apache, use 'sendfile.backends.xsendfile'
+# For Nginx, use 'sendfile.backends.nginx'
 SENDFILE_BACKEND = 'sendfile.backends.development'
 
 #SOUTH_MIGRATION_MODULES = {
