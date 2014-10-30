@@ -159,7 +159,7 @@ def edit_image(request, pk):
 @login_required
 def add_image_for_neurosynth(request):
     temp_collection_name = "%s's temporary collection"%request.user.username
-    #this is a hack we need to make sure this collection can be only 
+    #this is a hack we need to make sure this collection can be only
     #owned by the same user
     try:
         temp_collection = Collection.objects.get(name=temp_collection_name)
@@ -328,17 +328,18 @@ def view_image_with_pycortex(request, pk, collection_cid=None):
 def serve_image(request, collection_cid, img_name):
     collection = get_collection(collection_cid,request,mode='file')
     image = Image.objects.get(collection=collection,file__endswith='/'+img_name)
-#    if settings.DEBUG:
-#        content_type = mimetypes.guess_type(image.file.path)[0] or 'application/octet-stream'
-#        return HttpResponse(open(image.file.path, 'rb').read(), content_type=content_type)
+
     # use a URI for Nginx, and a filesystem path for Apache
     redir_path = '/private{0}'.format(format(os.path.join(settings.PRIVATE_MEDIA_URL,
                                       str(collection.id), img_name)))
     if settings.PRIVATE_MEDIA_REDIRECT_HEADER == 'X-Sendfile':
         redir_path = image.file.path
-    response = HttpResponse()
-    response['Content-Type'] = 'application/force-download'
-    response[settings.PRIVATE_MEDIA_REDIRECT_HEADER] = redir_path
+
+    response = HttpResponse(content_type='application/force-download')
+    if settings.DEBUG:
+        response.content = open(image.file.path, 'rb').read()
+    else:
+        response[settings.PRIVATE_MEDIA_REDIRECT_HEADER] = redir_path
     return response
 
 
@@ -346,9 +347,7 @@ def serve_pycortex(request, collection_cid, pycortex_dir, path):
     collection = get_collection(collection_cid,request,mode='file')
     int_path = '/private{0}'.format(os.path.join(settings.PRIVATE_MEDIA_URL,
                                     str(collection.id),pycortex_dir,path))
-#    if settings.DEBUG:
-#        content_type = mimetypes.guess_type(int_path)[0] or 'application/octet-stream'
-#        return HttpResponse(open(int_path, 'rb').read(), content_type=content_type)
+
     if settings.PRIVATE_MEDIA_REDIRECT_HEADER == 'X-Sendfile':
         int_path = os.path.join(settings.PRIVATE_MEDIA_ROOT,
                             'images',str(collection.id),pycortex_dir,path)
@@ -363,7 +362,11 @@ def serve_pycortex(request, collection_cid, pycortex_dir, path):
         response['Content-Type'] = 'image/svg+xml'
     else:
         response['Content-Type'] = ''
-    response[settings.PRIVATE_MEDIA_REDIRECT_HEADER] = int_path
+
+    if settings.DEBUG:
+        response.content = open(int_path, 'rb').read()
+    else:
+        response[settings.PRIVATE_MEDIA_REDIRECT_HEADER] = int_path
     return response
 
 
