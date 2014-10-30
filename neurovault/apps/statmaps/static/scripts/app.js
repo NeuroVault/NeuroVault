@@ -19,7 +19,7 @@ $(document).ready(function() {
 	// We already have the functional overlay, so add the anatomical...
 	images.unshift(
 		{
-			'url': '/media/anatomical/MNI152.nii.gz.json',
+			'url': '/static/anatomical/MNI152.nii.gz.json',
 			'name': 'MNI152 2mm',
 			'colorPalette': 'grayscale'
 		}

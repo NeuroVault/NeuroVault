@@ -29,3 +29,4 @@ Pillow
 requests
 requests-oauthlib
 python-openid
+django-sendfile

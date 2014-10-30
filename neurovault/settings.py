@@ -72,10 +72,8 @@ STATIC_URL = '/static/'
 
 # Additional locations of static files
 STATICFILES_DIRS = (
-    # Put strings here, like "/home/html/static" or "C:/www/django/static".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-)
+                    os.path.join(BASE_DIR, "static"),
+                    )
 
 # List of finder classes that know how to find static files in
 # various locations.
@@ -243,7 +241,7 @@ PRIVATE_MEDIA_URL = '/media/images'
 
 # For Apache, use 'X-Sendfile'
 # For Nginx, use 'X-Accel-Redirect'
-PRIVATE_MEDIA_REDIRECT_HEADER = 'X-Accel-Redirect'
+SENDFILE_BACKEND = 'sendfile.backends.development'
 
 #SOUTH_MIGRATION_MODULES = {
 #        'taggit': 'taggit.south_migrations',

@@ -12,6 +12,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.db.models import Q
 from neurovault import settings
+from sendfile import sendfile
 
 import zipfile
 import tarfile
@@ -328,43 +329,14 @@ def view_image_with_pycortex(request, pk, collection_cid=None):
 def serve_image(request, collection_cid, img_name):
     collection = get_collection(collection_cid,request,mode='file')
     image = Image.objects.get(collection=collection,file__endswith='/'+img_name)
-#    if settings.DEBUG:
-#        content_type = mimetypes.guess_type(image.file.path)[0] or 'application/octet-stream'
-#        return HttpResponse(open(image.file.path, 'rb').read(), content_type=content_type)
-    # use a URI for Nginx, and a filesystem path for Apache
-    redir_path = '/private{0}'.format(format(os.path.join(settings.PRIVATE_MEDIA_URL,
-                                      str(collection.id), img_name)))
-    if settings.PRIVATE_MEDIA_REDIRECT_HEADER == 'X-Sendfile':
-        redir_path = image.file.path
-    response = HttpResponse()
-    response['Content-Type'] = 'application/force-download'
-    response[settings.PRIVATE_MEDIA_REDIRECT_HEADER] = redir_path
-    return response
+    return sendfile(request, image.file.path)
 
 
 def serve_pycortex(request, collection_cid, pycortex_dir, path):
     collection = get_collection(collection_cid,request,mode='file')
-    int_path = '/private{0}'.format(os.path.join(settings.PRIVATE_MEDIA_URL,
-                                    str(collection.id),pycortex_dir,path))
-#    if settings.DEBUG:
-#        content_type = mimetypes.guess_type(int_path)[0] or 'application/octet-stream'
-#        return HttpResponse(open(int_path, 'rb').read(), content_type=content_type)
-    if settings.PRIVATE_MEDIA_REDIRECT_HEADER == 'X-Sendfile':
-        int_path = os.path.join(settings.PRIVATE_MEDIA_ROOT,
+    int_path = os.path.join(settings.PRIVATE_MEDIA_ROOT,
                             'images',str(collection.id),pycortex_dir,path)
-    response = HttpResponse()
-    if int_path.endswith(".png"):
-        response['Content-Type'] = 'image/png'
-    elif int_path.endswith(".json"):
-        response['Content-Type'] = 'application/json'
-    elif int_path.endswith(".ctm"):
-        response['Content-Type'] = 'application/octet-stream'
-    elif int_path.endswith(".svg"):
-        response['Content-Type'] = 'image/svg+xml'
-    else:
-        response['Content-Type'] = ''
-    response[settings.PRIVATE_MEDIA_REDIRECT_HEADER] = int_path
-    return response
+    return sendfile(request, int_path)
 
 
 def stats_view(request):
