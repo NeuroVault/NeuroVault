@@ -3,7 +3,7 @@ Created on 5 Jan 2014
 
 @author: filo
 '''
-# Make this unique, and don't share it with anybody.
+# those are bogus keys for dev purposes
 SECRET_KEY = 'bogus'
 FACEBOOK_APP_ID = 'bogus'
 FACEBOOK_API_SECRET = 'bogus'
