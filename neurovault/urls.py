@@ -2,6 +2,7 @@ from django.conf.urls import patterns, include, url
 from django.conf import settings
 from django.contrib import admin
 from neurovault.apps.statmaps.models import Image, Collection
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 admin.autodiscover()
 from django.contrib.auth.models import User, Group
 from rest_framework import viewsets, routers, serializers
@@ -161,6 +162,8 @@ urlpatterns = patterns('',
                            'rest_framework.urls', namespace='rest_framework'))
                        )
 
+if settings.DEBUG == True:
+    urlpatterns += staticfiles_urlpatterns()
 
 # if settings.DEBUG:
 # #    # static files (images, css, javascript, etc.)
