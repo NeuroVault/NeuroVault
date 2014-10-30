@@ -247,8 +247,10 @@ PRIVATE_MEDIA_REDIRECT_HEADER = 'X-Accel-Redirect'
 #    }
 
 # Bogus secret key.
-
-from secrets import *
+try:
+    from secrets import *
+except ImportError:
+    from bogus_secrets import *
 
 try:
     from local_settings import *
