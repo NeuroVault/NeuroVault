@@ -336,6 +336,16 @@ class ImageForm(ModelForm):
                     print cleaned_data["file"].__class__.__name__
                     cleaned_data["file"] = InMemoryUploadedFile(f, "file", fname + ".nii.gz",
                                                                 cleaned_data["file"].content_type, f.size, cleaned_data["file"].charset)
+                    
+                # check if number of voxels with value 0 are less than threshold
+                
+                threshold = .67
+                niiData = nii.get_data()
+                isZero = (niiData == 0).sum()/float(niiData.size)
+                
+                if isZero > threshold:
+                    self._errors["file"] = self.error_class(['number of voxels with value 0 exceeds %s' % threshold])
+                
             finally:
                 try:
                     shutil.rmtree(tmp_dir)  # delete directory
