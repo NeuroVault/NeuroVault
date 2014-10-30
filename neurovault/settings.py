@@ -108,6 +108,8 @@ MIDDLEWARE_CLASSES = (
 
 ROOT_URLCONF = 'neurovault.urls'
 
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+
 # Python dotted path to the WSGI application used by Django's runserver.
 WSGI_APPLICATION = 'neurovault.wsgi.application'
 
