@@ -236,6 +236,7 @@ DBBACKUP_POSTGRES_BACKUP_COMMAND = 'export PGPASSWORD=neurovault\n pg_dump --use
 # the the original image paths are retained to support old links.
 # Nginx will serve the PRIVATE_MEDIA_URL with private/ prepended to the path
 # e.g. for PRIVATE_MEDIA_URL 'media/images', configure internal location '/private/media/images'
+PRIVATE_MEDIA_ROOT = os.path.join(BASE_DIR,'private_media')
 PRIVATE_MEDIA_URL = '/media/images'
 
 # For Apache, use 'X-Sendfile'
