@@ -2,3 +2,8 @@
 neurovault/data/*/*/*
 *.pyc
 /static/
+image_data/
+neurovault/apps/statmaps/reload.py
+pycortex-newdata/
+pycortex_data/
+statictest/

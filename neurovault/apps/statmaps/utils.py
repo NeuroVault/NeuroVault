@@ -104,14 +104,16 @@ def generate_pycortex_dir(nifti_file, output_dir, transform_name):
         if exit_code:
             raise RuntimeError("tkregister2 exited with status %d" % exit_code)
         x = np.loadtxt(mni_mat)
+        #import ipdb;ipdb.set_trace()
         xfm = cortex.xfm.Transform.from_fsl(x, nifti_file, reference)
         xfm.save("fsaverage", transform_name,'coord')
         dv = cortex.Volume(nifti_file, "fsaverage", transform_name,
-                         cmap="RdBu_r", vmin=-3, vmax=3, dfilter="trilinear")
+                         cmap="RdBu_r", dfilter="trilinear")
 
         cortex.webgl.make_static(output_dir, dv)
     finally:
-        shutil.rmtree(temp_dir)
+        pass
+        #shutil.rmtree(temp_dir)
 
 
 def generate_url_token(length=8):
@@ -121,6 +123,7 @@ def generate_url_token(length=8):
         return generate_url_token()
     else:
         return token
+
 
 def get_paper_properties(doi):
     xmlurl = 'http://doi.crossref.org/servlet/query'
