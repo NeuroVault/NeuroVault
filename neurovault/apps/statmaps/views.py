@@ -12,6 +12,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.db.models import Q
 from neurovault import settings
+from sendfile import sendfile
 
 import zipfile
 import tarfile
@@ -328,58 +329,28 @@ def view_image_with_pycortex(request, pk, collection_cid=None):
 def serve_image(request, collection_cid, img_name):
     collection = get_collection(collection_cid,request,mode='file')
     image = Image.objects.get(collection=collection,file__endswith='/'+img_name)
-
-    # use a URI for Nginx, and a filesystem path for Apache
-    redir_path = '/private{0}'.format(format(os.path.join(settings.PRIVATE_MEDIA_URL,
-                                      str(collection.id), img_name)))
-    if settings.PRIVATE_MEDIA_REDIRECT_HEADER == 'X-Sendfile':
-        redir_path = image.file.path
-
-    response = HttpResponse(content_type='application/force-download')
-    if settings.DEBUG:
-        response.content = open(image.file.path, 'rb').read()
-    else:
-        response[settings.PRIVATE_MEDIA_REDIRECT_HEADER] = redir_path
-    return response
+    return sendfile(request, image.file.path)
 
 
 def serve_pycortex(request, collection_cid, pycortex_dir, path):
     collection = get_collection(collection_cid,request,mode='file')
-    int_path = '/private{0}'.format(os.path.join(settings.PRIVATE_MEDIA_URL,
-                                    str(collection.id),pycortex_dir,path))
-
-    if settings.PRIVATE_MEDIA_REDIRECT_HEADER == 'X-Sendfile':
-        int_path = os.path.join(settings.PRIVATE_MEDIA_ROOT,
+    int_path = os.path.join(settings.PRIVATE_MEDIA_ROOT,
                             'images',str(collection.id),pycortex_dir,path)
-    response = HttpResponse()
-    if int_path.endswith(".png"):
-        response['Content-Type'] = 'image/png'
-    elif int_path.endswith(".json"):
-        response['Content-Type'] = 'application/json'
-    elif int_path.endswith(".ctm"):
-        response['Content-Type'] = 'application/octet-stream'
-    elif int_path.endswith(".svg"):
-        response['Content-Type'] = 'image/svg+xml'
-    else:
-        response['Content-Type'] = ''
-
-    if settings.DEBUG:
-        response.content = open(int_path, 'rb').read()
-    else:
-        response[settings.PRIVATE_MEDIA_REDIRECT_HEADER] = int_path
-    return response
+    return sendfile(request, int_path)
 
 
 def stats_view(request):
     collections_by_journals = {}
-    for collection in Collection.objects.filter(private=False).exclude(Q(DOI__isnull=True) | Q(DOI__exact='')):
+    for collection in Collection.objects.filter(
+                                private=False).exclude(Q(DOI__isnull=True) | Q(DOI__exact='')):
         if not collection.journal_name:
             _,_,_,_, collection.journal_name = get_paper_properties(collection.DOI)
             collection.save()
         if collection.journal_name not in collections_by_journals.keys():
             collections_by_journals[collection.journal_name] = 1
         else:
-            collections_by_journals[collection.journal_name] +=1
-    collections_by_journals = OrderedDict(sorted(collections_by_journals.items(), key=lambda t: t[1], reverse=True))
+            collections_by_journals[collection.journal_name] += 1
+    collections_by_journals = OrderedDict(sorted(collections_by_journals.items(
+                                                ), key=lambda t: t[1], reverse=True))
     context = {'collections_by_journals': collections_by_journals}
     return render(request, 'statmaps/stats.html.haml', context)

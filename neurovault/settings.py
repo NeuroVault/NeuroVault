@@ -4,7 +4,7 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-DEBUG = False
+DEBUG = True
 
 TEMPLATE_DEBUG = DEBUG
 
@@ -72,10 +72,8 @@ STATIC_URL = '/static/'
 
 # Additional locations of static files
 STATICFILES_DIRS = (
-    # Put strings here, like "/home/html/static" or "C:/www/django/static".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-)
+                    os.path.join(BASE_DIR, "static"),
+                    )
 
 # List of finder classes that know how to find static files in
 # various locations.
@@ -107,6 +105,8 @@ MIDDLEWARE_CLASSES = (
 )
 
 ROOT_URLCONF = 'neurovault.urls'
+
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 # Python dotted path to the WSGI application used by Django's runserver.
 WSGI_APPLICATION = 'neurovault.wsgi.application'
@@ -236,19 +236,22 @@ DBBACKUP_POSTGRES_BACKUP_COMMAND = 'export PGPASSWORD=neurovault\n pg_dump --use
 # the the original image paths are retained to support old links.
 # Nginx will serve the PRIVATE_MEDIA_URL with private/ prepended to the path
 # e.g. for PRIVATE_MEDIA_URL 'media/images', configure internal location '/private/media/images'
+PRIVATE_MEDIA_ROOT = os.path.join(BASE_DIR,'private_media')
 PRIVATE_MEDIA_URL = '/media/images'
 
-# For Apache, use 'X-Sendfile'
-# For Nginx, use 'X-Accel-Redirect'
-PRIVATE_MEDIA_REDIRECT_HEADER = 'X-Accel-Redirect'
+# For Apache, use 'sendfile.backends.xsendfile'
+# For Nginx, use 'sendfile.backends.nginx'
+SENDFILE_BACKEND = 'sendfile.backends.development'
 
 #SOUTH_MIGRATION_MODULES = {
 #        'taggit': 'taggit.south_migrations',
 #    }
 
 # Bogus secret key.
-
-from secrets import *
+try:
+    from secrets import *
+except ImportError:
+    from bogus_secrets import *
 
 try:
     from local_settings import *

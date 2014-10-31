@@ -2,6 +2,8 @@ from django.conf.urls import patterns, include, url
 from django.conf import settings
 from django.contrib import admin
 from neurovault.apps.statmaps.models import Image, Collection
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.conf.urls.static import static
 admin.autodiscover()
 from django.contrib.auth.models import User, Group
 from rest_framework import viewsets, routers, serializers
@@ -161,7 +163,11 @@ urlpatterns = patterns('',
                            'rest_framework.urls', namespace='rest_framework'))
                        )
 
-if settings.DEBUG:
-    urlpatterns += patterns('',
-            url(r'^%s(?P<path>.*)$' % settings.MEDIA_URL[1:], 'django.views.static.serve', {
-                    'document_root': settings.MEDIA_ROOT}))
+#if settings.DEBUG == True:
+#    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# if settings.DEBUG:
+# #    # static files (images, css, javascript, etc.)
+#     urlpatterns += patterns('',
+#                            (r'^'+settings.MEDIA_URL+'/(?P<path>.*)$', 'django.views.static.serve', {
+#                             'document_root': settings.MEDIA_ROOT}))
