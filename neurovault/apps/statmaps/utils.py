@@ -104,11 +104,18 @@ def generate_pycortex_dir(nifti_file, output_dir, transform_name):
         if exit_code:
             raise RuntimeError("tkregister2 exited with status %d" % exit_code)
         x = np.loadtxt(mni_mat)
-        #import ipdb;ipdb.set_trace()
+
         xfm = cortex.xfm.Transform.from_fsl(x, nifti_file, reference)
         xfm.save("fsaverage", transform_name,'coord')
         dv = cortex.Volume(nifti_file, "fsaverage", transform_name,
                          cmap="RdBu_r", dfilter="trilinear")
+
+        # range excludes max/min 1%, evaluated at json output runtime
+        # Dataview.to_json(): np.percentile(np.nan_to_num(self.data), 99)]
+
+        use_vmax = dv.to_json()['vmax'][0]
+        dv.vmin = use_vmax * -1
+        dv.vmax = use_vmax
 
         cortex.webgl.make_static(output_dir, dv)
     finally:
