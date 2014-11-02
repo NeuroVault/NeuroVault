@@ -110,8 +110,8 @@ def generate_pycortex_dir(nifti_file, output_dir, transform_name):
         dv = cortex.Volume(nifti_file, "fsaverage", transform_name,
                          cmap="RdBu_r", dfilter="trilinear")
 
-        # range excludes max/min 1%, evaluated at json output runtime
-        # Dataview.to_json(): np.percentile(np.nan_to_num(self.data), 99)]
+        # range excludes max/min 1%, evaluated at json output runtime (Dataview.to_json())
+        # derived from: np.percentile(np.nan_to_num(self.data), 99)
 
         use_vmax = dv.to_json()['vmax'][0]
         dv.vmin = use_vmax * -1
@@ -119,8 +119,7 @@ def generate_pycortex_dir(nifti_file, output_dir, transform_name):
 
         cortex.webgl.make_static(output_dir, dv)
     finally:
-        pass
-        #shutil.rmtree(temp_dir)
+        shutil.rmtree(temp_dir)
 
 
 def generate_url_token(length=8):
