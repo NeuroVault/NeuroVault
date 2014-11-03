@@ -9,8 +9,7 @@ DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
-    (
-     #('Chris', 'krzysztof.gorgolewski@gmail.com'),
+    (('Chris', 'krzysztof.gorgolewski@gmail.com'),
      ('Gabriel', 'rivera@infocortex.com'))
 )
 
@@ -19,7 +18,7 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'neurovault',
+        'NAME': 'neurovault',                      # Or path to database file if using sqlite3.
         # The following settings are not used with sqlite3:
         'USER': 'neurovault',
         'PASSWORD': 'neurovault',
@@ -58,7 +57,7 @@ USE_TZ = True
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/var/www/example.com/media/"
-MEDIA_ROOT = '/opt/nv-env/NeuroVault/neurovault/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR,'media')
 MEDIA_URL = '/public/media/'
 
 # Absolute path to the directory static files should be collected to.
@@ -244,6 +243,8 @@ PRIVATE_MEDIA_URL = '/media/images'
 # For Nginx, use 'sendfile.backends.nginx'
 SENDFILE_BACKEND = 'sendfile.backends.development'
 
+PYCORTEX_CONFIG_HOME = '/opt/nv-env/NeuroVault/pycortex_data'
+
 #SOUTH_MIGRATION_MODULES = {
 #        'taggit': 'taggit.south_migrations',
 #    }
@@ -258,8 +259,3 @@ try:
     from local_settings import *
 except ImportError:
     pass
-
-PRIVATE_MEDIA_ROOT = '/opt/nv-env/NeuroVault/image_data'
-
-PYCORTEX_CONFIG_HOME = '/opt/nv-env/NeuroVault/pycortex-newdata'
-
