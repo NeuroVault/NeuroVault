@@ -1,13 +1,14 @@
 from .models import Collection, Image
 from .forms import CollectionFormSet, CollectionForm, SingleImageForm
-from django.http.response import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
+from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from neurovault.apps.statmaps.forms import UploadFileForm, SimplifiedImageForm
 from django.template.context import RequestContext
 from django.core.files.base import ContentFile
-from neurovault.apps.statmaps.utils import split_filename,generate_pycortex_dir, \
-    generate_url_token, HttpRedirectException, get_paper_properties
+from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
+    generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
+    collection_md5sum
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.db.models import Q
@@ -159,7 +160,7 @@ def edit_image(request, pk):
 
 @login_required
 def add_image_for_neurosynth(request):
-    temp_collection_name = "%s's temporary collection"%request.user.username
+    temp_collection_name = "%s's temporary collection" % request.user.username
     #this is a hack we need to make sure this collection can be only
     #owned by the same user
     try:
@@ -319,10 +320,39 @@ def view_image_with_pycortex(request, pk, collection_cid=None):
     pycortex_dir = os.path.join(base, fname + "_pycortex")
 
     if not os.path.exists(pycortex_dir):
-        generate_pycortex_dir(str(image.file.path), str(pycortex_dir), "trans_%s" % pk)
+        vol = generate_pycortex_volume(str(image.file.path), "trans_%s" % pk)
+        generate_pycortex_static([vol], pycortex_dir)
 
     _, _, ext = split_filename(image.file.url)
     pycortex_url = image.file.url[:-len(ext)] + "_pycortex/index.html"
+    return redirect(pycortex_url)
+
+
+def view_collection_with_pycortex(request, cid):
+    volumes = []
+    collection = get_collection(cid,request,mode='file')
+    images = Image.objects.filter(collection=collection)
+    basedir = os.path.split(images[0].file.path)[0]
+    baseurl = os.path.split(images[0].file.url)[0]
+    output_dir = os.path.join(basedir, "pycortex_all")
+    col_state = collection_md5sum(collection)
+    state_fpath = os.path.join(output_dir,'md5sum')
+
+    if os.path.exists(output_dir):
+        # check if collection contents have changed
+        existing_state = open(state_fpath,'r').read()
+        if col_state != existing_state:
+            shutil.rmtree(output_dir)
+            return view_collection_with_pycortex(request, cid)
+    else:
+        for image in images:
+            vol = generate_pycortex_volume(str(image.file.path), "trans_%s" % image.pk)
+            volumes.append(vol)
+        generate_pycortex_static(volumes, output_dir)
+        statefile = open(state_fpath,'w')
+        statefile.write(col_state)
+
+    pycortex_url = os.path.join(baseurl, "pycortex_all/index.html")
     return redirect(pycortex_url)
 
 
@@ -332,7 +362,7 @@ def serve_image(request, collection_cid, img_name):
     return sendfile(request, image.file.path)
 
 
-def serve_pycortex(request, collection_cid, pycortex_dir, path):
+def serve_pycortex(request, collection_cid, path, pycortex_dir='pycortex_all'):
     collection = get_collection(collection_cid,request,mode='file')
     int_path = os.path.join(settings.PRIVATE_MEDIA_ROOT,
                             'images',str(collection.id),pycortex_dir,path)

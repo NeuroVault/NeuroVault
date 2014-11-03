@@ -5,11 +5,12 @@ import shutil
 import numpy as np
 import string
 import random
-from .models import Collection
+from .models import Collection, Image
 from neurovault import settings
 import urllib2
 from lxml import etree
 import datetime
+import md5
 
 
 # see CollectionRedirectMiddleware
@@ -70,7 +71,7 @@ def split_filename(fname):
     return pth, fname, ext
 
 
-def generate_pycortex_dir(nifti_file, output_dir, transform_name):
+def generate_pycortex_volume(nifti_file, transform_name):
     os.environ["XDG_CONFIG_HOME"] = settings.PYCORTEX_CONFIG_HOME
     os.environ["FREESURFER_HOME"] = "/opt/freesurfer"
     os.environ["SUBJECTS_DIR"] = os.path.join(os.environ["FREESURFER_HOME"],"subjects")
@@ -103,23 +104,33 @@ def generate_pycortex_dir(nifti_file, output_dir, transform_name):
                                      mni_mat],stdout=tklog)
         if exit_code:
             raise RuntimeError("tkregister2 exited with status %d" % exit_code)
-        x = np.loadtxt(mni_mat)
 
+        x = np.loadtxt(mni_mat)
         xfm = cortex.xfm.Transform.from_fsl(x, nifti_file, reference)
         xfm.save("fsaverage", transform_name,'coord')
-        dv = cortex.Volume(nifti_file, "fsaverage", transform_name,
-                         cmap="RdBu_r", dfilter="trilinear")
 
-        # range excludes max/min 1%, evaluated at json output runtime (Dataview.to_json())
-        # derived from: np.percentile(np.nan_to_num(self.data), 99)
+        dv = cortex.Volume(nifti_file, "fsaverage", transform_name, cmap="RdBu_r",
+                    dfilter="trilinear", description=os.path.basename(nifti_file).split('.')[0])
 
+        # default colormap range evaluated only at runtime (Dataview.to_json())
+        # excludes max/min 1% : np.percentile(np.nan_to_num(self.data), 99)
         use_vmax = dv.to_json()['vmax'][0]
         dv.vmin = use_vmax * -1
         dv.vmax = use_vmax
 
-        cortex.webgl.make_static(output_dir, dv)
+        return dv
+
     finally:
         shutil.rmtree(temp_dir)
+
+
+def generate_pycortex_static(volumes, output_dir):
+    import cortex
+    vargs = {}
+    for vol in volumes:
+        vargs[vol.description] = vol
+    ds = cortex.Dataset(**vargs)
+    cortex.webgl.make_static(output_dir, ds)
 
 
 def generate_url_token(length=8):
@@ -141,7 +152,8 @@ def get_paper_properties(doi):
         raise Exception("DOI %s was not found" % doi)
     journal_name = doc.findall(".//journal/journal_metadata/full_title")[0].text
     title = doc.findall('.//title')[0].text
-    authors = [author.findall('given_name')[0].text + " " + author.findall('surname')[0].text for author in doc.findall('.//contributors/person_name')]
+    authors = [author.findall('given_name')[0].text + " " + author.findall('surname')[0].text
+            for author in doc.findall('.//contributors/person_name')]
     if len(authors) > 1:
         authors = ", ".join(authors[:-1]) + " and " + authors[-1]
     else:
@@ -161,3 +173,15 @@ def get_paper_properties(doi):
                                          1,
                                          1)
     return title, authors, url, publication_date, journal_name
+
+
+def collection_md5sum(collection):
+    fprint = md5.new()
+    images = Image.objects.filter(collection=collection)
+    for image in images:
+        fprint.update(str(image.pk))
+        fprint.update(image.file.name)
+        fprint.update(str(image.file.size))
+        fprint.update(str(image.file.storage.modified_time(image.file.name)))
+    return fprint.hexdigest()
+

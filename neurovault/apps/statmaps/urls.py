@@ -3,7 +3,7 @@ from django.views.generic import DetailView, ListView
 from .models import Collection
 from .views import edit_collection, edit_images, view_image, delete_image, edit_image, \
                     view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
-                    serve_image, serve_pycortex
+                    serve_image, serve_pycortex, view_collection_with_pycortex
 from neurovault.apps.statmaps.views import view_images_by_tag,\
     view_image_with_pycortex, stats_view
 from neurovault.apps.statmaps.models import KeyValueTag
@@ -53,6 +53,9 @@ urlpatterns = patterns('',
     url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/images/(?P<pk>\d+)/$',
         view_image,
         name="private_image_details"),
+    url(r'^collections/(?P<cid>\d+|[A-Z]{8})/pycortex$',
+        view_collection_with_pycortex,
+        name='view_collection_pycortex'),
 
     url(r'^images/tags/$',
         ListView.as_view(
@@ -89,5 +92,9 @@ urlpatterns = patterns('',
     url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<pycortex_dir>[A-Za-z0-9\.\+\-\_\s]+\_pycortex/)(?P<path>.*)$',
         serve_pycortex,
         name='serve_pycortex'),
+
+    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/pycortex_all/(?P<path>.*)$',
+        serve_pycortex,
+        name='serve_pycortex_collection'),
 
 )
