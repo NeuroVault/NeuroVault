@@ -72,8 +72,9 @@ def split_filename(fname):
     return pth, fname, ext
 
 
-def generate_pycortex_volume(nifti_file, transform_name):
-
+def generate_pycortex_volume(image):
+    nifti_file = str(image.file.path)
+    transform_name = "trans_%s" % image.pk
     temp_dir = tempfile.mkdtemp(dir=settings.PYCORTEX_DATASTORE)
     try:
         new_mni_dat = os.path.join(temp_dir, "mni152reg.dat")
@@ -106,7 +107,7 @@ def generate_pycortex_volume(nifti_file, transform_name):
         xfm.save("fsaverage", transform_name,'coord')
 
         dv = cortex.Volume(nifti_file, "fsaverage", transform_name, cmap="RdBu_r",
-                    dfilter="trilinear", description=os.path.basename(nifti_file).split('.')[0])
+                    dfilter="trilinear", description=image.description)
 
         # default colormap range evaluated only at runtime (Dataview.to_json())
         # excludes max/min 1% : np.percentile(np.nan_to_num(self.data), 99)
@@ -121,10 +122,7 @@ def generate_pycortex_volume(nifti_file, transform_name):
 
 
 def generate_pycortex_static(volumes, output_dir):
-    vargs = {}
-    for vol in volumes:
-        vargs[vol.description] = vol
-    ds = cortex.Dataset(**vargs)
+    ds = cortex.Dataset(**volumes)
     cortex.webgl.make_static(output_dir, ds)
 
 

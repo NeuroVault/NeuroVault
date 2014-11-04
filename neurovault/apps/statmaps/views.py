@@ -329,7 +329,7 @@ def view_image_with_pycortex(request, pk, collection_cid=None):
 
 
 def view_collection_with_pycortex(request, cid):
-    volumes = []
+    volumes = {}
     collection = get_collection(cid,request,mode='file')
     images = Image.objects.filter(collection=collection)
     basedir = os.path.split(images[0].file.path)[0]
@@ -346,8 +346,8 @@ def view_collection_with_pycortex(request, cid):
             return view_collection_with_pycortex(request, cid)
     else:
         for image in images:
-            vol = generate_pycortex_volume(str(image.file.path), "trans_%s" % image.pk)
-            volumes.append(vol)
+            vol = generate_pycortex_volume(image)
+            volumes[image.name] = vol
         generate_pycortex_static(volumes, output_dir)
         statefile = open(state_fpath,'w')
         statefile.write(col_state)
