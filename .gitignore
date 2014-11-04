@@ -2,3 +2,5 @@
 neurovault/data/*/*/*
 *.pyc
 /static/
+neurovault/reload.py
+neurovault/local_settings.py

@@ -258,9 +258,9 @@ try:
 except ImportError:
     pass
 
-PRIVATE_MEDIA_ROOT = '/opt/nv-env/NeuroVault/image_data'
+PRIVATE_MEDIA_ROOT = '/opt/nv-env/image_data'
 
-PYCORTEX_DATASTORE = '/opt/nv-env/NeuroVault/pycortex_data'
+PYCORTEX_DATASTORE = '/opt/nv-env/pycortex_data'
 
 # freesurfer/pycortex environment
 os.environ["XDG_CONFIG_HOME"] = PYCORTEX_DATASTORE
