@@ -243,9 +243,7 @@ PRIVATE_MEDIA_URL = '/media/images'
 # For Devserver, use 'sendfile.backends.development'
 SENDFILE_BACKEND = 'sendfile.backends.development'
 
-#SOUTH_MIGRATION_MODULES = {
-#        'taggit': 'taggit.south_migrations',
-#    }
+PYCORTEX_DATASTORE = os.path.join(BASE_DIR,'pycortex_data')
 
 # Bogus secret key.
 try:
@@ -257,10 +255,6 @@ try:
     from local_settings import *
 except ImportError:
     pass
-
-PRIVATE_MEDIA_ROOT = '/opt/nv-env/image_data'
-
-PYCORTEX_DATASTORE = '/opt/nv-env/pycortex_data'
 
 # freesurfer/pycortex environment
 os.environ["XDG_CONFIG_HOME"] = PYCORTEX_DATASTORE
