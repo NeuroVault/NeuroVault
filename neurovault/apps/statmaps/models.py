@@ -7,7 +7,7 @@ from neurovault.apps.statmaps.storage import NiftiGzStorage
 from taggit.managers import TaggableManager
 from taggit.models import GenericTaggedItemBase, TagBase
 from xml import etree
-import datetime
+from datetime import datetime
 import os
 import urllib2
 from dirtyfields import DirtyFieldsMixin
@@ -26,10 +26,10 @@ class Collection(models.Model):
     journal_name = models.CharField(max_length=200, blank=True, null=True, default=None)
     description = models.TextField(blank=True, null=True)
     owner = models.ForeignKey(User)
-    private = models.BooleanField(choices=((False, 'Public (The collection will be accessible by anyone and all the data in it will be distributed under CC0 license)'), 
+    private = models.BooleanField(choices=((False, 'Public (The collection will be accessible by anyone and all the data in it will be distributed under CC0 license)'),
                                            (True, 'Private (The collection will be not listed in the NeuroVault index. It will be possible to shared it with others at a private URL.)')), default=False,verbose_name="Accesibility")
     private_token = models.CharField(max_length=8,blank=True,null=True,unique=True,db_index=True, default=None)
-    add_date = models.DateTimeField('date published', auto_now_add=True) 
+    add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
     type_of_design = models.CharField(choices=[('blocked', 'blocked'), ('eventrelated', 'event_related'), ('hybridblockevent', 'hybrid block/event'), ('other', 'other')], max_length=200, blank=True, help_text="Blocked, event-related, hybrid, or other", null=True, verbose_name="Type of design")
     number_of_imaging_runs = models.IntegerField(help_text="Number of imaging runs acquired", null=True, verbose_name="No. of imaging runs", blank=True)
@@ -201,6 +201,15 @@ class Image(DirtyFieldsMixin, models.Model):
     class Meta:
         unique_together = ("collection", "name")
 
+    def save(self):
+        self.collection.modify_date = datetime.now()
+        self.collection.save()
+        super(Image, self).save()
+
+    def delete(self):
+        self.collection.modify_date = datetime.now()
+        self.collection.save()
+        super(Image, self).delete()
 
 #     def save(self):
 #

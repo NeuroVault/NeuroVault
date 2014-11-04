@@ -8,7 +8,7 @@ from django.template.context import RequestContext
 from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
-    collection_md5sum
+    get_file_ctime
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.db.models import Q
@@ -332,16 +332,16 @@ def view_collection_with_pycortex(request, cid):
     volumes = {}
     collection = get_collection(cid,request,mode='file')
     images = Image.objects.filter(collection=collection)
+
     basedir = os.path.split(images[0].file.path)[0]
     baseurl = os.path.split(images[0].file.url)[0]
     output_dir = os.path.join(basedir, "pycortex_all")
-    col_state = collection_md5sum(collection)
-    state_fpath = os.path.join(output_dir,'md5sum')
+    html_path = os.path.join(basedir, "pycortex_all/index.html")
+    pycortex_url = os.path.join(baseurl, "pycortex_all/index.html")
 
     if os.path.exists(output_dir):
         # check if collection contents have changed
-        existing_state = open(state_fpath,'r').read()
-        if col_state != existing_state:
+        if collection.modify_date > get_file_ctime(html_path):
             shutil.rmtree(output_dir)
             return view_collection_with_pycortex(request, cid)
     else:
@@ -349,10 +349,7 @@ def view_collection_with_pycortex(request, cid):
             vol = generate_pycortex_volume(image)
             volumes[image.name] = vol
         generate_pycortex_static(volumes, output_dir)
-        statefile = open(state_fpath,'w')
-        statefile.write(col_state)
 
-    pycortex_url = os.path.join(baseurl, "pycortex_all/index.html")
     return redirect(pycortex_url)
 
 

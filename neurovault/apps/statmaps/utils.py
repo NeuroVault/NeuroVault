@@ -5,13 +5,13 @@ import shutil
 import numpy as np
 import string
 import random
-from .models import Collection, Image
+from .models import Collection
 from neurovault import settings
 import urllib2
 from lxml import etree
-import datetime
-import md5
+from datetime import datetime,date
 import cortex
+import pytz
 
 
 # see CollectionRedirectMiddleware
@@ -154,27 +154,19 @@ def get_paper_properties(doi):
     url = doc.findall('.//doi_data/resource')[0].text
     date_node = doc.findall('.//publication_date')[0]
     if len(date_node.findall('day')) > 0:
-        publication_date = datetime.date(int(date_node.findall('year')[0].text),
-                                         int(date_node.findall('month')[0].text),
-                                         int(date_node.findall('day')[0].text))
+        publication_date = date(int(date_node.findall('year')[0].text),
+                                int(date_node.findall('month')[0].text),
+                                int(date_node.findall('day')[0].text))
     elif len(date_node.findall('month')) > 0:
-        publication_date = datetime.date(int(date_node.findall('year')[0].text),
-                                         int(date_node.findall('month')[0].text),
-                                         1)
+        publication_date = date(int(date_node.findall('year')[0].text),
+                                int(date_node.findall('month')[0].text),
+                                1)
     else:
-        publication_date = datetime.date(int(date_node.findall('year')[0].text),
-                                         1,
-                                         1)
+        publication_date = date(int(date_node.findall('year')[0].text),
+                                1,
+                                1)
     return title, authors, url, publication_date, journal_name
 
 
-def collection_md5sum(collection):
-    fprint = md5.new()
-    images = Image.objects.filter(collection=collection)
-    for image in images:
-        fprint.update(str(image.pk))
-        fprint.update(image.file.name)
-        fprint.update(str(image.file.size))
-        fprint.update(str(image.file.storage.modified_time(image.file.name)))
-    return fprint.hexdigest()
-
+def get_file_ctime(fpath):
+    return datetime.fromtimestamp(os.path.getctime(fpath),tz=pytz.utc)
