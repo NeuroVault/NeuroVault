@@ -11,6 +11,7 @@ import urllib2
 from lxml import etree
 import datetime
 import md5
+import cortex
 
 
 # see CollectionRedirectMiddleware
@@ -72,13 +73,8 @@ def split_filename(fname):
 
 
 def generate_pycortex_volume(nifti_file, transform_name):
-    os.environ["XDG_CONFIG_HOME"] = settings.PYCORTEX_CONFIG_HOME
-    os.environ["FREESURFER_HOME"] = "/opt/freesurfer"
-    os.environ["SUBJECTS_DIR"] = os.path.join(os.environ["FREESURFER_HOME"],"subjects")
-    os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
 
-    import cortex
-    temp_dir = tempfile.mkdtemp(dir=settings.PYCORTEX_CONFIG_HOME)
+    temp_dir = tempfile.mkdtemp(dir=settings.PYCORTEX_DATASTORE)
     try:
         new_mni_dat = os.path.join(temp_dir, "mni152reg.dat")
         mni_mat = os.path.join(temp_dir, "mni152reg.mat")
@@ -125,7 +121,6 @@ def generate_pycortex_volume(nifti_file, transform_name):
 
 
 def generate_pycortex_static(volumes, output_dir):
-    import cortex
     vargs = {}
     for vol in volumes:
         vargs[vol.description] = vol

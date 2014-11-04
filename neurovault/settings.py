@@ -18,7 +18,7 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'neurovault',                      # Or path to database file if using sqlite3.
+        'NAME': 'neurovault',
         # The following settings are not used with sqlite3:
         'USER': 'neurovault',
         'PASSWORD': 'neurovault',
@@ -64,6 +64,7 @@ MEDIA_URL = '/public/media/'
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/var/www/example.com/static/"
+
 STATIC_ROOT = os.path.join(BASE_DIR,'static')
 
 # URL prefix for static files.
@@ -71,9 +72,7 @@ STATIC_ROOT = os.path.join(BASE_DIR,'static')
 STATIC_URL = '/static/'
 
 # Additional locations of static files
-STATICFILES_DIRS = (
-                    os.path.join(BASE_DIR, "static"),
-                    )
+STATICFILES_DIRS = ()
 
 # List of finder classes that know how to find static files in
 # various locations.
@@ -149,7 +148,7 @@ INSTALLED_APPS = (
     'taggit_templatetags',
     #'south',
     'corsheaders',
-    'dbbackup'
+    'dbbackup',
 )
 
 # A sample logging configuration. The only tangible logging
@@ -241,9 +240,8 @@ PRIVATE_MEDIA_URL = '/media/images'
 
 # For Apache, use 'sendfile.backends.xsendfile'
 # For Nginx, use 'sendfile.backends.nginx'
+# For Devserver, use 'sendfile.backends.development'
 SENDFILE_BACKEND = 'sendfile.backends.development'
-
-PYCORTEX_CONFIG_HOME = '/opt/nv-env/NeuroVault/pycortex_data'
 
 #SOUTH_MIGRATION_MODULES = {
 #        'taggit': 'taggit.south_migrations',
@@ -259,3 +257,13 @@ try:
     from local_settings import *
 except ImportError:
     pass
+
+PRIVATE_MEDIA_ROOT = '/opt/nv-env/NeuroVault/image_data'
+
+PYCORTEX_DATASTORE = '/opt/nv-env/NeuroVault/pycortex_data'
+
+# freesurfer/pycortex environment
+os.environ["XDG_CONFIG_HOME"] = PYCORTEX_DATASTORE
+os.environ["FREESURFER_HOME"] = "/opt/freesurfer"
+os.environ["SUBJECTS_DIR"] = os.path.join(os.environ["FREESURFER_HOME"],"subjects")
+os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
