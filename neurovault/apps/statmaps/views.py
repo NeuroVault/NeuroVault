@@ -320,8 +320,8 @@ def view_image_with_pycortex(request, pk, collection_cid=None):
     pycortex_dir = os.path.join(base, fname + "_pycortex")
 
     if not os.path.exists(pycortex_dir):
-        vol = generate_pycortex_volume(str(image.file.path), "trans_%s" % pk)
-        generate_pycortex_static([vol], pycortex_dir)
+        volume = generate_pycortex_volume(image)
+        generate_pycortex_static({image.name: volume}, pycortex_dir)
 
     _, _, ext = split_filename(image.file.url)
     pycortex_url = image.file.url[:-len(ext)] + "_pycortex/index.html"
