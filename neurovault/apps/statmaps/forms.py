@@ -13,7 +13,6 @@ from django.core.exceptions import ValidationError
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Submit, HTML, Button, Row, Field, Hidden
 from crispy_forms.bootstrap import AppendedText, PrependedText, FormActions, TabHolder, Tab
-
 from .models import Collection, Image
 from django.forms.forms import Form
 from django.forms.fields import FileField
@@ -266,7 +265,7 @@ class CollectionForm(ModelForm):
 
 
 class ImageForm(ModelForm):
-    checkbox = forms.BooleanField(required=False, label='Ignore warning')
+    checkbox = forms.BooleanField(required=False, label='Ignore warning', widget=forms.HiddenInput)
     hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
 
     def __init__(self, *args, **kwargs):
@@ -274,14 +273,12 @@ class ImageForm(ModelForm):
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
         self.helper.form_tag = False
-#         self.fields.keyOrder = [
-#         'name',
-#         'description',
-#         'file',
-#         'checkbox',]
     class Meta:
         model = Image
         exclude = ('json_path', 'collection')
+        fields = ('name', 'collection', 'description', 'map_type',
+                  'file', 'checkbox', 'map_type','statistic_parameters', 'smoothness_fwhm',
+                   'contrast_definition', 'contrast_definition', 'contrast_definition_cogatlas','hdr_file', 'tags')
 
     def clean(self):
         cleaned_data = super(ImageForm, self).clean()
@@ -346,6 +343,7 @@ class ImageForm(ModelForm):
                 maxZero = .70
                 imgData = nii.get_data()
                 isZero = (imgData == 0).sum()/float(imgData.size)
+#                 print dir(self.base_fields)
                 if isZero > maxZero and not (cleaned_data.get('checkbox') == True):
                     self._errors["file"] = self.error_class(["Number of voxels with a value of zero is greater than %s" % maxZero])
                 

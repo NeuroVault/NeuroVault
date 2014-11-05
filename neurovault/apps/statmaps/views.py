@@ -74,19 +74,15 @@ def edit_images(request, collection_cid):
         formset = CollectionFormSet(request.POST, request.FILES, instance=collection)
         if formset.is_valid():
             formset.save()
-            print 'valid!'
             return HttpResponseRedirect(collection.get_absolute_url())
         else:
-            print 'not valid!'
-
-#             formset.form.base_fields['checkbox'].widget = forms.CheckboxInput()
+            formset = CollectionFormSet(request.POST, instance=collection)
+            formset.form.base_fields['checkbox'].widget = forms.CheckboxInput()
             context = {"formset": formset}
             return render(request, "statmaps/edit_images.html.haml", context)
     else:
         formset = CollectionFormSet(instance=collection)
-#         formset.form.base_fields['checkbox'].widget = forms.HiddenInput()
-        print 'bypass'
-
+        formset.form.base_fields['checkbox'].widget = forms.HiddenInput()
     context = {"formset": formset}
     return render(request, "statmaps/edit_images.html.haml", context)
 
