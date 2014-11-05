@@ -3,8 +3,11 @@ from .forms import CollectionFormSet, CollectionForm, SingleImageForm
 from django.http.response import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
-from neurovault.apps.statmaps.forms import UploadFileForm, SimplifiedImageForm
+from neurovault.apps.statmaps.forms import UploadFileForm, SimplifiedImageForm,\
+    ImageForm
 from django.template.context import RequestContext
+from django import forms
+from django.forms.widgets import CheckboxInput
 from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename,generate_pycortex_dir, \
     generate_url_token, HttpRedirectException, get_paper_properties
@@ -13,6 +16,7 @@ from django.http import Http404
 from django.db.models import Q
 from neurovault import settings
 from sendfile import sendfile
+import django.forms.extras.widgets as widgets
 
 import zipfile
 import tarfile
@@ -70,9 +74,18 @@ def edit_images(request, collection_cid):
         formset = CollectionFormSet(request.POST, request.FILES, instance=collection)
         if formset.is_valid():
             formset.save()
+            print 'valid!'
             return HttpResponseRedirect(collection.get_absolute_url())
+        else:
+            print 'not valid!'
+
+#             formset.form.base_fields['checkbox'].widget = forms.CheckboxInput()
+            context = {"formset": formset}
+            return render(request, "statmaps/edit_images.html.haml", context)
     else:
         formset = CollectionFormSet(instance=collection)
+#         formset.form.base_fields['checkbox'].widget = forms.HiddenInput()
+        print 'bypass'
 
     context = {"formset": formset}
     return render(request, "statmaps/edit_images.html.haml", context)
