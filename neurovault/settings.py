@@ -64,15 +64,11 @@ MEDIA_URL = '/public/media/'
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/var/www/example.com/static/"
-
 STATIC_ROOT = os.path.join(BASE_DIR,'static')
 
 # URL prefix for static files.
 # Example: "http://example.com/static/", "http://static.example.com/"
 STATIC_URL = '/static/'
-
-# Additional locations of static files
-STATICFILES_DIRS = ()
 
 # List of finder classes that know how to find static files in
 # various locations.
@@ -244,6 +240,12 @@ PRIVATE_MEDIA_URL = '/media/images'
 SENDFILE_BACKEND = 'sendfile.backends.development'
 
 PYCORTEX_DATASTORE = os.path.join(BASE_DIR,'pycortex_data')
+
+# Pycortex static data is deployed by collectstatic at build time.
+STATICFILES_DIRS = (
+    ('pycortex-resources', '/path/to/pycortex/cortex/webgl/resources'),
+)
+
 
 # Bogus secret key.
 try:
