@@ -244,6 +244,7 @@ PYCORTEX_DATASTORE = os.path.join(BASE_DIR,'pycortex_data')
 # Pycortex static data is deployed by collectstatic at build time.
 STATICFILES_DIRS = (
     ('pycortex-resources', '/path/to/pycortex/cortex/webgl/resources'),
+    ('pycortex-ctmcache', os.path.join(PYCORTEX_DATASTORE,'db/fsaverage/cache')),
 )
 
 
