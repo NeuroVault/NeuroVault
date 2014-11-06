@@ -125,7 +125,8 @@ def generate_pycortex_static(volumes, output_dir):
     app_path = os.path.abspath(os.path.dirname(__file__))
     tpl_path = os.path.join(app_path, 'templates/pycortex/dataview.html')
     ds = cortex.Dataset(**volumes)
-    cortex.webgl.make_static(output_dir, ds, template=tpl_path, html_embed=False)
+    cortex.webgl.make_static(output_dir, ds, template=tpl_path, html_embed=False,
+                             copy_ctmfiles=False)
 
 
 def generate_url_token(length=8):

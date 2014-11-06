@@ -96,8 +96,8 @@ urlpatterns = patterns('',
         name='redirect_pycortex_js'),
 
     # redirect cached ctm assets
-    url(r'^media/images/(\d+|[A-Z]{8})/(.*_pycortex|pycortex_all)/(?P<ctmfile>fsaverage.*.json|svg|ctm)$',
-        RedirectView.as_view(url='{0}pycortex-ctmcache/%(ctmfile)s'.format(settings.STATIC_URL)),
+    url(r'^media/images/(\d+|[A-Z]{8})/(.*_pycortex|pycortex_all)/(?P<ctmfile>fsaverage.*).(?P<ext>json|svg|ctm)$',
+        RedirectView.as_view(url='{0}pycortex-ctmcache/%(ctmfile)s.%(ext)s'.format(settings.STATIC_URL)),
         name='redirect_pycortex_js'),
 
     url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<pycortex_dir>[A-Za-z0-9\.\+\-\_\s]+\_pycortex/)(?P<path>.*)$',
