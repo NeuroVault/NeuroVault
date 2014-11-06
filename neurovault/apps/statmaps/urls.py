@@ -10,6 +10,7 @@ from neurovault.apps.statmaps.models import KeyValueTag
 from django.db.models import Count
 from django.contrib.auth.decorators import login_required
 from neurovault import settings
+from django.views.generic.base import RedirectView
 
 
 class MyCollectionsListView(ListView):
@@ -88,6 +89,16 @@ urlpatterns = patterns('',
     url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<img_name>[A-Za-z0-9\.\+\-\_\s]+)$',
         serve_image,
         name='serve_image'),
+
+    # redirect dynamically loaded pycortex scripts
+    url(r'^media/images/(\d+|[A-Z]{8})/(.*_pycortex|pycortex_all)/resources/(?P<path>.*).js$',
+        RedirectView.as_view(url='{0}pycortex-resources/%(path)s.js'.format(settings.STATIC_URL)),
+        name='redirect_pycortex_js'),
+
+    # redirect cached ctm assets
+    url(r'^media/images/(\d+|[A-Z]{8})/(.*_pycortex|pycortex_all)/(?P<ctmfile>fsaverage.*.json|svg|ctm)$',
+        RedirectView.as_view(url='{0}pycortex-ctmcache/%(ctmfile)s'.format(settings.STATIC_URL)),
+        name='redirect_pycortex_js'),
 
     url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<pycortex_dir>[A-Za-z0-9\.\+\-\_\s]+\_pycortex/)(?P<path>.*)$',
         serve_pycortex,
