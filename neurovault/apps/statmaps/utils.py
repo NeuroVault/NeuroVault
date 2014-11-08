@@ -12,7 +12,11 @@ from lxml import etree
 from datetime import datetime,date
 import cortex
 import pytz
-
+from lxml import etree
+import nibabel as nib
+from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from ast import literal_eval
 
 # see CollectionRedirectMiddleware
 class HttpRedirectException(Exception):
@@ -173,3 +177,54 @@ def get_paper_properties(doi):
 
 def get_file_ctime(fpath):
     return datetime.fromtimestamp(os.path.getctime(fpath),tz=pytz.utc)
+
+
+def get_afni_header(nii_file):
+    # AFNI header is nifti1 header extension 4
+    # http://nifti.nimh.nih.gov/nifti-1/AFNIextension1
+    extensions = nib.load(nii_file).get_header().extensions
+    return [ext for ext in extensions if ext.get_code() == 4].pop()
+
+
+def detect_afni4D(nii_file):
+    return bool(get_afni_header(nii_file))
+
+
+def split_afni4D_to_nii(nii_file):
+    outpaths = []
+    ext = ".nii.gz"
+    tmp_dir, name = os.path.split(nii_file)
+    fname = name.replace(ext,'')
+
+    nii = nib.load(nii_file)
+    fourDnii = nii.get_data()
+    slices = np.split(fourDnii, nii.get_shape()[-1], len(nii.get_shape())-1)
+
+    # slice labels delimited with '~'
+    # <AFNI_atr atr_name="BRICK_LABS" >
+    #   "SetA-SetB_mean~SetA-SetB_Zscr~SetA_mean~SetA_Zscr~SetB_mean~SetB_Zscr"
+    # </AFNI_atr>
+    tree = etree.fromstring(get_afni_header(nii_file).get_content())
+    lnode = [v for v in tree.findall('.//AFNI_atr') if v.attrib['atr_name'] == 'BRICK_LABS']
+
+    # header xml is wrapped in string literals
+    labels = [] + literal_eval(lnode[0].text.strip()).split('~')
+
+    for n,slice in enumerate(slices):
+        #import ipdb;ipdb.set_trace()
+        nifti = nib.Nifti1Image(slice,nii.get_header().get_best_affine())
+        layer_nm = labels[n] if n < len(labels) else 'slice_%s' % n
+        outpath = os.path.join(tmp_dir,'%s__%s%s' % (fname,layer_nm,ext))
+        nib.save(nifti,outpath)
+        outpaths.append((layer_nm,outpath))
+    return outpaths
+
+
+def memory_uploadfile(new_file, fname, old_file):
+    cfile = ContentFile(open(new_file).read())
+    content_type = getattr(old_file,'content_type',False) or 'application/x-gzip',
+    charset = getattr(old_file,'charset',False) or None
+
+    return InMemoryUploadedFile(cfile, "file", fname + ".nii.gz",
+                                content_type, cfile.size, charset)
+
