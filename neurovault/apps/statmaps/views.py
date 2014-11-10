@@ -284,7 +284,6 @@ def upload_folder(request, collection_cid):
                     else:
                         f = ContentFile(open(fpath).read(), name=dname)
 
-                    #import ipdb;ipdb.set_trace()
                     collection = get_collection(collection_cid,request)
                     new_image = Image(name=label,
                                       description=str(raw_hdr['descrip']) or label,
