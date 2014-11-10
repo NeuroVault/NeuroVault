@@ -8,7 +8,7 @@ from django.template.context import RequestContext
 from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
-    get_file_ctime
+    get_file_ctime,detect_afni4D, split_afni4D_to_3D
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.db.models import Q
@@ -241,13 +241,18 @@ def upload_folder(request, collection_cid):
                 for root, _, filenames in os.walk(tmp_directory, topdown=False):
                     filenames = [f for f in filenames if not f[0] == '.']
                     for fname in filenames:
-                        _, ext = splitext_nii_gz(fname)
-                        if ext in allowed_extensions:
-                            niftiFiles.append(os.path.join(root, fname))
+                        name, ext = splitext_nii_gz(fname)
+                        nii_path = os.path.join(root, fname)
+                        if ext not in allowed_extensions:
+                            continue
+                        if detect_afni4D(nii_path):
+                            niftiFiles.extend(split_afni4D_to_3D(nii_path))
+                        else:
+                            niftiFiles.append((fname,nii_path))
 
-                for fname in niftiFiles:
+                for label,fpath in niftiFiles:
                     # Read nifti file information
-                    nii = nib.load(fname)
+                    nii = nib.load(fpath)
                     if len(nii.get_shape()) > 3 and nii.get_shape()[3] > 1:
                         continue
                     hdr = nii.get_header()
@@ -257,32 +262,33 @@ def upload_folder(request, collection_cid):
                     # Check if filename corresponds to a T-map
                     Tregexp = re.compile('spmT.*')
                     # Fregexp = re.compile('spmF.*')
-                    if Tregexp.search(fname) is not None:
+                    if Tregexp.search(fpath) is not None:
                         map_type = Image.T
                     else:
                         # Check if filename corresponds to a F-map
-                        if Tregexp.search(fname) is not None:
+                        if Tregexp.search(fpath) is not None:
                             map_type = Image.F
                         else:
                             map_type = Image.OTHER
 
-                    path, name, ext = split_filename(fname)
-                    name += ".nii.gz"
-                    db_name = os.path.join(path.replace(tmp_directory,""), name)
-                    db_name = os.path.sep.join(db_name.split(os.path.sep)[2:])
+                    path, name, ext = split_filename(fpath)
+                    dname = name + ".nii.gz"
+
                     if ext.lower() != ".nii.gz":
                         new_file_tmp_directory = tempfile.mkdtemp()
                         nib.save(nii, os.path.join(new_file_tmp_directory, name))
                         f = ContentFile(open(os.path.join(
-                                        new_file_tmp_directory, name)).read(), name=name)
+                                        new_file_tmp_directory, name)).read(), name=dname)
                         shutil.rmtree(new_file_tmp_directory)
-                        db_name += " (old ext: %s)" % ext
+                        label += " (old ext: %s)" % ext
                     else:
-                        f = ContentFile(open(fname).read(), name=name)
+                        f = ContentFile(open(fpath).read(), name=dname)
 
+                    #import ipdb;ipdb.set_trace()
                     collection = get_collection(collection_cid,request)
-                    new_image = Image(name=db_name,
-                                      description=raw_hdr['descrip'], collection=collection)
+                    new_image = Image(name=label,
+                                      description=str(raw_hdr['descrip']) or label,
+                                      collection=collection)
                     new_image.file = f
                     new_image.map_type = map_type
                     new_image.save()

@@ -203,7 +203,7 @@ def get_afni_subbrick_labels(nii_file):
     return [] + literal_eval(lnode[0].text.strip()).split('~')
 
 
-def split_afni4D_to_3D(nii_file):
+def split_afni4D_to_3D(nii_file,with_labels=True):
     outpaths = []
     ext = ".nii.gz"
     tmp_dir, name = os.path.split(nii_file)
@@ -217,7 +217,10 @@ def split_afni4D_to_3D(nii_file):
         layer_nm = labels[n] if n < len(labels) else 'slice_%s' % n
         outpath = os.path.join(tmp_dir,'%s__%s%s' % (fname,layer_nm,ext))
         nib.save(nifti,outpath)
-        outpaths.append((layer_nm,outpath))
+        if with_labels:
+            outpaths.append((layer_nm,outpath))
+        else:
+            outpaths.append(outpath)
     return outpaths
 
 
