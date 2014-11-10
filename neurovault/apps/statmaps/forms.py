@@ -7,6 +7,7 @@ import numpy as np
 
 from django.forms import ModelForm
 from django.forms.models import inlineformset_factory
+from django.forms.models import BaseInlineFormSet
 from django.core.exceptions import ValidationError
 # from form_utils.forms import BetterModelForm
 
@@ -19,7 +20,7 @@ from django.forms.forms import Form
 from django.forms.fields import FileField
 import tempfile
 from neurovault.apps.statmaps.utils import split_filename, get_paper_properties, \
-                                        detect_afni4D, split_afni4D_to_nii, memory_uploadfile
+                                        detect_afni4D, split_afni4D_to_3D, memory_uploadfile
 from django import forms
 
 # Create the form class.
@@ -272,7 +273,7 @@ class ImageForm(ModelForm):
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
         self.helper.form_tag = False
-        self.afni_briks = []
+        self.afni_subbricks = []
         self.afni_tmp = None
 
     class Meta:
@@ -343,11 +344,11 @@ class ImageForm(ModelForm):
 
                 # detect AFNI 4D files and prepare 3D slices
                 if nii_tmp is not None and detect_afni4D(nii_tmp):
-                    self.afni_briks = split_afni4D_to_nii(nii_tmp)
+                    self.afni_subbricks = split_afni4D_to_3D(nii_tmp)
 
             finally:
                 try:
-                    if self.afni_briks:
+                    if self.afni_subbricks:
                         self.afni_tmp = tmp_dir  # keep temp dir for AFNI slicing
                     else:
                         shutil.rmtree(tmp_dir)
@@ -357,30 +358,6 @@ class ImageForm(ModelForm):
         else:
             raise ValidationError("Couldn't read uploaded file")
         return cleaned_data
-
-    def save(self, commit=True):
-        image = super(ImageForm, self).save(commit=False)
-        basenm = image.name
-        if self.afni_briks:
-            #import ipdb;ipdb.set_trace()
-            try:
-                label,brik = self.afni_briks.pop(0)
-                mfile = memory_uploadfile(brik, label, image.file)
-                image.file = mfile
-                image.name = '%s - %s' % (basenm, label)
-                image.save()
-
-                for label,brik in self.afni_briks:
-                    mfile = memory_uploadfile(brik, label, image.file)
-                    brik_img = Image(name='%s - %s' % (basenm, label), file=mfile,
-                                     collection=self.instance.collection)
-                    for field in ['description','map_type','tags']:
-                        setattr(brik_img, field, getattr(image,field))
-                    brik_img.save()
-            finally:
-                shutil.rmtree(self.afni_tmp)
-        else:
-            image.save()
 
 
 class SingleImageForm(ImageForm):
@@ -404,10 +381,53 @@ class SimplifiedImageForm(SingleImageForm):
         fields = ('name', 'collection', 'description', 'map_type',
                   'file', 'hdr_file', 'tags')
 
+
+class CollectionInlineFormset(BaseInlineFormSet):
+
+    def save_afni_slices(self,form,commit):
+        try:
+            base_name = form.instance.name
+            label,brick = form.afni_subbricks.pop(0)
+            mfile = memory_uploadfile(brick, label, form.instance.file)
+            newimg = Image(name='%s - %s' % (base_name, label), file=mfile,
+                           collection=form.instance.collection)
+            form.instance = newimg
+            form.save()
+
+            for label,brick in form.afni_subbricks:
+                mfile = memory_uploadfile(brick, label, newimg.file)
+                brick_img = Image(name='%s - %s' % (base_name, label), file=mfile)
+                for field in ['collection','description','map_type','tags']:
+                    setattr(brick_img, field, getattr(newimg,field))
+
+                if newimg.tags.exists():
+                    brick_img.save()  # generate PK before copying tags
+                    brick_img.tags = newimg.tags
+                brick_img.save()
+        finally:
+            shutil.rmtree(form.afni_tmp)
+        return form
+
+    def save_new(self,form,commit=True):
+        if form.afni_subbricks:
+            form = self.save_afni_slices(form,commit)
+            return form.instance
+        else:
+            return super(CollectionInlineFormset, self).save_new(form,commit=commit)
+
+    def save_existing(self,form,instance,commit=True):
+        if form.afni_subbricks:
+            form = self.save_afni_slices(form,commit)
+            return form.instance
+        else:
+            return super(CollectionInlineFormset, self).save_existing(
+                                                            form, instance, commit=commit)
+
+
 CollectionFormSet = inlineformset_factory(
     Collection, Image, form=ImageForm,
     exclude=['json_path', 'nifti_gz_file', 'collection'],
-    extra=1)
+    extra=1, formset=CollectionInlineFormset)
 
 
 class UploadFileForm(Form):

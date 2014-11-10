@@ -179,39 +179,40 @@ def get_file_ctime(fpath):
     return datetime.fromtimestamp(os.path.getctime(fpath),tz=pytz.utc)
 
 
-def get_afni_header(nii_file):
+def detect_afni4D(nii_file):
+    # don't split afni files with no subbricks
+    return bool(len(get_afni_subbrick_labels(nii_file)) > 1)
+
+
+def get_afni_subbrick_labels(nii_file):
     # AFNI header is nifti1 header extension 4
     # http://nifti.nimh.nih.gov/nifti-1/AFNIextension1
     extensions = nib.load(nii_file).get_header().extensions
-    return [ext for ext in extensions if ext.get_code() == 4].pop()
+    header = [ext for ext in extensions if ext.get_code() == 4]
+    if not header:
+        return []
+
+    # slice labels delimited with '~'
+    # <AFNI_atr atr_name="BRICK_LABS" >
+    #   "SetA-SetB_mean~SetA-SetB_Zscr~SetA_mean~SetA_Zscr~SetB_mean~SetB_Zscr"
+    # </AFNI_atr>
+    tree = etree.fromstring(header[0].get_content())
+    lnode = [v for v in tree.findall('.//AFNI_atr') if v.attrib['atr_name'] == 'BRICK_LABS']
+
+    # header xml is wrapped in string literals
+    return [] + literal_eval(lnode[0].text.strip()).split('~')
 
 
-def detect_afni4D(nii_file):
-    return bool(get_afni_header(nii_file))
-
-
-def split_afni4D_to_nii(nii_file):
+def split_afni4D_to_3D(nii_file):
     outpaths = []
     ext = ".nii.gz"
     tmp_dir, name = os.path.split(nii_file)
     fname = name.replace(ext,'')
 
     nii = nib.load(nii_file)
-    fourDnii = nii.get_data()
-    slices = np.split(fourDnii, nii.get_shape()[-1], len(nii.get_shape())-1)
-
-    # slice labels delimited with '~'
-    # <AFNI_atr atr_name="BRICK_LABS" >
-    #   "SetA-SetB_mean~SetA-SetB_Zscr~SetA_mean~SetA_Zscr~SetB_mean~SetB_Zscr"
-    # </AFNI_atr>
-    tree = etree.fromstring(get_afni_header(nii_file).get_content())
-    lnode = [v for v in tree.findall('.//AFNI_atr') if v.attrib['atr_name'] == 'BRICK_LABS']
-
-    # header xml is wrapped in string literals
-    labels = [] + literal_eval(lnode[0].text.strip()).split('~')
-
+    slices = np.split(nii.get_data(), nii.get_shape()[-1], len(nii.get_shape())-1)
+    labels = get_afni_subbrick_labels(nii_file)
     for n,slice in enumerate(slices):
-        #import ipdb;ipdb.set_trace()
         nifti = nib.Nifti1Image(slice,nii.get_header().get_best_affine())
         layer_nm = labels[n] if n < len(labels) else 'slice_%s' % n
         outpath = os.path.join(tmp_dir,'%s__%s%s' % (fname,layer_nm,ext))
