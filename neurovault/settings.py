@@ -132,6 +132,7 @@ INSTALLED_APPS = (
     'neurovault.apps.main',
     'neurovault.apps.statmaps',
     'neurovault.apps.users',
+    'neurovault.apps.nidm',
     # Uncomment the next line to enable the admin:
     'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
