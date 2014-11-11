@@ -1,11 +1,56 @@
 import django.db.models as models
 from neurovault.apps.statmaps.models import upload_to
 from neurovault.apps.statmaps.storage import NiftiGzStorage
+import os
+from django.core.files.base import ContentFile
 
 class Prov(models.Model):
     prov_type = models.CharField(max_length=200)
     prov_label = models.CharField(max_length=200)
     prov_URI = models.CharField(max_length=200, primary_key=True)
+    
+    _translations = {'http://www.w3.org/1999/02/22-rdf-syntax-ns#type': ('prov_type', str),
+                     'http://www.w3.org/2000/01/rdf-schema#label': ("prov_label", str)}
+    
+    @classmethod
+    def create(cls, uri, graph, nidm_file_handle):
+        try:
+            instance = cls.objects.get(prov_URI=uri)
+        except cls.DoesNotExist:
+            query = """
+prefix prov: <http://www.w3.org/ns/prov#>
+prefix nidm: <http://www.incf.org/ns/nidash/nidm#>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?property ?value WHERE {
+ <%s> ?property ?value .
+}
+"""%uri
+            results = graph.query(query)
+            property_value = {}
+            for _, row in enumerate(results.bindings):
+                property_value[str(row["property"])] = row["value"].decode()
+            
+            instance = cls()
+            instance.prov_URI = uri
+            for property_uri, (property_name, property_type) in cls._translation.iteritems():
+                if property_uri in property_value:
+                    if property_type is file:
+                        file_field = getattr(instance, property_name)
+                        root = nidm_file_handle.infolist()[0].filename
+                        _,  filename = os.path.split(property_value[property_uri])
+                        file_path = os.path.join(root + filename)
+                        file_handle = nidm_file_handle.open(file_path, "r")
+                        file_field.save(filename, ContentFile(file_handle.read()))
+                    elif property_type is Prov:
+                        instance = property_type.create(property_uri, graph, nidm_file_handle)
+                        setattr(instance, property_name, instance)
+                    else:
+                        setattr(instance, property_name, property_type(property_value[property_uri]))
+            print set(property_value.keys()) - set(cls._translation.keys())
+
+        return instance
+        
     class Meta:
         abstract = True
 
@@ -34,6 +79,10 @@ class Map(ProvEntity):
     sha512 = models.CharField(max_length=200, null=True)
     filename = models.CharField(max_length=200, null=True)
     
+    _translation = dict(Prov._translations.items() + {'http://purl.org/dc/terms/format': ("format", str),
+                                                      'http://id.loc.gov/vocabulary/preservation/cryptographicHashFunctions#sha512': ("sha512", str),
+                                                      'http://www.incf.org/ns/nidash/nidm#filename': ("filename", str)}.items())
+            
 
 class Image(ProvEntity):
     models.FileField(upload_to=upload_to, null=True)
@@ -52,7 +101,7 @@ class ContrastWeights(ProvEntity):
 
 
 class Data(ProvEntity):
-    grandMeanScaling = models.BooleanField(default=None, null=True)
+    grandMeanScaling = models.NullBooleanField(default=None, null=True)
     targetIntensity = models.FloatField(null=True)
     
 
@@ -80,7 +129,7 @@ class NoiseModel(ProvEntity):
                                    ("http://www.incf.org/ns/nidash/nidm#CompoundSymmetricNoise", "Compound Symmetric"),
                                    ("http://www.incf.org/ns/nidash/nidm#IndependentNoise", "Independent")]
     hasNoiseDependence = models.CharField(max_length=200, choices=_hasNoiseDependence_choices, null=True)
-    noiseVarianceHomogeneous = models.BooleanField(default=None, null=True)
+    noiseVarianceHomogeneous = models.NullBooleanField(default=None, null=True)
     _varianceSpatialModel_choices = [("http://www.incf.org/ns/nidash/nidm#SpatiallyLocalModel", "Spatially Local"),
                                      ("http://www.incf.org/ns/nidash/nidm#SpatialModel", "Spatial"),
                                      ("http://www.incf.org/ns/nidash/nidm#SpatiallyRegularizedModel", "Spatially Regularized"),
@@ -146,14 +195,14 @@ class ContrastMap(ProvEntity):
     
 class StatisticMap(ProvEntity):
     file = models.FileField(storage=NiftiGzStorage(), null=True)
-    contrastName = models.CharField(max_length=200, null=True, null=True)
-    errorDegreesOfFreedom = models.FloatField(null=True, null=True)
-    effectDegreesOfFreedom = models.FloatField(null=True, null=True)
-    atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True, null=True)
-    modelParametersEstimation = models.ForeignKey(ModelParametersEstimation, null=True, null=True)
-    statisticType = models.CharField(max_length=200, null=True, null=True)
-    sha512 = models.CharField(max_length=200, null=True, null=True)
-    map = models.OneToOneField(Map, null=True, null=True)
+    contrastName = models.CharField(max_length=200, null=True)
+    errorDegreesOfFreedom = models.FloatField(null=True)
+    effectDegreesOfFreedom = models.FloatField(null=True)
+    atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True)
+    modelParametersEstimation = models.ForeignKey(ModelParametersEstimation, null=True)
+    statisticType = models.CharField(max_length=200, null=True)
+    sha512 = models.CharField(max_length=200, null=True)
+    map = models.OneToOneField(Map, null=True)
     
 
 class ContrastStandardErrorMap(ProvEntity):
@@ -264,7 +313,7 @@ class SearchSpaceMap(ProvEntity):
     file = models.FileField(upload_to=upload_to, storage=NiftiGzStorage(), null=True)
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True)
     inCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True)
-    randomFieldStationarity = models.BooleanField(default=None, null=True)
+    randomFieldStationarity = models.NullBooleanField(default=None, null=True)
     searchVolumeReselsGeometry = models.CharField(max_length=200, null=True)
     map = models.OneToOneField(Map, null=True)
     
