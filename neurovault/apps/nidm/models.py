@@ -5,15 +5,19 @@ from neurovault.apps.statmaps.storage import NiftiGzStorage
 class Prov(models.Model):
     prov_type = models.CharField(max_length=200)
     prov_label = models.CharField(max_length=200)
-    prov_URI = models.CharField(max_length=200)
+    prov_URI = models.CharField(max_length=200, primary_key=True)
+    class Meta:
+        abstract = True
 
  
 class ProvEntity(Prov):
-    pass
+    class Meta:
+        abstract = True
 
 
 class ProvActivity(Prov):
-    pass
+    class Meta:
+        abstract = True
 
 
 class CoordinateSpace(ProvEntity):
@@ -48,7 +52,7 @@ class ContrastWeights(ProvEntity):
 
 
 class Data(ProvEntity):
-    grandMeanScaling = models.BooleanField()
+    grandMeanScaling = models.BooleanField(default=None)
     targetIntensity = models.FloatField()
     
 
@@ -76,7 +80,7 @@ class NoiseModel(ProvEntity):
                                    ("nidm:CompoundSymmetricNoise", "Compound Symmetric"),
                                    ("nidm:IndependentNoise", "Independent")]
     hasNoiseDependence = models.CharField(max_length=200, choices=_hasNoiseDependence_choices)
-    noiseVarianceHomogeneous = models.BooleanField()
+    noiseVarianceHomogeneous = models.BooleanField(default=None)
     _varianceSpatialModel_choices = [("nidm:SpatiallyLocalModel", "Spatially Local"),
                                      ("nidm:SpatialModel", "Spatial"),
                                      ("nidm:SpatiallyRegularizedModel", "Spatially Regularized"),
@@ -153,7 +157,7 @@ class StatisticMap(ProvEntity):
     map = models.OneToOneField(Map)
     
 
-class ContrastStandardErrorMap(models.Model):
+class ContrastStandardErrorMap(ProvEntity):
     file = models.FileField(upload_to=upload_to, storage=NiftiGzStorage())
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+')
     contrastEstimation = models.OneToOneField(ContrastEstimation)
@@ -261,7 +265,7 @@ class SearchSpaceMap(ProvEntity):
     file = models.FileField(upload_to=upload_to, storage=NiftiGzStorage())
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+')
     inCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+')
-    randomFieldStationarity = models.BooleanField()
+    randomFieldStationarity = models.BooleanField(default=None)
     searchVolumeReselsGeometry = models.CharField(max_length=200)
     map = models.OneToOneField(Map)
     
