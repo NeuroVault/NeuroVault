@@ -79,13 +79,11 @@ def edit_images(request, collection_cid):
             print 'not valid'
             formset = CollectionFormSet(request.POST, instance=collection)
             formset.form.base_fields['checkbox'].widget = forms.CheckboxInput()
-            context = {"formset": formset}
-            return render(request, "statmaps/edit_images.html.haml", context)
     else:
         formset = CollectionFormSet(instance=collection)
         formset.form.base_fields['checkbox'].widget = forms.HiddenInput()
     context = {"formset": formset}
-    return render(request, "statmaps/edit_images.html.haml", context)
+    return render(request, "statmaps/edit_images.html.haml", context, context_instance=RequestContext(request))
 
 
 @login_required
