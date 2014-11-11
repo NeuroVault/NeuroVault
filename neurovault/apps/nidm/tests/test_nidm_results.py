@@ -1,5 +1,6 @@
 from django.test import TestCase
 from ..models import StatisticMap
+from neurovault.apps.nidm.utils import parse_nidm_results
 
 class AnimalTestCase(TestCase):
 #     def setUp(self):
@@ -7,4 +8,4 @@ class AnimalTestCase(TestCase):
 #         Animal.objects.create(name="cat", sound="meow")
 
     def test_animals_can_speak(self):
-        self.assertEqual("bla", "blad")
+        parse_nidm_results("/Users/filo/krzysztof.gorgolewski@gmail.com/NeuroVault/NIDM/spm_example.nidm.zip")

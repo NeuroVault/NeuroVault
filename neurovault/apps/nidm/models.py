@@ -42,10 +42,10 @@ class Image(ProvEntity):
 # ## Model Fitting
     
 class ContrastWeights(ProvEntity):
-    _statisticsType_choices = [("nidm:ZStatistic", "Z"),
-                               ("nidm:Statistic", "Other"),
-                               ("nidm:FStatistic", "F"),
-                               ("nidm:TStatistic", "F")]
+    _statisticsType_choices = [("http://www.incf.org/ns/nidash/nidm#ZStatistic", "Z"),
+                               ("http://www.incf.org/ns/nidash/nidm#Statistic", "Other"),
+                               ("http://www.incf.org/ns/nidash/nidm#FStatistic", "F"),
+                               ("http://www.incf.org/ns/nidash/nidm#TStatistic", "F")]
     statisticType = models.CharField(max_length=200, choices=_statisticsType_choices)
     contrastName = models.CharField(max_length=200)
     value = models.CharField(max_length=200)
@@ -62,38 +62,38 @@ class DesignMatrix(ProvEntity):
     
     
 class NoiseModel(ProvEntity):
-    _dependenceSpatialModel_choices = [("nidm:SpatiallyLocalModel", "Spatiakky Local"),
-                                       ("nidm:SpatialModel", "Spatial"),
-                                       ("nidm:SpatiallyRegularizedModel", "SpatiallyRegularized"),
-                                       ("nidm:SpatiallyGlobalModel", "Spatially Global")]
+    _dependenceSpatialModel_choices = [("http://www.incf.org/ns/nidash/nidm#SpatiallyLocalModel", "Spatiakky Local"),
+                                       ("http://www.incf.org/ns/nidash/nidm#SpatialModel", "Spatial"),
+                                       ("http://www.incf.org/ns/nidash/nidm#SpatiallyRegularizedModel", "SpatiallyRegularized"),
+                                       ("http://www.incf.org/ns/nidash/nidm#SpatiallyGlobalModel", "Spatially Global")]
     dependenceSpatialModel = models.CharField(max_length=200, choices=_dependenceSpatialModel_choices)
     _hasNoiseDistribution_choices = [("fsl:NonParametricSymmetricDistribution", "Non-Parametric Symmetric"),
-                                     ("nidm:GaussianDistribution", "Gaussian"),
-                                     ("nidm:NoiseDistribution", "Noise"),
-                                     ("nidm:PoissonDistribution", "Poisson"),
+                                     ("http://www.incf.org/ns/nidash/nidm#GaussianDistribution", "Gaussian"),
+                                     ("http://www.incf.org/ns/nidash/nidm#NoiseDistribution", "Noise"),
+                                     ("http://www.incf.org/ns/nidash/nidm#PoissonDistribution", "Poisson"),
                                      ("fsl:BinomialDistribution", "Binomial"),
-                                     ("nidm:NonParametricDistribution", "Non-Parametric")]
+                                     ("http://www.incf.org/ns/nidash/nidm#NonParametricDistribution", "Non-Parametric")]
     hasNoiseDistribution = models.CharField(max_length=200, choices=_hasNoiseDistribution_choices)
-    _hasNoiseDependence_choices = [("nidm:ArbitrarilyCorrelatedNoise", "Arbitrarily Correlated"),
-                                   ("nidm:ExchangeableNoise", "Exchangable"),
-                                   ("nidm:SeriallyCorrelatedNoise", "Serially Correlated"),
-                                   ("nidm:CompoundSymmetricNoise", "Compound Symmetric"),
-                                   ("nidm:IndependentNoise", "Independent")]
+    _hasNoiseDependence_choices = [("http://www.incf.org/ns/nidash/nidm#ArbitrarilyCorrelatedNoise", "Arbitrarily Correlated"),
+                                   ("http://www.incf.org/ns/nidash/nidm#ExchangeableNoise", "Exchangable"),
+                                   ("http://www.incf.org/ns/nidash/nidm#SeriallyCorrelatedNoise", "Serially Correlated"),
+                                   ("http://www.incf.org/ns/nidash/nidm#CompoundSymmetricNoise", "Compound Symmetric"),
+                                   ("http://www.incf.org/ns/nidash/nidm#IndependentNoise", "Independent")]
     hasNoiseDependence = models.CharField(max_length=200, choices=_hasNoiseDependence_choices)
     noiseVarianceHomogeneous = models.BooleanField(default=None)
-    _varianceSpatialModel_choices = [("nidm:SpatiallyLocalModel", "Spatially Local"),
-                                     ("nidm:SpatialModel", "Spatial"),
-                                     ("nidm:SpatiallyRegularizedModel", "Spatially Regularized"),
-                                     ("nidm:SpatiallyGlobalModel", "Spatially Global")]
+    _varianceSpatialModel_choices = [("http://www.incf.org/ns/nidash/nidm#SpatiallyLocalModel", "Spatially Local"),
+                                     ("http://www.incf.org/ns/nidash/nidm#SpatialModel", "Spatial"),
+                                     ("http://www.incf.org/ns/nidash/nidm#SpatiallyRegularizedModel", "Spatially Regularized"),
+                                     ("http://www.incf.org/ns/nidash/nidm#SpatiallyGlobalModel", "Spatially Global")]
     varianceSpatialModel = models.CharField(max_length=200, choices=_varianceSpatialModel_choices)
     
     
 class ModelParametersEstimation(ProvActivity):
-    _withEstimation_method_choices = [("nidm:WeightedLeastSquares", "WeightedLeastSquares"),
-                                      ("nidm:OrdinaryLeastSquares", "OrdinaryLeastSquares"),
-                                      ("nidm:GeneralizedLeastSquares", "GeneralizedLeastSquares"),
-                                      ("nidm:EstimationMethod", "EstimatedMethod"),
-                                      ("nidm:RobustIterativelyReweighedLeastSquares", "RobustIterativelyReweighedLeastSquares")]
+    _withEstimation_method_choices = [("http://www.incf.org/ns/nidash/nidm#WeightedLeastSquares", "WeightedLeastSquares"),
+                                      ("http://www.incf.org/ns/nidash/nidm#OrdinaryLeastSquares", "OrdinaryLeastSquares"),
+                                      ("http://www.incf.org/ns/nidash/nidm#GeneralizedLeastSquares", "GeneralizedLeastSquares"),
+                                      ("http://www.incf.org/ns/nidash/nidm#EstimationMethod", "EstimatedMethod"),
+                                      ("http://www.incf.org/ns/nidash/nidm#RobustIterativelyReweighedLeastSquares", "RobustIterativelyReweighedLeastSquares")]
     withEstimationMethod = models.CharField(max_length=200, choices=_withEstimation_method_choices)
     designMatrix = models.ForeignKey(DesignMatrix)
     data = models.ForeignKey(Data)
@@ -145,16 +145,15 @@ class ContrastMap(ProvEntity):
     
     
 class StatisticMap(ProvEntity):
-    file = models.FileField(upload_to=upload_to, storage=NiftiGzStorage())
-    filename = models.CharField(max_length=200)
-    contrastName = models.CharField(max_length=200)
-    errorDegreesOfFreedom = models.FloatField()
-    effectDegreesOfFreedom = models.FloatField()
-    atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+')
-    modelParametersEstimation = models.ForeignKey(ModelParametersEstimation)
-    statisticType = models.CharField(max_length=200)
-    sha512 = models.CharField(max_length=200)
-    map = models.OneToOneField(Map)
+    file = models.FileField(storage=NiftiGzStorage())
+    contrastName = models.CharField(max_length=200, null=True)
+    errorDegreesOfFreedom = models.FloatField(null=True)
+    effectDegreesOfFreedom = models.FloatField(null=True)
+    atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True)
+    modelParametersEstimation = models.ForeignKey(ModelParametersEstimation, null=True)
+    statisticType = models.CharField(max_length=200, null=True)
+    sha512 = models.CharField(max_length=200, null=True)
+    map = models.OneToOneField(Map, null=True)
     
 
 class ContrastStandardErrorMap(ProvEntity):
@@ -177,8 +176,8 @@ class ReselsPerVoxelMap(ProvEntity):
 
 class Inference(ProvActivity):
     alternativeHypothesis = models.CharField(max_length=200)
-    _hasAlternativeHypothesis_choices = [("nidm:TwoTailedTest", "Two Tailed"),
-                                         ("nidm:OneTailedTest", "One Tailed")]
+    _hasAlternativeHypothesis_choices = [("http://www.incf.org/ns/nidash/nidm#TwoTailedTest", "Two Tailed"),
+                                         ("http://www.incf.org/ns/nidash/nidm#OneTailedTest", "One Tailed")]
     hasAlternativeHypothesis = models.CharField(max_length=200, choices=_hasAlternativeHypothesis_choices)
     contrastMap = models.ForeignKey(ContrastMap)
     statisticMap = models.ForeignKey(StatisticMap)
