@@ -203,10 +203,11 @@ def get_afni_subbrick_labels(nii_file):
     return [] + literal_eval(lnode[0].text.strip()).split('~')
 
 
-def split_afni4D_to_3D(nii_file,with_labels=True):
+def split_afni4D_to_3D(nii_file,with_labels=True,tmp_dir=None):
     outpaths = []
     ext = ".nii.gz"
-    tmp_dir, name = os.path.split(nii_file)
+    base_dir, name = os.path.split(nii_file)
+    out_dir = tmp_dir or base_dir
     fname = name.replace(ext,'')
 
     nii = nib.load(nii_file)
@@ -215,7 +216,7 @@ def split_afni4D_to_3D(nii_file,with_labels=True):
     for n,slice in enumerate(slices):
         nifti = nib.Nifti1Image(slice,nii.get_header().get_best_affine())
         layer_nm = labels[n] if n < len(labels) else 'slice_%s' % n
-        outpath = os.path.join(tmp_dir,'%s__%s%s' % (fname,layer_nm,ext))
+        outpath = os.path.join(out_dir,'%s__%s%s' % (fname,layer_nm,ext))
         nib.save(nifti,outpath)
         if with_labels:
             outpaths.append((layer_nm,outpath))
@@ -229,6 +230,6 @@ def memory_uploadfile(new_file, fname, old_file):
     content_type = getattr(old_file,'content_type',False) or 'application/x-gzip',
     charset = getattr(old_file,'charset',False) or None
 
-    return InMemoryUploadedFile(cfile, "file", fname + ".nii.gz",
+    return InMemoryUploadedFile(cfile, "file", fname,
                                 content_type, cfile.size, charset)
 

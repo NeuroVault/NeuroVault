@@ -339,7 +339,7 @@ class ImageForm(ModelForm):
                     nii_tmp = os.path.join(tmp_dir, fname + ".nii.gz")
                     nb.save(nii, nii_tmp)
 
-                    cleaned_data['file'] = memory_uploadfile(nii_tmp, fname,
+                    cleaned_data['file'] = memory_uploadfile(nii_tmp, fname + "nii.gz",
                                                              cleaned_data['file'])
 
                 # detect AFNI 4D files and prepare 3D slices
@@ -388,14 +388,16 @@ class CollectionInlineFormset(BaseInlineFormSet):
         try:
             base_name = form.instance.name
             label,brick = form.afni_subbricks.pop(0)
-            mfile = memory_uploadfile(brick, label, form.instance.file)
+            brick_fname = os.path.split(brick)[-1]
+            mfile = memory_uploadfile(brick, brick_fname, form.instance.file)
             newimg = Image(name='%s - %s' % (base_name, label), file=mfile,
                            collection=form.instance.collection)
             form.instance = newimg
             form.save()
 
             for label,brick in form.afni_subbricks:
-                mfile = memory_uploadfile(brick, label, newimg.file)
+                brick_fname = os.path.split(brick)[-1]
+                mfile = memory_uploadfile(brick, brick_fname, newimg.file)
                 brick_img = Image(name='%s - %s' % (base_name, label), file=mfile)
                 for field in ['collection','description','map_type','tags']:
                     setattr(brick_img, field, getattr(newimg,field))
