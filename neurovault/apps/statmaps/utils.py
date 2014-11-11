@@ -12,11 +12,11 @@ from lxml import etree
 from datetime import datetime,date
 import cortex
 import pytz
-from lxml import etree
 import nibabel as nib
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from ast import literal_eval
+
 
 # see CollectionRedirectMiddleware
 class HttpRedirectException(Exception):

@@ -15,7 +15,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Submit, HTML, Button, Row, Field, Hidden
 from crispy_forms.bootstrap import AppendedText, PrependedText, FormActions, TabHolder, Tab
 
-from .models import Collection, Image
+from .models import Collection, Image,ValueTaggedItem
 from django.forms.forms import Form
 from django.forms.fields import FileField
 import tempfile
@@ -386,26 +386,25 @@ class CollectionInlineFormset(BaseInlineFormSet):
 
     def save_afni_slices(self,form,commit):
         try:
-            base_name = form.instance.name
-            label,brick = form.afni_subbricks.pop(0)
-            brick_fname = os.path.split(brick)[-1]
-            mfile = memory_uploadfile(brick, brick_fname, form.instance.file)
-            newimg = Image(name='%s - %s' % (base_name, label), file=mfile,
-                           collection=form.instance.collection)
-            form.instance = newimg
-            form.save()
+            orig_img = form.instance
+            first_img = None
 
-            for label,brick in form.afni_subbricks:
+            for n,(label,brick) in enumerate(form.afni_subbricks):
                 brick_fname = os.path.split(brick)[-1]
-                mfile = memory_uploadfile(brick, brick_fname, newimg.file)
-                brick_img = Image(name='%s - %s' % (base_name, label), file=mfile)
-                for field in ['collection','description','map_type','tags']:
-                    setattr(brick_img, field, getattr(newimg,field))
+                mfile = memory_uploadfile(brick, brick_fname, orig_img.file)
+                brick_img = Image(name='%s - %s' % (orig_img.name, label), file=mfile)
+                for field in ['collection','description','map_type']:
+                    setattr(brick_img, field, form.cleaned_data[field])
 
-                if newimg.tags.exists():
-                    brick_img.save()  # generate PK before copying tags
-                    brick_img.tags = newimg.tags
-                brick_img.save()
+                if n == 0:
+                    form.instance = brick_img
+                    first_img = form.save()
+                else:
+                    brick_img.save()
+                    for tag in first_img.tags.all():
+                        tagobj = ValueTaggedItem(content_object=brick_img,tag=tag)
+                        tagobj.save()
+
         finally:
             shutil.rmtree(form.afni_tmp)
         return form
