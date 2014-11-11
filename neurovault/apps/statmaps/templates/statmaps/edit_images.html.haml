@@ -4,10 +4,10 @@
 {% block head %}
 <script src="{% static "scripts/clone-form.js"%}" type="text/javascript"></script>
 	:javascript
+		request_method = '{{ request }}'
+		
 		{% inlinecoffeescript %}
-
 			active_form = 0
-
 			$(document).ready ->
 
 				showForm = (id) ->

@@ -343,9 +343,8 @@ class ImageForm(ModelForm):
                 maxZero = .70
                 imgData = nii.get_data()
                 isZero = (imgData == 0).sum()/float(imgData.size)
-#                 print dir(self.base_fields)
                 if isZero > maxZero and not (cleaned_data.get('checkbox') == True):
-                    self._errors["file"] = self.error_class(["Number of voxels with a value of zero is greater than %s" % maxZero])
+                    self._errors["file"] = self.error_class(["Number of voxels with a value of zero is greater than 70"])
                 
             finally:
                 try:
@@ -359,18 +358,21 @@ class ImageForm(ModelForm):
 
 
 class SingleImageForm(ImageForm):
+    checkbox = forms.BooleanField(required=False, label='Ignore warning')
     hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
 
     class Meta:
         model = Image
         exclude = ('json_path', )
+        fields = ('name', 'collection', 'description', 'map_type',
+                  'file', 'checkbox', 'map_type','statistic_parameters', 'smoothness_fwhm',
+                   'contrast_definition', 'contrast_definition', 'contrast_definition_cogatlas','hdr_file', 'tags')
 
     def __init__(self, user, *args, **kwargs):
         super(SingleImageForm, self).__init__(*args, **kwargs)
         self.fields['collection'].queryset = Collection.objects.filter(owner=user)
         self.helper = FormHelper(self)
         self.helper.add_input(Submit('submit', 'Submit'))
-
 
 class SimplifiedImageForm(SingleImageForm):
     class Meta:

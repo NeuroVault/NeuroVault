@@ -75,7 +75,8 @@ def edit_images(request, collection_cid):
         if formset.is_valid():
             formset.save()
             return HttpResponseRedirect(collection.get_absolute_url())
-        else:
+        elif str(formset._errors[0]['file'])  == '<ul class="errorlist"><li>Number of voxels with a value of zero is greater than 70</li></ul>':
+            print 'not valid'
             formset = CollectionFormSet(request.POST, instance=collection)
             formset.form.base_fields['checkbox'].widget = forms.CheckboxInput()
             context = {"formset": formset}
@@ -159,9 +160,15 @@ def edit_image(request, pk):
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(image.get_absolute_url())
+        elif str(form._errors["file"])  == '<ul class="errorlist"><li>Number of voxels with a value of zero is greater than 70</li></ul>':
+            print 'not valid'
+            form = SingleImageForm(request.user, request.POST, request.FILES, instance=image)
+            form.base_fields['checkbox'].widget = forms.CheckboxInput()
+            context = {"form": form}
+            return render(request, "statmaps/edit_image.html.haml", context)
     else:
         form = SingleImageForm(request.user, instance=image)
-
+        form.base_fields['checkbox'].widget = forms.HiddenInput()
     context = {"form": form}
     return render(request, "statmaps/edit_image.html.haml", context)
 
