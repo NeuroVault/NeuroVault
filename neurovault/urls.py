@@ -1,7 +1,7 @@
 from django.conf.urls import patterns, include, url
 from django.conf import settings
 from django.contrib import admin
-from neurovault.apps.statmaps.models import StatisticMap, Collection
+from neurovault.apps.statmaps.models import Image, Collection
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf.urls.static import static
 admin.autodiscover()
@@ -70,7 +70,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
     url = HyperlinkedImageURL(source='get_absolute_url')
 
     class Meta:
-        model = StatisticMap
+        model = Image
 
 
 class CollectionSerializer(serializers.ModelSerializer):
@@ -82,7 +82,7 @@ class CollectionSerializer(serializers.ModelSerializer):
 
 class ImageViewSet(viewsets.ModelViewSet):
 
-    queryset = StatisticMap.objects.all()
+    queryset = Image.objects.all()
     serializer_class = ImageSerializer
 
     def _get_api_image(self,request,pk=None):
@@ -109,7 +109,7 @@ class ImageViewSet(viewsets.ModelViewSet):
         return Response(data)
 
     def list(self, request):
-        queryset = StatisticMap.objects.filter(collection__private=False)
+        queryset = Image.objects.filter(collection__private=False)
         data = ImageSerializer(queryset, context={'request': request}).data
         return Response(data)
 

@@ -1,4 +1,4 @@
-from .models import Collection, StatisticMap
+from .models import Collection, Image
 from .forms import CollectionFormSet, CollectionForm, SingleImageForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
@@ -49,7 +49,7 @@ def get_collection(cid,request,mode=None):
 
 
 def get_image(pk,collection_cid,request,mode=None):
-    image = get_object_or_404(StatisticMap, pk=pk)
+    image = get_object_or_404(Image, pk=pk)
     if image.collection.private and image.collection.private_token != collection_cid:
         if image.collection.owner == request.user:
             if mode == 'api':
@@ -143,7 +143,7 @@ def delete_collection(request, cid):
 
 @login_required
 def edit_image(request, pk):
-    image = get_object_or_404(StatisticMap,pk=pk)
+    image = get_object_or_404(Image,pk=pk)
     if image.collection.owner != request.user:
         return HttpResponseForbidden()
     if request.method == "POST":
@@ -172,7 +172,7 @@ def add_image_for_neurosynth(request):
                                      private=True,
                                      private_token=priv_token)
         temp_collection.save()
-    image = StatisticMap(collection=temp_collection)
+    image = Image(collection=temp_collection)
     if request.method == "POST":
         form = SimplifiedImageForm(request.user, request.POST, request.FILES, instance=image)
         if form.is_valid():
@@ -258,13 +258,13 @@ def upload_folder(request, collection_cid):
                     Tregexp = re.compile('spmT.*')
                     # Fregexp = re.compile('spmF.*')
                     if Tregexp.search(fname) is not None:
-                        map_type = StatisticMap.T
+                        map_type = Image.T
                     else:
                         # Check if filename corresponds to a F-map
                         if Tregexp.search(fname) is not None:
-                            map_type = StatisticMap.F
+                            map_type = Image.F
                         else:
-                            map_type = StatisticMap.OTHER
+                            map_type = Image.OTHER
 
                     path, name, ext = split_filename(fname)
                     name += ".nii.gz"
@@ -281,7 +281,7 @@ def upload_folder(request, collection_cid):
                         f = ContentFile(open(fname).read(), name=name)
 
                     collection = get_collection(collection_cid,request)
-                    new_image = StatisticMap(name=db_name,
+                    new_image = Image(name=db_name,
                                       description=raw_hdr['descrip'], collection=collection)
                     new_image.file = f
                     new_image.map_type = map_type
@@ -298,7 +298,7 @@ def upload_folder(request, collection_cid):
 
 @login_required
 def delete_image(request, pk):
-    image = get_object_or_404(StatisticMap,pk=pk)
+    image = get_object_or_404(Image,pk=pk)
     if image.collection.owner != request.user:
         return HttpResponseForbidden()
     image.delete()
@@ -307,7 +307,7 @@ def delete_image(request, pk):
 
 @login_required
 def view_images_by_tag(request, tag):
-    images = StatisticMap.objects.filter(tags__name__in=[tag]).filter(
+    images = Image.objects.filter(tags__name__in=[tag]).filter(
                                         Q(collection__private=False) |
                                         Q(collection__owner=request.user))
     context = {'images': images, 'tag': tag}
@@ -355,7 +355,7 @@ def view_collection_with_pycortex(request, cid):
 
 def serve_image(request, collection_cid, img_name):
     collection = get_collection(collection_cid,request,mode='file')
-    image = StatisticMap.objects.get(collection=collection,file__endswith='/'+img_name)
+    image = Image.objects.get(collection=collection,file__endswith='/'+img_name)
     return sendfile(request, image.file.path)
 
 
