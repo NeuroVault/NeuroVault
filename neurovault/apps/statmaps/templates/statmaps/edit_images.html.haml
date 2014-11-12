@@ -82,7 +82,7 @@
 		%select{id: 'image-select', size: '10'}
 			- for form in formset
 				<option value='{{forloop.counter0}}'
-					- if forloop.first
+					- if forloop.2
 						selected="selected"
 				>{{ form.name.value }}</option>
 		%button#add-image-form.btn.btn-large.btn-secondary{style:"margin: 0px 0px 0px 20px;"} Add a new image
