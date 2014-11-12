@@ -42,7 +42,8 @@
 					$("#id_image_set-#{num_forms-1}-id").val('')
 
 				# Show the first image on load
-				showForm(active_form)
+				id = 2
+				showForm(id)
 
 				$('#image-select').change((e) ->
 					id = $(e.target).val()
@@ -74,8 +75,6 @@
 			.span9
 				%h2 Edit images
 				.lead Select an image from the list at left and edit its properties in the form at right.
-			.span2
-				%button#submit-form.btn.btn-large.btn-primary{style:"margin: 35px 0px 0px 20px; font-size: 24px; padding: 10px 20px; line-height: 1.4em"} Save
 		%hr
 .row
 	.span3
@@ -97,4 +96,7 @@
 						{% crispy form %}
 					</div>
 		</form>
+.span5
+.span
+	%button#submit-form.btn.btn-large.btn-primary{style:"margin: 35px 0px 0px 20px; font-size: 24px; padding: 10px 20px; line-height: 1.4em"} Save
 {% endblock %}
