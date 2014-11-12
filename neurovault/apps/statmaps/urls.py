@@ -18,7 +18,7 @@ class MyCollectionsListView(ListView):
     context_object_name = 'collections'
 
     def get_queryset(self):
-        return Collection.objects.filter(owner=self.request.user).annotate(n_images=Count('image'))
+        return Collection.objects.filter(owner=self.request.user).annotate(n_images=Count('statisticmap'))
 
 urlpatterns = patterns('',
     url(r'^my_collections/$',
@@ -26,7 +26,7 @@ urlpatterns = patterns('',
         name='my_collections'),
     url(r'^collections/$',
         ListView.as_view(
-            queryset=Collection.objects.filter(private=False).annotate(n_images=Count('image')),
+            queryset=Collection.objects.filter(private=False).annotate(n_images=Count('statisticmap')),
             context_object_name='collections',
             template_name='statmaps/collections_index.html.haml'),
         name='collections_list'),

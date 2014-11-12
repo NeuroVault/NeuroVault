@@ -14,7 +14,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Submit, HTML, Button, Row, Field, Hidden
 from crispy_forms.bootstrap import AppendedText, PrependedText, FormActions, TabHolder, Tab
 
-from .models import Collection, Image
+from .models import Collection, StatisticMap
 from django.forms.forms import Form
 from django.forms.fields import FileField
 import tempfile
@@ -275,7 +275,7 @@ class ImageForm(ModelForm):
         self.helper.form_tag = False
 
     class Meta:
-        model = Image
+        model = StatisticMap
         exclude = ('json_path', 'collection')
 
     def clean(self):
@@ -351,7 +351,7 @@ class SingleImageForm(ImageForm):
     hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
 
     class Meta:
-        model = Image
+        model = StatisticMap
         exclude = ('json_path', )
 
     def __init__(self, user, *args, **kwargs):
@@ -363,13 +363,13 @@ class SingleImageForm(ImageForm):
 
 class SimplifiedImageForm(SingleImageForm):
     class Meta:
-        model = Image
+        model = StatisticMap
         exclude = ('json_path', )
         fields = ('name', 'collection', 'description', 'map_type',
                   'file', 'hdr_file', 'tags')
 
 CollectionFormSet = inlineformset_factory(
-    Collection, Image, form=ImageForm,
+    Collection, StatisticMap, form=ImageForm,
     exclude=['json_path', 'nifti_gz_file', 'collection'],
     extra=1)
 

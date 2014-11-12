@@ -147,7 +147,7 @@ class ValueTaggedItem(GenericTaggedItemBase):
     tag = models.ForeignKey(KeyValueTag, related_name="tagged_items")
 
 
-class Image(DirtyFieldsMixin, models.Model):
+class StatisticMap(DirtyFieldsMixin, models.Model):
     Z = 'Z'
     T = 'T'
     F = 'F'
@@ -226,7 +226,7 @@ class Image(DirtyFieldsMixin, models.Model):
 #                 self.nifti_gz_file.save(nifti_gz_file.split(os.path.sep)[-1], File(f), save=False)
 #
 #
-#         super(Image, self).save()
+#         super(StatisticMap, self).save()
 
 
     @classmethod
