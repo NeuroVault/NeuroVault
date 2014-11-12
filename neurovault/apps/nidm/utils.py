@@ -5,23 +5,13 @@ from neurovault.apps.nidm.models import CoordinateSpace, ContrastEstimation, Map
 from django.core.files.base import ContentFile
 import os
 
-prov_translations = {'http://www.w3.org/1999/02/22-rdf-syntax-ns#type': ('prov_type', str),
-                     'http://www.w3.org/2000/01/rdf-schema#label': ("prov_label", str),
-                     }
-
-def get_map_instance(graph, uri, nidm_file_handle):
-    translation = prov_translations + {'http://purl.org/dc/terms/format': ("format", str),
-                                       'http://id.loc.gov/vocabulary/preservation/cryptographicHashFunctions#sha512': ("sha512", str),
-                                       'http://www.incf.org/ns/nidash/nidm#filename': ("filename", str)
-                                       }
-
 def get_stat_map_instances(graph, nidm_file_handle):
     translation = {'http://www.incf.org/ns/nidash/nidm#errorDegreesOfFreedom': ("errorDegreesOfFreedomu", float),
                    'http://www.w3.org/ns/prov#atLocation': ("file", file),
                    'http://www.incf.org/ns/nidash/nidm#contrastName': ('contrastName', str),
                    'http://www.w3.org/1999/02/22-rdf-syntax-ns#type': ('prov_type', str),
-                   #'http://www.incf.org/ns/nidash/nidm#atCoordinateSpace': ("atCoordinateSpace", CoordinateSpace),
-                   #'http://www.w3.org/ns/prov#wasGeneratedBy': ("contrastEstimation", ContrastEstimation),
+                   'http://www.incf.org/ns/nidash/nidm#atCoordinateSpace': ("atCoordinateSpace", CoordinateSpace),
+                   'http://www.w3.org/ns/prov#wasGeneratedBy': ("contrastEstimation", ContrastEstimation),
                    'http://www.w3.org/ns/prov#wasDerivedFrom': ("map", Map),
                    'http://www.incf.org/ns/nidash/nidm#statisticType': ("statisticType", str),
                    'http://id.loc.gov/vocabulary/preservation/cryptographicHashFunctions#sha512': ("sha512", str),
@@ -51,7 +41,7 @@ SELECT ?uri ?property ?value WHERE {
         stat_map.prov_URI = uri
         for property_uri, (property_name, property_type) in translation.iteritems():
             if property_uri in stat_maps[uri]:
-                print property_uri
+                #print property_uri
                 if property_type is file:
                     file_field = getattr(stat_map, property_name)
                     root = nidm_file_handle.infolist()[0].filename
@@ -60,7 +50,7 @@ SELECT ?uri ?property ?value WHERE {
                     file_handle = nidm_file_handle.open(file_path, "r")
                     file_field.save(filename, ContentFile(file_handle.read()))
                 elif issubclass(property_type, Prov):
-                    instance = property_type.create(property_uri, graph, nidm_file_handle)
+                    instance = property_type.create(stat_maps[uri][property_uri], graph, nidm_file_handle)
                     setattr(stat_map, property_name, instance)
                 else:
                     setattr(stat_map, property_name, property_type(stat_maps[uri][property_uri]))

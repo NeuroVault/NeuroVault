@@ -1,8 +1,7 @@
 import django.db.models as models
-from neurovault.apps.statmaps.models import upload_to
-from neurovault.apps.statmaps.storage import NiftiGzStorage
 import os
 from django.core.files.base import ContentFile
+from django_hashedfilenamestorage.storage import HashedFilenameMetaStorage
 
 class Prov(models.Model):
     prov_type = models.CharField(max_length=200)
@@ -17,24 +16,34 @@ class Prov(models.Model):
         try:
             instance = cls.objects.get(prov_URI=uri)
         except cls.DoesNotExist:
+            print "creating %s"%uri
             query = """
 prefix prov: <http://www.w3.org/ns/prov#>
 prefix nidm: <http://www.incf.org/ns/nidash/nidm#>
 prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?property ?value WHERE {
+SELECT ?property ?value ?value_class WHERE {
  <%s> ?property ?value .
+ OPTIONAL {?value a ?value_class .}
 }
 """%uri
             results = graph.query(query)
+            if not results:
+                raise Exception("URI %s not found in graph"%uri)
             property_value = {}
             for _, row in enumerate(results.bindings):
-                property_value[str(row["property"])] = row["value"].decode()
+                if "value_class" in row:
+                    key = (str(row["property"]), str(row["value_class"]).split("#")[-1])
+                else:
+                    key = str(row["property"])
+                property_value[key] = row["value"].decode()
             
             instance = cls()
             instance.prov_URI = uri
-            for property_uri, (property_name, property_type) in cls._translation.iteritems():
+            for property_uri, (property_name, property_type) in cls._translations.iteritems():
                 if property_uri in property_value:
+                    if property_uri is tuple:
+                        property_uri = property_uri[0]
                     if property_type is file:
                         file_field = getattr(instance, property_name)
                         root = nidm_file_handle.infolist()[0].filename
@@ -42,12 +51,12 @@ SELECT ?property ?value WHERE {
                         file_path = os.path.join(root + filename)
                         file_handle = nidm_file_handle.open(file_path, "r")
                         file_field.save(filename, ContentFile(file_handle.read()))
-                    elif property_type is Prov:
-                        instance = property_type.create(property_uri, graph, nidm_file_handle)
+                    elif issubclass(property_type, Prov):
+                        instance = property_type.create(property_value[property_uri], graph, nidm_file_handle)
                         setattr(instance, property_name, instance)
                     else:
                         setattr(instance, property_name, property_type(property_value[property_uri]))
-            print set(property_value.keys()) - set(cls._translation.keys())
+            print set(property_value.keys()) - set(cls._translations.keys())
 
         return instance
         
@@ -66,6 +75,12 @@ class ProvActivity(Prov):
 
 
 class CoordinateSpace(ProvEntity):
+    _translations = dict(Prov._translations.items() + {'http://www.incf.org/ns/nidash/nidm#voxelUnits': ("voxelUnits", str), 
+                                                       'http://www.incf.org/ns/nidash/nidm#dimensionsInVoxels': ("dimensionsInVoxels", str),
+                                                       'http://www.incf.org/ns/nidash/nidm#inWorldCoordinateSystem': ("inWorldCoordinateSystem", str),
+                                                       'http://www.incf.org/ns/nidash/nidm#voxelSize': ("voxelSize", str),
+                                                       'http://www.incf.org/ns/nidash/nidm#voxelToWorldMapping': ("voxelToWorldMapping", str),
+                                                       'http://www.incf.org/ns/nidash/nidm#numberOfDimensions': ("numberOfDimensions", int)}.items())
     voxelUnits = models.CharField(max_length=200, null=True)
     dimensionsInVoxels = models.CharField(max_length=200, null=True)
     inWorldCoordinateSystem = models.CharField(max_length=200, null=True)
@@ -79,18 +94,21 @@ class Map(ProvEntity):
     sha512 = models.CharField(max_length=200, null=True)
     filename = models.CharField(max_length=200, null=True)
     
-    _translation = dict(Prov._translations.items() + {'http://purl.org/dc/terms/format': ("format", str),
+    _translations = dict(Prov._translations.items() + {'http://purl.org/dc/terms/format': ("format", str),
                                                       'http://id.loc.gov/vocabulary/preservation/cryptographicHashFunctions#sha512': ("sha512", str),
                                                       'http://www.incf.org/ns/nidash/nidm#filename': ("filename", str)}.items())
             
 
 class Image(ProvEntity):
-    models.FileField(upload_to=upload_to, null=True)
+    models.FileField(upload_to='hash_filestore', null=True)
 
 
 # ## Model Fitting
     
 class ContrastWeights(ProvEntity):
+    _translations = dict(Prov._translations.items() + {'http://www.incf.org/ns/nidash/nidm#statisticType': ("statisticType", str),
+                                                       'http://www.incf.org/ns/nidash/nidm#contrastName': ("contrastName", str),
+                                                       'http://www.w3.org/ns/prov#value': ("value", str)}.items())
     _statisticsType_choices = [("http://www.incf.org/ns/nidash/nidm#ZStatistic", "Z"),
                                ("http://www.incf.org/ns/nidash/nidm#Statistic", "Other"),
                                ("http://www.incf.org/ns/nidash/nidm#FStatistic", "F"),
@@ -107,7 +125,7 @@ class Data(ProvEntity):
 
 class DesignMatrix(ProvEntity):
     image = models.OneToOneField(Image, null=True)
-    file = models.FileField(upload_to=upload_to, null=True)
+    file = models.FileField(upload_to='hash_filestore', null=True)
     
     
 class NoiseModel(ProvEntity):
@@ -150,7 +168,7 @@ class ModelParametersEstimation(ProvActivity):
     
     
 class MaskMap(ProvEntity):
-    file = models.FileField(upload_to=upload_to, storage=NiftiGzStorage(), null=True)
+    file = models.FileField(upload_to='hash_filestore', storage=HashedFilenameMetaStorage(), null=True)
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True)
     inCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True)
     hasMapHeader = models.CharField(max_length=200, null=True)
@@ -159,7 +177,10 @@ class MaskMap(ProvEntity):
     
     
 class ParameterEstimateMap(ProvEntity):
-    file = models.FileField(upload_to=upload_to, storage=NiftiGzStorage(), null=True)
+    _translations = dict(Prov._translations.items() + {('http://www.incf.org/ns/nidash/nidm#atCoordinateSpace', 'CoordinateSpace'): ("atCoordinateSpace", CoordinateSpace),
+                                                       ('http://www.w3.org/ns/prov#wasGeneratedBy', 'ModelParametersEstimation'): ("modelParametersEstimation", ModelParametersEstimation),
+                                                       ('http://www.w3.org/ns/prov#wasDerivedFrom', 'Map'): ("map", Map)}.items())
+    file = models.FileField(upload_to='hash_filestore', storage=HashedFilenameMetaStorage(), null=True)
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True)
     inCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True)
     hasMapHeader = models.CharField(max_length=200, null=True)
@@ -168,7 +189,12 @@ class ParameterEstimateMap(ProvEntity):
     
     
 class ResidualMeanSquaresMap(ProvEntity):
-    file = models.FileField(upload_to=upload_to, storage=NiftiGzStorage(), null=True)
+    _translations = dict(Prov._translations.items() + {'http://www.w3.org/ns/prov#atLocation': ("file", file), 
+                                                       ('http://www.incf.org/ns/nidash/nidm#atCoordinateSpace', 'CoordinateSpace'): ("atCoordinateSpace", CoordinateSpace),
+                                                       ('http://www.w3.org/ns/prov#wasDerivedFrom', 'Map'): ("map", Map), 
+                                                       'http://id.loc.gov/vocabulary/preservation/cryptographicHashFunctions#sha512': ("sha512", str),
+                                                       ('http://www.w3.org/ns/prov#wasGeneratedBy', 'ModelParametersEstimation'): ("modelParametersEstimation", ModelParametersEstimation)}.items())
+    file = models.FileField(storage=HashedFilenameMetaStorage(), null=True)
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True)
     inCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True)
     modelParametersEstimation = models.OneToOneField(ModelParametersEstimation, null=True)
@@ -177,14 +203,18 @@ class ResidualMeanSquaresMap(ProvEntity):
     
 
 class ContrastEstimation(ProvActivity):
-    parameterEstimationMap = models.ForeignKey(ParameterEstimateMap, null=True)
+    _translations = dict(Prov._translations.items() + {('http://www.w3.org/ns/prov#used', 'ParameterEstimateMap'): ("parameterEstimateMap", ParameterEstimateMap),
+                                                       ('http://www.w3.org/ns/prov#used', 'ResidualMeanSquaresMap'): ("residualMeanSquaresMap", ResidualMeanSquaresMap),
+                                                       ('http://www.w3.org/ns/prov#used', 'MaskMap'): ("maskMap", MaskMap),
+                                                       ('http://www.w3.org/ns/prov#used', 'ContrastWeights'): ("contrastWeights", ContrastWeights)}.items())
+    parameterEstimateMap = models.ForeignKey(ParameterEstimateMap, null=True)
     residualMeanSquaresMap = models.ForeignKey(ResidualMeanSquaresMap, null=True)
     maskMap = models.ForeignKey(MaskMap, null=True)
     contrastWeights = models.ForeignKey(ContrastWeights, null=True)
 
 
 class ContrastMap(ProvEntity):
-    file = models.FileField(upload_to=upload_to, storage=NiftiGzStorage(), null=True)
+    file = models.FileField(upload_to='hash_filestore', storage=HashedFilenameMetaStorage(), null=True)
     contrastName = models.CharField(max_length=200, null=True)
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True)
     inCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True)
@@ -194,7 +224,7 @@ class ContrastMap(ProvEntity):
     
     
 class StatisticMap(ProvEntity):
-    file = models.FileField(storage=NiftiGzStorage(), null=True)
+    file = models.FileField(storage=HashedFilenameMetaStorage(), null=True)
     contrastName = models.CharField(max_length=200, null=True)
     errorDegreesOfFreedom = models.FloatField(null=True)
     effectDegreesOfFreedom = models.FloatField(null=True)
@@ -206,7 +236,7 @@ class StatisticMap(ProvEntity):
     
 
 class ContrastStandardErrorMap(ProvEntity):
-    file = models.FileField(upload_to=upload_to, storage=NiftiGzStorage(), null=True)
+    file = models.FileField(upload_to='hash_filestore', storage=HashedFilenameMetaStorage(), null=True)
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True)
     contrastEstimation = models.OneToOneField(ContrastEstimation, null=True)
     sha512 = models.CharField(max_length=200, null=True)
@@ -216,7 +246,7 @@ class ContrastStandardErrorMap(ProvEntity):
 # ## Inference
 
 class ReselsPerVoxelMap(ProvEntity):
-    file = models.FileField(upload_to=upload_to, storage=NiftiGzStorage(), null=True)
+    file = models.FileField(upload_to='hash_filestore', storage=HashedFilenameMetaStorage(), null=True)
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True)
     inCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True)
     modelParametersEstimation = models.OneToOneField(ModelParametersEstimation, null=True)
@@ -241,12 +271,12 @@ class Coordinate(ProvEntity):
     
 class ClusterLabelMap(ProvEntity):
     map = models.OneToOneField(Map, null=True)
-    file = models.FileField(upload_to=upload_to, storage=NiftiGzStorage(), null=True)
+    file = models.FileField(upload_to='hash_filestore', storage=HashedFilenameMetaStorage(), null=True)
     
     
 class ExcursionSet(ProvEntity):
-    file = models.FileField(upload_to=upload_to, storage=NiftiGzStorage(), null=True)
-    maximumIntensityProjection = models.FileField(upload_to=upload_to, null=True)
+    file = models.FileField(upload_to='hash_filestore', storage=HashedFilenameMetaStorage(), null=True)
+    maximumIntensityProjection = models.FileField(upload_to='hash_filestore', null=True)
     pValue = models.FloatField(null=True)
     numberOfClusters = models.IntegerField(null=True)
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True)
@@ -255,7 +285,7 @@ class ExcursionSet(ProvEntity):
     sha512 = models.CharField(max_length=200, null=True)
     clusterLabelMap = models.ForeignKey(ClusterLabelMap, null=True)
     image = models.OneToOneField(Image, null=True)
-    underlayFile = models.FileField(upload_to=upload_to, storage=NiftiGzStorage(), null=True)
+    underlayFile = models.FileField(upload_to='hash_filestore', storage=HashedFilenameMetaStorage(), null=True)
     
     
 class Cluster(ProvEntity):
@@ -310,7 +340,7 @@ class SearchSpaceMap(ProvEntity):
     noiseFWHMInUnits = models.CharField(max_length=200, null=True)
     sha512 = models.CharField(max_length=200, null=True)
     searchVolumeInResels = models.FloatField(null=True)
-    file = models.FileField(upload_to=upload_to, storage=NiftiGzStorage(), null=True)
+    file = models.FileField(upload_to='hash_filestore', storage=HashedFilenameMetaStorage(), null=True)
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True)
     inCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True)
     randomFieldStationarity = models.NullBooleanField(default=None, null=True)
