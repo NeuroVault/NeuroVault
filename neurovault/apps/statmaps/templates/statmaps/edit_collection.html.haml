@@ -2,7 +2,15 @@
 {% load crispy_forms_tags %}
 
 {% block head %}
+    %script{ src:"{% static 'scripts/chosen.jquery.min.js' %}", type:"text/javascript"}
     %link{ href:"{% static 'css/studies.css' %}", media:"screen", rel:"stylesheet", type:"text/css"}
+    %link{ href:"{% static 'css/chosen.css' %}", media:"screen", rel:"stylesheet", type:"text/css"}
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $("SELECT[multiple='multiple']").addClass("chosen");
+            $(".chosen").chosen();
+        });
+    </script>
 {% endblock %}
 
 {% block content %}

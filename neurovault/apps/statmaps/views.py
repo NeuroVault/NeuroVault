@@ -1,5 +1,5 @@
 from .models import Collection, Image
-from .forms import CollectionFormSet, CollectionForm, SingleImageForm
+from .forms import CollectionFormSet, CollectionForm, SingleImageForm,ContributorCollectionForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
@@ -27,6 +27,12 @@ import os
 from collections import OrderedDict
 
 
+def owner_or_contrib(request,collection):
+    if collection.owner == request.user or request.user in collection.contributors.all():
+        return True
+    return False
+
+
 def get_collection(cid,request,mode=None):
     keyargs = {'pk':cid}
     private_url = re.match(r'^[A-Z]{8}$',cid)
@@ -35,7 +41,7 @@ def get_collection(cid,request,mode=None):
     try:
         collection = Collection.objects.get(**keyargs)
         if private_url is None and collection.private:
-            if collection.owner == request.user:
+            if owner_or_contrib(request,collection):
                 if mode in ['file','api']:
                     raise PermissionDenied()
                 else:
@@ -51,7 +57,7 @@ def get_collection(cid,request,mode=None):
 def get_image(pk,collection_cid,request,mode=None):
     image = get_object_or_404(Image, pk=pk)
     if image.collection.private and image.collection.private_token != collection_cid:
-        if image.collection.owner == request.user:
+        if owner_or_contrib(request,image.collection):
             if mode == 'api':
                 raise PermissionDenied()
             else:
@@ -65,7 +71,7 @@ def get_image(pk,collection_cid,request,mode=None):
 @login_required
 def edit_images(request, collection_cid):
     collection = get_collection(collection_cid,request)
-    if collection.owner != request.user:
+    if not owner_or_contrib(request,collection):
         return HttpResponseForbidden()
     if request.method == "POST":
         formset = CollectionFormSet(request.POST, request.FILES, instance=collection)
@@ -82,10 +88,12 @@ def edit_images(request, collection_cid):
 @login_required
 def edit_collection(request, cid=None):
     page_header = "Add new collection"
+    is_owner = False
     if cid:
         collection = get_collection(cid,request)
+        is_owner = True if collection.owner == request.user else False
         page_header = 'Edit collection'
-        if collection.owner != request.user:
+        if not owner_or_contrib(request,collection):
             return HttpResponseForbidden()
     else:
         collection = Collection(owner=request.user)
@@ -96,18 +104,23 @@ def edit_collection(request, cid=None):
             if collection.private and collection.private_token is None:
                 collection.private_token = generate_url_token()
             collection.save()
+            if is_owner:
+                form.save_m2m()  # only save contributors if owner
 
             return HttpResponseRedirect(collection.get_absolute_url())
     else:
-        form = CollectionForm(instance=collection)
+        if is_owner:
+            form = CollectionForm(instance=collection)
+        else:
+            form = ContributorCollectionForm(instance=collection)
 
-    context = {"form": form, "page_header": page_header}
+    context = {"form": form, "page_header": page_header, "is_owner": is_owner}
     return render(request, "statmaps/edit_collection.html.haml", context)
 
 
 def view_image(request, pk, collection_cid=None):
     image = get_image(pk,collection_cid,request)
-    user_owns_image = True if image.collection.owner == request.user else False
+    user_owns_image = True if owner_or_contrib(request,image.collection) else False
     api_cid = pk
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
@@ -118,12 +131,14 @@ def view_image(request, pk, collection_cid=None):
 
 def view_collection(request, cid):
     collection = get_collection(cid,request)
-    user_owns_collection = True if collection.owner == request.user else False
+    edit_permission = True if owner_or_contrib(request,collection) else False
+    delete_permission = True if collection.owner == request.user else False
     context = {'collection': collection,
             'user': request.user,
-            'user_owns_collection': user_owns_collection,
+            'delete_permission': delete_permission,
+            'edit_permission': edit_permission,
             'cid':cid}
-    if collection.owner == request.user:
+    if owner_or_contrib(request,collection):
         form = UploadFileForm()
         c = RequestContext(request)
         c.update(context)
@@ -144,7 +159,7 @@ def delete_collection(request, cid):
 @login_required
 def edit_image(request, pk):
     image = get_object_or_404(Image,pk=pk)
-    if image.collection.owner != request.user:
+    if not owner_or_contrib(request,image.collection):
         return HttpResponseForbidden()
     if request.method == "POST":
         form = SingleImageForm(request.user, request.POST, request.FILES, instance=image)

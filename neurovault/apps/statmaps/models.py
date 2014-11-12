@@ -26,6 +26,7 @@ class Collection(models.Model):
     journal_name = models.CharField(max_length=200, blank=True, null=True, default=None)
     description = models.TextField(blank=True, null=True)
     owner = models.ForeignKey(User)
+    contributors = models.ManyToManyField(User,related_name="collection_contributors",blank=True,help_text="Select other NeuroVault users to add as contributes to the collection.  Contributors can add, edit and delete images in the collection.",verbose_name="Contributors")
     private = models.BooleanField(choices=((False, 'Public (The collection will be accessible by anyone and all the data in it will be distributed under CC0 license)'),
                                            (True, 'Private (The collection will be not listed in the NeuroVault index. It will be possible to shared it with others at a private URL.)')), default=False,verbose_name="Accesibility")
     private_token = models.CharField(max_length=8,blank=True,null=True,unique=True,db_index=True, default=None)

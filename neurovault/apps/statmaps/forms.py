@@ -28,7 +28,8 @@ collection_fieldsets = [
     ('Essentials', {'fields': ['name',
                                'DOI',
                                'description',
-                               'private'],
+                               'private',
+                               'contributors'],
                     'legend': 'Essentials'}),
     ('Participants', {'fields': ['number_of_subjects',
                                  'subject_age_mean',
@@ -217,7 +218,7 @@ collection_row_attrs = {
 
 
 class CollectionForm(ModelForm):
-    
+
     class Meta:
         exclude = ('owner','private_token')
         model = Collection
@@ -229,7 +230,6 @@ class CollectionForm(ModelForm):
 
     def clean(self):
         cleaned_data = super(CollectionForm, self).clean()
-
         doi = self.cleaned_data['DOI']
         if doi.strip() == '':
             self.cleaned_data['DOI'] = None
@@ -263,6 +263,11 @@ class CollectionForm(ModelForm):
             )
             )
         self.helper.layout.extend([tab_holder, Submit('submit', 'Save', css_class="btn-large offset2")])
+
+
+class ContributorCollectionForm(CollectionForm):
+    class Meta(CollectionForm.Meta):
+        exclude = ('contributors','private')
 
 
 class ImageForm(ModelForm):
