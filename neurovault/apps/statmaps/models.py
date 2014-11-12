@@ -148,42 +148,15 @@ class ValueTaggedItem(GenericTaggedItemBase):
 
 
 class Image(DirtyFieldsMixin, models.Model):
-    Z = 'Z'
-    T = 'T'
-    F = 'F'
-    X2 = 'X2'
-    P = 'P'
-    OTHER = 'Other'
-    MAP_TYPE_CHOICES = (
-        (T, 'T map'),
-        (Z, 'Z map'),
-        (F, 'F map'),
-        (X2, 'Chi squared map'),
-        (P, 'P map (given null hypothesis)'),
-        (OTHER, 'Other'),
-    )
+    
     collection = models.ForeignKey(Collection)
-    # collections = models.ManyToManyField(Collection)
     name = models.CharField(max_length=200, null=False, blank=False)
     description = models.TextField(blank=False)
     file = models.FileField(upload_to=upload_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='File with the unthresholded map (.img, .nii, .nii.gz)')
     add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
     tags = TaggableManager(through=ValueTaggedItem, blank=True)
-    map_type = models.CharField(help_text=("Type of statistic that is the basis of the inference"), verbose_name="Map type",
-                                                       max_length=200, null=False, blank=False, choices=MAP_TYPE_CHOICES)
-    statistic_parameters = models.FloatField(help_text="Parameters of the null distribution of the test statisic, typically degrees of freedom (should be clear from the test statistic what these are).", null=True, verbose_name="Statistic parameters", blank=True)
-    smoothness_fwhm = models.FloatField(help_text="Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.", verbose_name="Smoothness FWHM", null=True, blank=True)
-    contrast_definition = models.CharField(help_text="Exactly what terms are subtracted from what? Define these in terms of task or stimulus conditions (e.g., 'one-back task with objects versus zero-back task with objects') instead of underlying psychological concepts (e.g., 'working memory').", verbose_name="Contrast definition", max_length=200, null=True, blank=True)
-    contrast_definition_cogatlas = models.CharField(help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast", verbose_name="Cognitive Atlas definition", max_length=200, null=True, blank=True)
-
-    # Additional properties--need to add choices list for most of these
-    # statistic_type = models.CharField(help_text="Type of statistic values in the image represent (t, z, p, r, % signal change, etc.)", max_length=200, blank=True, null=True, verbose_name="Statistic type")
-    # analysis_type = models.CharField(help_text="What kind of analysis does this map reflect?", max_length=200, verbose_name="Analysis type", blank=True, null=True, choices=[('single-subject', 'single-subject'), ('','')])
-    # figure_identifier  = models.CharField(help_text="If the image is associated with a figure in a published paper, the ID of the figure (e.g., 1, 2B, 7).", max_length=20, blank=True, null=True)
-    # table_identifier = models.CharField(help_text="If the image is associated with a table of activations in a published paper, the ID of the figure (e.g., 1, 2B, 7).", max_length=20, blank=True, null=True)
-    # allow_in_collections = models.BooleanField(help_text="Allow other users to add this image to their collections? (They will not be able to edit any image data.)", null=False, default=False)
-
+    
     def __unicode__(self):
         return self.name
 
@@ -210,24 +183,6 @@ class Image(DirtyFieldsMixin, models.Model):
         self.collection.modify_date = datetime.now()
         self.collection.save()
         super(Image, self).delete()
-
-#     def save(self):
-#
-#         # If a new file or header has been uploaded, redo the JSON conversion
-#         if 'file' in self.get_dirty_fields() or 'hdr_file' in self.get_dirty_fields():
-#             self.file.save(self.file.name, self.file, save = False)
-#             if self.hdr_file:
-#                 self.hdr_file.save(self.hdr_file.name, self.hdr_file, save = False)
-#             if os.path.exists(self.file.path):
-#                 nifti_gz_file = ".".join(self.file.path.split(".")[:-1]) + '.nii.gz'
-#                 nii = nb.load(self.file.path)
-#                 nb.save(nii, nifti_gz_file)
-#                 f = open(nifti_gz_file)
-#                 self.nifti_gz_file.save(nifti_gz_file.split(os.path.sep)[-1], File(f), save=False)
-#
-#
-#         super(Image, self).save()
-
 
     @classmethod
     def create(cls, my_file, my_file_name, my_name, my_desc, my_collection_pk, my_map_type):
@@ -260,3 +215,26 @@ class Image(DirtyFieldsMixin, models.Model):
         image.save();
 
         return image
+    
+class StatisticMap(Image):
+    Z = 'Z'
+    T = 'T'
+    F = 'F'
+    X2 = 'X2'
+    P = 'P'
+    OTHER = 'Other'
+    MAP_TYPE_CHOICES = (
+        (T, 'T map'),
+        (Z, 'Z map'),
+        (F, 'F map'),
+        (X2, 'Chi squared map'),
+        (P, 'P map (given null hypothesis)'),
+        (OTHER, 'Other'),
+    )
+    map_type = models.CharField(help_text=("Type of statistic that is the basis of the inference"), verbose_name="Map type",
+                                                       max_length=200, null=False, blank=False, choices=MAP_TYPE_CHOICES)
+    statistic_parameters = models.FloatField(help_text="Parameters of the null distribution of the test statisic, typically degrees of freedom (should be clear from the test statistic what these are).", null=True, verbose_name="Statistic parameters", blank=True)
+    smoothness_fwhm = models.FloatField(help_text="Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.", verbose_name="Smoothness FWHM", null=True, blank=True)
+    contrast_definition = models.CharField(help_text="Exactly what terms are subtracted from what? Define these in terms of task or stimulus conditions (e.g., 'one-back task with objects versus zero-back task with objects') instead of underlying psychological concepts (e.g., 'working memory').", verbose_name="Contrast definition", max_length=200, null=True, blank=True)
+    contrast_definition_cogatlas = models.CharField(help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast", verbose_name="Cognitive Atlas definition", max_length=200, null=True, blank=True)
+
