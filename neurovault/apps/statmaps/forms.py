@@ -22,6 +22,7 @@ from neurovault.apps.statmaps.utils import split_filename, get_paper_properties
 from django.core.files.base import File, ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django import forms
+from neurovault.apps.statmaps.models import StatisticMap
 
 # Create the form class.
 collection_fieldsets = [
@@ -275,7 +276,7 @@ class ImageForm(ModelForm):
         self.helper.form_tag = False
 
     class Meta:
-        model = Image
+        model = StatisticMap
         exclude = ('json_path', 'collection')
 
     def clean(self):
@@ -351,7 +352,7 @@ class SingleImageForm(ImageForm):
     hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
 
     class Meta:
-        model = Image
+        model = StatisticMap
         exclude = ('json_path', )
 
     def __init__(self, user, *args, **kwargs):
@@ -363,13 +364,13 @@ class SingleImageForm(ImageForm):
 
 class SimplifiedImageForm(SingleImageForm):
     class Meta:
-        model = Image
+        model = StatisticMap
         exclude = ('json_path', )
         fields = ('name', 'collection', 'description', 'map_type',
                   'file', 'hdr_file', 'tags')
 
 CollectionFormSet = inlineformset_factory(
-    Collection, Image, form=ImageForm,
+    Collection, StatisticMap, form=ImageForm,
     exclude=['json_path', 'nifti_gz_file', 'collection'],
     extra=1)
 
