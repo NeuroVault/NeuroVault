@@ -14,12 +14,12 @@
 					$('.image-form').hide()
 					active_form = id
 					$('.image-form#image-' + active_form).show()
-					name = $("input#id_image_set-#{active_form}-name").val()
+					name = $("input#id_statisticmap_set-#{active_form}-name").val()
 					name = '[untitled image]' if !name
 					updateImageName(name)
 
 					# Add key up handler to name field
-					$("input#id_image_set-#{active_form}-name").keyup((e) ->
+					$("input#id_statisticmap_set-#{active_form}-name").keyup((e) ->
 						val = $(e.target).val()
 						updateImageName(val)
 					)
@@ -37,10 +37,10 @@
 				num_forms = $('.image-form').length
 				if num_forms > 1
 					$('.image-form').last().remove()
-					$('#id_image_set-TOTAL_FORMS').val(num_forms-1)
+					$('#id_statisticmap_set-TOTAL_FORMS').val(num_forms-1)
 					$("#image-select option[value=#{num_forms-1}]").last().remove()
 				else
-					$("#id_image_set-#{num_forms-1}-id").val('')
+					$("#id_statisticmap_set-#{num_forms-1}-id").val('')
 
 				# Show the first image on load
 				showForm(active_form)
@@ -94,7 +94,7 @@
 			{{ formset.management_form }}
 				- for form in formset
 					<div id='image-{{forloop.counter0}}' class='image-form'>
-						<input id="id_image_set-{{forloop.counter0}}-id" name="image_set-{{forloop.counter0}}-id" type="hidden" value="{{form.id.value}}" />
+						<input id="id_statisticmap_set-{{forloop.counter0}}-image_ptr" name="statisticmap_set-{{forloop.counter0}}-image_ptr" type="hidden" value="{{form.image_ptr.value}}" />
 						{% crispy form %}
 					</div>
 		</form>
