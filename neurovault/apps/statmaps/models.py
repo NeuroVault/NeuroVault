@@ -15,6 +15,7 @@ from django.core.files import File
 import nibabel as nb
 from django.core.exceptions import ValidationError
 from neurovault import settings
+from polymorphic.polymorphic_model import PolymorphicModel
 # from django.db.models.signals import post_save
 # from django.dispatch import receiver
 
@@ -147,7 +148,7 @@ class ValueTaggedItem(GenericTaggedItemBase):
     tag = models.ForeignKey(KeyValueTag, related_name="tagged_items")
 
 
-class Image(DirtyFieldsMixin, models.Model):
+class Image(DirtyFieldsMixin, PolymorphicModel):
     
     collection = models.ForeignKey(Collection)
     name = models.CharField(max_length=200, null=False, blank=False)
