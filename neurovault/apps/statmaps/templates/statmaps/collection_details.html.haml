@@ -86,7 +86,7 @@
                 %form{action: "upload_folder", enctype: "multipart/form-data", method: "POST", name: "upload_folder_form"}
                   %a.btn.btn-primary{href: "pycortex" } 3D View
                   %a.btn.btn-primary{href: "{% url 'edit_collection' cid %}" } Edit details
-                  %a.btn.btn-primary{href: "{% url 'edit_images' cid %}" } Add/edit images
+                  %a.btn.btn-primary{href: "{% url 'add_image' cid %}" } Add image
                   %a.btn.btn-primary{id:"upload_archive"} Upload archive (.zip)
                   <!--[if !IE]> -->
                   %a.btn.btn-primary{id:"upload_folder"} Upload folder

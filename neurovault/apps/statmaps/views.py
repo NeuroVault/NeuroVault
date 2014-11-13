@@ -1,9 +1,10 @@
 from .models import Collection, Image
-from .forms import CollectionFormSet, CollectionForm, SingleImageForm
+from .forms import CollectionFormSet, CollectionForm, SingleStatisticMapForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
-from neurovault.apps.statmaps.forms import UploadFileForm, SimplifiedImageForm
+from neurovault.apps.statmaps.forms import UploadFileForm, SimplifiedStatisticMapForm,\
+    StatisticMapForm, AddStatisticMapForm
 from django.template.context import RequestContext
 from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
@@ -76,7 +77,7 @@ def edit_images(request, collection_cid):
         formset = CollectionFormSet(instance=collection)
 
     context = {"formset": formset}
-    return render(request, "statmaps/edit_images.html.haml", context)
+    return render(request, "statmaps/edit_images_simpler.html.haml", context)
 
 
 @login_required
@@ -147,12 +148,12 @@ def edit_image(request, pk):
     if image.collection.owner != request.user:
         return HttpResponseForbidden()
     if request.method == "POST":
-        form = SingleImageForm(request.user, request.POST, request.FILES, instance=image)
+        form = SingleStatisticMapForm(request.user, request.POST, request.FILES, instance=image)
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(image.get_absolute_url())
     else:
-        form = SingleImageForm(request.user, instance=image)
+        form = SingleStatisticMapForm(request.user, instance=image)
 
     context = {"form": form}
     return render(request, "statmaps/edit_image.html.haml", context)
@@ -174,16 +175,31 @@ def add_image_for_neurosynth(request):
         temp_collection.save()
     image = Image(collection=temp_collection)
     if request.method == "POST":
-        form = SimplifiedImageForm(request.user, request.POST, request.FILES, instance=image)
+        form = SimplifiedStatisticMapForm(request.user, request.POST, request.FILES, instance=image)
         if form.is_valid():
             image = form.save()
             return HttpResponseRedirect("http://neurosynth.org/decode/?neurovault=%s-%s" % (
                 temp_collection.private_token,image.id))
     else:
-        form = SimplifiedImageForm(request.user, instance=image)
+        form = SimplifiedStatisticMapForm(request.user, instance=image)
 
     context = {"form": form}
     return render(request, "statmaps/add_image_for_neurosynth.html.haml", context)
+
+@login_required
+def add_image(request, collection_cid):
+    collection = get_collection(collection_cid,request)
+    image = Image(collection=collection)
+    if request.method == "POST":
+        form = AddStatisticMapForm(request.user, request.POST, request.FILES, instance=image)
+        if form.is_valid():
+            image = form.save()
+            return HttpResponseRedirect(image.get_absolute_url())
+    else:
+        form = AddStatisticMapForm(request.user, instance=image)
+
+    context = {"form": form}
+    return render(request, "statmaps/add_image.html.haml", context)
 
 
 def splitext_nii_gz(fname):
