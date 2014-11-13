@@ -55,6 +55,7 @@ SELECT ?property ?value ?value_class WHERE {
                         setattr(instance, property_name, instance)
                     else:
                         setattr(instance, property_name, property_type(property_value[property_uri]))
+            print "unused attributes for %s"%uri
             print set(property_value.keys()) - set(cls._translations.keys())
 
         return instance
@@ -215,7 +216,7 @@ class ResidualMeanSquaresMap(ProvEntity):
                                                        ('http://www.w3.org/ns/prov#wasDerivedFrom', 'Map'): ("map", Map), 
                                                        'http://id.loc.gov/vocabulary/preservation/cryptographicHashFunctions#sha512': ("sha512", str),
                                                        ('http://www.w3.org/ns/prov#wasGeneratedBy', 'ModelParametersEstimation'): ("modelParametersEstimation", ModelParametersEstimation)}.items())
-    file = models.FileField( null=True)
+    file = models.FileField(null=True)
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True)
     inCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True)
     modelParametersEstimation = models.OneToOneField(ModelParametersEstimation, null=True)
@@ -255,7 +256,7 @@ class StatisticMap(ProvEntity):
                                                        'http://www.incf.org/ns/nidash/nidm#statisticType': ("statisticType", str),
                                                        'http://id.loc.gov/vocabulary/preservation/cryptographicHashFunctions#sha512': ("sha512", str),
                                                        'http://www.incf.org/ns/nidash/nidm#effectDegreesOfFreedom': ("effectDegreesOfFreedom", float)}.items())
-    file = models.FileField( null=True)
+    file = models.FileField(null=True)
     contrastName = models.CharField(max_length=200, null=True)
     errorDegreesOfFreedom = models.FloatField(null=True)
     effectDegreesOfFreedom = models.FloatField(null=True)
