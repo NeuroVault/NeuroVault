@@ -267,7 +267,7 @@ class CollectionForm(ModelForm):
 class ImageForm(ModelForm):
     checkbox = forms.BooleanField(required=False, label='Ignore warning', widget=forms.HiddenInput)
     hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
-
+    maxZeroPercent = 80
     def __init__(self, *args, **kwargs):
         super(ImageForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
@@ -279,7 +279,7 @@ class ImageForm(ModelForm):
         fields = ('name', 'collection', 'description', 'map_type',
                   'file', 'checkbox', 'map_type','statistic_parameters', 'smoothness_fwhm',
                    'contrast_definition', 'contrast_definition', 'contrast_definition_cogatlas','hdr_file', 'tags')
-
+    
     def clean(self):
         cleaned_data = super(ImageForm, self).clean()
         file = cleaned_data.get("file")
@@ -339,12 +339,13 @@ class ImageForm(ModelForm):
                     cleaned_data["file"] = InMemoryUploadedFile(f, "file", fname + ".nii.gz",
                                                                 cleaned_data["file"].content_type, f.size, cleaned_data["file"].charset)
                     
-                # check if portion of voxels with a value of zero is less then specified amount
-                maxZero = .70
+                # check if portion of voxels with a value of zero is less amount specified above as maxZero
+                maxZero = self.maxZeroPercent/100.0
                 imgData = nii.get_data()
                 isZero = (imgData == 0).sum()/float(imgData.size)
                 if isZero > maxZero and not (cleaned_data.get('checkbox') == True):
-                    self._errors["file"] = self.error_class(["Number of voxels with a value of zero is greater than 70"])
+                    print isZero, maxZero
+                    self._errors["file"] = self.error_class(["Voxels with a value of zero is greater than %s%%" % self.maxZeroPercent])
                 
             finally:
                 try:
