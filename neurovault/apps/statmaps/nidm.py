@@ -1,11 +1,13 @@
+from models import Image
 import django.db.models as models
 import os
 from django.core.files.base import ContentFile
 
+
 class Prov(models.Model):
-    prov_type = models.CharField(max_length=200)
-    prov_label = models.CharField(max_length=200)
-    prov_URI = models.CharField(max_length=200, primary_key=True)
+    prov_type = models.CharField(max_length=200, null=True)
+    prov_label = models.CharField(max_length=200, null=True)
+    prov_URI = models.CharField(max_length=200, unique=True, null=True)
     
     _translations = {'http://www.w3.org/1999/02/22-rdf-syntax-ns#type': ('prov_type', str),
                      'http://www.w3.org/2000/01/rdf-schema#label': ("prov_label", str)}
@@ -99,7 +101,7 @@ class Map(ProvEntity):
                                                       'http://www.incf.org/ns/nidash/nidm#filename': ("filename", str)}.items())
             
 
-class Image(ProvEntity):
+class ProvImage(ProvEntity):
     _translations = dict(Prov._translations.items() + {'http://www.w3.org/ns/prov#atLocation': ("file", str)}.items())
   
     file = models.FileField(upload_to='hash_filestore', null=True)
@@ -129,8 +131,8 @@ class Data(ProvEntity):
 
 class DesignMatrix(ProvEntity):
     _translations = dict(Prov._translations.items() + {'http://www.w3.org/ns/prov#atLocation': ("file", file),
-                                                       ('http://www.incf.org/ns/nidash/nidm#visualisation', 'Image'): ("image", Image)}.items())
-    image = models.OneToOneField(Image, null=True)
+                                                       ('http://www.incf.org/ns/nidash/nidm#visualisation', 'Image'): ("image", ProvImage)}.items())
+    image = models.OneToOneField(ProvImage, null=True)
     file = models.FileField(upload_to='hash_filestore', null=True)
     
     
@@ -244,8 +246,7 @@ class ContrastMap(ProvEntity):
     sha512 = models.CharField(max_length=200, null=True)
     map = models.OneToOneField(Map, null=True)
     
-    
-class StatisticMap(ProvEntity):
+class StatisticMap(Image, ProvEntity):
     nidm_identifier = "nidm:StatisticMap"
     _translations = dict(Prov._translations.items() + {'http://www.incf.org/ns/nidash/nidm#errorDegreesOfFreedom': ("errorDegreesOfFreedomu", float),
                                                        'http://www.w3.org/ns/prov#atLocation': ("file", file),
@@ -256,15 +257,33 @@ class StatisticMap(ProvEntity):
                                                        'http://www.incf.org/ns/nidash/nidm#statisticType': ("statisticType", str),
                                                        'http://id.loc.gov/vocabulary/preservation/cryptographicHashFunctions#sha512': ("sha512", str),
                                                        'http://www.incf.org/ns/nidash/nidm#effectDegreesOfFreedom': ("effectDegreesOfFreedom", float)}.items())
-    file = models.FileField(null=True)
-    contrastName = models.CharField(max_length=200, null=True)
     errorDegreesOfFreedom = models.FloatField(null=True)
     effectDegreesOfFreedom = models.FloatField(null=True)
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True)
     modelParametersEstimation = models.ForeignKey(ModelParametersEstimation, null=True)
-    statisticType = models.CharField(max_length=200, null=True)
     sha512 = models.CharField(max_length=200, null=True)
     map = models.OneToOneField(Map, null=True)
+    
+    Z = 'Z'
+    T = 'T'
+    F = 'F'
+    X2 = 'X2'
+    P = 'P'
+    OTHER = 'Other'
+    MAP_TYPE_CHOICES = (
+        (T, 'T map'),
+        (Z, 'Z map'),
+        (F, 'F map'),
+        (X2, 'Chi squared map'),
+        (P, 'P map (given null hypothesis)'),
+        (OTHER, 'Other'),
+    )
+    statisticType = models.CharField(help_text=("Type of statistic that is the basis of the inference"), verbose_name="Map type",
+                                                       max_length=200, null=False, blank=False, choices=MAP_TYPE_CHOICES)
+    statistic_parameters = models.FloatField(help_text="Parameters of the null distribution of the test statisic, typically degrees of freedom (should be clear from the test statistic what these are).", null=True, verbose_name="Statistic parameters", blank=True)
+    smoothness_fwhm = models.FloatField(help_text="Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.", verbose_name="Smoothness FWHM", null=True, blank=True)
+    contrast_definition = models.CharField(help_text="Exactly what terms are subtracted from what? Define these in terms of task or stimulus conditions (e.g., 'one-back task with objects versus zero-back task with objects') instead of underlying psychological concepts (e.g., 'working memory').", verbose_name="Contrast definition", max_length=200, null=True, blank=True)
+    contrast_definition_cogatlas = models.CharField(help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast", verbose_name="Cognitive Atlas definition", max_length=200, null=True, blank=True)
     
 
 class ContrastStandardErrorMap(ProvEntity):
@@ -316,7 +335,7 @@ class ExcursionSet(ProvEntity):
     inference = models.ForeignKey(Inference, null=True)
     sha512 = models.CharField(max_length=200, null=True)
     clusterLabelMap = models.ForeignKey(ClusterLabelMap, null=True)
-    image = models.OneToOneField(Image, null=True)
+    image = models.OneToOneField(ProvImage, null=True)
     underlayFile = models.FileField(upload_to='hash_filestore', null=True)
     
     

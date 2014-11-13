@@ -1,7 +1,8 @@
 from django.conf.urls import patterns, include, url
 from django.conf import settings
 from django.contrib import admin
-from neurovault.apps.statmaps.models import Image, Collection, StatisticMap
+from neurovault.apps.statmaps.models import Image, Collection
+from neurovault.apps.statmaps.nidm import StatisticMap
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf.urls.static import static
 admin.autodiscover()

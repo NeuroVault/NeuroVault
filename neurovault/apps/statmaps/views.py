@@ -25,6 +25,7 @@ import errno
 import tempfile
 import os
 from collections import OrderedDict
+from neurovault.apps.statmaps.nidm import StatisticMap
 
 
 def get_collection(cid,request,mode=None):
@@ -258,13 +259,13 @@ def upload_folder(request, collection_cid):
                     Tregexp = re.compile('spmT.*')
                     # Fregexp = re.compile('spmF.*')
                     if Tregexp.search(fname) is not None:
-                        map_type = Image.T
+                        map_type = StatisticMap.T
                     else:
                         # Check if filename corresponds to a F-map
                         if Tregexp.search(fname) is not None:
-                            map_type = Image.F
+                            map_type = StatisticMap.F
                         else:
-                            map_type = Image.OTHER
+                            map_type = StatisticMap.OTHER
 
                     path, name, ext = split_filename(fname)
                     name += ".nii.gz"
@@ -284,7 +285,7 @@ def upload_folder(request, collection_cid):
                     new_image = Image(name=db_name,
                                       description=raw_hdr['descrip'], collection=collection)
                     new_image.file = f
-                    new_image.map_type = map_type
+                    new_image.statisticType = map_type
                     new_image.save()
             finally:
                 shutil.rmtree(tmp_directory)

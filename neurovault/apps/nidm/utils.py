@@ -1,6 +1,6 @@
 from zipfile import ZipFile
 import rdflib
-from neurovault.apps.nidm.models import StatisticMap
+from neurovault.apps.nidm.nidm import StatisticMap
 
 def get_all_instances(model_class, graph, nidm_file_handle):
     query = """
