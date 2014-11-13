@@ -71,6 +71,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Image
+        exclude = ['polymorphic_ctype']
 
 
 class CollectionSerializer(serializers.ModelSerializer):
