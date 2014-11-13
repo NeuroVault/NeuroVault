@@ -1,7 +1,7 @@
 from django.conf.urls import patterns, include, url
 from django.conf import settings
 from django.contrib import admin
-from neurovault.apps.statmaps.models import Image, Collection
+from neurovault.apps.statmaps.models import Image, Collection, StatisticMap
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf.urls.static import static
 admin.autodiscover()
@@ -62,7 +62,7 @@ class APIHelper:
             {'aaData': zip(data.keys(), data.values())}
         )
 
-
+        
 class ImageSerializer(serializers.HyperlinkedModelSerializer):
 
     file = HyperlinkedFileField(source='file')
@@ -72,7 +72,25 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Image
         exclude = ['polymorphic_ctype']
+        
+    def to_native(self, obj):
+        """
+        Because GalleryItem is Polymorphic
+        """
+        if isinstance(obj, StatisticMap):
+            print "statmap"
+            return StatisticMapSerializer(obj, context={'request': self.context['request']}).to_native(obj)
+        return super(ImageSerializer, self).to_native(obj)
 
+class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
+    
+    file = HyperlinkedFileField(source='file')
+    collection = HyperlinkedRelatedURL(source='collection')
+    url = HyperlinkedImageURL(source='get_absolute_url')
+
+    class Meta:
+        model = StatisticMap
+        exclude = ['polymorphic_ctype']
 
 class CollectionSerializer(serializers.ModelSerializer):
 
