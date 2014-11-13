@@ -245,6 +245,16 @@ class ContrastMap(ProvEntity):
     
     
 class StatisticMap(ProvEntity):
+    nidm_identifier = "nidm:StatisticMap"
+    _translations = dict(Prov._translations.items() + {'http://www.incf.org/ns/nidash/nidm#errorDegreesOfFreedom': ("errorDegreesOfFreedomu", float),
+                                                       'http://www.w3.org/ns/prov#atLocation': ("file", file),
+                                                       'http://www.incf.org/ns/nidash/nidm#contrastName': ('contrastName', str),
+                                                       ('http://www.incf.org/ns/nidash/nidm#atCoordinateSpace', 'CoordinateSpace'): ("atCoordinateSpace", CoordinateSpace),
+                                                       ('http://www.w3.org/ns/prov#wasGeneratedBy', 'ContrastEstimation'): ("contrastEstimation", ContrastEstimation),
+                                                       ('http://www.w3.org/ns/prov#wasDerivedFrom', 'Map'): ("map", Map),
+                                                       'http://www.incf.org/ns/nidash/nidm#statisticType': ("statisticType", str),
+                                                       'http://id.loc.gov/vocabulary/preservation/cryptographicHashFunctions#sha512': ("sha512", str),
+                                                       'http://www.incf.org/ns/nidash/nidm#effectDegreesOfFreedom': ("effectDegreesOfFreedom", float)}.items())
     file = models.FileField( null=True)
     contrastName = models.CharField(max_length=200, null=True)
     errorDegreesOfFreedom = models.FloatField(null=True)
