@@ -32,7 +32,7 @@ def parse_nidm_results(nidm_file):
     nidm_filename = root + "nidm.ttl"
     nidm_fp = z_fp.open(nidm_filename, "r")
     nidm_content = nidm_fp.read()
-    #SPM12 bug
+    #A tiny SPM12 factual inaccuracy
     nidm_content = nidm_content.replace("nidm_NoiseModel", "nidm:NoiseModel")
     
     nidm_graph = rdflib.Graph()
