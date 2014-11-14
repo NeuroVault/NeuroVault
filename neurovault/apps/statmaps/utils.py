@@ -33,7 +33,9 @@ SELECT ?uri WHERE {
         
     instances = []
     for uri in uris:
-        instances.append(model_class.create_from_nidm(uri, graph, nidm_file_handle, collection=collection))
+        instance = model_class.create_from_nidm(uri, graph, nidm_file_handle, collection=collection)
+        instance.save()
+        instances.append(instance)
         
     return instances
 
@@ -52,6 +54,7 @@ def parse_nidm_results(nidm_file, collection):
     stat_maps = get_all_instances(StatisticMap, nidm_graph, z_fp, collection)
     for stat_map in stat_maps:
         stat_map.save()
+    return stat_maps
 
 
 # see CollectionRedirectMiddleware

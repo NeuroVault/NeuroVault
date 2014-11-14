@@ -2,6 +2,7 @@ from models import Image
 import django.db.models as models
 import os
 from django.core.files.base import ContentFile
+from collections import OrderedDict
 
 
 class Prov(models.Model):
@@ -40,6 +41,7 @@ SELECT ?property ?value ?value_class WHERE {
                 property_value[key] = row["value"].decode()
             
             instance = cls(**kwargs)
+            print instance
             instance.prov_URI = uri
             for property_uri, (property_name, property_type) in cls._translations.iteritems():
                 if property_uri in property_value:
@@ -53,9 +55,10 @@ SELECT ?property ?value ?value_class WHERE {
                         file_handle = nidm_file_handle.open(file_path, "r")
                         file_field.save(filename, ContentFile(file_handle.read()))
                     elif issubclass(property_type, Prov):
-                        instance = property_type.create_from_nidm(property_value[property_uri], graph, nidm_file_handle)
-                        setattr(instance, property_name, instance)
+                        attr_instance = property_type.create_from_nidm(property_value[property_uri], graph, nidm_file_handle)
+                        setattr(instance, property_name, attr_instance)
                     else:
+                        print "setting %s to %s"%(property_name, property_type(property_value[property_uri]))
                         setattr(instance, property_name, property_type(property_value[property_uri]))
             print "unused attributes for %s"%uri
             print set(property_value.keys()) - set(cls._translations.keys())
@@ -248,12 +251,13 @@ class ContrastMap(ProvEntity):
     
 class StatisticMap(Image, ProvEntity):
     nidm_identifier = "nidm:StatisticMap"
-    _translations = dict(Prov._translations.items() + {'http://www.incf.org/ns/nidash/nidm#errorDegreesOfFreedom': ("errorDegreesOfFreedomu", float),
+    _translations = OrderedDict(Prov._translations.items() + {'http://www.w3.org/2000/01/rdf-schema#label': ('name', str),
+                                                              #'http://www.incf.org/ns/nidash/nidm#contrastName': ('name', str),
+                                                              'http://www.incf.org/ns/nidash/nidm#errorDegreesOfFreedom': ("errorDegreesOfFreedom", float),
                                                        'http://www.w3.org/ns/prov#atLocation': ("file", file),
-                                                       'http://www.incf.org/ns/nidash/nidm#contrastName': ('contrastName', str),
-                                                       ('http://www.incf.org/ns/nidash/nidm#atCoordinateSpace', 'CoordinateSpace'): ("atCoordinateSpace", CoordinateSpace),
-                                                       ('http://www.w3.org/ns/prov#wasGeneratedBy', 'ContrastEstimation'): ("contrastEstimation", ContrastEstimation),
-                                                       ('http://www.w3.org/ns/prov#wasDerivedFrom', 'Map'): ("map", Map),
+                                                        ('http://www.incf.org/ns/nidash/nidm#atCoordinateSpace', 'CoordinateSpace'): ("atCoordinateSpace", CoordinateSpace),
+                                                        ('http://www.w3.org/ns/prov#wasGeneratedBy', 'ContrastEstimation'): ("contrastEstimation", ContrastEstimation),
+                                                        ('http://www.w3.org/ns/prov#wasDerivedFrom', 'Map'): ("map", Map),
                                                        'http://www.incf.org/ns/nidash/nidm#statisticType': ("statisticType", str),
                                                        'http://id.loc.gov/vocabulary/preservation/cryptographicHashFunctions#sha512': ("sha512", str),
                                                        'http://www.incf.org/ns/nidash/nidm#effectDegreesOfFreedom': ("effectDegreesOfFreedom", float)}.items())
