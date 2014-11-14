@@ -5,6 +5,7 @@ from neurovault.apps.statmaps.models import Image, Collection
 from neurovault.apps.statmaps.nidm import StatisticMap
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf.urls.static import static
+from numpy import Infinity
 admin.autodiscover()
 from django.contrib.auth.models import User, Group
 from rest_framework import viewsets, routers, serializers
@@ -59,8 +60,12 @@ class APIHelper:
             A dict with an aaData field containing all of the
             values (and no keys) in tabular format. '''
         data = dict([(k,v) for k,v in data.items() if v and k not in fields_to_strip])
+        values = data.values()
+        for i in range(len(values)):
+            if values[i] == Infinity:
+                values[i] = "Infinity"
         return Response(
-            {'aaData': zip(data.keys(), data.values())}
+            {'aaData': zip(data.keys(), values)}
         )
 
         
@@ -88,10 +93,11 @@ class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
     file = HyperlinkedFileField(source='file')
     collection = HyperlinkedRelatedURL(source='collection')
     url = HyperlinkedImageURL(source='get_absolute_url')
+    estimation_method = serializers.CharField(source='get_estimation_method', read_only=True)
 
     class Meta:
         model = StatisticMap
-        exclude = ['polymorphic_ctype']
+        exclude = ['polymorphic_ctype', 'contrastEstimation', 'map', 'atCoordinateSpace']
 
 class CollectionSerializer(serializers.ModelSerializer):
 

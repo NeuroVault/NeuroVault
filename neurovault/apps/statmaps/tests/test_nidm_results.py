@@ -12,17 +12,24 @@ class NIDMResultsTestCase(TestCase):
         collection.save()
         for stat_map in parse_nidm_results("/Users/filo/krzysztof.gorgolewski@gmail.com/NeuroVault/NIDM/spm_example.nidm.zip", collection):
             print stat_map.name
-         
+            print stat_map.get_estimation_method()
+          
     def test_parse_nidm_results_auditory(self):
         user = User(username='test')
         user.save()
         collection = Collection(name='test_auditory', owner=user)
         collection.save()
-        parse_nidm_results("/Users/filo/krzysztof.gorgolewski@gmail.com/NeuroVault/NIDM/auditory.nidm.zip", collection)
-        
+        for stat_map in parse_nidm_results("/Users/filo/krzysztof.gorgolewski@gmail.com/NeuroVault/NIDM/auditory.nidm.zip", collection):
+            print stat_map.name
+            print stat_map.get_estimation_method()
+#          
     def test_parse_nidm_fsl(self):
         user = User(username='test')
         user.save()
         collection = Collection(name='test_nidm_fsl', owner=user)
         collection.save()
-        parse_nidm_results("/Users/filo/krzysztof.gorgolewski@gmail.com/NeuroVault/NIDM/fsl.nidm.zip", collection)
+        for stat_map in parse_nidm_results("/Users/filo/krzysztof.gorgolewski@gmail.com/NeuroVault/NIDM/fsl.nidm.zip", collection):
+            print stat_map.name
+            print stat_map.get_estimation_method()
+                
+                

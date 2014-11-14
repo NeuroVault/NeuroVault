@@ -9,7 +9,7 @@ from django.template.context import RequestContext
 from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
-    get_file_ctime
+    get_file_ctime, parse_nidm_results
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.db.models import Q
@@ -224,12 +224,16 @@ def mkdir_p(path):
 @login_required
 def upload_folder(request, collection_cid):
     allowed_extensions = ['.nii', '.img', '.nii.gz']
+    collection = get_collection(collection_cid,request)
     niftiFiles = []
     if request.method == 'POST':
         print request.POST
         print request.FILES
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
+            if "file" in request.FILES and request.FILES['file'].name.endswith(".nidm.zip"):
+                parse_nidm_results(request.FILES['file'], collection)
+                return HttpResponseRedirect('.')
             tmp_directory = tempfile.mkdtemp()
             print tmp_directory
             try:
@@ -297,7 +301,6 @@ def upload_folder(request, collection_cid):
                     else:
                         f = ContentFile(open(fname).read(), name=name)
 
-                    collection = get_collection(collection_cid,request)
                     new_image = Image(name=db_name,
                                       description=raw_hdr['descrip'], collection=collection)
                     new_image.file = f
@@ -306,7 +309,7 @@ def upload_folder(request, collection_cid):
             finally:
                 shutil.rmtree(tmp_directory)
 
-            return HttpResponseRedirect('editimages')
+            return HttpResponseRedirect('.')
     else:
         form = UploadFileForm()
     return render_to_response("statmaps/upload_folder.html",

@@ -38,7 +38,13 @@ SELECT ?property ?value ?value_class WHERE {
                     key = (str(row["property"]), str(row["value_class"]).split("#")[-1])
                 else:
                     key = str(row["property"])
-                property_value[key] = row["value"].decode()
+                if key not in property_value:
+                    property_value[key] = row["value"].decode()
+                else:
+                    if isinstance(property_value[key], list):
+                        property_value[key].append(row["value"].decode())
+                    else:
+                        property_value[key] = [property_value[key], row["value"].decode()]
             
             instance = cls(**kwargs)
             print instance
@@ -55,14 +61,21 @@ SELECT ?property ?value ?value_class WHERE {
                         file_handle = nidm_file_handle.open(file_path, "r")
                         file_field.save(filename, ContentFile(file_handle.read()))
                     elif issubclass(property_type, Prov):
-                        attr_instance = property_type.create_from_nidm(property_value[property_uri], graph, nidm_file_handle)
-                        setattr(instance, property_name, attr_instance)
+                        if not isinstance(property_value[property_uri], list):
+                            attr_instance = property_type.create_from_nidm(property_value[property_uri], graph, nidm_file_handle)
+                            setattr(instance, property_name, attr_instance)
+                        else:
+                            instance.save()
+                            m2m = getattr(instance, property_name)
+                            for val in property_value[property_uri]:
+                                m2m.add(property_type.create_from_nidm(val, graph, nidm_file_handle))
                     else:
                         print "setting %s to %s"%(property_name, property_type(property_value[property_uri]))
                         setattr(instance, property_name, property_type(property_value[property_uri]))
             print "unused attributes for %s"%uri
             print set(property_value.keys()) - set(cls._translations.keys())
-
+            instance.save()
+        
         return instance
         
     class Meta:
@@ -211,7 +224,7 @@ class ParameterEstimateMap(ProvEntity):
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True, blank=True)
     inCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True, blank=True)
     hasMapHeader = models.CharField(max_length=200, null=True, blank=True)
-    modelParameterEstimation = models.ForeignKey(ModelParametersEstimation, null=True, blank=True)
+    modelParametersEstimation = models.ForeignKey(ModelParametersEstimation, null=True, blank=True)
     map = models.OneToOneField(Map, null=True, blank=True)
     
     
@@ -234,7 +247,7 @@ class ContrastEstimation(ProvActivity):
                                                        ('http://www.w3.org/ns/prov#used', 'ResidualMeanSquaresMap'): ("residualMeanSquaresMap", ResidualMeanSquaresMap),
                                                        ('http://www.w3.org/ns/prov#used', 'MaskMap'): ("maskMap", MaskMap),
                                                        ('http://www.w3.org/ns/prov#used', 'ContrastWeights'): ("contrastWeights", ContrastWeights)}.items())
-    parameterEstimateMap = models.ForeignKey(ParameterEstimateMap, null=True, blank=True)
+    parameterEstimateMap = models.ManyToManyField(ParameterEstimateMap, null=True, blank=True)
     residualMeanSquaresMap = models.ForeignKey(ResidualMeanSquaresMap, null=True, blank=True)
     maskMap = models.ForeignKey(MaskMap, null=True, blank=True)
     contrastWeights = models.ForeignKey(ContrastWeights, null=True, blank=True)
@@ -264,7 +277,7 @@ class StatisticMap(Image, ProvEntity):
     errorDegreesOfFreedom = models.FloatField(null=True, blank=True)
     effectDegreesOfFreedom = models.FloatField(null=True, blank=True)
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True, blank=True)
-    modelParametersEstimation = models.ForeignKey(ModelParametersEstimation, null=True, blank=True)
+    contrastEstimation = models.ForeignKey(ContrastEstimation, null=True, blank=True)
     sha512 = models.CharField(max_length=200, null=True, blank=True)
     map = models.OneToOneField(Map, null=True, blank=True)
     
@@ -289,6 +302,9 @@ class StatisticMap(Image, ProvEntity):
     contrast_definition = models.CharField(help_text="Exactly what terms are subtracted from what? Define these in terms of task or stimulus conditions (e.g., 'one-back task with objects versus zero-back task with objects') instead of underlying psychological concepts (e.g., 'working memory').", verbose_name="Contrast definition", max_length=200, null=True, blank=True)
     contrast_definition_cogatlas = models.CharField(help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast", verbose_name="Cognitive Atlas definition", max_length=200, null=True, blank=True)
     
+    def get_estimation_method(self):
+        estimation_method = self.contrastEstimation.residualMeanSquaresMap.modelParametersEstimation.withEstimationMethod.split("#")[-1]
+        return estimation_method
 
 class ContrastStandardErrorMap(ProvEntity):
     file = models.FileField(upload_to='hash_filestore', null=True, blank=True)
