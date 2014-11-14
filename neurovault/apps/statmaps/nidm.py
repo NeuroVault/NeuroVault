@@ -13,7 +13,7 @@ class Prov(models.Model):
                      'http://www.w3.org/2000/01/rdf-schema#label': ("prov_label", str)}
     
     @classmethod
-    def create(cls, uri, graph, nidm_file_handle):
+    def create_from_nidm(cls, uri, graph, nidm_file_handle, **kwargs):
         try:
             instance = cls.objects.get(prov_URI=uri)
         except cls.DoesNotExist:
@@ -39,7 +39,7 @@ SELECT ?property ?value ?value_class WHERE {
                     key = str(row["property"])
                 property_value[key] = row["value"].decode()
             
-            instance = cls()
+            instance = cls(**kwargs)
             instance.prov_URI = uri
             for property_uri, (property_name, property_type) in cls._translations.iteritems():
                 if property_uri in property_value:
@@ -53,7 +53,7 @@ SELECT ?property ?value ?value_class WHERE {
                         file_handle = nidm_file_handle.open(file_path, "r")
                         file_field.save(filename, ContentFile(file_handle.read()))
                     elif issubclass(property_type, Prov):
-                        instance = property_type.create(property_value[property_uri], graph, nidm_file_handle)
+                        instance = property_type.create_from_nidm(property_value[property_uri], graph, nidm_file_handle)
                         setattr(instance, property_name, instance)
                     else:
                         setattr(instance, property_name, property_type(property_value[property_uri]))
