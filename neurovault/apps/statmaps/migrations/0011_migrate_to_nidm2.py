@@ -539,7 +539,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='contrastestimation',
             name='parameterEstimateMap',
-            field=models.ForeignKey(to='statmaps.ParameterEstimateMap', null=True),
+            field=models.ManyToManyField(to='statmaps.ParameterEstimateMap', null=True, blank=True),
             preserve_default=True,
         ),
         migrations.AddField(

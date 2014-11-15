@@ -45,9 +45,9 @@ SELECT ?property ?value ?value_class WHERE {
                         property_value[key].append(row["value"].decode())
                     else:
                         property_value[key] = [property_value[key], row["value"].decode()]
-            
-            instance = cls(**kwargs)
-            print instance
+            instance = cls()
+            for (key, value) in kwargs.items():
+                setattr(instance, key, value)
             instance.prov_URI = uri
             for property_uri, (property_name, property_type) in cls._translations.iteritems():
                 if property_uri in property_value:
@@ -62,13 +62,13 @@ SELECT ?property ?value ?value_class WHERE {
                         file_field.save(filename, ContentFile(file_handle.read()))
                     elif issubclass(property_type, Prov):
                         if not isinstance(property_value[property_uri], list):
-                            attr_instance = property_type.create_from_nidm(property_value[property_uri], graph, nidm_file_handle)
+                            attr_instance = property_type.create_from_nidm(property_value[property_uri], graph, nidm_file_handle, **kwargs)
                             setattr(instance, property_name, attr_instance)
                         else:
                             instance.save()
                             m2m = getattr(instance, property_name)
                             for val in property_value[property_uri]:
-                                m2m.add(property_type.create_from_nidm(val, graph, nidm_file_handle))
+                                m2m.add(property_type.create_from_nidm(val, graph, nidm_file_handle, **kwargs))
                     else:
                         print "setting %s to %s"%(property_name, property_type(property_value[property_uri]))
                         setattr(instance, property_name, property_type(property_value[property_uri]))
@@ -202,13 +202,13 @@ class ModelParametersEstimation(ProvActivity):
     noiseModel = models.ForeignKey(NoiseModel, null=True, blank=True)
     
     
-class MaskMap(ProvEntity):
-    _translations = dict(Prov._translations.items() + {'http://www.w3.org/ns/prov#atLocation': ("file", file), 
+class MaskMap(Image, ProvEntity):
+    _translations = dict(Prov._translations.items() + {'http://www.w3.org/2000/01/rdf-schema#label': ('name', str),
+                                                       'http://www.w3.org/ns/prov#atLocation': ("file", file), 
                                                        ('http://www.incf.org/ns/nidash/nidm#atCoordinateSpace', 'CoordinateSpace'): ("atCoordinateSpace", CoordinateSpace),
                                                        ('http://www.w3.org/ns/prov#wasDerivedFrom', 'Map'): ("map", Map),
                                                        'http://id.loc.gov/vocabulary/preservation/cryptographicHashFunctions#sha512': ("sha512", str),
                                                        ('http://www.w3.org/ns/prov#wasGeneratedBy', 'ModelParametersEstimation'): ("modelParametersEstimation", ModelParametersEstimation)}.items())
-    file = models.FileField(upload_to='hash_filestore', null=True, blank=True)
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True, blank=True)
     inCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True, blank=True)
     hasMapHeader = models.CharField(max_length=200, null=True, blank=True)
@@ -216,11 +216,12 @@ class MaskMap(ProvEntity):
     map = models.OneToOneField(Map, null=True, blank=True)
     
     
-class ParameterEstimateMap(ProvEntity):
-    _translations = dict(Prov._translations.items() + {('http://www.incf.org/ns/nidash/nidm#atCoordinateSpace', 'CoordinateSpace'): ("atCoordinateSpace", CoordinateSpace),
+class ParameterEstimateMap(Image, ProvEntity):
+    _translations = dict(Prov._translations.items() + {'http://www.w3.org/2000/01/rdf-schema#label': ('name', str),
+                                                       'http://www.w3.org/ns/prov#atLocation': ("file", file), 
+                                                       ('http://www.incf.org/ns/nidash/nidm#atCoordinateSpace', 'CoordinateSpace'): ("atCoordinateSpace", CoordinateSpace),
                                                        ('http://www.w3.org/ns/prov#wasGeneratedBy', 'ModelParametersEstimation'): ("modelParametersEstimation", ModelParametersEstimation),
                                                        ('http://www.w3.org/ns/prov#wasDerivedFrom', 'Map'): ("map", Map)}.items())
-    file = models.FileField(upload_to='hash_filestore', null=True, blank=True)
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True, blank=True)
     inCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True, blank=True)
     hasMapHeader = models.CharField(max_length=200, null=True, blank=True)
@@ -228,13 +229,13 @@ class ParameterEstimateMap(ProvEntity):
     map = models.OneToOneField(Map, null=True, blank=True)
     
     
-class ResidualMeanSquaresMap(ProvEntity):
-    _translations = dict(Prov._translations.items() + {'http://www.w3.org/ns/prov#atLocation': ("file", file), 
+class ResidualMeanSquaresMap(Image, ProvEntity):
+    _translations = dict(Prov._translations.items() + {'http://www.w3.org/2000/01/rdf-schema#label': ('name', str),
+                                                       'http://www.w3.org/ns/prov#atLocation': ("file", file), 
                                                        ('http://www.incf.org/ns/nidash/nidm#atCoordinateSpace', 'CoordinateSpace'): ("atCoordinateSpace", CoordinateSpace),
                                                        ('http://www.w3.org/ns/prov#wasDerivedFrom', 'Map'): ("map", Map), 
                                                        'http://id.loc.gov/vocabulary/preservation/cryptographicHashFunctions#sha512': ("sha512", str),
                                                        ('http://www.w3.org/ns/prov#wasGeneratedBy', 'ModelParametersEstimation'): ("modelParametersEstimation", ModelParametersEstimation)}.items())
-    file = models.FileField(null=True, blank=True)
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True, blank=True)
     inCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True, blank=True)
     modelParametersEstimation = models.OneToOneField(ModelParametersEstimation, null=True, blank=True)
@@ -253,8 +254,7 @@ class ContrastEstimation(ProvActivity):
     contrastWeights = models.ForeignKey(ContrastWeights, null=True, blank=True)
 
 
-class ContrastMap(ProvEntity):
-    file = models.FileField(upload_to='hash_filestore', null=True, blank=True)
+class ContrastMap(Image, ProvEntity):
     contrastName = models.CharField(max_length=200, null=True, blank=True)
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True, blank=True)
     inCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True, blank=True)
@@ -306,8 +306,7 @@ class StatisticMap(Image, ProvEntity):
         estimation_method = self.contrastEstimation.residualMeanSquaresMap.modelParametersEstimation.withEstimationMethod.split("#")[-1]
         return estimation_method
 
-class ContrastStandardErrorMap(ProvEntity):
-    file = models.FileField(upload_to='hash_filestore', null=True, blank=True)
+class ContrastStandardErrorMap(Image, ProvEntity):
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True, blank=True)
     contrastEstimation = models.OneToOneField(ContrastEstimation, null=True, blank=True)
     sha512 = models.CharField(max_length=200, null=True, blank=True)
@@ -316,8 +315,7 @@ class ContrastStandardErrorMap(ProvEntity):
     
 # ## Inference
 
-class ReselsPerVoxelMap(ProvEntity):
-    file = models.FileField(upload_to='hash_filestore', null=True, blank=True)
+class ReselsPerVoxelMap(Image, ProvEntity):
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True, blank=True)
     inCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True, blank=True)
     modelParametersEstimation = models.OneToOneField(ModelParametersEstimation, null=True, blank=True)
@@ -340,13 +338,11 @@ class Coordinate(ProvEntity):
     coordinate1 = models.FloatField(null=True, blank=True)
     
     
-class ClusterLabelMap(ProvEntity):
+class ClusterLabelMap(Image, ProvEntity):
     map = models.OneToOneField(Map, null=True, blank=True)
-    file = models.FileField(upload_to='hash_filestore', null=True, blank=True)
     
     
 class ExcursionSet(ProvEntity):
-    file = models.FileField(upload_to='hash_filestore', null=True, blank=True)
     maximumIntensityProjection = models.FileField(upload_to='hash_filestore', null=True, blank=True)
     pValue = models.FloatField(null=True, blank=True)
     numberOfClusters = models.IntegerField(null=True, blank=True)
@@ -396,7 +392,7 @@ class Peak(ProvEntity):
     cluster = models.ForeignKey(Cluster, null=True, blank=True)
     
     
-class SearchSpaceMap(ProvEntity):
+class SearchSpaceMap(Image, ProvEntity):
     expectedNumberOfClusters = models.FloatField(null=True, blank=True)
     expectedNumberOfVoxelsPerCluster = models.FloatField(null=True, blank=True)
     reselSize = models.FloatField(null=True, blank=True)
@@ -411,7 +407,6 @@ class SearchSpaceMap(ProvEntity):
     noiseFWHMInUnits = models.CharField(max_length=200, null=True, blank=True)
     sha512 = models.CharField(max_length=200, null=True, blank=True)
     searchVolumeInResels = models.FloatField(null=True, blank=True)
-    file = models.FileField(upload_to='hash_filestore', null=True, blank=True)
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True, blank=True)
     inCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True, blank=True)
     randomFieldStationarity = models.NullBooleanField(default=None, null=True, blank=True)

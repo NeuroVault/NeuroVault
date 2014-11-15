@@ -115,12 +115,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterField(
             model_name='contrastestimation',
-            name='parameterEstimateMap',
-            field=models.ForeignKey(blank=True, to='statmaps.ParameterEstimateMap', null=True),
-            preserve_default=True,
-        ),
-        migrations.AlterField(
-            model_name='contrastestimation',
             name='prov_URI',
             field=models.CharField(max_length=200, unique=True, null=True, blank=True),
             preserve_default=True,
