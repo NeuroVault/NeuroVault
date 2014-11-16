@@ -8,7 +8,7 @@ from django.template.context import RequestContext
 from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
-    get_file_ctime, splitext_nii_gz, mkdir_p
+    get_file_ctime, splitext_nii_gz, mkdir_p, send_email_notification
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.db.models import Q
@@ -99,12 +99,23 @@ def edit_collection(request, cid=None):
     if request.method == "POST":
         form = CollectionForm(request.POST, request.FILES, instance=collection)
         if form.is_valid():
+            previous_contribs = set(form.instance.contributors.all())
             collection = form.save(commit=False)
             if collection.private and collection.private_token is None:
                 collection.private_token = generate_url_token()
             collection.save()
+
             if is_owner:
-                form.save_m2m()  # only save contributors if owner
+                form.save_m2m()  # save contributors
+                current_contribs = set(collection.contributors.all())
+                new_contribs = list(current_contribs.difference(previous_contribs))
+                context = {
+                    'owner': collection.owner.username,
+                    'collection': collection.name,
+                    'url': request.META['HTTP_ORIGIN'] + collection.get_absolute_url(),
+                }
+                subj = '%s has added you to a NeuroVault collection' % context['owner']
+                send_email_notification('new_contributor', subj, new_contribs, context)
 
             return HttpResponseRedirect(collection.get_absolute_url())
     else:

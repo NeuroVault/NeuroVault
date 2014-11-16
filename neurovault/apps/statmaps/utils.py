@@ -13,6 +13,8 @@ from datetime import datetime,date
 import cortex
 import pytz
 import errno
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 
 
 # see CollectionRedirectMiddleware
@@ -192,3 +194,18 @@ def mkdir_p(path):
             pass
         else:
             raise
+
+
+def send_email_notification(notif_type, subject, users, tpl_context=None):
+    email_from = 'NeuroVault <do_not_reply@neurovault.org>'
+    plain_tpl = os.path.join('email','%s.txt' % notif_type)
+    html_tpl = os.path.join('email','%s.html' % notif_type)
+
+    for user in users:
+        context = dict(tpl_context.items() + [('username', user.username)])
+        dest = user.email
+        text_content = render_to_string(plain_tpl,context)
+        html_content = render_to_string(html_tpl,context)
+        msg = EmailMultiAlternatives(subject, text_content, email_from, [dest])
+        msg.attach_alternative(html_content, "text/html")
+        msg.send()
