@@ -8,7 +8,7 @@ from django.template.context import RequestContext
 from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
-    get_file_ctime
+    get_file_ctime, splitext_nii_gz, mkdir_p
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.db.models import Q
@@ -21,7 +21,6 @@ import gzip
 import shutil
 import nibabel as nib
 import re
-import errno
 import tempfile
 import os
 from collections import OrderedDict
@@ -88,7 +87,6 @@ def edit_images(request, collection_cid):
 @login_required
 def edit_collection(request, cid=None):
     page_header = "Add new collection"
-    is_owner = False
     if cid:
         collection = get_collection(cid,request)
         is_owner = True if collection.owner == request.user else False
@@ -96,6 +94,7 @@ def edit_collection(request, cid=None):
         if not owner_or_contrib(request,collection):
             return HttpResponseForbidden()
     else:
+        is_owner = True
         collection = Collection(owner=request.user)
     if request.method == "POST":
         form = CollectionForm(request.POST, request.FILES, instance=collection)
@@ -201,24 +200,6 @@ def add_image_for_neurosynth(request):
     return render(request, "statmaps/add_image_for_neurosynth.html.haml", context)
 
 
-def splitext_nii_gz(fname):
-    head, ext = os.path.splitext(fname)
-    if ext.lower() == ".gz":
-        _, ext2 = os.path.splitext(fname[:-3])
-        ext = ext2 + ext
-    return head, ext
-
-
-def mkdir_p(path):
-    try:
-        os.makedirs(path)
-    except OSError as exc:  # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
-            raise
-
-
 @login_required
 def upload_folder(request, collection_cid):
     allowed_extensions = ['.nii', '.img', '.nii.gz']
@@ -283,8 +264,10 @@ def upload_folder(request, collection_cid):
 
                     path, name, ext = split_filename(fname)
                     name += ".nii.gz"
+
                     db_name = os.path.join(path.replace(tmp_directory,""), name)
-                    db_name = os.path.sep.join(db_name.split(os.path.sep)[2:])
+                    db_name = os.path.split(db_name)[-1]
+                    #import ipdb; ipdb.set_trace()
                     if ext.lower() != ".nii.gz":
                         new_file_tmp_directory = tempfile.mkdtemp()
                         nib.save(nii, os.path.join(new_file_tmp_directory, name))

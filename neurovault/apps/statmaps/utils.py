@@ -12,6 +12,7 @@ from lxml import etree
 from datetime import datetime,date
 import cortex
 import pytz
+import errno
 
 
 # see CollectionRedirectMiddleware
@@ -173,3 +174,21 @@ def get_paper_properties(doi):
 
 def get_file_ctime(fpath):
     return datetime.fromtimestamp(os.path.getctime(fpath),tz=pytz.utc)
+
+
+def splitext_nii_gz(fname):
+    head, ext = os.path.splitext(fname)
+    if ext.lower() == ".gz":
+        _, ext2 = os.path.splitext(fname[:-3])
+        ext = ext2 + ext
+    return head, ext
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
