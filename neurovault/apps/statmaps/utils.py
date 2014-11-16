@@ -14,7 +14,7 @@ import cortex
 import pytz
 from zipfile import ZipFile
 import rdflib
-from neurovault.apps.statmaps.nidm import StatisticMap
+from neurovault.apps.statmaps.nidm import StatisticMap, Peak
 
 def get_all_instances(model_class, graph, nidm_file_handle, collection):
     query = """
@@ -54,6 +54,11 @@ def parse_nidm_results(nidm_file, collection):
     stat_maps = get_all_instances(StatisticMap, nidm_graph, z_fp, collection)
     for stat_map in stat_maps:
         stat_map.save()
+        
+    peaks = get_all_instances(Peak, nidm_graph, z_fp, collection)
+    for peak in peaks:
+        peak.save()
+        
     return stat_maps
 
 

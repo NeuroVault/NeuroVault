@@ -1,14 +1,19 @@
-from models import Image
+from models import Image, Collection
 import django.db.models as models
 import os
 from django.core.files.base import ContentFile
 from collections import OrderedDict
 
+class CollectionPart(models.Model):
+    collection = models.ForeignKey(Collection)
+    
+    class Meta:
+        abstract = True
 
 class Prov(models.Model):
     prov_type = models.CharField(max_length=200, null=True, blank=True)
     prov_label = models.CharField(max_length=200, null=True, blank=True)
-    prov_URI = models.CharField(max_length=200, unique=True, null=True, blank=True)
+    prov_URI = models.CharField(max_length=200, null=True, blank=True)
     
     _translations = {'http://www.w3.org/1999/02/22-rdf-syntax-ns#type': ('prov_type', str),
                      'http://www.w3.org/2000/01/rdf-schema#label': ("prov_label", str)}
@@ -16,7 +21,7 @@ class Prov(models.Model):
     @classmethod
     def create_from_nidm(cls, uri, graph, nidm_file_handle, **kwargs):
         try:
-            instance = cls.objects.get(prov_URI=uri)
+            instance = cls.objects.get(prov_URI=uri, **kwargs)
         except cls.DoesNotExist:
             print "creating %s"%uri
             query = """
@@ -63,7 +68,7 @@ SELECT ?property ?value ?value_class WHERE {
                     elif issubclass(property_type, Prov):
                         if not isinstance(property_value[property_uri], list):
                             attr_instance = property_type.create_from_nidm(property_value[property_uri], graph, nidm_file_handle, **kwargs)
-                            setattr(instance, property_name, attr_instance)
+                            setattr(instance, property_name, attr_instance)#
                         else:
                             instance.save()
                             m2m = getattr(instance, property_name)
@@ -73,7 +78,29 @@ SELECT ?property ?value ?value_class WHERE {
                         print "setting %s to %s"%(property_name, property_type(property_value[property_uri]))
                         setattr(instance, property_name, property_type(property_value[property_uri]))
             print "unused attributes for %s"%uri
-            print set(property_value.keys()) - set(cls._translations.keys())
+            filtered = set()
+            remains = set(property_value.keys()) - set(cls._translations.keys())
+            for val in remains:
+                if (isinstance(val, tuple) and val[1] in ('Entity', 
+                                                          'Collection', 
+                                                          'SoftwareAgent', 
+                                                          'Agent', 
+                                                          'ErrorModel', 
+                                                          'SPM', 
+                                                          'FSL',
+                                                          'Activity',
+                                                          'ClusterDefinitionCriteria',
+                                                          'DisplayMaskMap',
+                                                          'PeakDefinitionCriteria')) or val in ['http://www.incf.org/ns/nidash/nidm#filename', 
+                                                                                  'http://purl.org/dc/terms/format']:
+                    continue
+                else:
+                    filtered.add(val)
+            if filtered:
+                pass
+                #raise Exception("Non empty set of remaining fields for %s: %s"%(cls.__name__, str(filtered)))
+                    
+            
             instance.save()
         
         return instance
@@ -92,7 +119,7 @@ class ProvActivity(Prov):
         abstract = True
 
 
-class CoordinateSpace(ProvEntity):
+class CoordinateSpace(ProvEntity, CollectionPart):
     _translations = dict(Prov._translations.items() + {'http://www.incf.org/ns/nidash/nidm#voxelUnits': ("voxelUnits", str), 
                                                        'http://www.incf.org/ns/nidash/nidm#dimensionsInVoxels': ("dimensionsInVoxels", str),
                                                        'http://www.incf.org/ns/nidash/nidm#inWorldCoordinateSystem': ("inWorldCoordinateSystem", str),
@@ -107,7 +134,7 @@ class CoordinateSpace(ProvEntity):
     numberOfDimensions = models.IntegerField(null=True, blank=True)
     
     
-class Map(ProvEntity):
+class Map(ProvEntity, CollectionPart):
     format = models.CharField(max_length=200, null=True, blank=True)
     sha512 = models.CharField(max_length=200, null=True, blank=True)
     filename = models.CharField(max_length=200, null=True, blank=True)
@@ -117,7 +144,7 @@ class Map(ProvEntity):
                                                       'http://www.incf.org/ns/nidash/nidm#filename': ("filename", str)}.items())
             
 
-class ProvImage(ProvEntity):
+class ProvImage(ProvEntity, CollectionPart):
     _translations = dict(Prov._translations.items() + {'http://www.w3.org/ns/prov#atLocation': ("file", str)}.items())
   
     file = models.FileField(upload_to='hash_filestore', null=True, blank=True)
@@ -125,7 +152,7 @@ class ProvImage(ProvEntity):
 
 # ## Model Fitting
     
-class ContrastWeights(ProvEntity):
+class ContrastWeights(ProvEntity, CollectionPart):
     _translations = dict(Prov._translations.items() + {'http://www.incf.org/ns/nidash/nidm#statisticType': ("statisticType", str),
                                                        'http://www.incf.org/ns/nidash/nidm#contrastName': ("contrastName", str),
                                                        'http://www.w3.org/ns/prov#value': ("value", str)}.items())
@@ -138,21 +165,21 @@ class ContrastWeights(ProvEntity):
     value = models.CharField(max_length=200, null=True, blank=True)
 
 
-class Data(ProvEntity):
+class Data(ProvEntity, CollectionPart):
     _translations = dict(Prov._translations.items() + {'http://www.incf.org/ns/nidash/nidm#grandMeanScaling': ('grandMeanScaling', bool),
                                                        'http://www.incf.org/ns/nidash/nidm#targetIntensity': ('targetIntensity', float)}.items())
     grandMeanScaling = models.NullBooleanField(default=None, null=True, blank=True)
     targetIntensity = models.FloatField(null=True, blank=True)
     
 
-class DesignMatrix(ProvEntity):
+class DesignMatrix(ProvEntity, CollectionPart):
     _translations = dict(Prov._translations.items() + {'http://www.w3.org/ns/prov#atLocation': ("file", file),
                                                        ('http://www.incf.org/ns/nidash/nidm#visualisation', 'Image'): ("image", ProvImage)}.items())
     image = models.OneToOneField(ProvImage, null=True, blank=True)
     file = models.FileField(upload_to='hash_filestore', null=True, blank=True)
     
     
-class NoiseModel(ProvEntity):
+class NoiseModel(ProvEntity, CollectionPart):
     _translations = dict(Prov._translations.items() + {'http://www.incf.org/ns/nidash/nidm#noiseVarianceHomogeneous': ('noiseVarianceHomogeneous', bool),
                                                        'http://www.incf.org/ns/nidash/nidm#varianceSpatialModel': ('varianceSpatialModel', str),
                                                        'http://www.incf.org/ns/nidash/nidm#dependenceSpatialModel': ('dependenceSpatialModel', str),
@@ -185,7 +212,7 @@ class NoiseModel(ProvEntity):
     varianceSpatialModel = models.CharField(max_length=200, choices=_varianceSpatialModel_choices, null=True, blank=True)
     
     
-class ModelParametersEstimation(ProvActivity):
+class ModelParametersEstimation(ProvActivity, CollectionPart):
     _translations = dict(Prov._translations.items() + {('http://www.w3.org/ns/prov#used', 'Data'): ("data", Data), 
                                                        'http://www.incf.org/ns/nidash/nidm#withEstimationMethod': ("withEstimationMethod", str),
                                                        ('http://www.w3.org/ns/prov#used', 'DesignMatrix'): ("designMatrix", DesignMatrix),
@@ -206,6 +233,7 @@ class MaskMap(Image, ProvEntity):
     _translations = dict(Prov._translations.items() + {'http://www.w3.org/2000/01/rdf-schema#label': ('name', str),
                                                        'http://www.w3.org/ns/prov#atLocation': ("file", file), 
                                                        ('http://www.incf.org/ns/nidash/nidm#atCoordinateSpace', 'CoordinateSpace'): ("atCoordinateSpace", CoordinateSpace),
+                                                       ('http://www.incf.org/ns/nidash/nidm#inCoordinateSpace', 'CoordinateSpace'): ("inCoordinateSpace", CoordinateSpace),
                                                        ('http://www.w3.org/ns/prov#wasDerivedFrom', 'Map'): ("map", Map),
                                                        'http://id.loc.gov/vocabulary/preservation/cryptographicHashFunctions#sha512': ("sha512", str),
                                                        ('http://www.w3.org/ns/prov#wasGeneratedBy', 'ModelParametersEstimation'): ("modelParametersEstimation", ModelParametersEstimation)}.items())
@@ -233,25 +261,30 @@ class ResidualMeanSquaresMap(Image, ProvEntity):
     _translations = dict(Prov._translations.items() + {'http://www.w3.org/2000/01/rdf-schema#label': ('name', str),
                                                        'http://www.w3.org/ns/prov#atLocation': ("file", file), 
                                                        ('http://www.incf.org/ns/nidash/nidm#atCoordinateSpace', 'CoordinateSpace'): ("atCoordinateSpace", CoordinateSpace),
+                                                       ('http://www.incf.org/ns/nidash/nidm#inCoordinateSpace', 'CoordinateSpace'): ("inCoordinateSpace", CoordinateSpace),
                                                        ('http://www.w3.org/ns/prov#wasDerivedFrom', 'Map'): ("map", Map), 
                                                        'http://id.loc.gov/vocabulary/preservation/cryptographicHashFunctions#sha512': ("sha512", str),
-                                                       ('http://www.w3.org/ns/prov#wasGeneratedBy', 'ModelParametersEstimation'): ("modelParametersEstimation", ModelParametersEstimation)}.items())
+                                                       ('http://www.w3.org/ns/prov#wasGeneratedBy', 'ModelParametersEstimation'): ("modelParametersEstimation", ModelParametersEstimation),
+                                                       ('http://www.w3.org/ns/prov#used', 'DesignMatrix'): ('designMatrix', DesignMatrix)}.items())
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True, blank=True)
     inCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True, blank=True)
     modelParametersEstimation = models.OneToOneField(ModelParametersEstimation, null=True, blank=True)
+    designMatrix = models.ForeignKey(DesignMatrix, null=True, blank=True)
     sha512 = models.CharField(max_length=200, null=True, blank=True)
     map = models.OneToOneField(Map, null=True, blank=True)
     
 
-class ContrastEstimation(ProvActivity):
+class ContrastEstimation(ProvActivity, CollectionPart):
     _translations = dict(Prov._translations.items() + {('http://www.w3.org/ns/prov#used', 'ParameterEstimateMap'): ("parameterEstimateMap", ParameterEstimateMap),
                                                        ('http://www.w3.org/ns/prov#used', 'ResidualMeanSquaresMap'): ("residualMeanSquaresMap", ResidualMeanSquaresMap),
                                                        ('http://www.w3.org/ns/prov#used', 'MaskMap'): ("maskMap", MaskMap),
-                                                       ('http://www.w3.org/ns/prov#used', 'ContrastWeights'): ("contrastWeights", ContrastWeights)}.items())
+                                                       ('http://www.w3.org/ns/prov#used', 'ContrastWeights'): ("contrastWeights", ContrastWeights),
+                                                       ('http://www.w3.org/ns/prov#used', 'DesignMatrix'): ('designMatrix', DesignMatrix)}.items())
     parameterEstimateMap = models.ManyToManyField(ParameterEstimateMap, null=True, blank=True)
     residualMeanSquaresMap = models.ForeignKey(ResidualMeanSquaresMap, null=True, blank=True)
     maskMap = models.ForeignKey(MaskMap, null=True, blank=True)
     contrastWeights = models.ForeignKey(ContrastWeights, null=True, blank=True)
+    designMatrix = models.ForeignKey(DesignMatrix, null=True, blank=True)
 
 
 class ContrastMap(Image, ProvEntity):
@@ -265,10 +298,11 @@ class ContrastMap(Image, ProvEntity):
 class StatisticMap(Image, ProvEntity):
     nidm_identifier = "nidm:StatisticMap"
     _translations = OrderedDict(Prov._translations.items() + {'http://www.w3.org/2000/01/rdf-schema#label': ('name', str),
-                                                              #'http://www.incf.org/ns/nidash/nidm#contrastName': ('name', str),
+                                                              'http://www.incf.org/ns/nidash/nidm#contrastName': ('contrastName', str),
                                                               'http://www.incf.org/ns/nidash/nidm#errorDegreesOfFreedom': ("errorDegreesOfFreedom", float),
                                                        'http://www.w3.org/ns/prov#atLocation': ("file", file),
                                                         ('http://www.incf.org/ns/nidash/nidm#atCoordinateSpace', 'CoordinateSpace'): ("atCoordinateSpace", CoordinateSpace),
+                                                        ('http://www.incf.org/ns/nidash/nidm#inCoordinateSpace', 'CoordinateSpace'): ("inCoordinateSpace", CoordinateSpace),
                                                         ('http://www.w3.org/ns/prov#wasGeneratedBy', 'ContrastEstimation'): ("contrastEstimation", ContrastEstimation),
                                                         ('http://www.w3.org/ns/prov#wasDerivedFrom', 'Map'): ("map", Map),
                                                        'http://www.incf.org/ns/nidash/nidm#statisticType': ("statisticType", str),
@@ -279,6 +313,7 @@ class StatisticMap(Image, ProvEntity):
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True, blank=True)
     contrastEstimation = models.ForeignKey(ContrastEstimation, null=True, blank=True)
     sha512 = models.CharField(max_length=200, null=True, blank=True)
+    contrastName = models.CharField(max_length=200, null=True, blank=True)
     map = models.OneToOneField(Map, null=True, blank=True)
     
     Z = 'Z'
@@ -316,33 +351,78 @@ class ContrastStandardErrorMap(Image, ProvEntity):
 # ## Inference
 
 class ReselsPerVoxelMap(Image, ProvEntity):
+    _translations = OrderedDict(Prov._translations.items() + {('http://www.w3.org/ns/prov#wasDerivedFrom', 'Map'): ('map', Map), 
+                                                              ('http://www.incf.org/ns/nidash/nidm#atCoordinateSpace', 'CoordinateSpace'): ('atCoordinateSpace', CoordinateSpace),
+                                                              'http://id.loc.gov/vocabulary/preservation/cryptographicHashFunctions#sha512': ('sha512', str), 
+                                                              'http://www.w3.org/ns/prov#atLocation': ('file', file), 
+                                                              ('http://www.w3.org/ns/prov#wasGeneratedBy', 'ModelParametersEstimation'): ('modelParametersEstimation', ModelParametersEstimation)}.items())
     atCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True, blank=True)
     inCoordinateSpace = models.ForeignKey(CoordinateSpace, related_name='+', null=True, blank=True)
     modelParametersEstimation = models.OneToOneField(ModelParametersEstimation, null=True, blank=True)
     sha512 = models.CharField(max_length=200, null=True, blank=True)
     map = models.OneToOneField(Map, null=True, blank=True)
 
-class Inference(ProvActivity):
+class ExtentThreshold(ProvEntity, CollectionPart):
+    userSpecifiedThresholdType = models.CharField(max_length=200, null=True, blank=True)
+    pValueUncorrected = models.FloatField(null=True, blank=True)
+    pValueFWER = models.FloatField(null=True, blank=True)
+    qValueFDR = models.FloatField(null=True, blank=True)
+    clusterSizeInVoxels = models.IntegerField(null=True, blank=True)
+    clusterSizeInResels = models.FloatField(null=True, blank=True)
+    
+
+class HeightThreshold(ProvEntity, CollectionPart):
+    value = models.FloatField(null=True, blank=True)
+    userSpecifiedThresholdType = models.CharField(max_length=200, null=True, blank=True)
+    pValueUncorrected = models.FloatField(null=True, blank=True)
+    qValueFDR = models.FloatField(null=True, blank=True)
+    pValueFWER = models.FloatField(null=True, blank=True)
+
+class Inference(ProvActivity, CollectionPart):
+    _translations = OrderedDict(Prov._translations.items() + {'http://www.incf.org/ns/nidash/nidm#hasAlternativeHypothesis': ('hasAlternativeHypothesis', str), 
+                                                              ('http://www.w3.org/ns/prov#used', 'ExtentThreshold'): ('extentThreshold', ExtentThreshold), 
+                                                              ('http://www.w3.org/ns/prov#used', 'StatisticMap'): ('statisticMap', StatisticMap), 
+                                                              ('http://www.w3.org/ns/prov#used', 'HeightThreshold'): ('heightThreshold', HeightThreshold), 
+                                                              ('http://www.w3.org/ns/prov#used', 'MaskMap'): ('maskMap', MaskMap), 
+                                                              ('http://www.w3.org/ns/prov#used', 'ReselsPerVoxelMap'): ('reselsPerVoxelMap', ReselsPerVoxelMap)}.items())
     alternativeHypothesis = models.CharField(max_length=200, null=True, blank=True)
     _hasAlternativeHypothesis_choices = [("http://www.incf.org/ns/nidash/nidm#TwoTailedTest", "Two Tailed"),
                                          ("http://www.incf.org/ns/nidash/nidm#OneTailedTest", "One Tailed")]
     hasAlternativeHypothesis = models.CharField(max_length=200, choices=_hasAlternativeHypothesis_choices, null=True, blank=True)
     contrastMap = models.ForeignKey(ContrastMap, null=True, blank=True)
     statisticMap = models.ForeignKey(StatisticMap, null=True, blank=True)
+    heightThreshold = models.ForeignKey(HeightThreshold, null=True, blank=True)
+    extentThreshold = models.ForeignKey(ExtentThreshold, null=True, blank=True)
     reselsPerVoxelMap = models.ForeignKey(ReselsPerVoxelMap, null=True, blank=True)
+    maskMap = models.ForeignKey(MaskMap, null=True, blank=True)
 
     
-class Coordinate(ProvEntity):
+class Coordinate(ProvEntity, CollectionPart):
+    _translations = OrderedDict(Prov._translations.items() + {'http://www.incf.org/ns/nidash/nidm#coordinate3': ('coordinate3', float), 
+                                                              'http://www.incf.org/ns/nidash/nidm#coordinate2': ('coordinate2', float), 
+                                                              'http://www.incf.org/ns/nidash/nidm#coordinate1': ('coordinate1', float)}.items())
     coordinate3 = models.FloatField(null=True, blank=True)
     coordinate2 = models.FloatField(null=True, blank=True)
     coordinate1 = models.FloatField(null=True, blank=True)
     
     
 class ClusterLabelMap(Image, ProvEntity):
+    _translations = dict(Prov._translations.items() + {'http://www.w3.org/2000/01/rdf-schema#label': ('name', str),
+                                                       'http://www.w3.org/ns/prov#atLocation': ("file", file),
+                                                       ('http://www.w3.org/ns/prov#wasDerivedFrom', 'Map'): ("map", Map)}.items())
     map = models.OneToOneField(Map, null=True, blank=True)
     
     
-class ExcursionSet(ProvEntity):
+class ExcursionSet(ProvEntity, CollectionPart):
+    _translations = OrderedDict(Prov._translations.items() + {('http://www.w3.org/ns/prov#wasGeneratedBy', 'Inference'): ('inference', Inference), 
+                                                              'http://www.incf.org/ns/nidash/nidm#pValue': ('pValue', float), 
+                                                              ('http://www.incf.org/ns/nidash/nidm#inCoordinateSpace', 'CoordinateSpace'): ('inCoordinateSpace', CoordinateSpace), 
+                                                              ('http://www.incf.org/ns/nidash/nidm#atCoordinateSpace', 'CoordinateSpace'): ('atCoordinateSpace', CoordinateSpace), 
+                                                              'http://www.incf.org/ns/nidash/nidm#numberOfClusters': ('numberOfClusters', int),
+                                                              ('http://www.incf.org/ns/nidash/nidm#visualisation', 'Image'): ('image', ProvImage),
+                                                              ('http://www.incf.org/ns/nidash/nidm#hasClusterLabelsMap', 'ClusterLabelsMap'): ('hasClusterLabelsMap', ClusterLabelMap), 
+                                                              'http://id.loc.gov/vocabulary/preservation/cryptographicHashFunctions#sha512': ('sha512', str), 
+                                                              ('http://www.incf.org/ns/nidash/spm#hasMaximumIntensityProjection', 'Image'): ('hasMaximumIntensityProjection', Image)}.items())
     maximumIntensityProjection = models.FileField(upload_to='hash_filestore', null=True, blank=True)
     pValue = models.FloatField(null=True, blank=True)
     numberOfClusters = models.IntegerField(null=True, blank=True)
@@ -355,7 +435,14 @@ class ExcursionSet(ProvEntity):
     underlayFile = models.FileField(upload_to='hash_filestore', null=True, blank=True)
     
     
-class Cluster(ProvEntity):
+class Cluster(ProvEntity, CollectionPart):
+    _translations = OrderedDict(Prov._translations.items() + {'http://www.incf.org/ns/nidash/nidm#clusterLabelId': ('clusterLabelId',float), 
+                                                              'http://www.incf.org/ns/nidash/nidm#qValueFDR': ('qValueFDR', float), 
+                                                              'http://www.incf.org/ns/nidash/nidm#pValueUncorrected': ('pValueUncorrected', float),
+                                                              'http://www.incf.org/ns/nidash/nidm#pValueFWER': ('pValueFWER', float), 
+                                                              'http://www.incf.org/ns/nidash/spm#clusterSizeInResels': ('clusterSizeInResels', float), 
+                                                              ('http://www.w3.org/ns/prov#wasDerivedFrom', 'ExcursionSet'): ('excursionSet', ExcursionSet), 
+                                                              'http://www.incf.org/ns/nidash/nidm#clusterSizeInVoxels': ('clusterSizeInVoxels', int)}.items())
     qValueFDR = models.FloatField(null=True, blank=True)
     clusterLabelId = models.IntegerField(null=True, blank=True)
     pValueUncorrected = models.FloatField(null=True, blank=True)
@@ -364,25 +451,17 @@ class Cluster(ProvEntity):
     clusterSizeInVoxels = models.IntegerField(null=True, blank=True)
     clusterSizeInResels = models.FloatField(null=True, blank=True)
     
-    
-class ExtentThreshold(ProvEntity):
-    userSpecifiedThresholdType = models.CharField(max_length=200, null=True, blank=True)
-    pValueUncorrected = models.FloatField(null=True, blank=True)
-    pValueFWER = models.FloatField(null=True, blank=True)
-    qValueFDR = models.FloatField(null=True, blank=True)
-    clusterSizeInVoxels = models.IntegerField(null=True, blank=True)
-    clusterSizeInResels = models.FloatField(null=True, blank=True)
-    
 
-class HeightThreshold(ProvEntity):
-    value = models.FloatField(null=True, blank=True)
-    userSpecifiedThresholdType = models.CharField(max_length=200, null=True, blank=True)
-    pValueUncorrected = models.FloatField(null=True, blank=True)
-    qValueFDR = models.FloatField(null=True, blank=True)
-    pValueFWER = models.FloatField(null=True, blank=True)
-    
+class Peak(ProvEntity, CollectionPart):
+    nidm_identifier = "nidm:Peak"
+    _translations = OrderedDict(Prov._translations.items() + {'http://www.incf.org/ns/nidash/nidm#equivalentZStatistic': ('equivalentZStatistic', float),
+                                                              'http://www.w3.org/ns/prov#value': ('value', float),
+                                                              ('http://www.w3.org/ns/prov#wasDerivedFrom', 'Cluster'): ('cluster', Cluster),
+                                                              'http://www.incf.org/ns/nidash/nidm#pValueFWER': ('pValueFWER', float), 
+                                                              'http://www.incf.org/ns/nidash/nidm#qValueFDR': ('qValueFDR', float), 
+                                                              'http://www.incf.org/ns/nidash/nidm#pValueUncorrected': ('pValueUncorrected', float), 
+                                                              ('http://www.w3.org/ns/prov#atLocation', 'Coordinate'): ('coordinate', Coordinate)}.items())
 
-class Peak(ProvEntity):
     coordinate = models.OneToOneField(Coordinate)
     equivalentZStatistic = models.FloatField(null=True, blank=True)
     value = models.FloatField(null=True, blank=True)

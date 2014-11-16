@@ -178,6 +178,8 @@ class Image(DirtyFieldsMixin, PolymorphicModel):
     def save(self):
         self.collection.modify_date = datetime.now()
         self.collection.save()
+        if not self.name and self.file:
+            self.name = self.file.name.split("/")[-1]
         super(Image, self).save()
 
     def delete(self):
