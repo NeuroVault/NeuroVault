@@ -7,7 +7,7 @@ from django.conf.urls.static import static
 from rest_framework.filters import DjangoFilterBackend
 admin.autodiscover()
 from django.contrib.auth.models import User, Group
-from rest_framework import viewsets, routers, serializers
+from rest_framework import viewsets, routers, serializers, mixins
 from rest_framework.decorators import link
 from rest_framework.response import Response
 from taggit.models import Tag
@@ -82,7 +82,9 @@ class CollectionSerializer(serializers.ModelSerializer):
         exclude = ['private_token', 'private']
 
 
-class ImageViewSet(viewsets.ModelViewSet):
+class ImageViewSet(mixins.RetrieveModelMixin,
+                   mixins.ListModelMixin,
+                   viewsets.GenericViewSet):
 
     queryset = Image.objects.filter(collection__private=False)
     serializer_class = ImageSerializer
@@ -111,7 +113,9 @@ class ImageViewSet(viewsets.ModelViewSet):
         return Response(data)
 
 
-class CollectionViewSet(viewsets.ModelViewSet):
+class CollectionViewSet(mixins.RetrieveModelMixin,
+                        mixins.ListModelMixin,
+                        viewsets.GenericViewSet):
 
     queryset = Collection.objects.filter(private=False)
     filter_fields = ('name', 'DOI', 'owner')
