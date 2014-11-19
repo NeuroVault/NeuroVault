@@ -22,6 +22,7 @@ from neurovault.apps.statmaps.utils import split_filename, get_paper_properties
 from django.core.files.base import File, ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django import forms
+from neurovault.apps.statmaps.nidm import StatisticMap
 
 # Create the form class.
 collection_fieldsets = [
@@ -265,21 +266,23 @@ class CollectionForm(ModelForm):
         self.helper.layout.extend([tab_holder, Submit('submit', 'Save', css_class="btn-large offset2")])
 
 
-class ImageForm(ModelForm):
+class StatisticMapForm(ModelForm):
     hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
 
     def __init__(self, *args, **kwargs):
-        super(ImageForm, self).__init__(*args, **kwargs)
+        super(StatisticMapForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
         self.helper.form_tag = False
 
     class Meta:
-        model = Image
-        exclude = ('json_path', 'collection')
+        model = StatisticMap
+        exclude = ('json_path', 'nifti_gz_file', 'collection', 'prov_type', 
+                   'prov_label', 'prov_URI', 'atCoordinateSpace', 'modelParametersEstimation', 
+                   'sha512', 'map')
 
     def clean(self):
-        cleaned_data = super(ImageForm, self).clean()
+        cleaned_data = super(StatisticMapForm, self).clean()
         file = cleaned_data.get("file")
 
         if file:
@@ -347,30 +350,51 @@ class ImageForm(ModelForm):
         return cleaned_data
 
 
-class SingleImageForm(ImageForm):
+class SingleStatisticMapForm(StatisticMapForm):
     hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
 
     class Meta:
-        model = Image
+        model = StatisticMap
         exclude = ('json_path', )
 
     def __init__(self, user, *args, **kwargs):
-        super(SingleImageForm, self).__init__(*args, **kwargs)
+        super(SingleStatisticMapForm, self).__init__(*args, **kwargs)
         self.fields['collection'].queryset = Collection.objects.filter(owner=user)
+        self.helper = FormHelper(self)
+        self.helper.add_input(Submit('submit', 'Submit'))
+        
+class AddStatisticMapForm(StatisticMapForm):
+    hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
+
+    class Meta:
+        model = StatisticMap
+        fields = ['name', 'description', 'statisticType',
+                  'file', 'hdr_file', 'tags', 'errorDegreesOfFreedom',
+                  'effectDegreesOfFreedom', 'statisticType', 
+                  'statistic_parameters', 'smoothness_fwhm',
+                  'contrast_definition', 'contrast_definition_cogatlas']
+        exclude = ('json_path', 'nifti_gz_file', 'collection', 'prov_type', 
+                   'prov_label', 'prov_URI', 'atCoordinateSpace', 'modelParametersEstimation', 
+                   'sha512', 'map')
+
+    def __init__(self, user, *args, **kwargs):
+        super(AddStatisticMapForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.add_input(Submit('submit', 'Submit'))
 
 
-class SimplifiedImageForm(SingleImageForm):
+class SimplifiedStatisticMapForm(SingleStatisticMapForm):
     class Meta:
-        model = Image
+        model = StatisticMap
         exclude = ('json_path', )
-        fields = ('name', 'collection', 'description', 'map_type',
+        fields = ('name', 'collection', 'description', 'statisticType',
                   'file', 'hdr_file', 'tags')
 
 CollectionFormSet = inlineformset_factory(
-    Collection, Image, form=ImageForm,
-    exclude=['json_path', 'nifti_gz_file', 'collection'],
+    Collection, StatisticMap, form=StatisticMapForm,
+    exclude=['json_path', 'nifti_gz_file', 'collection', 'prov_type', 
+             'prov_label', 'prov_URI', 'atCoordinateSpace', 'modelParametersEstimation', 
+             'sha512', 'map'],
     extra=1)
 
 

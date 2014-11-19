@@ -1,14 +1,15 @@
 from .models import Collection, Image
-from .forms import CollectionFormSet, CollectionForm, SingleImageForm
+from .forms import CollectionFormSet, CollectionForm, SingleStatisticMapForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
-from neurovault.apps.statmaps.forms import UploadFileForm, SimplifiedImageForm
+from neurovault.apps.statmaps.forms import UploadFileForm, SimplifiedStatisticMapForm,\
+    StatisticMapForm, AddStatisticMapForm
 from django.template.context import RequestContext
 from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
-    get_file_ctime
+    get_file_ctime, parse_nidm_results
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.db.models import Q
@@ -25,6 +26,7 @@ import errno
 import tempfile
 import os
 from collections import OrderedDict
+from neurovault.apps.statmaps.nidm import StatisticMap
 
 
 def get_collection(cid,request,mode=None):
@@ -76,7 +78,7 @@ def edit_images(request, collection_cid):
         formset = CollectionFormSet(instance=collection)
 
     context = {"formset": formset}
-    return render(request, "statmaps/edit_images.html.haml", context)
+    return render(request, "statmaps/edit_images_simpler.html.haml", context)
 
 
 @login_required
@@ -147,12 +149,12 @@ def edit_image(request, pk):
     if image.collection.owner != request.user:
         return HttpResponseForbidden()
     if request.method == "POST":
-        form = SingleImageForm(request.user, request.POST, request.FILES, instance=image)
+        form = SingleStatisticMapForm(request.user, request.POST, request.FILES, instance=image)
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(image.get_absolute_url())
     else:
-        form = SingleImageForm(request.user, instance=image)
+        form = SingleStatisticMapForm(request.user, instance=image)
 
     context = {"form": form}
     return render(request, "statmaps/edit_image.html.haml", context)
@@ -174,16 +176,31 @@ def add_image_for_neurosynth(request):
         temp_collection.save()
     image = Image(collection=temp_collection)
     if request.method == "POST":
-        form = SimplifiedImageForm(request.user, request.POST, request.FILES, instance=image)
+        form = SimplifiedStatisticMapForm(request.user, request.POST, request.FILES, instance=image)
         if form.is_valid():
             image = form.save()
             return HttpResponseRedirect("http://neurosynth.org/decode/?neurovault=%s-%s" % (
                 temp_collection.private_token,image.id))
     else:
-        form = SimplifiedImageForm(request.user, instance=image)
+        form = SimplifiedStatisticMapForm(request.user, instance=image)
 
     context = {"form": form}
     return render(request, "statmaps/add_image_for_neurosynth.html.haml", context)
+
+@login_required
+def add_image(request, collection_cid):
+    collection = get_collection(collection_cid,request)
+    image = Image(collection=collection)
+    if request.method == "POST":
+        form = AddStatisticMapForm(request.user, request.POST, request.FILES, instance=image)
+        if form.is_valid():
+            image = form.save()
+            return HttpResponseRedirect(image.get_absolute_url())
+    else:
+        form = AddStatisticMapForm(request.user, instance=image)
+
+    context = {"form": form}
+    return render(request, "statmaps/add_image.html.haml", context)
 
 
 def splitext_nii_gz(fname):
@@ -207,12 +224,16 @@ def mkdir_p(path):
 @login_required
 def upload_folder(request, collection_cid):
     allowed_extensions = ['.nii', '.img', '.nii.gz']
+    collection = get_collection(collection_cid,request)
     niftiFiles = []
     if request.method == 'POST':
         print request.POST
         print request.FILES
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
+            if "file" in request.FILES and request.FILES['file'].name.endswith(".nidm.zip"):
+                parse_nidm_results(request.FILES['file'], collection)
+                return HttpResponseRedirect('.')
             tmp_directory = tempfile.mkdtemp()
             print tmp_directory
             try:
@@ -258,13 +279,13 @@ def upload_folder(request, collection_cid):
                     Tregexp = re.compile('spmT.*')
                     # Fregexp = re.compile('spmF.*')
                     if Tregexp.search(fname) is not None:
-                        map_type = Image.T
+                        map_type = StatisticMap.T
                     else:
                         # Check if filename corresponds to a F-map
                         if Tregexp.search(fname) is not None:
-                            map_type = Image.F
+                            map_type = StatisticMap.F
                         else:
-                            map_type = Image.OTHER
+                            map_type = StatisticMap.OTHER
 
                     path, name, ext = split_filename(fname)
                     name += ".nii.gz"
@@ -280,16 +301,15 @@ def upload_folder(request, collection_cid):
                     else:
                         f = ContentFile(open(fname).read(), name=name)
 
-                    collection = get_collection(collection_cid,request)
                     new_image = Image(name=db_name,
                                       description=raw_hdr['descrip'], collection=collection)
                     new_image.file = f
-                    new_image.map_type = map_type
+                    new_image.statisticType = map_type
                     new_image.save()
             finally:
                 shutil.rmtree(tmp_directory)
 
-            return HttpResponseRedirect('editimages')
+            return HttpResponseRedirect('.')
     else:
         form = UploadFileForm()
     return render_to_response("statmaps/upload_folder.html",

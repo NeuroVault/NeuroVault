@@ -46,3 +46,4 @@ class NiftiGzStorage(FileSystemStorage):
         else:
             cid = collection.id
         return os.path.join(self.base_url,str(cid),file_name)
+

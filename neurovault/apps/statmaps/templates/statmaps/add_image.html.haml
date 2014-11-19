@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block head %}
+    %link{ href:"{% static 'css/studies.css' %}", media:"screen", rel:"stylesheet", type:"text/css"}
+{% endblock %}
+{% block content %}
+    .span11
+        %h2 Upload a statistical map
+ 
+    .span11
+        %hr
+        {% crispy form %}
+{% endblock %}

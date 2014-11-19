@@ -30,3 +30,5 @@ requests
 requests-oauthlib
 python-openid
 django-sendfile
+django-hashedfilenamestorage
+django-polymorphic
