@@ -72,13 +72,14 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Image
-
+        
 
 class CollectionSerializer(serializers.ModelSerializer):
+    images = ImageSerializer(source='image_set')
 
     class Meta:
         model = Collection
-        exclude = ['private_token']
+        exclude = ['private_token', 'private']
 
 
 class ImageViewSet(viewsets.ModelViewSet):
