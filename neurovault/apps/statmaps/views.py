@@ -1,5 +1,5 @@
 from .models import Collection, Image
-from .forms import CollectionFormSet, CollectionForm, SingleImageForm
+from .forms import CollectionFormSet, CollectionFormSetFirst, CollectionForm, SingleImageForm
 from django.http.response import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
@@ -68,7 +68,7 @@ def get_image(pk,collection_cid,request,mode=None):
 @login_required
 def edit_images(request, collection_cid):
     collection = get_collection(collection_cid,request)
-    
+    numImages = len(Image.objects.filter(collection=collection))
     if collection.owner != request.user:
         return HttpResponseForbidden()
     if request.method == "POST":
@@ -79,19 +79,22 @@ def edit_images(request, collection_cid):
         else:
             print 'not valid'
             formset = CollectionFormSet(request.POST, request.FILES, instance=collection)
-            numImages = len(Image.objects.filter(collection=collection))
+            
             request.session['numImages'] = numImages
             for x in range(len(formset)):
                 form = formset[x]
                 if str(form.errors.get('file'))  == '<ul class="errorlist"><li>Voxels with a value of zero is greater than %s%%</li></ul>' % ImageForm.maxZeroPercent:
-                    formset[0].fields['checkbox'].widget = forms.CheckboxInput()
+                    formset[x].fields['checkbox'].widget = forms.CheckboxInput()
                     if x < (numImages-1):
 #                         formset[0].fields['checkbox'].initial = True
                         pass
                 else:
                     formset[x].base_fields['checkbox'].widget = forms.HiddenInput()
     else:
-        formset = CollectionFormSet(instance=collection)
+        if numImages == 0:
+            formset = CollectionFormSetFirst(instance=collection)
+        else:
+            formset = CollectionFormSet(instance=collection)
     context = {"formset": formset}
     print request.POST
 #     print 'actual number: ', len(Image.objects.filter(collection=collection))

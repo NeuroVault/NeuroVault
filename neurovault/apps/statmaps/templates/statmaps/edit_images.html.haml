@@ -6,7 +6,7 @@
 	:javascript
 		{% inlinecoffeescript %}
 			active_form = 0
-			current_form = +"0"
+			current_form = 0
 			$(document).ready ->
 				showForm = (id) ->
 					$('.image-form').hide()
@@ -34,14 +34,8 @@
 				# way to solve this.)
 				num_forms = $('.image-form').length
 				request_method = '{{request.method}}'
-				if num_forms > 1 and request_method == 'GET'
-					$('.image-form').last().remove()
-					$('#id_image_set-TOTAL_FORMS').val(num_forms-1)
-					$("#image-select option[value=#{num_forms-1}]").last().remove()
-					showForm(active_form)
-				else
-					$("#id_image_set-#{num_forms-1}-id").val('')
-					showForm('{{formset.0.current.value}}')
+				
+				showForm(current_form)
 				
 
 				$('#image-select').change((e) ->
@@ -54,6 +48,7 @@
 					document.getElementById('id_image_set-0-current').value = current_form
 					$('form').submit()
 				)
+				
 
 				$('#add-image-form').click((e) ->
 					e.preventDefault()

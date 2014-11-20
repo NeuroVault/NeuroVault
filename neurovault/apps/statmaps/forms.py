@@ -388,6 +388,11 @@ class SimplifiedImageForm(SingleImageForm):
 CollectionFormSet = inlineformset_factory(
     Collection, Image, form=ImageForm,
     exclude=['json_path', 'nifti_gz_file', 'collection'],
+    extra=0)
+
+CollectionFormSetFirst = inlineformset_factory(
+    Collection, Image, form=ImageForm,
+    exclude=['json_path', 'nifti_gz_file', 'collection'],
     extra=1)
 
 
