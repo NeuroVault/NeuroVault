@@ -4,11 +4,10 @@
 {% block head %}
 <script src="{% static "scripts/clone-form.js"%}" type="text/javascript"></script>
 	:javascript
-		
 		{% inlinecoffeescript %}
 			active_form = 0
+			current_form = +"0"
 			$(document).ready ->
-
 				showForm = (id) ->
 					$('.image-form').hide()
 					active_form = id
@@ -39,22 +38,20 @@
 					$('.image-form').last().remove()
 					$('#id_image_set-TOTAL_FORMS').val(num_forms-1)
 					$("#image-select option[value=#{num_forms-1}]").last().remove()
+					showForm(active_form)
 				else
 					$("#id_image_set-#{num_forms-1}-id").val('')
+					showForm('{{formset.0.current.value}}')
+				
 
-				# Show the first image on load
-				post_form = 2
-				showForm(post_form)
-				request_session = '{{request.session}}'
 				$('#image-select').change((e) ->
 					id = $(e.target).val()
+					current_form = parseInt( id, 10 )
 					showForm(id)
-					request_session['last_form'] = id
-
-					
 				)
 				$('#submit-form').click((e) ->
 					e.preventDefault()
+					document.getElementById('id_image_set-0-current').value = current_form
 					$('form').submit()
 				)
 
@@ -85,7 +82,7 @@
 		%select{id: 'image-select', size: '10'}
 			- for form in formset
 				<option value='{{forloop.counter0}}'
-					- if forloop.counter0 == 2
+					- if forloop.counter0 == '{{formset.0.current.value}}'
 						selected="selected"
 				>{{ form.name.value }}</option>
 		%button#add-image-form.btn.btn-large.btn-secondary{style:"margin: 0px 0px 0px 20px;"} Add a new image
@@ -96,8 +93,12 @@
 				- for form in formset
 					<div id='image-{{forloop.counter0}}' class='image-form'>
 						<input id="id_image_set-{{forloop.counter0}}-id" name="image_set-{{forloop.counter0}}-id" type="hidden" value="{{form.id.value}}" />
+						
 						{% crispy form %}
 					</div>
+					
+
+</div>
 		</form>
 .span5
 .span

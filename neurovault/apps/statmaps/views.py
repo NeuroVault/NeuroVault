@@ -80,18 +80,22 @@ def edit_images(request, collection_cid):
             print 'not valid'
             formset = CollectionFormSet(request.POST, request.FILES, instance=collection)
             numImages = len(Image.objects.filter(collection=collection))
+            request.session['numImages'] = numImages
             for x in range(len(formset)):
                 form = formset[x]
                 if str(form.errors.get('file'))  == '<ul class="errorlist"><li>Voxels with a value of zero is greater than %s%%</li></ul>' % ImageForm.maxZeroPercent:
+                    formset[0].fields['checkbox'].widget = forms.CheckboxInput()
                     if x < (numImages-1):
-                        #figure out how to except the exception
-                        print str(form.errors.get('file'))
-                    form.fields['checkbox'].widget = forms.CheckboxInput()
+#                         formset[0].fields['checkbox'].initial = True
+                        pass
+                else:
+                    formset[x].base_fields['checkbox'].widget = forms.HiddenInput()
     else:
         formset = CollectionFormSet(instance=collection)
-        formset.form.base_fields['checkbox'].widget = forms.HiddenInput()
     context = {"formset": formset}
-    print request.session['last_form']
+    print request.POST
+#     print 'actual number: ', len(Image.objects.filter(collection=collection))
+#     print 'number in formset: ', len(formset)
     return render(request, "statmaps/edit_images.html.haml", context, context_instance=RequestContext(request))
 
 

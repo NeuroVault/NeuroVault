@@ -265,8 +265,10 @@ class CollectionForm(ModelForm):
 
 
 class ImageForm(ModelForm):
-    checkbox = forms.BooleanField(required=False, label='Ignore warning', widget=forms.HiddenInput)
+#     checkbox = forms.BooleanField(required=False, label='Ignore warning', widget=forms.HiddenInput, initial=False)
+    checkbox = forms.BooleanField(required=False, label='Ignore warning', initial=False)
     hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
+    current =  forms.IntegerField(required=False, widget=forms.HiddenInput)
     maxZeroPercent = 80
     def __init__(self, *args, **kwargs):
         super(ImageForm, self).__init__(*args, **kwargs)
@@ -278,7 +280,7 @@ class ImageForm(ModelForm):
         exclude = ('json_path', 'collection')
         fields = ('name', 'collection', 'description', 'map_type',
                   'file', 'checkbox', 'map_type','statistic_parameters', 'smoothness_fwhm',
-                   'contrast_definition', 'contrast_definition', 'contrast_definition_cogatlas','hdr_file', 'tags')
+                   'contrast_definition', 'contrast_definition', 'contrast_definition_cogatlas','hdr_file', 'tags', 'current')
     
     def clean(self):
         cleaned_data = super(ImageForm, self).clean()
@@ -338,13 +340,14 @@ class ImageForm(ModelForm):
                     print cleaned_data["file"].__class__.__name__
                     cleaned_data["file"] = InMemoryUploadedFile(f, "file", fname + ".nii.gz",
                                                                 cleaned_data["file"].content_type, f.size, cleaned_data["file"].charset)
-                    
-                # check if portion of voxels with a value of zero is less amount specified above as maxZero
+                
+                
+                # check if portion of voxels with a value of zero is less than amount specified above as maxZero
                 maxZero = self.maxZeroPercent/100.0
                 imgData = nii.get_data()
                 isZero = (imgData == 0).sum()/float(imgData.size)
                 if isZero > maxZero and not (cleaned_data.get('checkbox') == True):
-                    print isZero, maxZero
+#                     print isZero, maxZero
                     self._errors["file"] = self.error_class(["Voxels with a value of zero is greater than %s%%" % self.maxZeroPercent])
                 
             finally:
