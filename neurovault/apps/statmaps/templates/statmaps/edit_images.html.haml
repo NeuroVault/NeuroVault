@@ -6,7 +6,8 @@
 	:javascript
 		{% inlinecoffeescript %}
 			active_form = 0
-			current_form = 0
+			current_form = '{{formset.0.current.value}}'
+
 			$(document).ready ->
 				showForm = (id) ->
 					$('.image-form').hide()
@@ -40,7 +41,7 @@
 
 				$('#image-select').change((e) ->
 					id = $(e.target).val()
-					current_form = parseInt( id, 10 )
+					current_form = id
 					showForm(id)
 				)
 				$('#submit-form').click((e) ->
@@ -77,7 +78,7 @@
 		%select{id: 'image-select', size: '10'}
 			- for form in formset
 				<option value='{{forloop.counter0}}'
-					- if forloop.counter0 == '{{formset.0.current.value}}'
+					- if forloop.counter0 == formset.0.current.value|add:"0"
 						selected="selected"
 				>{{ form.name.value }}</option>
 		%button#add-image-form.btn.btn-large.btn-secondary{style:"margin: 0px 0px 0px 20px;"} Add a new image

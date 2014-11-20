@@ -268,7 +268,7 @@ class ImageForm(ModelForm):
 #     checkbox = forms.BooleanField(required=False, label='Ignore warning', widget=forms.HiddenInput, initial=False)
     checkbox = forms.BooleanField(required=False, label='Ignore warning', initial=False)
     hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
-    current =  forms.IntegerField(required=False, widget=forms.HiddenInput)
+    current =  forms.IntegerField(required=False, widget=forms.HiddenInput, initial=0)
     maxZeroPercent = 80
     def __init__(self, *args, **kwargs):
         super(ImageForm, self).__init__(*args, **kwargs)
