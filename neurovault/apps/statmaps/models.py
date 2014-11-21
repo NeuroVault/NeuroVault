@@ -239,3 +239,8 @@ class StatisticMap(Image):
     contrast_definition = models.CharField(help_text="Exactly what terms are subtracted from what? Define these in terms of task or stimulus conditions (e.g., 'one-back task with objects versus zero-back task with objects') instead of underlying psychological concepts (e.g., 'working memory').", verbose_name="Contrast definition", max_length=200, null=True, blank=True)
     contrast_definition_cogatlas = models.CharField(help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast", verbose_name="Cognitive Atlas definition", max_length=200, null=True, blank=True)
 
+class Atlas(Image):
+    label_description_file = models.FileField(upload_to=upload_to, 
+                                              null=False, blank=False, 
+                                              storage=NiftiGzStorage(), 
+                                              verbose_name='FSL compatible label description file (.xml)')
