@@ -368,9 +368,8 @@ class AddStatisticMapForm(StatisticMapForm):
 
     class Meta:
         model = StatisticMap
-        fields = ['name', 'description', 'statisticType',
-                  'file', 'hdr_file', 'tags', 'errorDegreesOfFreedom',
-                  'effectDegreesOfFreedom', 'statisticType', 
+        fields = ['name', 'description', 'map_type',
+                  'file', 'hdr_file', 'tags',
                   'statistic_parameters', 'smoothness_fwhm',
                   'contrast_definition', 'contrast_definition_cogatlas']
         exclude = ('json_path', 'nifti_gz_file', 'collection', 'prov_type', 
