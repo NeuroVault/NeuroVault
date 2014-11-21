@@ -1,10 +1,9 @@
 from .models import Collection, Image
-from .forms import CollectionFormSet, CollectionForm, SingleStatisticMapForm
+from .forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
+    StatisticMapForm, EditStatisticMapForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
-from neurovault.apps.statmaps.forms import UploadFileForm, SimplifiedStatisticMapForm,\
-    StatisticMapForm, AddStatisticMapForm
 from django.template.context import RequestContext
 from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
@@ -157,12 +156,12 @@ def edit_image(request, pk):
     if image.collection.owner != request.user:
         return HttpResponseForbidden()
     if request.method == "POST":
-        form = SingleStatisticMapForm(request.user, request.POST, request.FILES, instance=image)
+        form = EditStatisticMapForm(request.user, request.POST, request.FILES, instance=image)
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(image.get_absolute_url())
     else:
-        form = SingleStatisticMapForm(request.user, instance=image)
+        form = EditStatisticMapForm(request.user, instance=image)
 
     context = {"form": form}
     return render(request, "statmaps/edit_image.html.haml", context)
@@ -200,12 +199,12 @@ def add_image(request, collection_cid):
     collection = get_collection(collection_cid,request)
     image = Image(collection=collection)
     if request.method == "POST":
-        form = AddStatisticMapForm(request.user, request.POST, request.FILES, instance=image)
+        form = StatisticMapForm(request.POST, request.FILES, instance=image)
         if form.is_valid():
             image = form.save()
             return HttpResponseRedirect(image.get_absolute_url())
     else:
-        form = AddStatisticMapForm(request.user, instance=image)
+        form = StatisticMapForm(instance=image)
 
     context = {"form": form}
     return render(request, "statmaps/add_image.html.haml", context)

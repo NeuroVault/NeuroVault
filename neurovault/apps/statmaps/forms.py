@@ -266,20 +266,17 @@ class CollectionForm(ModelForm):
         self.helper.layout.extend([tab_holder, Submit('submit', 'Save', css_class="btn-large offset2")])
 
 
-class StatisticMapForm(ModelForm):
+class ImageForm(ModelForm):
     hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
 
     def __init__(self, *args, **kwargs):
-        super(StatisticMapForm, self).__init__(*args, **kwargs)
+        super(ImageForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
-        self.helper.form_class = 'form-horizontal'
-        self.helper.form_tag = False
+        self.helper.add_input(Submit('submit', 'Submit'))
 
     class Meta:
-        model = StatisticMap
-        exclude = ('json_path', 'nifti_gz_file', 'collection', 'prov_type', 
-                   'prov_label', 'prov_URI', 'atCoordinateSpace', 'modelParametersEstimation', 
-                   'sha512', 'map')
+        model = Image
+        exclude = ('collection', )
 
     def clean(self):
         cleaned_data = super(StatisticMapForm, self).clean()
@@ -348,44 +345,27 @@ class StatisticMapForm(ModelForm):
         else:
             raise ValidationError("Couldn't read uploaded file")
         return cleaned_data
-
-
-class SingleStatisticMapForm(StatisticMapForm):
-    hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
-
-    class Meta:
+    
+class StatisticMapForm(ImageForm):
+    class Meta(ImageForm.Meta):
         model = StatisticMap
-        exclude = ('json_path', )
+        fields = ('name', 'collection', 'description', 'map_type',
+                  'file', 'hdr_file', 'tags', 'statistic_parameters',
+                  'smoothness_fwhm', 'contrast_definition', 'contrast_definition_cogatlas')
 
+class EditStatisticMapForm(StatisticMapForm):
+    
     def __init__(self, user, *args, **kwargs):
-        super(SingleStatisticMapForm, self).__init__(*args, **kwargs)
+        super(EditStatisticMapForm, self).__init__(*args, **kwargs)
         self.fields['collection'].queryset = Collection.objects.filter(owner=user)
-        self.helper = FormHelper(self)
-        self.helper.add_input(Submit('submit', 'Submit'))
+    
+    class Meta(StatisticMapForm.Meta):
+        exclude = ()
+
+
+class SimplifiedStatisticMapForm(EditStatisticMapForm):
         
-class AddStatisticMapForm(StatisticMapForm):
-    hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
-
-    class Meta:
-        model = StatisticMap
-        fields = ['name', 'description', 'map_type',
-                  'file', 'hdr_file', 'tags',
-                  'statistic_parameters', 'smoothness_fwhm',
-                  'contrast_definition', 'contrast_definition_cogatlas']
-        exclude = ('json_path', 'nifti_gz_file', 'collection', 'prov_type', 
-                   'prov_label', 'prov_URI', 'atCoordinateSpace', 'modelParametersEstimation', 
-                   'sha512', 'map')
-
-    def __init__(self, user, *args, **kwargs):
-        super(AddStatisticMapForm, self).__init__(*args, **kwargs)
-        self.helper = FormHelper(self)
-        self.helper.add_input(Submit('submit', 'Submit'))
-
-
-class SimplifiedStatisticMapForm(SingleStatisticMapForm):
-    class Meta:
-        model = StatisticMap
-        exclude = ('json_path', )
+    class Meta(EditStatisticMapForm.Meta):
         fields = ('name', 'collection', 'description', 'map_type',
                   'file', 'hdr_file', 'tags')
 
