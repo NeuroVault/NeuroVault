@@ -245,3 +245,15 @@ class Atlas(Image):
                                               storage=NiftiGzStorage(), 
                                               verbose_name='FSL compatible label description file (.xml)')
 
+
+class NIDMResults(Image):
+    ttl_file = models.FileField(upload_to=upload_to, 
+                                null=False, blank=False, 
+                                storage=NiftiGzStorage(), 
+                                verbose_name='Turtle serialization of NIDM Results (.ttl)')
+    
+    def save(self):
+        self._unpack_nidm_zip()
+        self._update_ttl_paths()
+        self._update_nidm_zip()
+        super(NIDMResults, self).save()
