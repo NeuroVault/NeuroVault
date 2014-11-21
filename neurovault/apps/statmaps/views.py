@@ -26,6 +26,9 @@ import errno
 import tempfile
 import os
 from collections import OrderedDict
+from neurovault.apps.statmaps.models import StatisticMap, Atlas
+from glob import glob
+from xml.dom import minidom
 
 
 def get_collection(cid,request,mode=None):
@@ -253,18 +256,30 @@ def upload_folder(request, collection_cid):
                         tmp_file.close()
                 else:
                     raise
-
+                
+                atlases = {}
                 for root, _, filenames in os.walk(tmp_directory, topdown=False):
                     filenames = [f for f in filenames if not f[0] == '.']
                     for fname in filenames:
                         _, ext = splitext_nii_gz(fname)
                         if ext in allowed_extensions:
                             niftiFiles.append(os.path.join(root, fname))
+                        elif ext == '.xml':
+                            print "found xml"
+                            dom = minidom.parse(os.path.join(root, fname))
+                            for atlas in dom.getElementsByTagName("summaryimagefile"):
+                                print "found atlas"
+                                path, base, ext = split_filename(atlas.lastChild.nodeValue)
+                                nifti_name = os.path.join(path, base)
+                                atlases[str(os.path.join(root, nifti_name[1:]))] = os.path.join(root, fname)
 
+                print atlases
+                print niftiFiles
                 for fname in niftiFiles:
                     # Read nifti file information
                     nii = nib.load(fname)
                     if len(nii.get_shape()) > 3 and nii.get_shape()[3] > 1:
+                        print "skipping wrong size"
                         continue
                     hdr = nii.get_header()
                     raw_hdr = hdr.structarr
@@ -274,16 +289,18 @@ def upload_folder(request, collection_cid):
                     Tregexp = re.compile('spmT.*')
                     # Fregexp = re.compile('spmF.*')
                     if Tregexp.search(fname) is not None:
-                        map_type = Image.T
+                        map_type = StatisticMap.T
                     else:
                         # Check if filename corresponds to a F-map
                         if Tregexp.search(fname) is not None:
-                            map_type = Image.F
+                            map_type = StatisticMap.F
                         else:
-                            map_type = Image.OTHER
+                            map_type = StatisticMap.OTHER
+                            
+                    
 
-                    path, name, ext = split_filename(fname)
-                    name += ".nii.gz"
+                    path, base_name, ext = split_filename(fname)
+                    name = base_name + ".nii.gz"
                     db_name = os.path.join(path.replace(tmp_directory,""), name)
                     db_name = os.path.sep.join(db_name.split(os.path.sep)[2:])
                     if ext.lower() != ".nii.gz":
@@ -297,15 +314,27 @@ def upload_folder(request, collection_cid):
                         f = ContentFile(open(fname).read(), name=name)
 
                     collection = get_collection(collection_cid,request)
-                    new_image = Image(name=db_name,
-                                      description=raw_hdr['descrip'], collection=collection)
+                    
+                    
+                    print os.path.join(path, base_name)
+                    if os.path.join(path, base_name) in atlases:
+                        print "added atlas"
+                        new_image = Atlas(name=db_name,
+                                          description=raw_hdr['descrip'], collection=collection)
+                        
+                        new_image.label_description_file = ContentFile(open(atlases[os.path.join(path,base_name)]).read(), 
+                                                                       name=base_name + ".xml")
+                    else:
+                        new_image = StatisticMap(name=db_name,
+                                                 description=raw_hdr['descrip'], collection=collection)
+                        new_image.map_type = map_type
+                    
                     new_image.file = f
-                    new_image.map_type = map_type
                     new_image.save()
             finally:
                 shutil.rmtree(tmp_directory)
 
-            return HttpResponseRedirect('editimages')
+            return HttpResponseRedirect('')
     else:
         form = UploadFileForm()
     return render_to_response("statmaps/upload_folder.html",
@@ -371,8 +400,8 @@ def view_collection_with_pycortex(request, cid):
 
 def serve_image(request, collection_cid, img_name):
     collection = get_collection(collection_cid,request,mode='file')
-    image = Image.objects.get(collection=collection,file__endswith='/'+img_name)
-    return sendfile(request, image.file.path)
+    path = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',str(collection.id),img_name)
+    return sendfile(request, path)
 
 
 def serve_pycortex(request, collection_cid, path, pycortex_dir='pycortex_all'):
