@@ -279,7 +279,7 @@ class ImageForm(ModelForm):
         exclude = ('collection', )
 
     def clean(self):
-        cleaned_data = super(StatisticMapForm, self).clean()
+        cleaned_data = super(ImageForm, self).clean()
         file = cleaned_data.get("file")
 
         if file:
