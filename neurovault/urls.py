@@ -1,7 +1,8 @@
 from django.conf.urls import patterns, include, url
 from django.conf import settings
 from django.contrib import admin
-from neurovault.apps.statmaps.models import Image, Collection, StatisticMap
+from neurovault.apps.statmaps.models import Image, Collection, StatisticMap,\
+    Atlas
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf.urls.static import static
 from rest_framework.filters import DjangoFilterBackend
@@ -79,8 +80,9 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
         Because GalleryItem is Polymorphic
         """
         if isinstance(obj, StatisticMap):
-            print "statmap"
             return StatisticMapSerializer(obj, context={'request': self.context['request']}).to_native(obj)
+        if isinstance(obj, Atlas):
+            return AtlasSerializer(obj, context={'request': self.context['request']}).to_native(obj)
         return super(ImageSerializer, self).to_native(obj)
 
 
@@ -92,6 +94,16 @@ class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = StatisticMap
+        exclude = ['polymorphic_ctype']
+        
+class AtlasSerializer(serializers.HyperlinkedModelSerializer):
+    
+    label_description_file = HyperlinkedFileField(source='label_description_file')
+    collection = HyperlinkedRelatedURL(source='collection')
+    url = HyperlinkedImageURL(source='get_absolute_url')
+
+    class Meta:
+        model = Atlas
         exclude = ['polymorphic_ctype']
 
 
