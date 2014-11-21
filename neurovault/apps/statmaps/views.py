@@ -28,6 +28,7 @@ from collections import OrderedDict
 from neurovault.apps.statmaps.models import StatisticMap, Atlas
 from glob import glob
 from xml.dom import minidom
+from neurovault.apps.statmaps.forms import EditAtlasForm
 
 
 def get_collection(cid,request,mode=None):
@@ -153,15 +154,22 @@ def delete_collection(request, cid):
 @login_required
 def edit_image(request, pk):
     image = get_object_or_404(Image,pk=pk)
+    
+    if isinstance(image, StatisticMap):
+        form = EditStatisticMapForm
+    elif isinstance(image, Atlas):
+        form = EditAtlasForm
+    else:
+        raise Exception("unsuported image type")
     if image.collection.owner != request.user:
         return HttpResponseForbidden()
     if request.method == "POST":
-        form = EditStatisticMapForm(request.user, request.POST, request.FILES, instance=image)
+        form = form(request.user, request.POST, request.FILES, instance=image)
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(image.get_absolute_url())
     else:
-        form = EditStatisticMapForm(request.user, instance=image)
+        form = form(request.user, instance=image)
 
     context = {"form": form}
     return render(request, "statmaps/edit_image.html.haml", context)

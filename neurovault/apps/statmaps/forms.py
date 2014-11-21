@@ -22,7 +22,7 @@ from neurovault.apps.statmaps.utils import split_filename, get_paper_properties
 from django.core.files.base import File, ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django import forms
-from neurovault.apps.statmaps.models import StatisticMap
+from neurovault.apps.statmaps.models import StatisticMap, Atlas
 
 # Create the form class.
 collection_fieldsets = [
@@ -352,6 +352,12 @@ class StatisticMapForm(ImageForm):
         fields = ('name', 'collection', 'description', 'map_type',
                   'file', 'hdr_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'contrast_definition', 'contrast_definition_cogatlas')
+        
+class AtlasForm(ImageForm):
+    class Meta(ImageForm.Meta):
+        model = Atlas
+        fields = ('name', 'collection', 'description',
+                  'file', 'hdr_file', 'label_description_file', 'tags')
 
 class EditStatisticMapForm(StatisticMapForm):
     
@@ -360,6 +366,16 @@ class EditStatisticMapForm(StatisticMapForm):
         self.fields['collection'].queryset = Collection.objects.filter(owner=user)
     
     class Meta(StatisticMapForm.Meta):
+        exclude = ()
+        
+
+class EditAtlasForm(AtlasForm):
+    
+    def __init__(self, user, *args, **kwargs):
+        super(EditAtlasForm, self).__init__(*args, **kwargs)
+        self.fields['collection'].queryset = Collection.objects.filter(owner=user)
+    
+    class Meta(AtlasForm.Meta):
         exclude = ()
 
 
