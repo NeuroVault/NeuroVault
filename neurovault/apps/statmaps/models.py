@@ -244,3 +244,4 @@ class Atlas(Image):
                                               null=False, blank=False, 
                                               storage=NiftiGzStorage(), 
                                               verbose_name='FSL compatible label description file (.xml)')
+
