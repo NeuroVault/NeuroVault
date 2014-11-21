@@ -116,8 +116,14 @@ def view_image(request, pk, collection_cid=None):
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
     context = {'image': image, 'user': image.collection.owner, 'user_owns_image': user_owns_image,
-            'api_cid':api_cid}
-    return render(request, 'statmaps/image_details.html.haml', context)
+               'api_cid':api_cid}
+    if isinstance(image, StatisticMap):
+        template = 'statmaps/statisticmap_details.html.haml'
+    elif isinstance(image, Atlas):
+        template = 'statmaps/atlas_details.html.haml'
+    else:
+        template = 'statmaps/image_details.html.haml'
+    return render(request, template, context)
 
 
 def view_collection(request, cid):
