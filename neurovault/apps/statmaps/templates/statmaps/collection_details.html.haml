@@ -119,6 +119,7 @@
                             %th ID
                             %th Name
                             %th Tags
+                            %th Type
                             %th Description
                     %tbody
                         - for image in collection.image_set.all
@@ -130,7 +131,8 @@
                                     - for tag in image.tags.all
                                         %a{ href: "/images/tags/{{tag.name}}" }= tag.name
                                         - if not forloop.last
-                                            ,
+                                        
+                                %td= image.polymorphic_ctype.name
                                 %td= image.description
             #details.tab-pane
                 %table.table.table-condensed.table-striped.table-hover.collection-details-datatable
