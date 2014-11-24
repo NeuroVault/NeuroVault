@@ -1,4 +1,4 @@
-from .models import Collection, Image
+from .models import Collection, Image, VoxelQuery
 from .forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
@@ -11,10 +11,15 @@ from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_vol
     get_file_ctime, detect_afni4D, split_afni4D_to_3D, splitext_nii_gz, mkdir_p, \
     send_email_notification
 from django.core.exceptions import PermissionDenied
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.db.models import Q
 from neurovault import settings
 from sendfile import sendfile
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.renderers import JSONRenderer
+from rest_framework.parsers import JSONParser
+from .serializers import VoxelQuerySerializer
+from voxel_query_functions import *
 
 import zipfile
 import tarfile
@@ -473,3 +478,41 @@ def papaya_js_embed(request, pk, iframe=None):
     context = {'image': image, 'request':request}
     return render_to_response('statmaps/%s' % tpl,
                               context, content_type=mimetype)
+
+@csrf_exempt
+def voxel_query_detail(request, region, atlas):
+#     try:
+#         query = VoxelQuery.objects.get(X=X)
+#     except VoxelQuery.DoesNotExist:
+#         return HttpResponse(status=404)
+    region = region.replace('-',' ')
+    atlas = atlas + '.xml'
+    if request.method == 'GET':
+        with open('networkxGraph2.pkl','rb') as input:
+            graph = pickle.load(input)
+            
+        try:
+            data = getAtlasVoxels(region, atlas)
+            return JSONResponse(data)
+        except KeyError:
+             return JSONResponse('"{region}" not in "{atlas}"'.format(region=region, atlas=atlas), status=400)
+#     elif request.method == 'PUT':
+#         data = JSONParser().parse(request)
+#         serializer = VoxelQuerySerializer(query, data=data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return JSONResponse(serializer.data)
+#         return JSONResponse(serializer.errors, status=400)
+# 
+#     elif request.method == 'DELETE':
+#         query.delete()
+#         return HttpResponse(status=204)
+
+class JSONResponse(HttpResponse):
+    """
+    An HttpResponse that renders its content into JSON.
+    """
+    def __init__(self, data, **kwargs):
+        content = JSONRenderer().render(data)
+        kwargs['content_type'] = 'application/json'
+        super(JSONResponse, self).__init__(content, **kwargs)
