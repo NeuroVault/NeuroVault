@@ -99,7 +99,9 @@ def edit_collection(request, cid=None):
     if request.method == "POST":
         form = CollectionForm(request.POST, request.FILES, instance=collection)
         if form.is_valid():
-            previous_contribs = set(form.instance.contributors.all())
+            previous_contribs = set()
+            if form.instance.pk is not None:
+                previous_contribs = set(form.instance.contributors.all())
             collection = form.save(commit=False)
             if collection.private and collection.private_token is None:
                 collection.private_token = generate_url_token()
