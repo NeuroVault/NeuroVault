@@ -1,4 +1,4 @@
-from .models import Collection, Image, VoxelQuery
+from .models import Collection, Image
 from .forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
@@ -18,7 +18,6 @@ from sendfile import sendfile
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
-from .serializers import VoxelQuerySerializer
 from voxel_query_functions import *
 
 import zipfile
@@ -28,6 +27,7 @@ import shutil
 import nibabel as nib
 import re
 import tempfile
+import neurovault
 import os
 from collections import OrderedDict
 from neurovault.apps.statmaps.models import StatisticMap, Atlas
@@ -480,33 +480,47 @@ def papaya_js_embed(request, pk, iframe=None):
                               context, content_type=mimetype)
 
 @csrf_exempt
-def voxel_query_detail(request, region, atlas):
-#     try:
-#         query = VoxelQuery.objects.get(X=X)
-#     except VoxelQuery.DoesNotExist:
-#         return HttpResponse(status=404)
-    region = region.replace('-',' ')
+def voxel_query_detail(request, search, atlas):
+    search = search.replace('-',' ')
     atlas = atlas + '.xml'
+    neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))
+    atlas_dir = os.path.join(neurovault_root, 'private_media/images/11')
     if request.method == 'GET':
-        with open('networkxGraph2.pkl','rb') as input:
+        with open(os.path.join(neurovault_root, 'neurovault/apps/statmaps/NIFgraph.pkl'),'rb') as input:
             graph = pickle.load(input)
-            
+        tree = ET.parse(os.path.join(atlas_dir, atlas))
+        root = tree.getroot()
+        atlasRegions = [x.text.lower() for x in root[1]]
+        synonymsDict = {}
+        for atlasRegion in atlasRegions:
+            synonymsDict[atlasRegion] = getSynonyms(atlasRegion)
         try:
-            data = getAtlasVoxels(region, atlas)
-            return JSONResponse(data)
-        except KeyError:
-             return JSONResponse('"{region}" not in "{atlas}"'.format(region=region, atlas=atlas), status=400)
-#     elif request.method == 'PUT':
-#         data = JSONParser().parse(request)
-#         serializer = VoxelQuerySerializer(query, data=data)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return JSONResponse(serializer.data)
-#         return JSONResponse(serializer.errors, status=400)
-# 
-#     elif request.method == 'DELETE':
-#         query.delete()
-#         return HttpResponse(status=204)
+            searchList = toAtlas(search, graph, atlasRegions, synonymsDict)
+        except ValueError:
+            return JSONResponse('region not in atlas or ontology', status=400)
+        if searchList == 'none':
+            return JSONResponse('could not map specified region to region in specified atlas', status=400)
+        data = [[],[],[]]
+        for x in searchList:
+            voxels = getAtlasVoxels(x, atlas, atlas_dir)
+            dataTriples = []
+            for x in range(len(data[0])):
+                dataTriple = [data[0][x],data[1][x], data[2][x]]
+                dataTriples.append(dataTriple)
+            
+            for x in range(len(voxels[0])):
+                voxelsTriple = [voxels[0][x],voxels[1][x], voxels[2][x]]
+                if voxelsTriple not in dataTriples:
+                    data[0].append(voxels[0][x])
+                    data[1].append(voxels[1][x])
+                    data[2].append(voxels[2][x])
+
+        return JSONResponse(data)
+
+# def voxel_query_voxels(reguest, x, y, z, atlas):
+#     atlas = atlas + '.xml'
+#     neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))
+#     atlas_dir = os.path.join(neurovault_root, 'private_media/images/11')
 
 class JSONResponse(HttpResponse):
     """
