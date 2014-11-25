@@ -122,9 +122,9 @@ urlpatterns = patterns('',
         name='serve_pycortex_collection'),
     url(r'^statmaps/region=(?P<search>[A-Za-z0-9\-]+)~atlas=(?P<atlas>[A-Za-z0-9\-]+)/$', 
         voxel_query_region,
-        name = 'voxel_query_region')
-#     url(r'^statmaps/x=(?P<x>[0-9]+)y=(?P<y>[0-9]+)z=(?P<z>[0-9]+)~atlas=(?P<atlas>[A-Za-z0-9\-]+)/$', 
-#         voxel_query_voxels,
-#         name = 'voxel_query_voxels')
+        name = 'voxel_query_region'),
+    url(r'^statmaps/x=(?P<X>[0-9]+)y=(?P<Y>[0-9]+)z=(?P<Z>[0-9]+)~atlas=(?P<atlas>[A-Za-z0-9\-]+)/$', 
+        voxel_query_voxel,
+        name = 'voxel_query_voxel')
 
 )

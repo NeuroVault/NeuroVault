@@ -480,15 +480,15 @@ def papaya_js_embed(request, pk, iframe=None):
                               context, content_type=mimetype)
 
 @csrf_exempt
-def voxel_query_detail(request, search, atlas):
+def voxel_query_region(request, search, atlas):
     search = search.replace('-',' ')
-    atlas = atlas + '.xml'
+    atlas_file = atlas + '.xml'
     neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))
     atlas_dir = os.path.join(neurovault_root, 'private_media/images/11')
     if request.method == 'GET':
         with open(os.path.join(neurovault_root, 'neurovault/apps/statmaps/NIFgraph.pkl'),'rb') as input:
             graph = pickle.load(input)
-        tree = ET.parse(os.path.join(atlas_dir, atlas))
+        tree = ET.parse(os.path.join(atlas_dir, atlas_file))
         root = tree.getroot()
         atlasRegions = [x.text.lower() for x in root[1]]
         synonymsDict = {}
@@ -502,7 +502,7 @@ def voxel_query_detail(request, search, atlas):
             return JSONResponse('could not map specified region to region in specified atlas', status=400)
         data = [[],[],[]]
         for x in searchList:
-            voxels = getAtlasVoxels(x, atlas, atlas_dir)
+            voxels = getAtlasVoxels(x, atlas_file, atlas_dir)
             dataTriples = []
             for x in range(len(data[0])):
                 dataTriple = [data[0][x],data[1][x], data[2][x]]
@@ -517,10 +517,12 @@ def voxel_query_detail(request, search, atlas):
 
         return JSONResponse(data)
 
-# def voxel_query_voxels(reguest, x, y, z, atlas):
-#     atlas = atlas + '.xml'
-#     neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))
-#     atlas_dir = os.path.join(neurovault_root, 'private_media/images/11')
+def voxel_query_voxel(reguest, X, Y, Z, atlas):
+    atlas_file = atlas + '.xml'
+    neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))
+    atlas_dir = os.path.join(neurovault_root, 'private_media/images/11')
+    data = voxelToRegion(X,Y,Z,atlas_file, atlas_dir)
+    return JSONResponse(data)
 
 class JSONResponse(HttpResponse):
     """
