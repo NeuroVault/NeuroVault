@@ -3,7 +3,8 @@ from django.views.generic import DetailView, ListView
 from .models import Collection
 from .views import edit_collection, edit_images, view_image, delete_image, edit_image, \
                     view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
-                    serve_image, serve_pycortex, view_collection_with_pycortex
+                    serve_image, serve_pycortex, view_collection_with_pycortex, \
+                    papaya_js_embed
 from neurovault.apps.statmaps.views import view_images_by_tag,\
     view_image_with_pycortex, stats_view
 from neurovault.apps.statmaps.models import KeyValueTag
@@ -85,6 +86,9 @@ urlpatterns = patterns('',
     url(r'^images/add_for_neurosynth$',
         add_image_for_neurosynth,
         name='add_for_neurosynth'),
+    url(r'^images/(?P<pk>\d+)/js/embed$',
+        papaya_js_embed,
+        name='papaya_js_embed'),
 
     url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<img_name>[A-Za-z0-9\.\+\-\_\s]+)$',
         serve_image,

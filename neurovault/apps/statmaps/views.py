@@ -1,6 +1,6 @@
 from .models import Collection, Image
 from .forms import CollectionFormSet, CollectionForm, SingleImageForm
-from django.http.response import HttpResponseRedirect, HttpResponseForbidden
+from django.http.response import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from neurovault.apps.statmaps.forms import UploadFileForm, SimplifiedImageForm
@@ -356,7 +356,20 @@ def view_collection_with_pycortex(request, cid):
 def serve_image(request, collection_cid, img_name):
     collection = get_collection(collection_cid,request,mode='file')
     image = Image.objects.get(collection=collection,file__endswith='/'+img_name)
-    return sendfile(request, image.file.path)
+
+    # use a URI for Nginx, and a filesystem path for Apache
+    redir_path = '/private{0}'.format(format(os.path.join(settings.PRIVATE_MEDIA_URL,
+                                      str(collection.id), img_name)))
+    if settings.PRIVATE_MEDIA_REDIRECT_HEADER == 'X-Sendfile':
+        redir_path = image.file.path
+
+    response = HttpResponse(content_type='application/force-download')
+    response['Access-Control-Allow-Origin'] = '*'
+    if settings.DEBUG:
+        response.content = open(image.file.path, 'rb').read()
+    else:
+        response[settings.PRIVATE_MEDIA_REDIRECT_HEADER] = redir_path
+    return response
 
 
 def serve_pycortex(request, collection_cid, path, pycortex_dir='pycortex_all'):
@@ -381,3 +394,12 @@ def stats_view(request):
                                                 ), key=lambda t: t[1], reverse=True))
     context = {'collections_by_journals': collections_by_journals}
     return render(request, 'statmaps/stats.html.haml', context)
+
+
+def papaya_js_embed(request, pk):
+    image = get_image(pk,None,request)
+    if image.collection.private:
+        return HttpResponseForbidden()
+    context = {'image': image, 'request':request}
+    return render_to_response('statmaps/papaya_embed.tpl.js',
+                              context, content_type="text/javascript")

@@ -213,10 +213,14 @@ REST_FRAMEWORK = {
 }
 
 # Allow cross-origin requests from approved sites
-CORS_ORIGIN_REGEX_WHITELIST = (
-    '.*neurosynth.org',
-    'pilab.colorado.edu'
-    )
+#CORS_ORIGIN_REGEX_WHITELIST = (
+#    '.*neurosynth.org',
+#    'pilab.colorado.edu'
+#    '.*'
+#    )
+
+CORS_ORIGIN_ALLOW_ALL = True
+
 
 #LOGIN_URL          = '/login-form/'
 #LOGIN_REDIRECT_URL = '/logged-in/'
@@ -238,6 +242,8 @@ PRIVATE_MEDIA_URL = '/media/images'
 # For Nginx, use 'sendfile.backends.nginx'
 # For Devserver, use 'sendfile.backends.development'
 SENDFILE_BACKEND = 'sendfile.backends.development'
+
+PRIVATE_MEDIA_REDIRECT_HEADER = 'X-Accel-Redirect'
 
 PYCORTEX_DATASTORE = os.path.join(BASE_DIR,'pycortex_data')
 
