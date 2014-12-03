@@ -480,15 +480,18 @@ def papaya_js_embed(request, pk, iframe=None):
                               context, content_type=mimetype)
 
 @csrf_exempt
-def voxel_query_region(request, search, atlas):
-    search = search.replace('-',' ')
-    atlas_file = atlas + '.xml'
+def atlas_query_region(request):
+    search = request.GET.get('region','')
+    atlas = request.GET.get('atlas','').replace('\'', '')
     neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))
-    atlas_dir = os.path.join(neurovault_root, 'private_media/images/11')
+    atlas_dir = os.path.join(neurovault_root, 'private_media/')
+    atlas_image = str(Atlas.objects.filter(name=atlas)[0].file)
+    atlas_xml = str(Atlas.objects.filter(name=atlas)[0].label_description_file)
     if request.method == 'GET':
         with open(os.path.join(neurovault_root, 'neurovault/apps/statmaps/NIFgraph.pkl'),'rb') as input:
             graph = pickle.load(input)
-        tree = ET.parse(os.path.join(atlas_dir, atlas_file))
+            
+        tree = ET.parse(os.path.join(atlas_dir, atlas_xml))
         root = tree.getroot()
         atlasRegions = [x.text.lower() for x in root[1]]
         synonymsDict = {}
@@ -500,28 +503,34 @@ def voxel_query_region(request, search, atlas):
             return JSONResponse('region not in atlas or ontology', status=400)
         if searchList == 'none':
             return JSONResponse('could not map specified region to region in specified atlas', status=400)
-        data = [[],[],[]]
-        for x in searchList:
-            voxels = getAtlasVoxels(x, atlas_file, atlas_dir)
-            dataTriples = []
-            for x in range(len(data[0])):
-                dataTriple = [data[0][x],data[1][x], data[2][x]]
-                dataTriples.append(dataTriple)
-            
-            for x in range(len(voxels[0])):
-                voxelsTriple = [voxels[0][x],voxels[1][x], voxels[2][x]]
-                if voxelsTriple not in dataTriples:
-                    data[0].append(voxels[0][x])
-                    data[1].append(voxels[1][x])
-                    data[2].append(voxels[2][x])
+        data = {'voxels':getAtlasVoxels(searchList, atlas_image, atlas_xml, atlas_dir)}
+#         for x in searchList:
+#             voxels = getAtlasVoxels(x, atlas_image, atlas_xml, atlas_dir)
+#             dataTriples = []
+#             for x in range(len(data[0])):
+#                 dataTriple = [data['x_coordinates'][x],data[1][x], data[2][x]]
+#                 dataTriples.append(dataTriple)
+#             
+#             for x in range(len(voxels[0])):
+#                 voxelsTriple = [voxels['x_coordinates'][x],voxels[1][x], voxels[2][x]]
+#                 if voxelsTriple not in dataTriples:
+#                     data['x_coordinates'].append(voxels[0][x])
+#                     data['y_coordinates'].append(voxels[1][x])
+#                     data['z_coordinates'].append(voxels[2][x])
 
         return JSONResponse(data)
 
-def voxel_query_voxel(reguest, X, Y, Z, atlas):
-    atlas_file = atlas + '.xml'
+@csrf_exempt
+def atlas_query_voxel(request):
+    X = request.GET.get('x','')
+    Y = request.GET.get('y','')
+    Z = request.GET.get('z','')
+    atlas = request.GET.get('atlas','').replace('\'', '')
     neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))
-    atlas_dir = os.path.join(neurovault_root, 'private_media/images/11')
-    data = voxelToRegion(X,Y,Z,atlas_file, atlas_dir)
+    atlas_dir = os.path.join(neurovault_root, 'private_media/')
+    atlas_image = str(Atlas.objects.filter(name=atlas)[0].file)
+    atlas_xml = str(Atlas.objects.filter(name=atlas)[0].label_description_file)
+    data = voxelToRegion(X,Y,Z,atlas_image, atlas_xml, atlas_dir)
     return JSONResponse(data)
 
 class JSONResponse(HttpResponse):

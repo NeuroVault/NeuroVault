@@ -120,11 +120,11 @@ urlpatterns = patterns('',
     url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/pycortex_all/(?P<path>.*)$',
         serve_pycortex,
         name='serve_pycortex_collection'),
-    url(r'^statmaps/region=(?P<search>[A-Za-z0-9\-]+)~atlas=(?P<atlas>[A-Za-z0-9\-]+)/$', 
-        voxel_query_region,
+    url(r'^api/atlas_query_region/$', 
+        atlas_query_region,
         name = 'voxel_query_region'),
-    url(r'^statmaps/x=(?P<X>[0-9]+)y=(?P<Y>[0-9]+)z=(?P<Z>[0-9]+)~atlas=(?P<atlas>[A-Za-z0-9\-]+)/$', 
-        voxel_query_voxel,
-        name = 'voxel_query_voxel')
+    url(r'^api/atlas_query_voxel/$', 
+        atlas_query_voxel,
+        name = 'atlas_query_voxel')
 
 )

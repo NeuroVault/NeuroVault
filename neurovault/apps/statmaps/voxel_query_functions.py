@@ -12,42 +12,31 @@ import cPickle as pickle
 
 
 
-def getAtlasVoxels(region, atlas_file, atlas_dir):
-	tree = ET.parse(os.path.join(atlas_dir, atlas_file))
+def getAtlasVoxels(regions, atlas_image, atlas_xml, atlas_dir):
+	tree = ET.parse(os.path.join(atlas_dir, atlas_xml))
 	root = tree.getroot()
-	summaryimagelist = []
-	summaryimagefile = ''
-	root_header = root.find('header')
-	for images in root_header.findall('images'):
-		if '2mm' in images.find('summaryimagefile').text:
-			summaryimagefile = images.find('summaryimagefile').text
 			
-	atlas_name = os.path.basename(summaryimagefile) + '.nii.gz'
-	atlas=nibabel.load(os.path.join(atlas_dir, atlas_name))
+	atlas=nibabel.load(os.path.join(atlas_dir, atlas_image))
 	atlas_data=atlas.get_data()
 	name_value = 0
-	data = root.find
+	atlas_mask = numpy.zeros(atlas_data.shape)
 	
 	for i in range(len(root[1])):
 		name = root[1][i].text.replace("'",'').rstrip(' ').lower()
-		if name == region.lower():
+		if name in [region.lower() for region in regions]:
+			#FIXME read index property
 			name_value = i+1
-			voxels = numpy.where(atlas_data==name_value)
-			return voxels
-	raise ValueError('"{region}" not in "{atlas_file}"'.format(region=region, atlas_file=atlas_file))
+			atlas_mask[atlas_data==name_value] = True
+	if atlas_mask.sum() != 0:
+		voxels = numpy.where(atlas_mask)
+		return voxels
+	else:
+		raise ValueError('"{region}" not in "{atlas_xml}"'.format(region=region, atlas_xml=atlas_xml))
 
-def voxelToRegion(X,Y,Z,atlas_file, atlas_dir):
-	tree = ET.parse(os.path.join(atlas_dir, atlas_file))
-	root = tree.getroot()
-	summaryimagelist = []
-	summaryimagefile = ''
-	root_header = root.find('header')
-	for images in root_header.findall('images'):
-		if '2mm' in images.find('summaryimagefile').text:
-			summaryimagefile = images.find('summaryimagefile').text
-			
-	atlas_name = os.path.basename(summaryimagefile) + '.nii.gz'
-	atlas=nibabel.load(os.path.join(atlas_dir, atlas_name))
+def voxelToRegion(X,Y,Z, atlas_image, atlas_xml, atlas_dir):
+	tree = ET.parse(os.path.join(atlas_dir, atlas_xml))
+	root = tree.getroot()	
+	atlas=nibabel.load(os.path.join(atlas_dir, atlas_image))
 	atlas_data=atlas.get_data()
 	atlasRegions = [x.text.lower() for x in root[1]]
 	index = atlas_data[X,Y,Z] - 1
