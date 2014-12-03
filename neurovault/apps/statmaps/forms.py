@@ -14,7 +14,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Submit, HTML, Button, Row, Field, Hidden
 from crispy_forms.bootstrap import AppendedText, PrependedText, FormActions, TabHolder, Tab
 
-from .models import Collection, Image
+from .models import Collection, Image, User
 from django.forms.forms import Form
 from django.forms.fields import FileField
 import tempfile
@@ -262,7 +262,9 @@ class CollectionForm(ModelForm):
                 *fs[1]['fields']
             )
             )
-        self.helper.layout.extend([tab_holder, Submit('submit', 'Save', css_class="btn-large offset2")])
+        self.helper.layout.extend([tab_holder, Submit(
+                                  'submit','Save', css_class="btn-large offset2")])
+        self.fields['contributors'].queryset = User.objects.exclude(pk=self.instance.owner.pk)
 
 
 class ContributorCollectionForm(CollectionForm):
