@@ -22,6 +22,11 @@ from neurovault.apps.statmaps.utils import split_filename, get_paper_properties
 from django.core.files.base import File, ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django import forms
+from django.forms.models import ModelMultipleChoiceField
+from django.utils.encoding import force_unicode, smart_str
+from django.utils.safestring import mark_safe
+from django.forms.util import flatatt
+
 
 # Create the form class.
 collection_fieldsets = [
@@ -217,7 +222,56 @@ collection_row_attrs = {
 }
 
 
+class CommaSeperatedContribWidget(forms.Widget):
+    def render(self, name, value, attrs=None):
+        final_attrs = self.build_attrs(attrs, type='text', name=name)
+
+        if not type(value) == unicode:
+            values = []
+            for val in value:
+                try:
+                    values.append(str(User.objects.get(pk=val).username))
+                except:
+                    continue
+            value = ', '.join(values)
+            if value:
+                final_attrs['value'] = smart_str(value)
+        else:
+            final_attrs['value'] = smart_str(value)
+        return mark_safe(u'<input%s />' % flatatt(final_attrs))
+
+
+class ContributorCommaField(ModelMultipleChoiceField):
+    widget = CommaSeperatedContribWidget
+
+    def clean(self,value):
+
+        if self.required and not value:
+            raise ValidationError(self.error_messages['required'])
+        elif not self.required and not value:
+            return []
+
+        values = value.split(',')
+
+        if not isinstance(values, (list, tuple)):
+            raise ValidationError("Invalid input.")
+
+        for name in values:
+            try:
+                self.queryset.filter(username=name)
+            except ValueError:
+                raise ValidationError("Invalid user.")
+        qs = self.queryset.filter(username__in=values)
+        usernames = set([force_unicode(o.username) for o in qs])
+
+        for val in values:
+            if force_unicode(val) not in usernames:
+                raise ValidationError("User %s not found." % val)
+        return qs
+
+
 class CollectionForm(ModelForm):
+    contributors = ContributorCommaField(queryset=None,required=False)
 
     class Meta:
         exclude = ('owner','private_token')
@@ -251,6 +305,7 @@ class CollectionForm(ModelForm):
     def __init__(self, *args, **kwargs):
 
         super(CollectionForm, self).__init__(*args, **kwargs)
+        self.fields['contributors'].queryset = User.objects.exclude(pk=self.instance.owner.pk)
 
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
@@ -264,9 +319,6 @@ class CollectionForm(ModelForm):
             )
         self.helper.layout.extend([tab_holder, Submit(
                                   'submit','Save', css_class="btn-large offset2")])
-
-        if 'contributors' in self.fields:
-            self.fields['contributors'].queryset = User.objects.exclude(pk=self.instance.owner.pk)
 
 
 class ContributorCollectionForm(CollectionForm):
