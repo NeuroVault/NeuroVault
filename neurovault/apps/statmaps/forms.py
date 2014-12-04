@@ -264,7 +264,9 @@ class CollectionForm(ModelForm):
             )
         self.helper.layout.extend([tab_holder, Submit(
                                   'submit','Save', css_class="btn-large offset2")])
-        self.fields['contributors'].queryset = User.objects.exclude(pk=self.instance.owner.pk)
+
+        if 'contributors' in self.fields:
+            self.fields['contributors'].queryset = User.objects.exclude(pk=self.instance.owner.pk)
 
 
 class ContributorCollectionForm(CollectionForm):
