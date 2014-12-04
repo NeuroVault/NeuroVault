@@ -15,18 +15,14 @@ import cPickle as pickle
 def getAtlasVoxels(regions, atlas_image, atlas_xml, atlas_dir):
 	tree = ET.parse(os.path.join(atlas_dir, atlas_xml))
 	root = tree.getroot()
-			
 	atlas=nibabel.load(os.path.join(atlas_dir, atlas_image))
 	atlas_data=atlas.get_data()
-	name_value = 0
 	atlas_mask = numpy.zeros(atlas_data.shape)
-	
-	for i in range(len(root[1])):
-		name = root[1][i].text.replace("'",'').rstrip(' ').lower()
+	for line in root[1]:
+		name = line.text.replace("'",'').rstrip(' ').lower()
 		if name in [region.lower() for region in regions]:
-			#FIXME read index property
-			name_value = i+1
-			atlas_mask[atlas_data==name_value] = True
+			index = int(line.get('index'))
+			atlas_mask[atlas_data==index] = True
 	if atlas_mask.sum() != 0:
 		voxels = numpy.where(atlas_mask)
 		return voxels
