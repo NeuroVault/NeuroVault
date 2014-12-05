@@ -1,5 +1,5 @@
 from .models import Collection, Image
-from .forms import CollectionFormSet, CollectionForm, SingleImageForm,OwnerCollectionForm
+from .forms import CollectionFormSet, CollectionForm, SingleImageForm, OwnerCollectionForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
@@ -398,3 +398,17 @@ def stats_view(request):
                                                 ), key=lambda t: t[1], reverse=True))
     context = {'collections_by_journals': collections_by_journals}
     return render(request, 'statmaps/stats.html.haml', context)
+
+
+def papaya_js_embed(request, pk, iframe=None):
+    tpl = 'papaya_embed.tpl.js'
+    mimetype = "text/javascript"
+    if iframe is not None:
+        tpl = 'papaya_frame.html.haml'
+        mimetype = "text/html"
+    image = get_image(pk,None,request)
+    if image.collection.private:
+        return HttpResponseForbidden()
+    context = {'image': image, 'request':request}
+    return render_to_response('statmaps/%s' % tpl,
+                              context, content_type=mimetype)

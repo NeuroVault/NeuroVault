@@ -3,6 +3,7 @@
 <head>
     <title>{% block title %}NeuroVault: a new home for all brain statistical maps!{% endblock %}</title>
     {% block includes %}{% endblock %}
+    {% block global_includes %}
     <script src="{% static "scripts/jquery-1.10.2.min.js"%}" type="text/javascript"></script>
     <script src="{% static "scripts/jquery-ui.min.js"%}" type="text/javascript"></script>
     <script src="{% static "scripts/jquery.cookie.js"%}" type="text/javascript"></script>
@@ -15,10 +16,12 @@
     <link rel="stylesheet" href="{% static "css/datatables.css" %}" />
     <link href="http://netdna.bootstrapcdn.com/font-awesome/3.1.1/css/font-awesome.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static "css/style.css" %}" />
+    {% endblock %}
     {% block head %}{% endblock %}
 	{% block functions %}{% endblock %}
 </head>
 
+{% block body %}
 <body>
 <!-- UserVoice JavaScript SDK (only needed once on a page) -->
 <script>(function(){var uv=document.createElement('script');uv.type='text/javascript';uv.async=true;uv.src='//widget.uservoice.com/py7m8MbdHZIXptw3qAaw.js';var s=document.getElementsByTagName('script')[0];s.parentNode.insertBefore(uv,s)})()</script>
@@ -32,7 +35,7 @@
 					<li><a href="{% url 'collections_list' %}">See all collections</a></li>
 					<li><a href="{% url 'FAQ' %}">FAQ</a></li>
 					<li><a href="javascript:void(0)" data-uv-lightbox="classic_widget" data-uv-mode="full" data-uv-primary-color="#cc6d00" data-uv-link-color="#007dbf" data-uv-default-mode="feedback" data-uv-forum-id="210717">Give feedback</a>
-					</li>    
+					</li>
 				</ul>
 				<ul class="nav pull-right">
 					{% if request.user.is_authenticated %}
@@ -50,7 +53,7 @@
 	                {% else %}
                         <li><a href="{% url 'login' %}">Log in</a></li>
                     {% endif %}
-				</ul>					              				       
+				</ul>
             </div>
         </div>
         <div class="row" id="content">
@@ -66,13 +69,14 @@
       _gaq.push(['_require', 'inpage_linkid', pluginUrl]);
       _gaq.push(['_setAccount', 'UA-339450-10']);
       _gaq.push(['_trackPageview']);
-    
+
       (function() {
         var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
         ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
         var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
       })();
-    
+
     </script>
 </body>
+{% endblock %}
 </html>
