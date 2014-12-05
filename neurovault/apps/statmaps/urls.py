@@ -88,7 +88,7 @@ urlpatterns = patterns('',
         add_image_for_neurosynth,
         name='add_for_neurosynth'),
 
-    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<img_name>[A-Za-z0-9\.\+\-\_\s]+)$',
+    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<img_name>[A-Za-z0-9\.\+\-\_\s\[\]]+)$',
         serve_image,
         name='serve_image'),
 
