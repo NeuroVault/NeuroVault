@@ -1,5 +1,5 @@
 from django.conf.urls import patterns, url
-from django.views.generic import DetailView, ListView
+from django.views.generic import ListView
 from .models import Collection
 from .views import edit_collection, edit_images, view_image, delete_image, edit_image, \
                     view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
@@ -12,14 +12,16 @@ from django.db.models import Count
 from django.contrib.auth.decorators import login_required
 from neurovault import settings
 from django.views.generic.base import RedirectView
+from django.db.models import Q
 
 
 class MyCollectionsListView(ListView):
-    template_name='statmaps/my_collections.html.haml'
+    template_name = 'statmaps/my_collections.html.haml'
     context_object_name = 'collections'
 
     def get_queryset(self):
-        return Collection.objects.filter(owner=self.request.user).annotate(n_images=Count('image'))
+        return Collection.objects.filter(Q(contributors=self.request.user)
+                            | Q(owner=self.request.user)).annotate(n_images=Count('image'))
 
 urlpatterns = patterns('',
     url(r'^my_collections/$',
@@ -94,7 +96,7 @@ urlpatterns = patterns('',
         papaya_js_embed,
         {'iframe':True},name='papaya_iframe_embed'),
 
-    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<img_name>[A-Za-z0-9\.\+\-\_\s]+)$',
+    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<img_name>[A-Za-z0-9\.\+\-\_\s\[\]]+)$',
         serve_image,
         name='serve_image'),
 

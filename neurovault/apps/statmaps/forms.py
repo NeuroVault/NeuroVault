@@ -7,6 +7,7 @@ import numpy as np
 
 from django.forms import ModelForm
 from django.forms.models import inlineformset_factory
+from django.forms.models import BaseInlineFormSet
 from django.core.exceptions import ValidationError
 # from form_utils.forms import BetterModelForm
 
@@ -14,21 +15,25 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Submit, HTML, Button, Row, Field, Hidden
 from crispy_forms.bootstrap import AppendedText, PrependedText, FormActions, TabHolder, Tab
 
-from .models import Collection, Image
+from .models import Collection, Image,ValueTaggedItem, User
+
 from django.forms.forms import Form
 from django.forms.fields import FileField
 import tempfile
-from neurovault.apps.statmaps.utils import split_filename, get_paper_properties
-from django.core.files.base import File, ContentFile
-from django.core.files.uploadedfile import InMemoryUploadedFile
+from neurovault.apps.statmaps.utils import split_filename, get_paper_properties, \
+                                        detect_afni4D, split_afni4D_to_3D, memory_uploadfile
 from django import forms
+from django.forms.models import ModelMultipleChoiceField
+from django.utils.encoding import smart_str
+from django.utils.safestring import mark_safe
+from django.forms.util import flatatt
+
 
 # Create the form class.
 collection_fieldsets = [
     ('Essentials', {'fields': ['name',
                                'DOI',
-                               'description',
-                               'private'],
+                               'description'],
                     'legend': 'Essentials'}),
     ('Participants', {'fields': ['number_of_subjects',
                                  'subject_age_mean',
@@ -216,20 +221,55 @@ collection_row_attrs = {
 }
 
 
+class ContributorCommaSepInput(forms.Widget):
+    def render(self, name, value, attrs=None):
+        final_attrs = self.build_attrs(attrs, type='text', name=name)
+        if not type(value) == unicode and value is not None:
+            out_vals = []
+            for val in value:
+                try:
+                    out_vals.append(str(User.objects.get(pk=val).username))
+                except:
+                    continue
+            value = ', '.join(out_vals)
+            if value:
+                final_attrs['value'] = smart_str(value)
+        else:
+            final_attrs['value'] = smart_str(value)
+        return mark_safe(u'<input%s />' % flatatt(final_attrs))
+
+
+class ContributorCommaField(ModelMultipleChoiceField):
+    widget = ContributorCommaSepInput
+
+    def clean(self,value):
+        if self.required and not value:
+            raise ValidationError(self.error_messages['required'])
+        elif not self.required and not value:
+            return []
+
+        split_vals = [v.strip() for v in value.split(',')]
+
+        if not isinstance(split_vals, (list, tuple)):
+            raise ValidationError("Invalid input.")
+
+        for name in split_vals:
+            if not len(self.queryset.filter(username=name)):
+                raise ValidationError("User %s does not exist." % name)
+
+        return self.queryset.filter(username__in=split_vals)
+
+
 class CollectionForm(ModelForm):
-    
+
     class Meta:
-        exclude = ('owner','private_token')
+        exclude = ('owner','private_token','contributors','private')
         model = Collection
-        widgets = {
-            'private': forms.RadioSelect
-        }
         # fieldsets = study_fieldsets
         # row_attrs = study_row_attrs
 
     def clean(self):
         cleaned_data = super(CollectionForm, self).clean()
-
         doi = self.cleaned_data['DOI']
         if doi.strip() == '':
             self.cleaned_data['DOI'] = None
@@ -262,7 +302,27 @@ class CollectionForm(ModelForm):
                 *fs[1]['fields']
             )
             )
-        self.helper.layout.extend([tab_holder, Submit('submit', 'Save', css_class="btn-large offset2")])
+        self.helper.layout.extend([tab_holder, Submit(
+                                  'submit','Save', css_class="btn-large offset2")])
+
+
+class OwnerCollectionForm(CollectionForm):
+    contributors = ContributorCommaField(queryset=None,required=False)
+
+    class Meta():
+        exclude = ('owner','private_token')
+        model = Collection
+        widgets = {
+            'private': forms.RadioSelect
+        }
+
+    def __init__(self, *args, **kwargs):
+        # explicitly populate owner-only fields to fieldsets
+        for field in ['contributors','private']:
+            if field not in collection_fieldsets[0][1]['fields']:
+                collection_fieldsets[0][1]['fields'].append(field)
+        super(OwnerCollectionForm, self).__init__(*args, **kwargs)
+        self.fields['contributors'].queryset = User.objects.exclude(pk=self.instance.owner.pk)
 
 
 class ImageForm(ModelForm):
@@ -273,12 +333,15 @@ class ImageForm(ModelForm):
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
         self.helper.form_tag = False
+        self.afni_subbricks = []
+        self.afni_tmp = None
 
     class Meta:
         model = Image
         exclude = ('json_path', 'collection')
 
-    def clean(self):
+    def clean(self, **kwargs):
+
         cleaned_data = super(ImageForm, self).clean()
         file = cleaned_data.get("file")
 
@@ -314,13 +377,14 @@ class ImageForm(ModelForm):
                         return cleaned_data
 
                 # write the data file to a temporary directory
-                f = open(os.path.join(tmp_dir, fname + ext), "wb")
+                nii_tmp = os.path.join(tmp_dir, fname + ext)
+                f = open(nii_tmp, "wb")
                 f.write(file.file.read())
                 f.close()
 
                 # check if it is really nifti
                 try:
-                    nii = nb.load(os.path.join(tmp_dir, fname + ext))
+                    nii = nb.load(nii_tmp)
                 except Exception as e:
                     self._errors["file"] = self.error_class([str(e)])
                     del cleaned_data["file"]
@@ -328,17 +392,26 @@ class ImageForm(ModelForm):
 
                 # convert to nii.gz if needed
                 if ext.lower() != ".nii.gz":
-                    #Papaya does not handle flaot64, but by converting files we loose precision
-#                     if nii.get_data_dtype() == np.float64:
-#                         nii.set_data_dtype(np.float32)
-                    nb.save(nii, os.path.join(tmp_dir, fname + ".nii.gz"))
-                    f = ContentFile(open(os.path.join(tmp_dir, fname + ".nii.gz")).read())
-                    print cleaned_data["file"].__class__.__name__
-                    cleaned_data["file"] = InMemoryUploadedFile(f, "file", fname + ".nii.gz",
-                                                                cleaned_data["file"].content_type, f.size, cleaned_data["file"].charset)
+
+                    #Papaya does not handle float64, but by converting files we loose precision
+                    #if nii.get_data_dtype() == np.float64:
+                    #ii.set_data_dtype(np.float32)
+                    nii_tmp = os.path.join(tmp_dir, fname + ".nii.gz")
+                    nb.save(nii, nii_tmp)
+
+                    cleaned_data['file'] = memory_uploadfile(nii_tmp, fname + "nii.gz",
+                                                             cleaned_data['file'])
+
+                # detect AFNI 4D files and prepare 3D slices
+                if nii_tmp is not None and detect_afni4D(nii_tmp):
+                    self.afni_subbricks = split_afni4D_to_3D(nii_tmp)
+
             finally:
                 try:
-                    shutil.rmtree(tmp_dir)  # delete directory
+                    if self.afni_subbricks:
+                        self.afni_tmp = tmp_dir  # keep temp dir for AFNI slicing
+                    else:
+                        shutil.rmtree(tmp_dir)
                 except OSError as exc:
                     if exc.errno != 2:  # code 2 - no such file or directory
                         raise  # re-raise exception
@@ -368,10 +441,54 @@ class SimplifiedImageForm(SingleImageForm):
         fields = ('name', 'collection', 'description', 'map_type',
                   'file', 'hdr_file', 'tags')
 
+
+class CollectionInlineFormset(BaseInlineFormSet):
+
+    def save_afni_slices(self,form,commit):
+        try:
+            orig_img = form.instance
+            first_img = None
+
+            for n,(label,brick) in enumerate(form.afni_subbricks):
+                brick_fname = os.path.split(brick)[-1]
+                mfile = memory_uploadfile(brick, brick_fname, orig_img.file)
+                brick_img = Image(name='%s - %s' % (orig_img.name, label), file=mfile)
+                for field in ['collection','description','map_type']:
+                    setattr(brick_img, field, form.cleaned_data[field])
+
+                if n == 0:
+                    form.instance = brick_img
+                    first_img = form.save()
+                else:
+                    brick_img.save()
+                    for tag in first_img.tags.all():
+                        tagobj = ValueTaggedItem(content_object=brick_img,tag=tag)
+                        tagobj.save()
+
+        finally:
+            shutil.rmtree(form.afni_tmp)
+        return form
+
+    def save_new(self,form,commit=True):
+        if form.afni_subbricks:
+            form = self.save_afni_slices(form,commit)
+            return form.instance
+        else:
+            return super(CollectionInlineFormset, self).save_new(form,commit=commit)
+
+    def save_existing(self,form,instance,commit=True):
+        if form.afni_subbricks:
+            form = self.save_afni_slices(form,commit)
+            return form.instance
+        else:
+            return super(CollectionInlineFormset, self).save_existing(
+                                                            form, instance, commit=commit)
+
+
 CollectionFormSet = inlineformset_factory(
     Collection, Image, form=ImageForm,
     exclude=['json_path', 'nifti_gz_file', 'collection'],
-    extra=1)
+    extra=1, formset=CollectionInlineFormset)
 
 
 class UploadFileForm(Form):

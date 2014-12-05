@@ -4,9 +4,10 @@ from django.contrib import admin
 from neurovault.apps.statmaps.models import Image, Collection
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf.urls.static import static
+from rest_framework.filters import DjangoFilterBackend
 admin.autodiscover()
 from django.contrib.auth.models import User, Group
-from rest_framework import viewsets, routers, serializers
+from rest_framework import viewsets, routers, serializers, mixins
 from rest_framework.decorators import link
 from rest_framework.response import Response
 from taggit.models import Tag
@@ -42,6 +43,13 @@ class HyperlinkedImageURL(serializers.CharField):
             return request.build_absolute_uri(value)
 
 
+class SerializedContributors(serializers.CharField):
+
+    def to_native(self, value):
+        if value:
+            return ', '.join([v.username for v in value.all()])
+
+
 class APIHelper:
     ''' Contains generic helper methods to call from various
     serializers and viewsets. '''
@@ -71,18 +79,23 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Image
-
+        
 
 class CollectionSerializer(serializers.ModelSerializer):
+    images = ImageSerializer(source='image_set')
+
+    contributors = SerializedContributors(source='contributors')
 
     class Meta:
         model = Collection
-        exclude = ['private_token']
+        exclude = ['private_token', 'private']
 
 
-class ImageViewSet(viewsets.ModelViewSet):
+class ImageViewSet(mixins.RetrieveModelMixin,
+                   mixins.ListModelMixin,
+                   viewsets.GenericViewSet):
 
-    queryset = Image.objects.all()
+    queryset = Image.objects.filter(collection__private=False)
     serializer_class = ImageSerializer
 
     def _get_api_image(self,request,pk=None):
@@ -108,16 +121,15 @@ class ImageViewSet(viewsets.ModelViewSet):
         data = ImageSerializer(image, context={'request': request}).data
         return Response(data)
 
-    def list(self, request):
-        queryset = Image.objects.filter(collection__private=False)
-        data = ImageSerializer(queryset, context={'request': request}).data
-        return Response(data)
 
+class CollectionViewSet(mixins.RetrieveModelMixin,
+                        mixins.ListModelMixin,
+                        viewsets.GenericViewSet):
 
-class CollectionViewSet(viewsets.ModelViewSet):
-
-    queryset = Collection.objects.filter()
+    queryset = Collection.objects.filter(private=False)
+    filter_fields = ('name', 'DOI', 'owner')
     serializer_class = CollectionSerializer
+    filter_backends = (DjangoFilterBackend,)
 
     @link()
     def datatable(self, request, pk=None):
@@ -128,11 +140,6 @@ class CollectionViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, pk=None):
         collection = get_collection(pk,request,mode='api')
         data = CollectionSerializer(collection).data
-        return Response(data)
-
-    def list(self, request):
-        queryset = Collection.objects.filter(private=False)
-        data = CollectionSerializer(queryset).data
         return Response(data)
 
 
