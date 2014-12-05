@@ -79,7 +79,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Image
-        
+
 
 class CollectionSerializer(serializers.ModelSerializer):
     images = ImageSerializer(source='image_set')
@@ -134,12 +134,12 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
     @link()
     def datatable(self, request, pk=None):
         collection = get_collection(pk,request,mode='api')
-        data = CollectionSerializer(collection).data
+        data = CollectionSerializer(collection, context={'request': request}).data
         return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date'])
 
     def retrieve(self, request, pk=None):
         collection = get_collection(pk,request,mode='api')
-        data = CollectionSerializer(collection).data
+        data = CollectionSerializer(collection, context={'request': request}).data
         return Response(data)
 
 
