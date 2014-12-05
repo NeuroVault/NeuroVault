@@ -90,6 +90,10 @@ urlpatterns = patterns('',
         papaya_js_embed,
         name='papaya_js_embed'),
 
+    url(r'^images/(?P<pk>\d+)/papaya/embedview$',
+        papaya_js_embed,
+        {'iframe':True},name='papaya_iframe_embed'),
+
     url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<img_name>[A-Za-z0-9\.\+\-\_\s]+)$',
         serve_image,
         name='serve_image'),

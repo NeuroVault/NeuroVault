@@ -396,10 +396,15 @@ def stats_view(request):
     return render(request, 'statmaps/stats.html.haml', context)
 
 
-def papaya_js_embed(request, pk):
+def papaya_js_embed(request, pk, iframe=None):
+    tpl = 'papaya_embed.tpl.js'
+    mimetype = "text/javascript"
+    if iframe is not None:
+        tpl = 'papaya_frame.html.haml'
+        mimetype = "text/html"
     image = get_image(pk,None,request)
     if image.collection.private:
         return HttpResponseForbidden()
     context = {'image': image, 'request':request}
-    return render_to_response('statmaps/papaya_embed.tpl.js',
-                              context, content_type="text/javascript")
+    return render_to_response('statmaps/%s' % tpl,
+                              context, content_type=mimetype)
