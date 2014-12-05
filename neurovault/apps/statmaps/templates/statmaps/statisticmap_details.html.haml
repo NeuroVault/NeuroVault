@@ -41,12 +41,12 @@
             %p Contributed by {{ user.username }} on {{ image.add_date|date:"N j, Y" }}
             %p <b>Collection</b>: <a href="{{ image.collection.get_absolute_url }}">{{ image.collection.name }}</a>
             - if image.description
-            	%p <b>Description</b>: {{ image.description }}
+                %p <b>Description</b>: {{ image.description }}
             - if image.tags.all
-	            %p <b>Tags</b>:
-	                - for tag in image.tags.all
-	                    %a{ href: "/images/tags/{{tag.name}}" }= tag.name
-	                    - if not forloop.last
+                %p <b>Tags</b>:
+                    - for tag in image.tags.all
+                        %a{ href: "/images/tags/{{tag.name}}" }= tag.name
+                        - if not forloop.last
             %a.btn.btn-primary.btn-large{href: "pycortex" } 3D View
             %a.btn.btn-primary.btn-large{href: "{{ image.file.url }}" } Download
             %a.btn.btn-primary.btn-large{href: "http://neurosynth.org/decode/?neurovault={{ api_cid }}" } Decode with neurosynth
@@ -60,8 +60,12 @@
                 %a{href:'#papaya_viewer', data-toggle:'tab'} Papaya viewer
             %li
                 %a{href:'#details', data-toggle:'tab'} Details
+            %li
+                %a{href:'#embed', data-toggle:'tab'} Embed
 
         .tab-content
+            #papaya_viewer.tab-pane.active
+                {% include 'statmaps/_papaya_viewer_content.html.haml' %}
             #details.tab-pane
                 %table.table.table-condensed.table-striped.table-hover.image-details-datatable
                     %thead
@@ -69,6 +73,9 @@
                             %th Field
                             %th Value
                     %tbody
-            #papaya_viewer.tab-pane.active
-                {% include 'statmaps/_papaya_viewer_content.html.haml' %}
+            #embed.tab-pane
+                <div class="well">
+                    <h5>Copy and paste this snippet to embed this map into your website or blog:</h5>
+                    <textarea class="nv-papaya-copy-snippet"><div id="NeuroVaultPapayaHolder"><script src="http://{{ request.get_host }}{% url 'image_details' image.id %}js/embed" type="text/javascript" charset="utf-8"></script></div></textarea>
+                </div>
 {% endblock %}
