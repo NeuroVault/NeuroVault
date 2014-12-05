@@ -3,9 +3,9 @@ from django.views.generic import ListView
 from .models import Collection
 from .views import edit_collection, edit_images, view_image, delete_image, edit_image, \
                     view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
-                    serve_image, serve_pycortex, view_collection_with_pycortex, \
+                    serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
                     papaya_js_embed
-from neurovault.apps.statmaps.views import view_images_by_tag,\
+from neurovault.apps.statmaps.views import view_images_by_tag, \
     view_image_with_pycortex, stats_view
 from neurovault.apps.statmaps.models import KeyValueTag
 from django.db.models import Count
@@ -51,6 +51,9 @@ urlpatterns = patterns('',
     url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/editimages$',
         edit_images,
         name="edit_images"),
+    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/addimage',
+        add_image,
+        name="add_image"),
     url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/upload_folder$',
         upload_folder,
         name="upload_folder"),

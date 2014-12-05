@@ -1,9 +1,9 @@
 from .models import Collection, Image
-from .forms import CollectionFormSet, CollectionForm, SingleImageForm, OwnerCollectionForm
+from .forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
+    StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
-from neurovault.apps.statmaps.forms import UploadFileForm, SimplifiedImageForm
 from django.template.context import RequestContext
 from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
@@ -25,6 +25,10 @@ import re
 import tempfile
 import os
 from collections import OrderedDict
+from neurovault.apps.statmaps.models import StatisticMap, Atlas
+from glob import glob
+from xml.dom import minidom
+from neurovault.apps.statmaps.forms import EditAtlasForm
 
 
 def owner_or_contrib(request,collection):
@@ -82,7 +86,7 @@ def edit_images(request, collection_cid):
         formset = CollectionFormSet(instance=collection)
 
     context = {"formset": formset}
-    return render(request, "statmaps/edit_images.html.haml", context)
+    return render(request, "statmaps/edit_images_simpler.html.haml", context)
 
 
 @login_required
@@ -140,8 +144,14 @@ def view_image(request, pk, collection_cid=None):
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
     context = {'image': image, 'user': image.collection.owner, 'user_owns_image': user_owns_image,
-            'api_cid':api_cid}
-    return render(request, 'statmaps/image_details.html.haml', context)
+               'api_cid':api_cid}
+    if isinstance(image, StatisticMap):
+        template = 'statmaps/statisticmap_details.html.haml'
+    elif isinstance(image, Atlas):
+        template = 'statmaps/atlas_details.html.haml'
+    else:
+        template = 'statmaps/image_details.html.haml'
+    return render(request, template, context)
 
 
 def view_collection(request, cid):
@@ -174,15 +184,21 @@ def delete_collection(request, cid):
 @login_required
 def edit_image(request, pk):
     image = get_object_or_404(Image,pk=pk)
+    if isinstance(image, StatisticMap):
+        form = EditStatisticMapForm
+    elif isinstance(image, Atlas):
+        form = EditAtlasForm
+    else:
+        raise Exception("unsuported image type")
     if not owner_or_contrib(request,image.collection):
         return HttpResponseForbidden()
     if request.method == "POST":
-        form = SingleImageForm(request.user, request.POST, request.FILES, instance=image)
+        form = form(request.user, request.POST, request.FILES, instance=image)
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(image.get_absolute_url())
     else:
-        form = SingleImageForm(request.user, instance=image)
+        form = form(request.user, instance=image)
 
     context = {"form": form}
     return render(request, "statmaps/edit_image.html.haml", context)
@@ -204,16 +220,32 @@ def add_image_for_neurosynth(request):
         temp_collection.save()
     image = Image(collection=temp_collection)
     if request.method == "POST":
-        form = SimplifiedImageForm(request.user, request.POST, request.FILES, instance=image)
+        form = SimplifiedStatisticMapForm(request.user, request.POST, request.FILES, instance=image)
         if form.is_valid():
             image = form.save()
             return HttpResponseRedirect("http://neurosynth.org/decode/?neurovault=%s-%s" % (
                 temp_collection.private_token,image.id))
     else:
-        form = SimplifiedImageForm(request.user, instance=image)
+        form = SimplifiedStatisticMapForm(request.user, instance=image)
 
     context = {"form": form}
     return render(request, "statmaps/add_image_for_neurosynth.html.haml", context)
+
+
+@login_required
+def add_image(request, collection_cid):
+    collection = get_collection(collection_cid,request)
+    image = Image(collection=collection)
+    if request.method == "POST":
+        form = StatisticMapForm(request.POST, request.FILES, instance=image)
+        if form.is_valid():
+            image = form.save()
+            return HttpResponseRedirect(image.get_absolute_url())
+    else:
+        form = StatisticMapForm(instance=image)
+
+    context = {"form": form}
+    return render(request, "statmaps/add_image.html.haml", context)
 
 
 @login_required
@@ -250,6 +282,7 @@ def upload_folder(request, collection_cid):
                 else:
                     raise
 
+                atlases = {}
                 for root, _, filenames in os.walk(tmp_directory, topdown=False):
                     filenames = [f for f in filenames if not f[0] == '.']
                     for fname in filenames:
@@ -257,6 +290,16 @@ def upload_folder(request, collection_cid):
                         nii_path = os.path.join(root, fname)
                         if ext not in allowed_extensions:
                             continue
+                        elif ext == '.xml':
+                            print "found xml"
+                            dom = minidom.parse(os.path.join(root, fname))
+                            for atlas in dom.getElementsByTagName("summaryimagefile"):
+                                print "found atlas"
+                                path, base, ext = split_filename(atlas.lastChild.nodeValue)
+                                nifti_name = os.path.join(path, base)
+                                atlases[str(os.path.join(
+                                            froot, nifti_name[1:]))] = os.path.join(root, fname)
+
                         if detect_afni4D(nii_path):
                             niftiFiles.extend(split_afni4D_to_3D(nii_path))
                         else:
@@ -266,6 +309,7 @@ def upload_folder(request, collection_cid):
                     # Read nifti file information
                     nii = nib.load(fpath)
                     if len(nii.get_shape()) > 3 and nii.get_shape()[3] > 1:
+                        print "skipping wrong size"
                         continue
                     hdr = nii.get_header()
                     raw_hdr = hdr.structarr
@@ -274,6 +318,7 @@ def upload_folder(request, collection_cid):
                     # Check if filename corresponds to a T-map
                     Tregexp = re.compile('spmT.*')
                     # Fregexp = re.compile('spmF.*')
+
                     if Tregexp.search(fpath) is not None:
                         map_type = Image.T
                     else:
@@ -281,7 +326,7 @@ def upload_folder(request, collection_cid):
                         if Tregexp.search(fpath) is not None:
                             map_type = Image.F
                         else:
-                            map_type = Image.OTHER
+                            map_type = StatisticMap.OTHER
 
                     path, name, ext = split_filename(fpath)
                     dname = name + ".nii.gz"
@@ -297,16 +342,26 @@ def upload_folder(request, collection_cid):
                         f = ContentFile(open(fpath).read(), name=dname)
 
                     collection = get_collection(collection_cid,request)
-                    new_image = Image(name=label,
-                                      description=str(raw_hdr['descrip']) or label,
-                                      collection=collection)
+
+                    if os.path.join(path, name) in atlases:
+
+                        new_image = Atlas(name=dname,
+                                          description=raw_hdr['descrip'], collection=collection)
+
+                        new_image.label_description_file = ContentFile(
+                                    open(atlases[os.path.join(path,name)]).read(),
+                                                                    name=name + ".xml")
+                    else:
+                        new_image = StatisticMap(name=dname,
+                                description=raw_hdr['descrip'] or label, collection=collection)
+                        new_image.map_type = map_type
+
                     new_image.file = f
-                    new_image.map_type = map_type
                     new_image.save()
             finally:
                 shutil.rmtree(tmp_directory)
 
-            return HttpResponseRedirect('editimages')
+            return HttpResponseRedirect('')
     else:
         form = UploadFileForm()
     return render_to_response("statmaps/upload_folder.html",
@@ -372,8 +427,8 @@ def view_collection_with_pycortex(request, cid):
 
 def serve_image(request, collection_cid, img_name):
     collection = get_collection(collection_cid,request,mode='file')
-    image = Image.objects.get(collection=collection,file__endswith='/'+img_name)
-    return sendfile(request, image.file.path)
+    path = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',str(collection.id),img_name)
+    return sendfile(request, path)
 
 
 def serve_pycortex(request, collection_cid, path, pycortex_dir='pycortex_all'):

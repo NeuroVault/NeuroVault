@@ -1,7 +1,8 @@
 from django.conf.urls import patterns, include, url
 from django.conf import settings
 from django.contrib import admin
-from neurovault.apps.statmaps.models import Image, Collection
+from neurovault.apps.statmaps.models import Image, Collection, StatisticMap,\
+    Atlas
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf.urls.static import static
 from rest_framework.filters import DjangoFilterBackend
@@ -79,6 +80,40 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Image
+        exclude = ['polymorphic_ctype']
+
+    def to_native(self, obj):
+        """
+        Because GalleryItem is Polymorphic
+        """
+        if isinstance(obj, StatisticMap):
+            return StatisticMapSerializer(obj, context={
+                                'request': self.context['request']}).to_native(obj)
+        if isinstance(obj, Atlas):
+            return AtlasSerializer(obj, context={'request': self.context['request']}).to_native(obj)
+        return super(ImageSerializer, self).to_native(obj)
+
+
+class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
+
+    file = HyperlinkedFileField(source='file')
+    collection = HyperlinkedRelatedURL(source='collection')
+    url = HyperlinkedImageURL(source='get_absolute_url')
+
+    class Meta:
+        model = StatisticMap
+        exclude = ['polymorphic_ctype']
+
+
+class AtlasSerializer(serializers.HyperlinkedModelSerializer):
+
+    label_description_file = HyperlinkedFileField(source='label_description_file')
+    collection = HyperlinkedRelatedURL(source='collection')
+    url = HyperlinkedImageURL(source='get_absolute_url')
+
+    class Meta:
+        model = Atlas
+        exclude = ['polymorphic_ctype']
 
 
 class CollectionSerializer(serializers.ModelSerializer):
@@ -169,12 +204,3 @@ urlpatterns = patterns('',
                        url(r'^api-auth/', include(
                            'rest_framework.urls', namespace='rest_framework'))
                        )
-
-#if settings.DEBUG == True:
-#    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-
-# if settings.DEBUG:
-# #    # static files (images, css, javascript, etc.)
-#     urlpatterns += patterns('',
-#                            (r'^'+settings.MEDIA_URL+'/(?P<path>.*)$', 'django.views.static.serve', {
-#                             'document_root': settings.MEDIA_ROOT}))

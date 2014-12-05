@@ -62,7 +62,7 @@
                 	xhr.open 'POST', "upload_folder", false
                 	xhr.setRequestHeader "X-CSRFToken", csrftoken
                 	xhr.send(data)
-                	document.location = "editimages"
+                	document.location = ""
                 )
 
 
@@ -86,7 +86,7 @@
                 %form{action: "upload_folder", enctype: "multipart/form-data", method: "POST", name: "upload_folder_form"}
                   %a.btn.btn-primary{href: "pycortex" } 3D View
                   %a.btn.btn-primary{href: "{% url 'edit_collection' cid %}" } Edit details
-                  %a.btn.btn-primary{href: "{% url 'edit_images' cid %}" } Add/edit images
+                  %a.btn.btn-primary{href: "{% url 'add_image' cid %}" } Add image
                   %a.btn.btn-primary{id:"upload_archive"} Upload archive (.zip)
                   <!--[if !IE]> -->
                   %a.btn.btn-primary{id:"upload_folder"} Upload folder
@@ -120,6 +120,7 @@
                             %th ID
                             %th Name
                             %th Tags
+                            %th Type
                             %th Description
                     %tbody
                         - for image in collection.image_set.all
@@ -131,7 +132,8 @@
                                     - for tag in image.tags.all
                                         %a{ href: "/images/tags/{{tag.name}}" }= tag.name
                                         - if not forloop.last
-                                            ,
+                                        
+                                %td= image.polymorphic_ctype.name
                                 %td= image.description
             #details.tab-pane
                 %table.table.table-condensed.table-striped.table-hover.collection-details-datatable

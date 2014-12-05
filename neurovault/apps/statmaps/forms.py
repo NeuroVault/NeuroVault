@@ -6,8 +6,7 @@ import nibabel as nb
 import numpy as np
 
 from django.forms import ModelForm
-from django.forms.models import inlineformset_factory
-from django.forms.models import BaseInlineFormSet
+from django.forms.models import inlineformset_factory, ModelMultipleChoiceField, BaseInlineFormSet
 from django.core.exceptions import ValidationError
 # from form_utils.forms import BetterModelForm
 
@@ -15,7 +14,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Submit, HTML, Button, Row, Field, Hidden
 from crispy_forms.bootstrap import AppendedText, PrependedText, FormActions, TabHolder, Tab
 
-from .models import Collection, Image,ValueTaggedItem, User
+from .models import Collection, Image, ValueTaggedItem, User, StatisticMap, Atlas
 
 from django.forms.forms import Form
 from django.forms.fields import FileField
@@ -23,7 +22,6 @@ import tempfile
 from neurovault.apps.statmaps.utils import split_filename, get_paper_properties, \
                                         detect_afni4D, split_afni4D_to_3D, memory_uploadfile
 from django import forms
-from django.forms.models import ModelMultipleChoiceField
 from django.utils.encoding import smart_str
 from django.utils.safestring import mark_safe
 from django.forms.util import flatatt
@@ -331,6 +329,7 @@ class ImageForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(ImageForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
+        self.helper.add_input(Submit('submit', 'Submit'))
         self.helper.form_class = 'form-horizontal'
         self.helper.form_tag = False
         self.afni_subbricks = []
@@ -338,7 +337,7 @@ class ImageForm(ModelForm):
 
     class Meta:
         model = Image
-        exclude = ('json_path', 'collection')
+        exclude = ('collection', )
 
     def clean(self, **kwargs):
 
@@ -420,24 +419,44 @@ class ImageForm(ModelForm):
         return cleaned_data
 
 
-class SingleImageForm(ImageForm):
-    hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
+class StatisticMapForm(ImageForm):
+    class Meta(ImageForm.Meta):
+        model = StatisticMap
+        fields = ('name', 'collection', 'description', 'map_type',
+                  'file', 'hdr_file', 'tags', 'statistic_parameters',
+                  'smoothness_fwhm', 'contrast_definition', 'contrast_definition_cogatlas')
 
-    class Meta:
-        model = Image
-        exclude = ('json_path', )
+
+class AtlasForm(ImageForm):
+    class Meta(ImageForm.Meta):
+        model = Atlas
+        fields = ('name', 'collection', 'description',
+                  'file', 'hdr_file', 'label_description_file', 'tags')
+
+
+class EditStatisticMapForm(StatisticMapForm):
 
     def __init__(self, user, *args, **kwargs):
-        super(SingleImageForm, self).__init__(*args, **kwargs)
+        super(EditStatisticMapForm, self).__init__(*args, **kwargs)
         self.fields['collection'].queryset = Collection.objects.filter(owner=user)
-        self.helper = FormHelper(self)
-        self.helper.add_input(Submit('submit', 'Submit'))
+
+    class Meta(StatisticMapForm.Meta):
+        exclude = ()
 
 
-class SimplifiedImageForm(SingleImageForm):
-    class Meta:
-        model = Image
-        exclude = ('json_path', )
+class EditAtlasForm(AtlasForm):
+
+    def __init__(self, user, *args, **kwargs):
+        super(EditAtlasForm, self).__init__(*args, **kwargs)
+        self.fields['collection'].queryset = Collection.objects.filter(owner=user)
+
+    class Meta(AtlasForm.Meta):
+        exclude = ()
+
+
+class SimplifiedStatisticMapForm(EditStatisticMapForm):
+
+    class Meta(EditStatisticMapForm.Meta):
         fields = ('name', 'collection', 'description', 'map_type',
                   'file', 'hdr_file', 'tags')
 
@@ -484,17 +503,18 @@ class CollectionInlineFormset(BaseInlineFormSet):
             return super(CollectionInlineFormset, self).save_existing(
                                                             form, instance, commit=commit)
 
-
 CollectionFormSet = inlineformset_factory(
-    Collection, Image, form=ImageForm,
-    exclude=['json_path', 'nifti_gz_file', 'collection'],
-    extra=1, formset=CollectionInlineFormset)
+    Collection, StatisticMap, form=StatisticMapForm,
+    exclude=['json_path', 'nifti_gz_file', 'collection', 'prov_type',
+             'prov_label', 'prov_URI', 'atCoordinateSpace', 'modelParametersEstimation',
+             'sha512', 'map'],
+    extra=1)
 
 
 class UploadFileForm(Form):
 
     # TODO Need to uplaod in a temp directory
-    file = FileField(required=False);#(upload_to="images/%s/%s"%(instance.collection.id, filename))
+    file = FileField(required=False);  #(upload_to="images/%s/%s"%(instance.collection.id, filename))
 
     def __init__(self, *args, **kwargs):
         super(UploadFileForm, self).__init__(*args, **kwargs)
