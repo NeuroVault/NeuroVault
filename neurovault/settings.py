@@ -213,14 +213,11 @@ REST_FRAMEWORK = {
 }
 
 # Allow cross-origin requests from approved sites
-#CORS_ORIGIN_REGEX_WHITELIST = (
-#    '.*neurosynth.org',
-#    'pilab.colorado.edu'
-#    '.*'
-#    )
-
-CORS_ORIGIN_ALLOW_ALL = True
-
+CORS_ORIGIN_REGEX_WHITELIST = (
+    '.*neurosynth.org',
+    'pilab.colorado.edu'
+    '.*'
+)
 
 #LOGIN_URL          = '/login-form/'
 #LOGIN_REDIRECT_URL = '/logged-in/'
