@@ -86,7 +86,7 @@ def edit_images(request, collection_cid):
         formset = CollectionFormSet(instance=collection)
 
     context = {"formset": formset}
-    return render(request, "statmaps/edit_images_simpler.html.haml", context)
+    return render(request, "statmaps/edit_images.html.haml", context)
 
 
 @login_required
@@ -235,7 +235,7 @@ def add_image_for_neurosynth(request):
 @login_required
 def add_image(request, collection_cid):
     collection = get_collection(collection_cid,request)
-    image = Image(collection=collection)
+    image = StatisticMap(collection=collection)
     if request.method == "POST":
         form = StatisticMapForm(request.POST, request.FILES, instance=image)
         if form.is_valid():

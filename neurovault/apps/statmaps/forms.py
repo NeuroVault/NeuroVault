@@ -331,7 +331,7 @@ class ImageForm(ModelForm):
         self.helper = FormHelper(self)
         self.helper.add_input(Submit('submit', 'Submit'))
         self.helper.form_class = 'form-horizontal'
-        self.helper.form_tag = False
+        #self.helper.form_tag = False
         self.afni_subbricks = []
         self.afni_tmp = None
 
