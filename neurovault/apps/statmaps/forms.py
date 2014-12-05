@@ -23,7 +23,7 @@ from django.core.files.base import File, ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django import forms
 from django.forms.models import ModelMultipleChoiceField
-from django.utils.encoding import force_unicode, smart_str
+from django.utils.encoding import smart_str
 from django.utils.safestring import mark_safe
 from django.forms.util import flatatt
 
@@ -32,9 +32,7 @@ from django.forms.util import flatatt
 collection_fieldsets = [
     ('Essentials', {'fields': ['name',
                                'DOI',
-                               'description',
-                               'private',
-                               'contributors'],
+                               'description'],
                     'legend': 'Essentials'}),
     ('Participants', {'fields': ['number_of_subjects',
                                  'subject_age_mean',
@@ -222,18 +220,17 @@ collection_row_attrs = {
 }
 
 
-class CommaSeperatedContribWidget(forms.Widget):
+class ContributorCommaSepInput(forms.Widget):
     def render(self, name, value, attrs=None):
         final_attrs = self.build_attrs(attrs, type='text', name=name)
-
-        if not type(value) == unicode:
-            values = []
+        if not type(value) == unicode and value is not None:
+            out_vals = []
             for val in value:
                 try:
-                    values.append(str(User.objects.get(pk=val).username))
+                    out_vals.append(str(User.objects.get(pk=val).username))
                 except:
                     continue
-            value = ', '.join(values)
+            value = ', '.join(out_vals)
             if value:
                 final_attrs['value'] = smart_str(value)
         else:
@@ -242,43 +239,31 @@ class CommaSeperatedContribWidget(forms.Widget):
 
 
 class ContributorCommaField(ModelMultipleChoiceField):
-    widget = CommaSeperatedContribWidget
+    widget = ContributorCommaSepInput
 
     def clean(self,value):
-
         if self.required and not value:
             raise ValidationError(self.error_messages['required'])
         elif not self.required and not value:
             return []
 
-        values = value.split(',')
+        split_vals = [v.strip() for v in value.split(',')]
 
-        if not isinstance(values, (list, tuple)):
+        if not isinstance(split_vals, (list, tuple)):
             raise ValidationError("Invalid input.")
 
-        for name in values:
-            try:
-                self.queryset.filter(username=name)
-            except ValueError:
-                raise ValidationError("Invalid user.")
-        qs = self.queryset.filter(username__in=values)
-        usernames = set([force_unicode(o.username) for o in qs])
+        for name in split_vals:
+            if not len(self.queryset.filter(username=name)):
+                raise ValidationError("User %s does not exist." % name)
 
-        for val in values:
-            if force_unicode(val) not in usernames:
-                raise ValidationError("User %s not found." % val)
-        return qs
+        return self.queryset.filter(username__in=split_vals)
 
 
 class CollectionForm(ModelForm):
-    contributors = ContributorCommaField(queryset=None,required=False)
 
     class Meta:
-        exclude = ('owner','private_token')
+        exclude = ('owner','private_token','contributors','private')
         model = Collection
-        widgets = {
-            'private': forms.RadioSelect
-        }
         # fieldsets = study_fieldsets
         # row_attrs = study_row_attrs
 
@@ -305,7 +290,6 @@ class CollectionForm(ModelForm):
     def __init__(self, *args, **kwargs):
 
         super(CollectionForm, self).__init__(*args, **kwargs)
-        self.fields['contributors'].queryset = User.objects.exclude(pk=self.instance.owner.pk)
 
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
@@ -321,9 +305,23 @@ class CollectionForm(ModelForm):
                                   'submit','Save', css_class="btn-large offset2")])
 
 
-class ContributorCollectionForm(CollectionForm):
-    class Meta(CollectionForm.Meta):
-        exclude = ('contributors','private')
+class OwnerCollectionForm(CollectionForm):
+    contributors = ContributorCommaField(queryset=None,required=False)
+
+    class Meta():
+        exclude = ('owner','private_token')
+        model = Collection
+        widgets = {
+            'private': forms.RadioSelect
+        }
+
+    def __init__(self, *args, **kwargs):
+        # explicitly populate owner-only fields to fieldsets
+        for field in ['contributors','private']:
+            if field not in collection_fieldsets[0][1]['fields']:
+                collection_fieldsets[0][1]['fields'].append(field)
+        super(OwnerCollectionForm, self).__init__(*args, **kwargs)
+        self.fields['contributors'].queryset = User.objects.exclude(pk=self.instance.owner.pk)
 
 
 class ImageForm(ModelForm):

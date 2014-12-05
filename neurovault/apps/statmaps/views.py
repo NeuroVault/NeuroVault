@@ -1,5 +1,5 @@
 from .models import Collection, Image
-from .forms import CollectionFormSet, CollectionForm, SingleImageForm,ContributorCollectionForm
+from .forms import CollectionFormSet, CollectionForm, SingleImageForm,OwnerCollectionForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
@@ -98,6 +98,8 @@ def edit_collection(request, cid=None):
         collection = Collection(owner=request.user)
     if request.method == "POST":
         form = CollectionForm(request.POST, request.FILES, instance=collection)
+        if is_owner:
+            form = OwnerCollectionForm(request.POST, request.FILES, instance=collection)
         if form.is_valid():
             previous_contribs = set()
             if form.instance.pk is not None:
@@ -122,9 +124,9 @@ def edit_collection(request, cid=None):
             return HttpResponseRedirect(collection.get_absolute_url())
     else:
         if is_owner:
-            form = CollectionForm(instance=collection)
+            form = OwnerCollectionForm(instance=collection)
         else:
-            form = ContributorCollectionForm(instance=collection)
+            form = CollectionForm(instance=collection)
 
     context = {"form": form, "page_header": page_header, "is_owner": is_owner}
     return render(request, "statmaps/edit_collection.html.haml", context)
@@ -280,7 +282,7 @@ def upload_folder(request, collection_cid):
 
                     db_name = os.path.join(path.replace(tmp_directory,""), name)
                     db_name = os.path.split(db_name)[-1]
-                    #import ipdb; ipdb.set_trace()
+
                     if ext.lower() != ".nii.gz":
                         new_file_tmp_directory = tempfile.mkdtemp()
                         nib.save(nii, os.path.join(new_file_tmp_directory, name))
