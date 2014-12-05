@@ -1,6 +1,6 @@
 Django>=1.5
 python-social-auth>=0.1.23
-djangorestframework
+djangorestframework==2.3.13
 markdown
 django-filter
 django-taggit

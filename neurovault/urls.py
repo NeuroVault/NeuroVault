@@ -44,6 +44,13 @@ class HyperlinkedImageURL(serializers.CharField):
             return request.build_absolute_uri(value)
 
 
+class SerializedContributors(serializers.CharField):
+
+    def to_native(self, value):
+        if value:
+            return ', '.join([v.username for v in value.all()])
+
+
 class APIHelper:
     ''' Contains generic helper methods to call from various
     serializers and viewsets. '''
@@ -74,20 +81,21 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Image
         exclude = ['polymorphic_ctype']
-        
+
     def to_native(self, obj):
         """
         Because GalleryItem is Polymorphic
         """
         if isinstance(obj, StatisticMap):
-            return StatisticMapSerializer(obj, context={'request': self.context['request']}).to_native(obj)
+            return StatisticMapSerializer(obj, context={
+                                'request': self.context['request']}).to_native(obj)
         if isinstance(obj, Atlas):
             return AtlasSerializer(obj, context={'request': self.context['request']}).to_native(obj)
         return super(ImageSerializer, self).to_native(obj)
 
 
 class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
-    
+
     file = HyperlinkedFileField(source='file')
     collection = HyperlinkedRelatedURL(source='collection')
     url = HyperlinkedImageURL(source='get_absolute_url')
@@ -95,9 +103,10 @@ class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = StatisticMap
         exclude = ['polymorphic_ctype']
-        
+
+
 class AtlasSerializer(serializers.HyperlinkedModelSerializer):
-    
+
     label_description_file = HyperlinkedFileField(source='label_description_file')
     collection = HyperlinkedRelatedURL(source='collection')
     url = HyperlinkedImageURL(source='get_absolute_url')
@@ -109,6 +118,8 @@ class AtlasSerializer(serializers.HyperlinkedModelSerializer):
 
 class CollectionSerializer(serializers.ModelSerializer):
     images = ImageSerializer(source='image_set')
+
+    contributors = SerializedContributors(source='contributors')
 
     class Meta:
         model = Collection
@@ -158,12 +169,12 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
     @link()
     def datatable(self, request, pk=None):
         collection = get_collection(pk,request,mode='api')
-        data = CollectionSerializer(collection).data
+        data = CollectionSerializer(collection, context={'request': request}).data
         return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date'])
 
     def retrieve(self, request, pk=None):
         collection = get_collection(pk,request,mode='api')
-        data = CollectionSerializer(collection).data
+        data = CollectionSerializer(collection, context={'request': request}).data
         return Response(data)
 
 
@@ -193,12 +204,3 @@ urlpatterns = patterns('',
                        url(r'^api-auth/', include(
                            'rest_framework.urls', namespace='rest_framework'))
                        )
-
-#if settings.DEBUG == True:
-#    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-
-# if settings.DEBUG:
-# #    # static files (images, css, javascript, etc.)
-#     urlpatterns += patterns('',
-#                            (r'^'+settings.MEDIA_URL+'/(?P<path>.*)$', 'django.views.static.serve', {
-#                             'document_root': settings.MEDIA_ROOT}))

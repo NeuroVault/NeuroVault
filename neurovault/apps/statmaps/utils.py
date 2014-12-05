@@ -12,6 +12,13 @@ from lxml import etree
 from datetime import datetime,date
 import cortex
 import pytz
+import errno
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+import nibabel as nib
+from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from ast import literal_eval
 
 
 # see CollectionRedirectMiddleware
@@ -173,3 +180,91 @@ def get_paper_properties(doi):
 
 def get_file_ctime(fpath):
     return datetime.fromtimestamp(os.path.getctime(fpath),tz=pytz.utc)
+
+
+def splitext_nii_gz(fname):
+    head, ext = os.path.splitext(fname)
+    if ext.lower() == ".gz":
+        _, ext2 = os.path.splitext(fname[:-3])
+        ext = ext2 + ext
+    return head, ext
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
+
+
+def send_email_notification(notif_type, subject, users, tpl_context=None):
+    email_from = 'NeuroVault <do_not_reply@neurovault.org>'
+    plain_tpl = os.path.join('email','%s.txt' % notif_type)
+    html_tpl = os.path.join('email','%s.html' % notif_type)
+
+    for user in users:
+        context = dict(tpl_context.items() + [('username', user.username)])
+        dest = user.email
+        text_content = render_to_string(plain_tpl,context)
+        html_content = render_to_string(html_tpl,context)
+        msg = EmailMultiAlternatives(subject, text_content, email_from, [dest])
+        msg.attach_alternative(html_content, "text/html")
+        msg.send()
+
+
+def detect_afni4D(nii_file):
+    # don't split afni files with no subbricks
+    return bool(len(get_afni_subbrick_labels(nii_file)) > 1)
+
+
+def get_afni_subbrick_labels(nii_file):
+    # AFNI header is nifti1 header extension 4
+    # http://nifti.nimh.nih.gov/nifti-1/AFNIextension1
+    extensions = nib.load(nii_file).get_header().extensions
+    header = [ext for ext in extensions if ext.get_code() == 4]
+    if not header:
+        return []
+
+    # slice labels delimited with '~'
+    # <AFNI_atr atr_name="BRICK_LABS" >
+    #   "SetA-SetB_mean~SetA-SetB_Zscr~SetA_mean~SetA_Zscr~SetB_mean~SetB_Zscr"
+    # </AFNI_atr>
+    tree = etree.fromstring(header[0].get_content())
+    lnode = [v for v in tree.findall('.//AFNI_atr') if v.attrib['atr_name'] == 'BRICK_LABS']
+
+    # header xml is wrapped in string literals
+    return [] + literal_eval(lnode[0].text.strip()).split('~')
+
+
+def split_afni4D_to_3D(nii_file,with_labels=True,tmp_dir=None):
+    outpaths = []
+    ext = ".nii.gz"
+    base_dir, name = os.path.split(nii_file)
+    out_dir = tmp_dir or base_dir
+    fname = name.replace(ext,'')
+
+    nii = nib.load(nii_file)
+    slices = np.split(nii.get_data(), nii.get_shape()[-1], len(nii.get_shape())-1)
+    labels = get_afni_subbrick_labels(nii_file)
+    for n,slice in enumerate(slices):
+        nifti = nib.Nifti1Image(slice,nii.get_header().get_best_affine())
+        layer_nm = labels[n] if n < len(labels) else 'slice_%s' % n
+        outpath = os.path.join(out_dir,'%s__%s%s' % (fname,layer_nm,ext))
+        nib.save(nifti,outpath)
+        if with_labels:
+            outpaths.append((layer_nm,outpath))
+        else:
+            outpaths.append(outpath)
+    return outpaths
+
+
+def memory_uploadfile(new_file, fname, old_file):
+    cfile = ContentFile(open(new_file).read())
+    content_type = getattr(old_file,'content_type',False) or 'application/x-gzip',
+    charset = getattr(old_file,'charset',False) or None
+
+    return InMemoryUploadedFile(cfile, "file", fname,
+                                content_type, cfile.size, charset)

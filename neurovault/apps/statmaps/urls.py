@@ -1,24 +1,27 @@
 from django.conf.urls import patterns, url
-from django.views.generic import DetailView, ListView
+from django.views.generic import ListView
 from .models import Collection
 from .views import edit_collection, edit_images, view_image, delete_image, edit_image, \
                     view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
-                    serve_image, serve_pycortex, view_collection_with_pycortex, add_image
-from neurovault.apps.statmaps.views import view_images_by_tag,\
+                    serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
+                    papaya_js_embed
+from neurovault.apps.statmaps.views import view_images_by_tag, \
     view_image_with_pycortex, stats_view
 from neurovault.apps.statmaps.models import KeyValueTag
 from django.db.models import Count
 from django.contrib.auth.decorators import login_required
 from neurovault import settings
 from django.views.generic.base import RedirectView
+from django.db.models import Q
 
 
 class MyCollectionsListView(ListView):
-    template_name='statmaps/my_collections.html.haml'
+    template_name = 'statmaps/my_collections.html.haml'
     context_object_name = 'collections'
 
     def get_queryset(self):
-        return Collection.objects.filter(owner=self.request.user).annotate(n_images=Count('image'))
+        return Collection.objects.filter(Q(contributors=self.request.user)
+                            | Q(owner=self.request.user)).annotate(n_images=Count('image'))
 
 urlpatterns = patterns('',
     url(r'^my_collections/$',
@@ -88,8 +91,15 @@ urlpatterns = patterns('',
     url(r'^images/add_for_neurosynth$',
         add_image_for_neurosynth,
         name='add_for_neurosynth'),
+    url(r'^images/(?P<pk>\d+)/js/embed$',
+        papaya_js_embed,
+        name='papaya_js_embed'),
 
-    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<img_name>[A-Za-z0-9\.\+\-\_\s]+)$',
+    url(r'^images/(?P<pk>\d+)/papaya/embedview$',
+        papaya_js_embed,
+        {'iframe':True},name='papaya_iframe_embed'),
+
+    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<img_name>[A-Za-z0-9\.\+\-\_\s\[\]]+)$',
         serve_image,
         name='serve_image'),
 

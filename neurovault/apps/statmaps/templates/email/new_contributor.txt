@@ -1,0 +1,11 @@
+Dear user {{ username }},
+
+NeuroVault user {{ owner }} has added you as a Contributor to the NeuroVault collection {{ collection }}.
+
+You now have the ability to add, edit and delete images to this collection.
+
+You can access this collection here: {{ url }}.
+
+Thanks,
+
+The NeuroVault team.

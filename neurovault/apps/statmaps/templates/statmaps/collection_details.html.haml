@@ -81,7 +81,7 @@
         	.lead
         		%a{href:"{{ collection.url }}" } Link to the paper
 
-        - if user_owns_collection
+        - if edit_permission
             .management-options
                 %form{action: "upload_folder", enctype: "multipart/form-data", method: "POST", name: "upload_folder_form"}
                   %a.btn.btn-primary{href: "pycortex" } 3D View
@@ -91,8 +91,9 @@
                   <!--[if !IE]> -->
                   %a.btn.btn-primary{id:"upload_folder"} Upload folder
                   <!-- <![endif]-->
-                  .float-right-wrapper
-                    %a.btn.btn-danger{href: "{% url 'delete_collection' cid %}", id:"delete_collection"} Delete collection
+                  - if delete_permission
+                      .float-right-wrapper
+                       %a.btn.btn-danger{href: "{% url 'delete_collection' cid %}", id:"delete_collection"} Delete collection
                   {% csrf_token %}
                   %div{style: "height: 0px;width: 0px; overflow:hidden;"}
                      {{ form.file }}
