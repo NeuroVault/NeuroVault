@@ -43,6 +43,13 @@ class HyperlinkedImageURL(serializers.CharField):
             return request.build_absolute_uri(value)
 
 
+class SerializedContributors(serializers.CharField):
+
+    def to_native(self, value):
+        if value:
+            return ', '.join([v.username for v in value.all()])
+
+
 class APIHelper:
     ''' Contains generic helper methods to call from various
     serializers and viewsets. '''
@@ -76,6 +83,8 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
 
 class CollectionSerializer(serializers.ModelSerializer):
     images = ImageSerializer(source='image_set')
+
+    contributors = SerializedContributors(source='contributors')
 
     class Meta:
         model = Collection

@@ -1,5 +1,5 @@
 from .models import Collection, Image
-from .forms import CollectionFormSet, CollectionForm, SingleImageForm
+from .forms import CollectionFormSet, CollectionForm, SingleImageForm,OwnerCollectionForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
@@ -8,7 +8,8 @@ from django.template.context import RequestContext
 from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
-    get_file_ctime,detect_afni4D, split_afni4D_to_3D
+    get_file_ctime, detect_afni4D, split_afni4D_to_3D, splitext_nii_gz, mkdir_p, \
+    send_email_notification
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.db.models import Q
@@ -21,10 +22,15 @@ import gzip
 import shutil
 import nibabel as nib
 import re
-import errno
 import tempfile
 import os
 from collections import OrderedDict
+
+
+def owner_or_contrib(request,collection):
+    if collection.owner == request.user or request.user in collection.contributors.all():
+        return True
+    return False
 
 
 def get_collection(cid,request,mode=None):
@@ -35,7 +41,7 @@ def get_collection(cid,request,mode=None):
     try:
         collection = Collection.objects.get(**keyargs)
         if private_url is None and collection.private:
-            if collection.owner == request.user:
+            if owner_or_contrib(request,collection):
                 if mode in ['file','api']:
                     raise PermissionDenied()
                 else:
@@ -51,7 +57,7 @@ def get_collection(cid,request,mode=None):
 def get_image(pk,collection_cid,request,mode=None):
     image = get_object_or_404(Image, pk=pk)
     if image.collection.private and image.collection.private_token != collection_cid:
-        if image.collection.owner == request.user:
+        if owner_or_contrib(request,image.collection):
             if mode == 'api':
                 raise PermissionDenied()
             else:
@@ -65,7 +71,7 @@ def get_image(pk,collection_cid,request,mode=None):
 @login_required
 def edit_images(request, collection_cid):
     collection = get_collection(collection_cid,request)
-    if collection.owner != request.user:
+    if not owner_or_contrib(request,collection):
         return HttpResponseForbidden()
     if request.method == "POST":
         formset = CollectionFormSet(request.POST, request.FILES, instance=collection)
@@ -84,30 +90,52 @@ def edit_collection(request, cid=None):
     page_header = "Add new collection"
     if cid:
         collection = get_collection(cid,request)
+        is_owner = True if collection.owner == request.user else False
         page_header = 'Edit collection'
-        if collection.owner != request.user:
+        if not owner_or_contrib(request,collection):
             return HttpResponseForbidden()
     else:
+        is_owner = True
         collection = Collection(owner=request.user)
     if request.method == "POST":
         form = CollectionForm(request.POST, request.FILES, instance=collection)
+        if is_owner:
+            form = OwnerCollectionForm(request.POST, request.FILES, instance=collection)
         if form.is_valid():
+            previous_contribs = set()
+            if form.instance.pk is not None:
+                previous_contribs = set(form.instance.contributors.all())
             collection = form.save(commit=False)
             if collection.private and collection.private_token is None:
                 collection.private_token = generate_url_token()
             collection.save()
 
+            if is_owner:
+                form.save_m2m()  # save contributors
+                current_contribs = set(collection.contributors.all())
+                new_contribs = list(current_contribs.difference(previous_contribs))
+                context = {
+                    'owner': collection.owner.username,
+                    'collection': collection.name,
+                    'url': request.META['HTTP_ORIGIN'] + collection.get_absolute_url(),
+                }
+                subj = '%s has added you to a NeuroVault collection' % context['owner']
+                send_email_notification('new_contributor', subj, new_contribs, context)
+
             return HttpResponseRedirect(collection.get_absolute_url())
     else:
-        form = CollectionForm(instance=collection)
+        if is_owner:
+            form = OwnerCollectionForm(instance=collection)
+        else:
+            form = CollectionForm(instance=collection)
 
-    context = {"form": form, "page_header": page_header}
+    context = {"form": form, "page_header": page_header, "is_owner": is_owner}
     return render(request, "statmaps/edit_collection.html.haml", context)
 
 
 def view_image(request, pk, collection_cid=None):
     image = get_image(pk,collection_cid,request)
-    user_owns_image = True if image.collection.owner == request.user else False
+    user_owns_image = True if owner_or_contrib(request,image.collection) else False
     api_cid = pk
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
@@ -118,12 +146,14 @@ def view_image(request, pk, collection_cid=None):
 
 def view_collection(request, cid):
     collection = get_collection(cid,request)
-    user_owns_collection = True if collection.owner == request.user else False
+    edit_permission = True if owner_or_contrib(request,collection) else False
+    delete_permission = True if collection.owner == request.user else False
     context = {'collection': collection,
             'user': request.user,
-            'user_owns_collection': user_owns_collection,
+            'delete_permission': delete_permission,
+            'edit_permission': edit_permission,
             'cid':cid}
-    if collection.owner == request.user:
+    if owner_or_contrib(request,collection):
         form = UploadFileForm()
         c = RequestContext(request)
         c.update(context)
@@ -144,7 +174,7 @@ def delete_collection(request, cid):
 @login_required
 def edit_image(request, pk):
     image = get_object_or_404(Image,pk=pk)
-    if image.collection.owner != request.user:
+    if not owner_or_contrib(request,image.collection):
         return HttpResponseForbidden()
     if request.method == "POST":
         form = SingleImageForm(request.user, request.POST, request.FILES, instance=image)
@@ -184,24 +214,6 @@ def add_image_for_neurosynth(request):
 
     context = {"form": form}
     return render(request, "statmaps/add_image_for_neurosynth.html.haml", context)
-
-
-def splitext_nii_gz(fname):
-    head, ext = os.path.splitext(fname)
-    if ext.lower() == ".gz":
-        _, ext2 = os.path.splitext(fname[:-3])
-        ext = ext2 + ext
-    return head, ext
-
-
-def mkdir_p(path):
-    try:
-        os.makedirs(path)
-    except OSError as exc:  # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
-            raise
 
 
 @login_required

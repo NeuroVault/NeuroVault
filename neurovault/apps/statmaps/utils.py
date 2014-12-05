@@ -12,6 +12,9 @@ from lxml import etree
 from datetime import datetime,date
 import cortex
 import pytz
+import errno
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 import nibabel as nib
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -179,6 +182,39 @@ def get_file_ctime(fpath):
     return datetime.fromtimestamp(os.path.getctime(fpath),tz=pytz.utc)
 
 
+def splitext_nii_gz(fname):
+    head, ext = os.path.splitext(fname)
+    if ext.lower() == ".gz":
+        _, ext2 = os.path.splitext(fname[:-3])
+        ext = ext2 + ext
+    return head, ext
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
+
+
+def send_email_notification(notif_type, subject, users, tpl_context=None):
+    email_from = 'NeuroVault <do_not_reply@neurovault.org>'
+    plain_tpl = os.path.join('email','%s.txt' % notif_type)
+    html_tpl = os.path.join('email','%s.html' % notif_type)
+
+    for user in users:
+        context = dict(tpl_context.items() + [('username', user.username)])
+        dest = user.email
+        text_content = render_to_string(plain_tpl,context)
+        html_content = render_to_string(html_tpl,context)
+        msg = EmailMultiAlternatives(subject, text_content, email_from, [dest])
+        msg.attach_alternative(html_content, "text/html")
+        msg.send()
+
+
 def detect_afni4D(nii_file):
     # don't split afni files with no subbricks
     return bool(len(get_afni_subbrick_labels(nii_file)) > 1)
@@ -232,4 +268,3 @@ def memory_uploadfile(new_file, fname, old_file):
 
     return InMemoryUploadedFile(cfile, "file", fname,
                                 content_type, cfile.size, charset)
-
