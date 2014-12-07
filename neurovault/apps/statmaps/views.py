@@ -26,7 +26,6 @@ import tempfile
 import os
 from collections import OrderedDict
 from neurovault.apps.statmaps.models import StatisticMap, Atlas
-from glob import glob
 from xml.dom import minidom
 from neurovault.apps.statmaps.forms import EditAtlasForm
 
@@ -297,8 +296,7 @@ def upload_folder(request, collection_cid):
                                 print "found atlas"
                                 path, base, ext = split_filename(atlas.lastChild.nodeValue)
                                 nifti_name = os.path.join(path, base)
-                                atlases[str(os.path.join(
-                                            froot, nifti_name[1:]))] = os.path.join(root, fname)
+                                atlases[str(os.path.join(root,nifti_name[1:]))] = os.path.join(root, fname)
 
                         if detect_afni4D(nii_path):
                             niftiFiles.extend(split_afni4D_to_3D(nii_path))
