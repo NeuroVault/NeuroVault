@@ -329,7 +329,6 @@ class ImageForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(ImageForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
-        self.helper.add_input(Submit('submit', 'Submit'))
         self.helper.form_class = 'form-horizontal'
         self.helper.form_tag = False
         self.afni_subbricks = []
@@ -505,10 +504,8 @@ class CollectionInlineFormset(BaseInlineFormSet):
 
 CollectionFormSet = inlineformset_factory(
     Collection, StatisticMap, form=StatisticMapForm,
-    exclude=['json_path', 'nifti_gz_file', 'collection', 'prov_type',
-             'prov_label', 'prov_URI', 'atCoordinateSpace', 'modelParametersEstimation',
-             'sha512', 'map'],
-    extra=1)
+    exclude=['json_path', 'nifti_gz_file', 'collection'],
+    extra=1, formset=CollectionInlineFormset)
 
 
 class UploadFileForm(Form):

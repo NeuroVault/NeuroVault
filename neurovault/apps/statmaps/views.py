@@ -26,7 +26,6 @@ import tempfile
 import os
 from collections import OrderedDict
 from neurovault.apps.statmaps.models import StatisticMap, Atlas
-from glob import glob
 from xml.dom import minidom
 from neurovault.apps.statmaps.forms import EditAtlasForm
 
@@ -86,7 +85,7 @@ def edit_images(request, collection_cid):
         formset = CollectionFormSet(instance=collection)
 
     context = {"formset": formset}
-    return render(request, "statmaps/edit_images_simpler.html.haml", context)
+    return render(request, "statmaps/edit_images.html.haml", context)
 
 
 @login_required
@@ -235,7 +234,7 @@ def add_image_for_neurosynth(request):
 @login_required
 def add_image(request, collection_cid):
     collection = get_collection(collection_cid,request)
-    image = Image(collection=collection)
+    image = StatisticMap(collection=collection)
     if request.method == "POST":
         form = StatisticMapForm(request.POST, request.FILES, instance=image)
         if form.is_valid():
@@ -297,8 +296,7 @@ def upload_folder(request, collection_cid):
                                 print "found atlas"
                                 path, base, ext = split_filename(atlas.lastChild.nodeValue)
                                 nifti_name = os.path.join(path, base)
-                                atlases[str(os.path.join(
-                                            froot, nifti_name[1:]))] = os.path.join(root, fname)
+                                atlases[str(os.path.join(root,nifti_name[1:]))] = os.path.join(root, fname)
 
                         if detect_afni4D(nii_path):
                             niftiFiles.extend(split_afni4D_to_3D(nii_path))
