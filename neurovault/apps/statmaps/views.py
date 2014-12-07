@@ -453,15 +453,11 @@ def stats_view(request):
     
     non_empty_collections_count = Collection.objects.annotate(num_submissions=Count('image')).filter(num_submissions__gt = 0).count()
     public_collections_count = Collection.objects.filter(private=False).annotate(num_submissions=Count('image')).filter(num_submissions__gt = 0).count()
-    public_collections_percentage = public_collections_count/float(non_empty_collections_count)*100.0
     public_collections_with_DOIs_count = Collection.objects.filter(private=False).exclude(Q(DOI__isnull=True) | Q(DOI__exact='')).annotate(num_submissions=Count('image')).filter(num_submissions__gt = 0).count()
-    public_collections_with_DOIs_percentage = public_collections_with_DOIs_count/float(non_empty_collections_count)*100.0
     context = {'collections_by_journals': collections_by_journals,
                'non_empty_collections_count': non_empty_collections_count,
                'public_collections_count': public_collections_count,
-               'public_collections_percentage': public_collections_percentage,
-               'public_collections_with_DOIs_count': public_collections_with_DOIs_count,
-               'public_collections_with_DOIs_percentage': public_collections_with_DOIs_percentage}
+               'public_collections_with_DOIs_count': public_collections_with_DOIs_count}
     return render(request, 'statmaps/stats.html.haml', context)
 
 
