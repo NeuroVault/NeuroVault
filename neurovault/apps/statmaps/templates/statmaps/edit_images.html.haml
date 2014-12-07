@@ -67,6 +67,10 @@
 					showForm(nextIndex)
 				)
 
+				# Hax: The empty inheritance pk pointer for a new image must be "", not "None"
+				# TODO: fix in form backend
+				$("input[id$='image_ptr']").each ->
+					$(this).val ""  if $(this).val() is "None"
 
 		{% endinlinecoffeescript %}
 {% endblock %}

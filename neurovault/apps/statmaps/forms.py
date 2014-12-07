@@ -437,10 +437,8 @@ class EditStatisticMapForm(StatisticMapForm):
 
     def __init__(self, user, *args, **kwargs):
         super(EditStatisticMapForm, self).__init__(*args, **kwargs)
-        self.fields['collection'].queryset = Collection.objects.filter(owner=user)
-
-    class Meta(StatisticMapForm.Meta):
-        exclude = ()
+        self.helper.form_tag = True
+        self.helper.add_input(Submit('submit', 'Submit'))
 
 
 class EditAtlasForm(AtlasForm):
