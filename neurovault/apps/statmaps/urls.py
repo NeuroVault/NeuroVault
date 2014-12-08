@@ -4,7 +4,7 @@ from .models import Collection
 from .views import edit_collection, edit_images, view_image, delete_image, edit_image, \
                     view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
                     serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
-                    papaya_js_embed, voxel_query_detail
+                    papaya_js_embed, atlas_query_region, atlas_query_voxel
 from neurovault.apps.statmaps.views import view_images_by_tag, \
     view_image_with_pycortex, stats_view
 from neurovault.apps.statmaps.models import KeyValueTag
@@ -122,7 +122,7 @@ urlpatterns = patterns('',
         name='serve_pycortex_collection'),
     url(r'^api/atlas_query_region/$', 
         atlas_query_region,
-        name = 'voxel_query_region'),
+        name = 'atlas_query_region'),
     url(r'^api/atlas_query_voxel/$', 
         atlas_query_voxel,
         name = 'atlas_query_voxel')
