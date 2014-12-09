@@ -26,7 +26,7 @@
                 $("table[class*=image-regions-datatable]").dataTable
                     sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
                     sPaginationType: "bootstrap"
-                    sAjaxSource: "/api/images/" + "{{ api_cid }}" + "/regions_table/?format=json"
+                    sAjaxSource: "/api/atlases/" + "{{ api_cid }}" + "/regions_table/?format=json"
                     iDisplayLength: 25
 
              $('#delete_image').click( () ->

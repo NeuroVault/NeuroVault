@@ -493,7 +493,7 @@ def atlas_query_region(request):
             
         tree = ET.parse(os.path.join(atlas_dir, atlas_xml))
         root = tree.getroot()
-        atlasRegions = [x.text.lower() for x in root[1]]
+        atlasRegions = [x.text.lower() for x in root.find('data').findall('label')]
         synonymsDict = {}
         for atlasRegion in atlasRegions:
             synonymsDict[atlasRegion] = getSynonyms(atlasRegion)

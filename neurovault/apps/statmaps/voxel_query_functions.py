@@ -18,7 +18,7 @@ def getAtlasVoxels(regions, atlas_image, atlas_xml, atlas_dir):
 	atlas=nibabel.load(os.path.join(atlas_dir, atlas_image))
 	atlas_data=atlas.get_data()
 	atlas_mask = numpy.zeros(atlas_data.shape)
-	for line in root[1]:
+	for line in root.find('data').findall('label'):
 		name = line.text.replace("'",'').rstrip(' ').lower()
 		if name in [region.lower() for region in regions]:
 			index = int(line.get('index')) + 1
@@ -34,7 +34,7 @@ def voxelToRegion(X,Y,Z, atlas_image, atlas_xml, atlas_dir):
 	root = tree.getroot()	
 	atlas=nibabel.load(os.path.join(atlas_dir, atlas_image))
 	atlas_data=atlas.get_data()
-	atlasRegions = [x.text.lower() for x in root[1]]
+	atlasRegions = [x.text.lower() for x in root.find('data').findall('label')]
 	index = atlas_data[X,Y,Z] - 1
 	print index
 	if index == -1:
