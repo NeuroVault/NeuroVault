@@ -7,6 +7,7 @@ import tempfile
 import os
 import shutil
 from neurovault.apps.statmaps.utils import detect_afni4D, split_afni4D_to_3D
+from glob import glob
 
 
 class CollectionSharingTest(TestCase):
@@ -60,8 +61,8 @@ class Afni4DTest(TestCase):
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
         app_path = os.path.abspath(os.path.dirname(__file__))
-        self.afni_file = os.path.join(app_path,'static/test_data/TTatlas.nii.gz')
-        self.nii_file = os.path.join(app_path,'static/anatomical/MNI152.nii.gz')
+        self.afni_file = os.path.join(app_path,'test_data/TTatlas.nii.gz')
+        self.nii_file = os.path.abspath(os.path.join(app_path,'../static/anatomical/MNI152.nii.gz'))
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir)

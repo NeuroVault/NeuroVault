@@ -14,6 +14,8 @@ from rest_framework.response import Response
 from taggit.models import Tag
 from neurovault.apps.statmaps.views import get_image,get_collection
 import re
+import xml.etree.ElementTree as ET
+import urllib2
 
 from django import template
 template.add_to_builtins('django.templatetags.future')
@@ -150,6 +152,21 @@ class ImageViewSet(mixins.RetrieveModelMixin,
         data = ImageSerializer(image, context={'request': request}).data
         return APIHelper.wrap_for_datatables(data, ['name', 'modify_date',
                                                     'description', 'add_date'])
+        
+    @link()
+    def regions_table(self, request, pk=None):
+        ''' A wrapper around standard retrieve() request that formats the
+        object for the regions_table plugin. '''
+        image = self._get_api_image(request,pk)
+        data = ImageSerializer(image, context={'request': request}).data
+        xmlFile = data.get('label_description_file')
+        tree = ET.parse(urllib2.urlopen(xmlFile))
+        root = tree.getroot()
+        indices = [int(line.get('index')) for line in root[1]]
+        regions = [line.text.split('(')[0].replace("'",'').rstrip(' ').lower() for line in root[1]]
+        
+        return Response(
+            {'aaData': zip(indices, regions)})
 
     def retrieve(self, request, pk=None):
         image = self._get_api_image(request,pk)

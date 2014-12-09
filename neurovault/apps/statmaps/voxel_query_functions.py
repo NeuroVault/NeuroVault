@@ -21,7 +21,7 @@ def getAtlasVoxels(regions, atlas_image, atlas_xml, atlas_dir):
 	for line in root[1]:
 		name = line.text.replace("'",'').rstrip(' ').lower()
 		if name in [region.lower() for region in regions]:
-			index = int(line.get('index'))
+			index = int(line.get('index')) + 1
 			atlas_mask[atlas_data==index] = True
 	if atlas_mask.sum() != 0:
 		voxels = numpy.where(atlas_mask)
