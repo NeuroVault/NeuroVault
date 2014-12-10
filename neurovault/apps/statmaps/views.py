@@ -486,8 +486,11 @@ def atlas_query_region(request):
     search = request.GET.get('region','')
     atlas = request.GET.get('atlas','').replace('\'', '')
     neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))
-    atlas_image = Atlas.objects.filter(name=atlas)[0].file
-    atlas_xml = Atlas.objects.filter(name=atlas)[0].label_description_file
+    try:
+        atlas_image = Atlas.objects.filter(name=atlas)[0].file
+        atlas_xml = Atlas.objects.filter(name=atlas)[0].label_description_file
+    except IndexError:
+        return JSONResponse('could not find %s' % atlas, status=400)
     if request.method == 'GET':
         with open(os.path.join(neurovault_root, 'neurovault/apps/statmaps/NIFgraph.pkl'),'rb') as input:
             graph = pickle.load(input)
@@ -528,8 +531,11 @@ def atlas_query_voxel(request):
     Y = request.GET.get('y','')
     Z = request.GET.get('z','')
     atlas = request.GET.get('atlas','').replace('\'', '')
-    atlas_image = Atlas.objects.filter(name=atlas)[0].file
-    atlas_xml = Atlas.objects.filter(name=atlas)[0].label_description_file
+    try:
+        atlas_image = Atlas.objects.filter(name=atlas)[0].file
+        atlas_xml = Atlas.objects.filter(name=atlas)[0].label_description_file
+    except IndexError:
+        return JSONResponse('could not find %s' % atlas, status=400)
     data = voxelToRegion(X,Y,Z,atlas_image, atlas_xml)
     return JSONResponse(data)
 
