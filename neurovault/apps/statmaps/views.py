@@ -334,6 +334,7 @@ def upload_folder(request, collection_cid):
 
                     path, name, ext = split_filename(fpath)
                     dname = name + ".nii.gz"
+                    spaced_name = name.replace('_',' ').replace('-',' ')
 
                     if ext.lower() != ".nii.gz":
                         new_file_tmp_directory = tempfile.mkdtemp()
@@ -349,14 +350,14 @@ def upload_folder(request, collection_cid):
 
                     if os.path.join(path, name) in atlases:
                         
-                        new_image = Atlas(name=dname,
+                        new_image = Atlas(name=spaced_name,
                                           description=raw_hdr['descrip'], collection=collection)
 
                         new_image.label_description_file = ContentFile(
                                     open(atlases[os.path.join(path,name)]).read(),
                                                                     name=name + ".xml")
                     else:
-                        new_image = StatisticMap(name=dname,
+                        new_image = StatisticMap(name=spaced_name,
                                 description=raw_hdr['descrip'] or label, collection=collection)
                         new_image.map_type = map_type
 
