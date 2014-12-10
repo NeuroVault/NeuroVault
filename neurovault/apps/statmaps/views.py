@@ -537,7 +537,10 @@ def atlas_query_voxel(request):
         atlas_xml = Atlas.objects.filter(name=atlas)[0].label_description_file
     except IndexError:
         return JSONResponse('could not find %s' % atlas, status=400)
-    data = voxelToRegion(X,Y,Z,atlas_image, atlas_xml)
+    try:
+        data = voxelToRegion(X,Y,Z,atlas_image, atlas_xml)
+    except IndexError:
+        return JSONResponse('coordinates are out of range', status=400)
     return JSONResponse(data)
 
 class JSONResponse(HttpResponse):
