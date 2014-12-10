@@ -288,9 +288,7 @@ def upload_folder(request, collection_cid):
                     for fname in filenames:
                         name, ext = splitext_nii_gz(fname)
                         nii_path = os.path.join(root, fname)
-                        if ext not in allowed_extensions:
-                            continue
-                        elif ext == '.xml':
+                        if ext == '.xml':
                             print "found xml"
                             dom = minidom.parse(os.path.join(root, fname))
                             for atlas in dom.getElementsByTagName("summaryimagefile"):
@@ -298,11 +296,13 @@ def upload_folder(request, collection_cid):
                                 path, base, ext = split_filename(atlas.lastChild.nodeValue)
                                 nifti_name = os.path.join(path, base)
                                 atlases[str(os.path.join(root,nifti_name[1:]))] = os.path.join(root, fname)
-
-                        if detect_afni4D(nii_path):
+                        elif ext not in allowed_extensions:
+                            continue
+                        elif detect_afni4D(nii_path):
                             niftiFiles.extend(split_afni4D_to_3D(nii_path))
                         else:
                             niftiFiles.append((fname,nii_path))
+                        
 
                 for label,fpath in niftiFiles:
                     # Read nifti file information
