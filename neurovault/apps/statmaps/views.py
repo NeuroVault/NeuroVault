@@ -348,7 +348,7 @@ def upload_folder(request, collection_cid):
                     collection = get_collection(collection_cid,request)
 
                     if os.path.join(path, name) in atlases:
-
+                        
                         new_image = Atlas(name=dname,
                                           description=raw_hdr['descrip'], collection=collection)
 
@@ -481,18 +481,20 @@ def papaya_js_embed(request, pk, iframe=None):
 
 @csrf_exempt
 def atlas_query_region(request):
+    # this query is significantly faster (from 2-4 seconds to <1 second) if the synonyms don't need to be queried
+    # i was previously in contact with NIF and it seems like it wouldn't be too hard to download all the synonym data
     search = request.GET.get('region','')
     atlas = request.GET.get('atlas','').replace('\'', '')
     neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))
-    atlas_dir = os.path.join(neurovault_root, 'private_media/')
-    atlas_image = str(Atlas.objects.filter(name=atlas)[0].file)
-    atlas_xml = str(Atlas.objects.filter(name=atlas)[0].label_description_file)
+    atlas_image = Atlas.objects.filter(name=atlas)[0].file
+    atlas_xml = Atlas.objects.filter(name=atlas)[0].label_description_file
     if request.method == 'GET':
         with open(os.path.join(neurovault_root, 'neurovault/apps/statmaps/NIFgraph.pkl'),'rb') as input:
             graph = pickle.load(input)
             
-        tree = ET.parse(os.path.join(atlas_dir, atlas_xml))
-        root = tree.getroot()
+        atlas_xml.open()
+        root = ET.fromstring(atlas_xml.read())
+        atlas_xml.close()
         atlasRegions = [x.text.lower() for x in root.find('data').findall('label')]
         synonymsDict = {}
         for atlasRegion in atlasRegions:
@@ -503,7 +505,7 @@ def atlas_query_region(request):
             return JSONResponse('region not in atlas or ontology', status=400)
         if searchList == 'none':
             return JSONResponse('could not map specified region to region in specified atlas', status=400)
-        data = {'voxels':getAtlasVoxels(searchList, atlas_image, atlas_xml, atlas_dir)}
+        data = {'voxels':getAtlasVoxels(searchList, atlas_image, atlas_xml)}
 #         for x in searchList:
 #             voxels = getAtlasVoxels(x, atlas_image, atlas_xml, atlas_dir)
 #             dataTriples = []
@@ -526,11 +528,9 @@ def atlas_query_voxel(request):
     Y = request.GET.get('y','')
     Z = request.GET.get('z','')
     atlas = request.GET.get('atlas','').replace('\'', '')
-    neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))
-    atlas_dir = os.path.join(neurovault_root, 'private_media/')
-    atlas_image = str(Atlas.objects.filter(name=atlas)[0].file)
-    atlas_xml = str(Atlas.objects.filter(name=atlas)[0].label_description_file)
-    data = voxelToRegion(X,Y,Z,atlas_image, atlas_xml, atlas_dir)
+    atlas_image = Atlas.objects.filter(name=atlas)[0].file
+    atlas_xml = Atlas.objects.filter(name=atlas)[0].label_description_file
+    data = voxelToRegion(X,Y,Z,atlas_image, atlas_xml)
     return JSONResponse(data)
 
 class JSONResponse(HttpResponse):

@@ -12,10 +12,11 @@ import cPickle as pickle
 
 
 
-def getAtlasVoxels(regions, atlas_image, atlas_xml, atlas_dir):
-	tree = ET.parse(os.path.join(atlas_dir, atlas_xml))
-	root = tree.getroot()
-	atlas=nibabel.load(os.path.join(atlas_dir, atlas_image))
+def getAtlasVoxels(regions, atlas_image, atlas_xml):
+	atlas_xml.open()
+	root = ET.fromstring(atlas_xml.read())
+	atlas_xml.close()
+	atlas=nibabel.load(atlas_image.path)
 	atlas_data=atlas.get_data()
 	atlas_mask = numpy.zeros(atlas_data.shape)
 	for line in root.find('data').findall('label'):
@@ -29,14 +30,14 @@ def getAtlasVoxels(regions, atlas_image, atlas_xml, atlas_dir):
 	else:
 		raise ValueError('"{region}" not in "{atlas_xml}"'.format(region=region, atlas_xml=atlas_xml))
 
-def voxelToRegion(X,Y,Z, atlas_image, atlas_xml, atlas_dir):
-	tree = ET.parse(os.path.join(atlas_dir, atlas_xml))
-	root = tree.getroot()	
-	atlas=nibabel.load(os.path.join(atlas_dir, atlas_image))
+def voxelToRegion(X,Y,Z, atlas_image, atlas_xml):
+	atlas_xml.open()
+	root = ET.fromstring(atlas_xml.read())
+	atlas_xml.close()
+	atlas=nibabel.load(atlas_image.path)
 	atlas_data=atlas.get_data()
 	atlasRegions = [x.text.lower() for x in root.find('data').findall('label')]
-	index = atlas_data[X,Y,Z] - 1
-	print index
+	index = int(atlas_data[X,Y,Z]) - 1
 	if index == -1:
 		return 'none'
 	else:

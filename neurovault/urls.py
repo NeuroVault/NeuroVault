@@ -6,6 +6,7 @@ from neurovault.apps.statmaps.models import Image, Collection, StatisticMap,\
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf.urls.static import static
 from rest_framework.filters import DjangoFilterBackend
+from lxml.etree import xmlfile
 admin.autodiscover()
 from django.contrib.auth.models import User, Group
 from rest_framework import viewsets, routers, serializers, mixins
@@ -180,8 +181,9 @@ class AtlasViewSet(ImageViewSet):
         xmlFile.open()
         root = ET.fromstring(xmlFile.read())
         xmlFile.close()
-        indices = [int(line.get('index')) for line in root.find('data').findall('label')]
-        regions = [line.text.split('(')[0].replace("'",'').rstrip(' ').lower() for line in root[1]]  
+        lines = root.find('data').findall('label')
+        indices = [int(line.get('index')) for line in lines ]
+        regions = [line.text.split('(')[0].replace("'",'').rstrip(' ').lower() for line in lines]  
         return Response(
             {'aaData': zip(indices, regions)})
 
@@ -198,7 +200,7 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
     def datatable(self, request, pk=None):
         collection = get_collection(pk,request,mode='api')
         data = CollectionSerializer(collection, context={'request': request}).data
-        return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date'])
+        return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date', 'images'])
 
     def retrieve(self, request, pk=None):
         collection = get_collection(pk,request,mode='api')

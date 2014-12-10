@@ -30,7 +30,7 @@ class TestGetAtlasVoxels(TestCase):
         atlas_dir = os.path.join(app_path, 'test_data')
         tree = ET.parse(os.path.join(atlas_dir,'VentralFrontal_thr75_summaryimage_2mm.xml'))
         root = tree.getroot()
-        atlasRegions = [x.text.lower() for x in root[1]]
+        atlasRegions = [x.text.lower() for x in root.find('data').findall('label')]
         for region in atlasRegions:
             orderedURL = 'http://127.0.0.1:8000/api/atlas_query_region/?region=%s&atlas=orderedAtlas' %region
             orderedResponse = self.client.get(orderedURL, follow=True)
