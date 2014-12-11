@@ -182,7 +182,7 @@ class AtlasViewSet(ImageViewSet):
         root = ET.fromstring(xmlFile.read())
         xmlFile.close()
         lines = root.find('data').findall('label')
-        indices = [int(line.get('index')) for line in lines ]
+        indices = [int(line.get('index')) + 1 for line in lines ]
         regions = [line.text.split('(')[0].replace("'",'').rstrip(' ').lower() for line in lines]  
         return Response(
             {'aaData': zip(indices, regions)})
