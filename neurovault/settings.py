@@ -233,7 +233,7 @@ DBBACKUP_POSTGRES_BACKUP_COMMAND = 'export PGPASSWORD=neurovault\n pg_dump --use
 # the the original image paths are retained to support old links.
 # Nginx will serve the PRIVATE_MEDIA_URL with private/ prepended to the path
 # e.g. for PRIVATE_MEDIA_URL 'media/images', configure internal location '/private/media/images'
-PRIVATE_MEDIA_ROOT = os.path.join(BASE_DIR,'private_media')
+PRIVATE_MEDIA_ROOT = '/opt/image_data'
 PRIVATE_MEDIA_URL = '/media/images'
 
 # For Apache, use 'sendfile.backends.xsendfile'
@@ -243,11 +243,11 @@ SENDFILE_BACKEND = 'sendfile.backends.development'
 
 PRIVATE_MEDIA_REDIRECT_HEADER = 'X-Accel-Redirect'
 
-PYCORTEX_DATASTORE = os.path.join(BASE_DIR,'pycortex_data')
+PYCORTEX_DATASTORE = '/opt/pycortex_data'
 
 # Pycortex static data is deployed by collectstatic at build time.
 STATICFILES_DIRS = (
-    ('pycortex-resources', '/path/to/pycortex/cortex/webgl/resources'),
+    ('pycortex-resources', '/opt/nv_env/lib/pycortex/cortex/webgl/resources'),
     ('pycortex-ctmcache', os.path.join(PYCORTEX_DATASTORE,'db/fsaverage/cache')),
 )
 

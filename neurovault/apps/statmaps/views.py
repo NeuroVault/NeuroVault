@@ -492,37 +492,29 @@ def atlas_query_region(request):
         atlas_xml = Atlas.objects.filter(name=atlas)[0].label_description_file
     except IndexError:
         return JSONResponse('could not find %s' % atlas, status=400)
-    if request.method == 'GET':
-        with open(os.path.join(neurovault_root, 'neurovault/apps/statmaps/NIFgraph.pkl'),'rb') as input:
-            graph = pickle.load(input)
-            
+    if request.method == 'GET':       
         atlas_xml.open()
         root = ET.fromstring(atlas_xml.read())
         atlas_xml.close()
         atlasRegions = [x.text.lower() for x in root.find('data').findall('label')]
-        synonymsDict = {}
-        for atlasRegion in atlasRegions:
-            synonymsDict[atlasRegion] = getSynonyms(atlasRegion)
+        if search in atlasRegions:
+            searchList = [search]
+        else:
+            synonymsDict = {}
+            with open(os.path.join(neurovault_root, 'neurovault/apps/statmaps/NIFgraph.pkl'),'rb') as input:
+                graph = pickle.load(input)
+            for atlasRegion in atlasRegions:
+                synonymsDict[atlasRegion] = getSynonyms(atlasRegion)
+            try:
+                searchList = toAtlas(search, graph, atlasRegions, synonymsDict)
+            except ValueError:
+                return JSONResponse('region not in atlas or ontology', status=400)
+            if searchList == 'none':
+                return JSONResponse('could not map specified region to region in specified atlas', status=400)
         try:
-            searchList = toAtlas(search, graph, atlasRegions, synonymsDict)
+            data = {'voxels':getAtlasVoxels(searchList, atlas_image, atlas_xml)}
         except ValueError:
-            return JSONResponse('region not in atlas or ontology', status=400)
-        if searchList == 'none':
-            return JSONResponse('could not map specified region to region in specified atlas', status=400)
-        data = {'voxels':getAtlasVoxels(searchList, atlas_image, atlas_xml)}
-#         for x in searchList:
-#             voxels = getAtlasVoxels(x, atlas_image, atlas_xml, atlas_dir)
-#             dataTriples = []
-#             for x in range(len(data[0])):
-#                 dataTriple = [data['x_coordinates'][x],data[1][x], data[2][x]]
-#                 dataTriples.append(dataTriple)
-#             
-#             for x in range(len(voxels[0])):
-#                 voxelsTriple = [voxels['x_coordinates'][x],voxels[1][x], voxels[2][x]]
-#                 if voxelsTriple not in dataTriples:
-#                     data['x_coordinates'].append(voxels[0][x])
-#                     data['y_coordinates'].append(voxels[1][x])
-#                     data['z_coordinates'].append(voxels[2][x])
+            return JSONResponse('region not in atlas', status=400)
 
         return JSONResponse(data)
 

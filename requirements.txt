@@ -31,3 +31,4 @@ requests-oauthlib
 python-openid
 django-sendfile
 django-polymorphic
+networkx
