@@ -4,3 +4,5 @@ neurovault/data/*/*/*
 /static/
 neurovault/reload.py
 neurovault/local_settings.py
+.project
+.pydevproject
