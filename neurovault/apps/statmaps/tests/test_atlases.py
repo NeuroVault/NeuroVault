@@ -9,7 +9,8 @@ from operator import itemgetter
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 class Test_atlas_queries(TestCase):
-    def setUp(self):    
+    def setUp(self):
+        app_path = os.path.abspath(os.path.dirname(__file__))
         self.u1 = User.objects.create(username='neurovault')
         atlasCollection = Collection(name='atlasCollection',owner=self.u1)
         atlasCollection.save()
@@ -58,7 +59,7 @@ class Test_atlas_queries(TestCase):
         for region, testVoxels in testRegions.items():
             for triple in testVoxels:
                 X, Y, Z = triple[0], triple[1], triple[2]
-                URL = 'http://127.0.0.1:8000/api/atlas_query_voxel/?x=%s&y=%s&z=%s&atlas=orderedAtlas' % X, Y, Z
+                URL = 'http://127.0.0.1:8000/api/atlas_query_voxel/?x=%s&y=%s&z=%s&atlas=orderedAtlas' % (X, Y, Z)
                 response = self.client.get(URL, follow=True)
                 responseText = eval(response.content)
                 self.assertEqual(responseText, region)
