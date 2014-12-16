@@ -22,7 +22,7 @@ from polymorphic.polymorphic_model import PolymorphicModel
 class Collection(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of collection")
     DOI = models.CharField(max_length=200, unique=True, blank=True, null=True, default=None, verbose_name="DOI of the corresponding paper")
-    authors = models.CharField(max_length=200, blank=True, null=True)
+    authors = models.CharField(max_length=5000, blank=True, null=True)
     url = models.CharField(max_length=200, blank=True, null=True)
     journal_name = models.CharField(max_length=200, blank=True, null=True, default=None)
     description = models.TextField(blank=True, null=True)
