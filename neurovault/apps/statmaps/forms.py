@@ -269,6 +269,7 @@ class CollectionForm(ModelForm):
     def clean(self):
         cleaned_data = super(CollectionForm, self).clean()
         doi = self.cleaned_data['DOI']
+        self.cleaned_data['description'] = self.cleaned_data['description'].replace('\n', '<br />')
         if doi.strip() == '':
             self.cleaned_data['DOI'] = None
 
