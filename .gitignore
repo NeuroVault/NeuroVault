@@ -1,10 +1,12 @@
-*.
+.*
 !/.gitignore
 
 neurovault/data/*/*/*
 /static/
 neurovault/reload.py
 neurovault/local_settings.py
+neurovault/secrets.py
+neurovault/static/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
