@@ -22,7 +22,7 @@
                     sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
                     sPaginationType: "bootstrap"
                     iDisplayLength: 10
-                    aoColumns: [ { sWidth: '8%'}, { sWidth: '20%'}, { sWidth: '20%' }, { sWidth: '52%'}]
+                    aoColumns: [ { sWidth: '7%'}, { sWidth: '43%'}, { sWidth: '12%' }, { sWidth: '15%'}, { sWidth: '23%'}]
                     fnRowCallback: (nRow, aData, iDisplayIndex) ->
                         nRow
 
@@ -81,7 +81,7 @@
         	.lead
         		%a{href:"{{ collection.url }}" } Link to the paper
 
-        
+
         .management-options
             %form{action: "upload_folder", enctype: "multipart/form-data", method: "POST", name: "upload_folder_form"}
               %a.btn.btn-primary{href: "pycortex" } 3D View
