@@ -182,6 +182,8 @@ def delete_collection(request, cid):
     collection = get_collection(cid,request)
     if collection.owner != request.user:
         return HttpResponseForbidden()
+    for image in collection.image_set.all():
+        image.delete()
     collection.delete()
     return render(request, "statmaps/deleted_collection.html")
 
@@ -307,7 +309,7 @@ def upload_folder(request, collection_cid):
                             niftiFiles.extend(split_afni4D_to_3D(nii_path))
                         else:
                             niftiFiles.append((fname,nii_path))
-                        
+
 
                 for label,fpath in niftiFiles:
                     # Read nifti file information
@@ -349,7 +351,7 @@ def upload_folder(request, collection_cid):
                     collection = get_collection(collection_cid,request)
 
                     if os.path.join(path, name) in atlases:
-                        
+
                         new_image = Atlas(name=spaced_name,
                                           description=raw_hdr['descrip'], collection=collection)
 
@@ -456,7 +458,7 @@ def stats_view(request):
             collections_by_journals[collection.journal_name] += 1
     collections_by_journals = OrderedDict(sorted(collections_by_journals.items(
                                                 ), key=lambda t: t[1], reverse=True))
-    
+
     non_empty_collections_count = Collection.objects.annotate(num_submissions=Count('image')).filter(num_submissions__gt = 0).count()
     public_collections_count = Collection.objects.filter(private=False).annotate(num_submissions=Count('image')).filter(num_submissions__gt = 0).count()
     public_collections_with_DOIs_count = Collection.objects.filter(private=False).exclude(Q(DOI__isnull=True) | Q(DOI__exact='')).annotate(num_submissions=Count('image')).filter(num_submissions__gt = 0).count()
@@ -492,7 +494,7 @@ def atlas_query_region(request):
         atlas_xml = Atlas.objects.filter(name=atlas)[0].label_description_file
     except IndexError:
         return JSONResponse('could not find %s' % atlas, status=400)
-    if request.method == 'GET':       
+    if request.method == 'GET':
         atlas_xml.open()
         root = ET.fromstring(atlas_xml.read())
         atlas_xml.close()
