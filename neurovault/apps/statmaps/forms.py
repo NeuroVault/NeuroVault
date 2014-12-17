@@ -433,6 +433,16 @@ class AtlasForm(ImageForm):
                   'file', 'hdr_file', 'label_description_file', 'tags')
 
 
+class PolymorphicImageForm(ImageForm):
+    def __init__(self, *args, **kwargs):
+        super(PolymorphicImageForm, self).__init__(*args, **kwargs)
+        if self.instance.polymorphic_ctype is not None:
+            if self.instance.polymorphic_ctype.model == 'atlas':
+                self.fields = AtlasForm.base_fields
+            else:
+                self.fields = StatisticMapForm.base_fields
+
+
 class EditStatisticMapForm(StatisticMapForm):
 
     def __init__(self, user, *args, **kwargs):
@@ -461,6 +471,9 @@ class SimplifiedStatisticMapForm(EditStatisticMapForm):
 
 
 class CollectionInlineFormset(BaseInlineFormSet):
+
+    def add_fields(self, form, index):
+        super(CollectionInlineFormset, self).add_fields(form, index)
 
     def save_afni_slices(self,form,commit):
         try:
@@ -502,15 +515,16 @@ class CollectionInlineFormset(BaseInlineFormSet):
             return super(CollectionInlineFormset, self).save_existing(
                                                             form, instance, commit=commit)
 
+
 CollectionFormSet = inlineformset_factory(
-    Collection, StatisticMap, form=StatisticMapForm,
+    Collection, Image, form=PolymorphicImageForm,
     exclude=['json_path', 'nifti_gz_file', 'collection'],
-    extra=1, formset=CollectionInlineFormset)
+    extra=1, formset=CollectionInlineFormset, can_delete=False)
 
 
 class UploadFileForm(Form):
 
-    # TODO Need to uplaod in a temp directory
+    # TODO Need to upload in a temp directory
     file = FileField(required=False);  #(upload_to="images/%s/%s"%(instance.collection.id, filename))
 
     def __init__(self, *args, **kwargs):

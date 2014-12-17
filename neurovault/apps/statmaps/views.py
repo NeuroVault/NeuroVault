@@ -89,7 +89,6 @@ def edit_images(request, collection_cid):
             return HttpResponseRedirect(collection.get_absolute_url())
     else:
         formset = CollectionFormSet(instance=collection)
-
     context = {"formset": formset}
     return render(request, "statmaps/edit_images.html.haml", context)
 
