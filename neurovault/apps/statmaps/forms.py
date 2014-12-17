@@ -483,9 +483,10 @@ class CollectionInlineFormset(BaseInlineFormSet):
             for n,(label,brick) in enumerate(form.afni_subbricks):
                 brick_fname = os.path.split(brick)[-1]
                 mfile = memory_uploadfile(brick, brick_fname, orig_img.file)
-                brick_img = Image(name='%s - %s' % (orig_img.name, label), file=mfile)
-                for field in ['collection','description','map_type']:
+                brick_img = StatisticMap(name='%s - %s' % (orig_img.name, label), file=mfile)
+                for field in ['collection','description']:
                     setattr(brick_img, field, form.cleaned_data[field])
+                setattr(brick_img, 'map_type', form.data['%s-map_type' % form.prefix])
 
                 if n == 0:
                     form.instance = brick_img
