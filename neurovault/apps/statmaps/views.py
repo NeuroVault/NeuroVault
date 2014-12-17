@@ -377,7 +377,7 @@ def upload_folder(request, collection_cid):
 @login_required
 def delete_image(request, pk):
     image = get_object_or_404(Image,pk=pk)
-    if image.collection.owner != request.user:
+    if not owner_or_contrib(request,image.collection):
         return HttpResponseForbidden()
     image.delete()
     return render(request, "statmaps/deleted_image.html")
