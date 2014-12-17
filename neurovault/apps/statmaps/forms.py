@@ -31,7 +31,9 @@ from django.forms.util import flatatt
 collection_fieldsets = [
     ('Essentials', {'fields': ['name',
                                'DOI',
-                               'description'],
+                               'description',
+                               'contributors',
+                               'private',],
                     'legend': 'Essentials'}),
     ('Participants', {'fields': ['number_of_subjects',
                                  'subject_age_mean',
@@ -295,6 +297,8 @@ class CollectionForm(ModelForm):
         self.helper.layout = Layout()
         tab_holder = TabHolder()
         for fs in collection_fieldsets:
+            # manually enforce field exclusion
+            fs[1]['fields'] = [v for v in fs[1]['fields'] if v not in self.Meta.exclude]
             tab_holder.append(Tab(
                 fs[1]['legend'],
                 *fs[1]['fields']
@@ -315,10 +319,6 @@ class OwnerCollectionForm(CollectionForm):
         }
 
     def __init__(self, *args, **kwargs):
-        # explicitly populate owner-only fields to fieldsets
-        for field in ['contributors','private']:
-            if field not in collection_fieldsets[0][1]['fields']:
-                collection_fieldsets[0][1]['fields'].append(field)
         super(OwnerCollectionForm, self).__init__(*args, **kwargs)
         self.fields['contributors'].queryset = User.objects.exclude(pk=self.instance.owner.pk)
 
