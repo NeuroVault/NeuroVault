@@ -5,42 +5,53 @@ from uuid import uuid4
 import tempfile
 import os
 import shutil
-from neurovault.apps.statmaps.utils import detect_nidm
+import zipfile
+from neurovault.apps.statmaps.utils import NIDMUpload, NIDMParseException
 
 
 class NIDMResultsTest(TestCase):
 
     def setUp(self):
-        self.client = {}
+        testpath = os.path.abspath(os.path.dirname(__file__))
+        self.files = {
+            'fsl_nidm':      os.path.join(testpath,'test_data/nidm/fsl.nidm.zip'),
+            'two_contrasts': os.path.join(testpath,'test_data/nidm/two_contrasts.nidm.zip'),
+
+            ## not parsing with latest rdflib 4.1.2
+            ## turtle parsing still under active development
+            ## see also: https://github.com/RDFLib/rdflib/issues/336
+            'broken_spm_example':   os.path.join(testpath,'test_data/nidm/spm_example.nidm.zip'),
+        }
+
+        self.tmpdir = tempfile.mkdtemp()
         self.user = User.objects.create_user('NeuroGuy')
         self.user.save()
-
         self.client = Client()
         self.client.login(username=self.user)
-
         self.coll = Collection(owner=self.user, name="Test Collection")
         self.coll.save()
 
+    def testParseNIDMZip(self):
+        contrasts = {}
+        turtles = {}  # I like turtles.
+        uploads = {}
 
-    def testCollectionSharing(self):
-
-        #view_url = self.coll.get_absolute_url()
-        edit_url = reverse('edit_collection',kwargs={'cid': self.coll.pk})
-        resp = {}
-
-        for role in ['owner','contrib','someguy']:
-            resp[role] = self.client[role].get(edit_url, follow=True)
-
-        """
-        assert that owner and contributor can edit the collection,
-        and that some guy cannot:
-        """
-        self.assertEqual(resp['owner'].status_code,200)
-        self.assertEqual(resp['contrib'].status_code,200)
-        self.assertEqual(resp['someguy'].status_code,403)
+        for name in ['fsl_nidm','two_contrasts']:
+            uploads[name] = NIDMUpload(self.files[name])
+            turtles[name] = uploads[name].parse_ttl(extract=True)
+            contrasts[name] = uploads[name].parse_contrasts()
+            # unpack
+            uploads[name].unpack_nidm_zip()
 
         """
-        assert that only the owner can view/edit contributors:
+        assert known bad file throws parsing error
         """
-        self.assertTrue('contributor' in resp['owner'].content.lower())
-        self.assertFalse('contributor' in resp['contrib'].content.lower())
+        bad_ttl = NIDMUpload(self.files['broken_spm_example'])
+        with self.assertRaises(NIDMParseException):
+            bad_ttl.unpack_nidm_zip()
+
+
+
+
+        # assertions
+

@@ -19,7 +19,10 @@ import nibabel as nib
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from ast import literal_eval
-
+import zipfile
+from fnmatch import fnmatch
+import rdflib
+from rdflib.plugins.parsers.notation3 import BadSyntax
 
 # see CollectionRedirectMiddleware
 class HttpRedirectException(Exception):
@@ -268,3 +271,97 @@ def memory_uploadfile(new_file, fname, old_file):
 
     return InMemoryUploadedFile(cfile, "file", fname,
                                 content_type, cfile.size, charset)
+
+
+class NIDMParseException(Exception):
+        pass
+
+
+class NIDMUpload:
+
+    def __init__(self, zip_path,tmp_dir=None):
+        self.path = zip_path
+        self.workdir = os.path.split(zip_path)[0] if tmp_dir is None else tmp_dir
+        self.zipobj = None
+        self.raw_ttl = ''
+        self.valid_ttl = False
+        self.unzipped = False
+        self.contrasts = []
+        self.statmaps = []
+
+    def parse_ttl(self,extract=False):
+        self.zipobj = zipfile.ZipFile(self.path)
+        ttl_list = [v for v in self.zipobj.infolist() if fnmatch(v.filename,'*.ttl')]
+        if len(ttl_list) > 1:
+            raise NIDMParseException("Detected more than one ttl file in zip.")
+        if not ttl_list:
+            return False
+        self.raw_ttl = self.zipobj.read(ttl_list[0])
+
+        return self.raw_ttl if extract else True
+
+    def parse_contrasts(self):
+        query = """
+        prefix prov: <http://www.w3.org/ns/prov#>
+        prefix nidm: <http://www.incf.org/ns/nidash/nidm#>
+        prefix spm: <http://www.incf.org/ns/nidash/spm#>
+        prefix fsl: <http://www.incf.org/ns/nidash/fsl#>
+
+        SELECT ?contrastName ?statFile ?statType WHERE {
+         ?cid a nidm:ContrastMap ;
+              nidm:contrastName ?contrastName ;
+              prov:atLocation ?cfile .
+         ?cea a nidm:ContrastEstimation .
+         ?cid prov:wasGeneratedBy ?cea .
+         ?sid a nidm:StatisticMap ;
+              nidm:statisticType ?statType ;
+              prov:atLocation ?statFile .
+        }
+        """
+        nidm_g = rdflib.Graph()
+
+        try:
+            nidm_g.parse(data=self.raw_ttl, format='turtle')
+            self.valid_ttl = True
+        except BadSyntax:
+            raise NIDMParseException("RDFLib was unable to parse the ttl file.")
+
+        c_results = nidm_g.query(query)
+        for row in c_results.bindings:
+            c_row = {}
+            for key, val in sorted(row.items()):
+                c_row[str(key)] = val.decode()
+            self.contrasts.append(c_row)
+        return self.contrasts
+
+    def unpack_nidm_zip(self):
+        if not self.raw_ttl:
+            self.parse_ttl()
+        if not self.contrasts:
+            self.parse_contrasts()
+        try:
+            self.zipobj.extractall(path=self.workdir)
+            self.unzipped = True
+        except Exception,e:
+            raise NIDMParseException("Unable to unzip: %s" % e)
+
+    def get_statmaps(self):
+        if not self.unzipped:
+            self.unpack_nidm_zip()
+        if not self.contrasts:
+            return False
+        for contrast in contrasts:
+            pass
+
+        # get rid of redundant names
+        # make a list of names and paths
+
+    @staticmethod
+    def print_sparql_results(res):
+        for idx, row in enumerate(res.bindings):
+            rowfmt = []
+            print "Item %d" % idx
+            for key, val in sorted(row.items()):
+                rowfmt.append('%s-->%s' % (key, val.decode()))
+            print '\n'.join(rowfmt)
+
