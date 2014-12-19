@@ -220,7 +220,7 @@ def add_image_for_neurosynth(request):
         priv_token = generate_url_token()
         temp_collection = Collection(name=temp_collection_name,
                                      owner=request.user,
-                                     private=True,
+                                     private=False,
                                      private_token=priv_token)
         temp_collection.save()
     image = Image(collection=temp_collection)
