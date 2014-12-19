@@ -149,18 +149,36 @@ class ValueTaggedItem(GenericTaggedItemBase):
     tag = models.ForeignKey(KeyValueTag, related_name="tagged_items")
 
 
-class Image(PolymorphicModel):
-
-    collection = models.ForeignKey(Collection)
+class BaseCollectionItem(models.Model):
     name = models.CharField(max_length=200, null=False, blank=False)
     description = models.TextField(blank=False)
-    file = models.FileField(upload_to=upload_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='File with the unthresholded map (.img, .nii, .nii.gz)')
+    collection = models.ForeignKey(Collection)
     add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
     tags = TaggableManager(through=ValueTaggedItem, blank=True)
 
     def __unicode__(self):
         return self.name
+
+    def set_name(self, new_name):
+        self.name = new_name
+
+    class Meta:
+        abstract = True
+
+    def save(self):
+        self.collection.modify_date = datetime.now()
+        self.collection.save()
+        super(BaseCollectionItem, self).save()
+
+    def delete(self):
+        self.collection.modify_date = datetime.now()
+        self.collection.save()
+        super(BaseCollectionItem, self).delete()
+
+
+class Image(PolymorphicModel,BaseCollectionItem):
+    file = models.FileField(upload_to=upload_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='File with the unthresholded map (.img, .nii, .nii.gz)')
 
     def get_absolute_url(self):
         return_args = [str(self.id)]
@@ -169,22 +187,6 @@ class Image(PolymorphicModel):
             return_args.insert(0,str(self.collection.private_token))
             url_name = 'private_image_details'
         return reverse(url_name, args=return_args)
-
-    def set_name(self, new_name):
-        self.name = new_name
-
-    class Meta:
-        unique_together = ("collection", "name")
-
-    def save(self):
-        self.collection.modify_date = datetime.now()
-        self.collection.save()
-        super(Image, self).save()
-
-    def delete(self):
-        self.collection.modify_date = datetime.now()
-        self.collection.save()
-        super(Image, self).delete()
 
     @classmethod
     def create(cls, my_file, my_file_name, my_name, my_desc, my_collection_pk, my_map_type):
@@ -218,6 +220,9 @@ class Image(PolymorphicModel):
 
         return image
 
+    class Meta:
+        unique_together = ("collection", "name")
+
 
 class BaseStatisticMap(Image):
     Z = 'Z'
@@ -250,21 +255,34 @@ class StatisticMap(BaseStatisticMap):
     contrast_definition_cogatlas = models.CharField(help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast", verbose_name="Cognitive Atlas definition", max_length=200, null=True, blank=True)
 
 
-class Atlas(Image):
-    label_description_file = models.FileField(upload_to=upload_to,
-                                              null=False, blank=False,
-                                              storage=NiftiGzStorage(),
-                                              verbose_name='FSL compatible label description file (.xml)')
-
-
-class NIDMResults(Image):
+class NIDMResults(BaseCollectionItem):
     ttl_file = models.FileField(upload_to=upload_to,
-                                null=False, blank=False,
-                                storage=NiftiGzStorage(),
-                                verbose_name='Turtle serialization of NIDM Results (.ttl)')
+                    null=False, blank=False, editable=False,
+                    verbose_name='Turtle serialization of NIDM Results (.ttl)')
+
+    provn_file = models.FileField(upload_to=upload_to,
+                    null=False, blank=False, editable=False,
+                    verbose_name='Provenance store serialization of NIDM Results (.provn)')
+
+    zip_file = models.FileField(upload_to=upload_to,
+                    null=False, blank=False, verbose_name='NIDM Results zip file')
+
+    class Meta:
+        unique_together = ("collection", "zip_file")
+
+
+class NIDMResultStatisticMap(BaseStatisticMap):
+    nidm_results_zip = models.ForeignKey(NIDMResults)
 
     def save(self):
-        self._unpack_nidm_zip()
-        self._update_ttl_paths()
-        self._update_nidm_zip()
-        super(NIDMResults, self).save()
+        # enforce uneditable nifti
+        super(BaseStatisticMap, self).save()
+
+
+class Atlas(Image):
+    label_description_file = models.FileField(
+                                upload_to=upload_to,
+                                null=False, blank=False,
+                                storage=NiftiGzStorage(),
+                                verbose_name='FSL compatible label description file (.xml)')
+
