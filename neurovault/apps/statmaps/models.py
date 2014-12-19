@@ -193,18 +193,18 @@ class Image(PolymorphicModel):
         # Copy the nifti file into the proper location
         image = cls(description=my_desc, name=my_name, collection=my_collection)
         f = open(my_file)
-        niftiFile = File(f);
-        image.file.save(my_file_name, niftiFile);
+        niftiFile = File(f)
+        image.file.save(my_file_name, niftiFile)
 
         # If a .img file was loaded then load the correspoding .hdr file as well
         _, ext = os.path.splitext(my_file_name)
         print ext
         if ext in ['.img']:
             f = open(my_file[:-3] + "hdr")
-            hdrFile = File(f);
-            image.hdr_file.save(my_file_name[:-3] + "hdr", hdrFile);
+            hdrFile = File(f)
+            image.hdr_file.save(my_file_name[:-3] + "hdr", hdrFile)
 
-        image.map_type = my_map_type;
+        image.map_type = my_map_type
 
         #create JSON file for neurosynth viewer
         if os.path.exists(image.file.path):
@@ -214,11 +214,12 @@ class Image(PolymorphicModel):
             f = open(nifti_gz_file)
             image.nifti_gz_file.save(nifti_gz_file.split(os.path.sep)[-1], File(f), save=False)
 
-        image.save();
+        image.save()
 
         return image
 
-class StatisticMap(Image):
+
+class BaseStatisticMap(Image):
     Z = 'Z'
     T = 'T'
     F = 'F'
@@ -233,12 +234,21 @@ class StatisticMap(Image):
         (P, 'P map (given null hypothesis)'),
         (OTHER, 'Other'),
     )
-    map_type = models.CharField(help_text=("Type of statistic that is the basis of the inference"), verbose_name="Map type",
-                                                       max_length=200, null=False, blank=False, choices=MAP_TYPE_CHOICES)
+    map_type = models.CharField(
+                    help_text=("Type of statistic that is the basis of the inference"),
+                    verbose_name="Map type",
+                    max_length=200, null=False, blank=False, choices=MAP_TYPE_CHOICES)
+
+    class Meta:
+        abstract = True
+
+
+class StatisticMap(BaseStatisticMap):
     statistic_parameters = models.FloatField(help_text="Parameters of the null distribution of the test statisic, typically degrees of freedom (should be clear from the test statistic what these are).", null=True, verbose_name="Statistic parameters", blank=True)
     smoothness_fwhm = models.FloatField(help_text="Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.", verbose_name="Smoothness FWHM", null=True, blank=True)
     contrast_definition = models.CharField(help_text="Exactly what terms are subtracted from what? Define these in terms of task or stimulus conditions (e.g., 'one-back task with objects versus zero-back task with objects') instead of underlying psychological concepts (e.g., 'working memory').", verbose_name="Contrast definition", max_length=200, null=True, blank=True)
     contrast_definition_cogatlas = models.CharField(help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast", verbose_name="Cognitive Atlas definition", max_length=200, null=True, blank=True)
+
 
 class Atlas(Image):
     label_description_file = models.FileField(upload_to=upload_to,
