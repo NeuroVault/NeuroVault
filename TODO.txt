@@ -37,3 +37,5 @@
 - The *datatables methods in the API ViewSets could stand to be customized, so that, e.g., fields like add_date return better-formatted values.
 
 - The upload image screen needs to remind users that everything they upload is immediately public and downloadable.
+
+- Add image comparison
