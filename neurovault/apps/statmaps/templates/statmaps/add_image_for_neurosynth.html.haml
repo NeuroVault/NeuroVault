@@ -12,19 +12,18 @@
             .span9
                 %p
                     :markdown
-                        Welcome to NeuroVault - a web repository for statistical 
+                        Welcome to NeuroVault - a  public web repository for statistical 
                         maps of the human brain. After filling in the minimum
                         information outlined below (only the fields with an 
-                        asteriks [*] are compulsory), your map 
+                        asterisk [*] are compulsory), your map 
                         will be sent back to <a href="http://neurosynth.org">Neurosynth.org</a> for
-                        decoding. <b>Remeber that your map needs to be unthresholded and in MNI152
+                        decoding. <b>Remember that your map needs to be unthresholded and in MNI152
                         space for decoding to work correctly!</b>.
                         
-			            You can always come back to 
-			            <a href="http://neurovault.org">NeuroVault.org</a> to 
-			            inspect, modify, and/or delete your maps. Unless you choose
-			            otherwise your maps are private. That means 
-			            only you and whoever you share the link with can see them.
+			            <b>By uploading your map you agree to make it publicly available under <a href="http://creativecommons.org/about/cc0">CC0 license</a>.</b>
+			            You can always come back to <a href="/">NeuroVault.org</a> to 
+			            inspect, modify, and/or delete your maps. If you wish to use Neurosynth decoding, but keep 
+			            your maps private, consider creating a <a href="{% url 'new_collection' %}">a private collection</a>.
  
     .span11
         %hr
