@@ -6,7 +6,7 @@ import tempfile
 import os
 import shutil
 import zipfile
-from neurovault.apps.statmaps.utils import NIDMUpload, NIDMParseException
+from neurovault.apps.statmaps.utils import NIDMUpload
 
 
 class NIDMResultsTest(TestCase):
@@ -31,27 +31,23 @@ class NIDMResultsTest(TestCase):
         self.coll = Collection(owner=self.user, name="Test Collection")
         self.coll.save()
 
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir)
+
     def testParseNIDMZip(self):
         contrasts = {}
         turtles = {}  # I like turtles.
         uploads = {}
+        statmaps = {}
 
         for name in ['fsl_nidm','two_contrasts']:
-            uploads[name] = NIDMUpload(self.files[name])
+            uploads[name] = NIDMUpload(self.files[name],tmp_dir=self.tmpdir,load=False)
             turtles[name] = uploads[name].parse_ttl(extract=True)
             contrasts[name] = uploads[name].parse_contrasts()
-            # unpack
-            uploads[name].unpack_nidm_zip()
+            statmaps[name] = uploads[name].get_statmaps()
 
         """
         assert known bad file throws parsing error
         """
-        bad_ttl = NIDMUpload(self.files['broken_spm_example'])
-        with self.assertRaises(NIDMParseException):
-            bad_ttl.unpack_nidm_zip()
-
-
-
-
-        # assertions
-
+        with self.assertRaises(NIDMUpload.ParseException):
+            bad_ttl = NIDMUpload(self.files['broken_spm_example'])
