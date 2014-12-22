@@ -442,6 +442,8 @@ class PolymorphicImageForm(ImageForm):
         if self.instance.polymorphic_ctype is not None:
             if self.instance.polymorphic_ctype.model == 'atlas':
                 self.fields = AtlasForm.base_fields
+            elif self.instance.polymorphic_ctype.model == 'nidmresultstatisticmap':
+                self.fields = NIDMResultStatisticMapForm(instance=self.instance).fields
             else:
                 self.fields = StatisticMapForm.base_fields
 
@@ -624,15 +626,18 @@ class NIDMResultStatisticMapForm(ImageForm):
         fields = ('name', 'collection', 'description', 'map_type',
                   'file', 'tags', 'nidm_results_zip')
 
-    def __init__(self,*args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(NIDMResultStatisticMapForm,self).__init__(*args,**kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_class = 'form-horizontal'
         self.fields['hdr_file'].widget = HiddenInput()  # problem with exclude() and fields()
         if self.instance.pk is None:
             self.fields['file'].widget = HiddenInput()
         else:
             for fld in self.fields:
                 self.fields[fld].widget.attrs['readonly'] = 'readonly'
-            self.fields['map_type'].widget.attrs['disabled'] = 'disabled'
+                self.fields[fld].widget.attrs['disabled'] = 'disabled'
+
             self.fields['file'].widget = PathOnlyWidget()
 
 

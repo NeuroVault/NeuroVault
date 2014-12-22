@@ -1,6 +1,7 @@
 from .models import Collection, Image
 from .forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
-    StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm
+    StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, \
+    NIDMResultStatisticMapForm, NIDMResultStatisticMap
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
@@ -32,7 +33,6 @@ import os
 from collections import OrderedDict
 from neurovault.apps.statmaps.models import StatisticMap, Atlas
 from xml.dom import minidom
-from neurovault.apps.statmaps.forms import EditAtlasForm
 from django.db.models.aggregates import Count
 
 
@@ -194,6 +194,8 @@ def edit_image(request, pk):
         form = EditStatisticMapForm
     elif isinstance(image, Atlas):
         form = EditAtlasForm
+    elif isinstance(image, NIDMResultStatisticMap):
+        form = NIDMResultStatisticMapForm
     else:
         raise Exception("unsuported image type")
     if not owner_or_contrib(request,image.collection):
