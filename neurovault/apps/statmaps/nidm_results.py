@@ -12,11 +12,11 @@ class NIDMUpload:
 
     def __init__(self, zip_path,tmp_dir=None,load=True):
         self.path = zip_path
-        self.provn_path = ''
-        self.ttl_path = ''
+        self.provn = None
+        self.ttl = None
         self.ttl_relpath = ''
         self.workdir = tempfile.mkdtemp() if tmp_dir is None else tmp_dir
-        self.zipobj = None
+        self.zip = None
         self.raw_ttl = ''
         self.valid_ttl = False
         self.unzipped = False
@@ -34,14 +34,14 @@ class NIDMUpload:
 
     def parse_metafiles(self,extract_ttl=False):
         try:
-            self.zipobj = zipfile.ZipFile(self.path)
+            self.zip = zipfile.ZipFile(self.path)
         except Exception:
             raise self.ParseException("Unable to read the zip file.")
         metafiles = {}
         for ext in ['.ttl','.provn']:
-            metafiles[ext] = [v for v in self.zipobj.infolist()
+            metafiles[ext] = [v for v in self.zip.infolist()
                               if fnmatch(v.filename, '*'+ext)
-                              # strip terrible random metadata folder on Mac
+                              # strip OS X resource fork
                               and not fnmatch(v.filename,'__MACOSX*')
                               ]
             if len(metafiles[ext]) > 1:
@@ -51,9 +51,9 @@ class NIDMUpload:
                 raise self.ParseException(
                         "No {0} file found in zip.".format(ext))
 
-        self.ttl_path = metafiles['.ttl'][0].filename
-        self.provn_path = metafiles['.provn'][0].filename
-        self.raw_ttl = self.zipobj.read(metafiles['.ttl'][0])
+        self.ttl = metafiles['.ttl'][0]
+        self.provn = metafiles['.provn'][0]
+        self.raw_ttl = self.zip.read(metafiles['.ttl'][0])
         self.ttl_relpath = self.parse_ttl_relative_path(metafiles['.ttl'][0].filename)
 
         # fix incorrect property format in earlier versions of SPM12 output
@@ -96,13 +96,13 @@ class NIDMUpload:
         return self.contrasts
 
     def unpack_nidm_zip(self):
-        if not self.ttl_path or not self.provn_path:
+        if not self.ttl or not self.provn:
             self.parse_metafiles()
         if not self.contrasts:
             self.parse_contrasts()
 
         try:
-            self.zipobj.extractall(path=self.workdir)
+            self.zip.extractall(path=self.workdir)
             self.unzipped = True
         except Exception,e:
             raise self.ParseException("Unable to unzip: %s" % e)
@@ -128,7 +128,6 @@ class NIDMUpload:
     def validate_statmap_uri(self,contrast):
         rel_path = self.uri_to_path(contrast['statFile'])
         path = self.expand_path(rel_path)
-        return path
         if not os.path.exists(path):
             raise self.ParseException(
                     "Unable to find image file for map {0}".format(

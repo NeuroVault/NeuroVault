@@ -35,7 +35,7 @@ class NIDMResultsTest(TestCase):
         }
 
         self.failing_files = {
-            #corrupted ttl
+            # corrupted ttl
             'spm_bad_ttl':   os.path.join(testpath,'test_data/nidm/spm_bad_ttl.nidm.zip'),
         }
 

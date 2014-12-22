@@ -14,17 +14,23 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Submit, HTML, Button, Row, Field, Hidden
 from crispy_forms.bootstrap import AppendedText, PrependedText, FormActions, TabHolder, Tab
 
-from .models import Collection, Image, ValueTaggedItem, User, StatisticMap, Atlas
+from .models import Collection, Image, ValueTaggedItem, User, StatisticMap, Atlas, \
+    NIDMResults, NIDMResultStatisticMap
 
 from django.forms.forms import Form
 from django.forms.fields import FileField
 import tempfile
 from neurovault.apps.statmaps.utils import split_filename, get_paper_properties, \
                                         detect_afni4D, split_afni4D_to_3D, memory_uploadfile
+from neurovault.apps.statmaps.nidm_results import NIDMUpload
 from django import forms
 from django.utils.encoding import smart_str
 from django.utils.safestring import mark_safe
 from django.forms.util import flatatt
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.core.files.base import ContentFile
+from django.forms.widgets import HiddenInput
+from neurovault import settings
 
 
 # Create the form class.
@@ -332,7 +338,7 @@ class ImageForm(ModelForm):
 
     class Meta:
         model = Image
-        exclude = ('collection', )
+        exclude = []
 
     def clean(self, **kwargs):
 
@@ -429,6 +435,13 @@ class AtlasForm(ImageForm):
                   'file', 'hdr_file', 'label_description_file', 'tags')
 
 
+class NIDMResultStatisticMapForm(ImageForm):
+    class Meta(ImageForm.Meta):
+        model = NIDMResultStatisticMap
+        fields = ('name', 'collection', 'description', 'map_type',
+                  'file', 'hdr_file', 'tags', 'nidm_results_zip')
+
+
 class PolymorphicImageForm(ImageForm):
     def __init__(self, *args, **kwargs):
         super(PolymorphicImageForm, self).__init__(*args, **kwargs)
@@ -522,7 +535,8 @@ CollectionFormSet = inlineformset_factory(
 class UploadFileForm(Form):
 
     # TODO Need to upload in a temp directory
-    file = FileField(required=False);  #(upload_to="images/%s/%s"%(instance.collection.id, filename))
+    # (upload_to="images/%s/%s"%(instance.collection.id, filename))
+    file = FileField(required=False)
 
     def __init__(self, *args, **kwargs):
         super(UploadFileForm, self).__init__(*args, **kwargs)
@@ -536,3 +550,57 @@ class UploadFileForm(Form):
             ext = ext.lower()
             if ext not in ['.zip', '.gz']:
                 raise ValidationError("Not allowed filetype!")
+
+
+class PathOnlyWidget(forms.Widget):
+
+    def render(self, name, value, attrs=None):
+        return mark_safe('<a target="_blank" href="%s">%s</a><br /><br />' % (value.url,value.url))
+
+
+class NIDMResultsForm(forms.ModelForm):
+    class Meta:
+        model = NIDMResults
+        exclude = []
+
+    def __init__(self,*args, **kwargs):
+        super(NIDMResultsForm,self).__init__(*args,**kwargs)
+
+        for fld in ['ttl_file','provn_file']:
+            if self.instance.pk is None:
+                self.fields[fld].widget = HiddenInput()
+            else:
+                self.fields[fld].widget = PathOnlyWidget()
+
+    def clean(self):
+
+        cleaned_data = super(NIDMResultsForm, self).clean()
+        # only process new uploads or replaced zips
+        if self.instance.pk is None or 'zip_file' in self.changed_data:
+            try:
+                nidm = NIDMUpload(cleaned_data.get('zip_file'))
+            except Exception,e:
+                raise ValidationError("The NIDM file was not readable: {0}".format(e))
+
+            ttl_name = os.path.split(nidm.ttl.filename)[-1]
+            provn_name = os.path.split(nidm.provn.filename)[-1]
+
+            self.cleaned_data['ttl_file'] = InMemoryUploadedFile(
+                                    ContentFile(nidm.zip.read(nidm.ttl)),
+                                    "file", ttl_name, "text/turtle",
+                                    nidm.ttl.file_size, "utf-8")
+
+            self.cleaned_data['provn_file'] = InMemoryUploadedFile(
+                                    ContentFile(nidm.zip.read(nidm.provn)),
+                                    "file", provn_name, "text/provenance-notation",
+                                    nidm.provn.file_size, "utf-8")
+
+
+
+
+
+
+
+
+
+

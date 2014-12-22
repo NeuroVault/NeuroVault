@@ -46,3 +46,19 @@ class NiftiGzStorage(FileSystemStorage):
         else:
             cid = collection.id
         return os.path.join(self.base_url,str(cid),file_name)
+
+
+class NIDMStorage(NiftiGzStorage):
+
+    def url(self, name):
+        spath,file_name = os.path.split(name)
+        spath = spath.split('/')
+        collection_id = spath[1]
+        dirname = spath[2]
+        coll_model = get_model('statmaps','Collection')
+        collection = coll_model.objects.get(id=collection_id)
+        if collection.private:
+            cid = collection.private_token
+        else:
+            cid = collection.id
+        return os.path.join(self.base_url,str(cid),dirname,file_name)

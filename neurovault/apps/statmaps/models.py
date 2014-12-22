@@ -3,7 +3,9 @@
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db import models
-from neurovault.apps.statmaps.storage import NiftiGzStorage
+from neurovault.apps.statmaps.storage import NiftiGzStorage, NIDMStorage
+#asdf
+
 from taggit.managers import TaggableManager
 from taggit.models import GenericTaggedItemBase, TagBase
 from xml import etree
@@ -137,8 +139,13 @@ class Collection(models.Model):
         app_label = 'statmaps'
 
 
-def upload_to(instance, filename):
+def upload_img_to(instance, filename):
     return os.path.join('images',str(instance.collection.id), filename)
+
+
+def upload_nidm_to(instance, filename):
+    nidm_subdir = instance.zip_file.name.replace('.zip','')
+    return os.path.join('images',str(instance.collection.id), nidm_subdir, filename)
 
 
 class KeyValueTag(TagBase):
@@ -177,8 +184,8 @@ class BaseCollectionItem(models.Model):
         super(BaseCollectionItem, self).delete()
 
 
-class Image(PolymorphicModel,BaseCollectionItem):
-    file = models.FileField(upload_to=upload_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='File with the unthresholded map (.img, .nii, .nii.gz)')
+class Image(PolymorphicModel, BaseCollectionItem):
+    file = models.FileField(upload_to=upload_img_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='File with the unthresholded map (.img, .nii, .nii.gz)')
 
     def get_absolute_url(self):
         return_args = [str(self.id)]
@@ -256,33 +263,40 @@ class StatisticMap(BaseStatisticMap):
 
 
 class NIDMResults(BaseCollectionItem):
-    ttl_file = models.FileField(upload_to=upload_to,
-                    null=False, blank=False, editable=False,
+    ttl_file = models.FileField(upload_to=upload_nidm_to,
+                    storage=NIDMStorage(),
+                    null=True, blank=True,
                     verbose_name='Turtle serialization of NIDM Results (.ttl)')
 
-    provn_file = models.FileField(upload_to=upload_to,
-                    null=False, blank=False, editable=False,
+    provn_file = models.FileField(upload_to=upload_nidm_to,
+                    storage=NIDMStorage(),
+                    null=False, blank=True,
                     verbose_name='Provenance store serialization of NIDM Results (.provn)')
 
-    zip_file = models.FileField(upload_to=upload_to,
+    zip_file = models.FileField(upload_to=upload_nidm_to,
+                    storage=NIDMStorage(),
                     null=False, blank=False, verbose_name='NIDM Results zip file')
 
     class Meta:
         unique_together = ("collection", "zip_file")
+        verbose_name_plural = "NIDMResults"
 
 
 class NIDMResultStatisticMap(BaseStatisticMap):
     nidm_results_zip = models.ForeignKey(NIDMResults)
 
-    def save(self):
+    def save(self, *args, **kwargs):
         # enforce uneditable nifti
-        super(BaseStatisticMap, self).save()
+        super(NIDMResultStatisticMap, self).save(*args, **kwargs)
 
 
 class Atlas(Image):
     label_description_file = models.FileField(
-                                upload_to=upload_to,
+                                upload_to=upload_img_to,
                                 null=False, blank=False,
                                 storage=NiftiGzStorage(),
                                 verbose_name='FSL compatible label description file (.xml)')
+
+    class Meta:
+        verbose_name_plural = "Atlases"
 
