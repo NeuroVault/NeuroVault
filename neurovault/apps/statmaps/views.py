@@ -535,6 +535,35 @@ def atlas_query_voxel(request):
         return JSONResponse('one or more coordinates are out of range', status=400)
     return JSONResponse(data)
 
+# Compare Two Images
+def compare_images(request,pk1,pk2):
+    image1 = get_object_or_404(Image,pk=pk1)
+    image2 = get_object_or_404(Image,pk=pk2)        
+    base1, fname1, _ = split_filename(image1.file.path)
+    base2, fname2, _ = split_filename(image2.file.path)
+    pycortex_dir1 = os.path.join(base1, fname1 + "_pycortex")
+    pycortex_dir2 = os.path.join(base2, fname2 + "_pycortex")
+
+    # TODO: Here we will add NeuroVault atlases, something like:
+    #atlas_image = Atlas.objects.filter(name=atlas)[0].file
+    #atlas_xml = Atlas.objects.filter(name=atlas)[0].label_description_file 
+    
+    # call image_compare function to read in data, do regional comparisons for different metrics
+
+    if not os.path.exists(pycortex_dir1):
+        volume = generate_pycortex_volume(image1)
+        generate_pycortex_static({image.name: volume}, pycortex_dir1)
+
+    if not os.path.exists(pycortex_dir2):
+        volume = generate_pycortex_volume(image2)
+        generate_pycortex_static({image.name: volume}, pycortex_dir2)
+
+    _, _, ext1 = split_filename(image1.file.url)
+    _, _, ext2 = split_filename(image1.file.url)
+    pycortex_url1 = image1.file.url[:-len(ext1)] + "_pycortex/index.html"
+    pycortex_url2 = image1.file.url[:-len(ext1)] + "_pycortex/index.html"
+    return redirect(pycortex_url1)
+
 class JSONResponse(HttpResponse):
     """
     An HttpResponse that renders its content into JSON.
