@@ -84,7 +84,8 @@
 
         .management-options
             %form{action: "upload_folder", enctype: "multipart/form-data", method: "POST", name: "upload_folder_form"}
-              %a.btn.btn-primary{href: "pycortex" } 3D View
+              - if collection.image_set.all
+                  %a.btn.btn-primary{href: "pycortex" } 3D View
               - if edit_permission
                   %a.btn.btn-primary{href: "{% url 'edit_collection' cid %}" } Edit details
                   -#%a.btn.btn-primary{href: "{% url 'add_image' cid %}" } Add image
