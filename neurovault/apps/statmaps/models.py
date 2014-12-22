@@ -285,9 +285,9 @@ class NIDMResults(BaseCollectionItem):
 class NIDMResultStatisticMap(BaseStatisticMap):
     nidm_results_zip = models.ForeignKey(NIDMResults)
 
-    def save(self, *args, **kwargs):
-        # enforce uneditable nifti
-        super(NIDMResultStatisticMap, self).save(*args, **kwargs)
+    #def save(self, *args, **kwargs):
+    #    # enforce uneditable nifti
+    #    super(NIDMResultStatisticMap, self).save(*args, **kwargs)
 
 
 class Atlas(Image):

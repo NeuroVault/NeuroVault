@@ -45,7 +45,7 @@ class NIDMResultsAdmin(BaseImageAdmin):
     def save_model(self, request, obj, form, change):
         instance = form.save(commit=False)
         instance.save()
-
+        form.save_nidm()
 
 admin.site.register(Image, ImageAdmin)
 admin.site.register(Collection)

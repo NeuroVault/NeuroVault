@@ -31,6 +31,7 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.files.base import ContentFile
 from django.forms.widgets import HiddenInput
 from neurovault import settings
+from django.core.files import File
 
 
 # Create the form class.
@@ -435,13 +436,6 @@ class AtlasForm(ImageForm):
                   'file', 'hdr_file', 'label_description_file', 'tags')
 
 
-class NIDMResultStatisticMapForm(ImageForm):
-    class Meta(ImageForm.Meta):
-        model = NIDMResultStatisticMap
-        fields = ('name', 'collection', 'description', 'map_type',
-                  'file', 'hdr_file', 'tags', 'nidm_results_zip')
-
-
 class PolymorphicImageForm(ImageForm):
     def __init__(self, *args, **kwargs):
         super(PolymorphicImageForm, self).__init__(*args, **kwargs)
@@ -572,28 +566,75 @@ class NIDMResultsForm(forms.ModelForm):
             else:
                 self.fields[fld].widget = PathOnlyWidget()
 
+        self.helper = FormHelper(self)
+        self.helper.form_class = 'form-horizontal'
+        self.helper.form_tag = False
+        self.nidm = None
+
     def clean(self):
 
         cleaned_data = super(NIDMResultsForm, self).clean()
         # only process new uploads or replaced zips
         if self.instance.pk is None or 'zip_file' in self.changed_data:
             try:
-                nidm = NIDMUpload(cleaned_data.get('zip_file'))
+                self.nidm = NIDMUpload(cleaned_data.get('zip_file'))
             except Exception,e:
                 raise ValidationError("The NIDM file was not readable: {0}".format(e))
 
-            ttl_name = os.path.split(nidm.ttl.filename)[-1]
-            provn_name = os.path.split(nidm.provn.filename)[-1]
+            ttl_name = os.path.split(self.nidm.ttl.filename)[-1]
+            provn_name = os.path.split(self.nidm.provn.filename)[-1]
 
             self.cleaned_data['ttl_file'] = InMemoryUploadedFile(
-                                    ContentFile(nidm.zip.read(nidm.ttl)),
+                                    ContentFile(self.nidm.zip.read(self.nidm.ttl)),
                                     "file", ttl_name, "text/turtle",
-                                    nidm.ttl.file_size, "utf-8")
+                                    self.nidm.ttl.file_size, "utf-8")
 
             self.cleaned_data['provn_file'] = InMemoryUploadedFile(
-                                    ContentFile(nidm.zip.read(nidm.provn)),
+                                    ContentFile(self.nidm.zip.read(self.nidm.provn)),
                                     "file", provn_name, "text/provenance-notation",
-                                    nidm.provn.file_size, "utf-8")
+                                    self.nidm.provn.file_size, "utf-8")
+
+    def save(self,commit=True):
+        nidm_r = super(NIDMResultsForm, self).save(commit)
+        if commit and (self.instance.pk is None or 'zip_file' in self.changed_data):
+            self.save_nidm()
+        return nidm_r
+
+    def save_nidm(self):
+        if self.nidm and 'zip_file' in self.changed_data:
+            # todo: delete existing images
+
+            for sinfo in self.nidm.statmaps:
+                fname = os.path.split(sinfo['file'])[-1]
+                statmap = NIDMResultStatisticMap(name=sinfo['name'])
+                statmap.collection = self.instance.collection
+                statmap.description = 'Extracted from <a href="{0}">{1}</a>'.format(
+                                                self.instance.zip_file.url,self.instance.name)
+                statmap.map_type = sinfo['type'][0]
+                statmap.nidm_results_zip = self.instance
+                statmap.save()
+                statmap.file.save(fname,File(open(sinfo['file'])))
+                # todo: handle tags
+                # todo: delete workdir
+
+
+class NIDMResultStatisticMapForm(ImageForm):
+    class Meta(ImageForm.Meta):
+        model = NIDMResultStatisticMap
+        fields = ('name', 'collection', 'description', 'map_type',
+                  'file', 'tags', 'nidm_results_zip')
+
+    def __init__(self,*args, **kwargs):
+        super(NIDMResultStatisticMapForm,self).__init__(*args,**kwargs)
+        self.fields['hdr_file'].widget = HiddenInput()  # problem with exclude() and fields()
+        if self.instance.pk is None:
+            self.fields['file'].widget = HiddenInput()
+        else:
+            for fld in self.fields:
+                self.fields[fld].widget.attrs['readonly'] = 'readonly'
+            self.fields['map_type'].widget.attrs['disabled'] = 'disabled'
+            self.fields['file'].widget = PathOnlyWidget()
+
 
 
 
