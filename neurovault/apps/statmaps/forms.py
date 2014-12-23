@@ -598,9 +598,12 @@ class NIDMResultsForm(forms.ModelForm):
 
     def save(self,commit=True):
         nidm_r = super(NIDMResultsForm, self).save(commit)
-        if commit and (self.instance.pk is None or 'zip_file' in self.changed_data):
-            self.save_nidm()
+        if commit:
+            self.save_m2m()
+            if self.instance.pk is None or 'zip_file' in self.changed_data:
+                self.save_nidm()
         return nidm_r
+
 
     def save_nidm(self):
         if self.nidm and 'zip_file' in self.changed_data:
@@ -615,8 +618,11 @@ class NIDMResultsForm(forms.ModelForm):
                 statmap.nidm_results = self.instance
                 statmap.save()
                 statmap.file.save(fname,File(open(sinfo['file'])))
-                # todo: handle tags
-                # todo: delete workdir
+
+
+            # copy files
+            # delete workdir
+            # todo: rewrite ttl
 
 
 class NIDMResultStatisticMapForm(ImageForm):

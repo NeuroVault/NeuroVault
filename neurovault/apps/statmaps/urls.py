@@ -6,7 +6,7 @@ from .views import edit_collection, edit_images, view_image, delete_image, edit_
                     serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
                     papaya_js_embed, atlas_query_region, atlas_query_voxel
 from neurovault.apps.statmaps.views import view_images_by_tag, \
-    view_image_with_pycortex, stats_view
+    view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image
 from neurovault.apps.statmaps.models import KeyValueTag
 from django.db.models import Count
 from django.contrib.auth.decorators import login_required
@@ -120,10 +120,19 @@ urlpatterns = patterns('',
     url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/pycortex_all/(?P<path>.*)$',
         serve_pycortex,
         name='serve_pycortex_collection'),
-    url(r'^api/atlas_query_region/$', 
+
+    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[A-Za-z0-9\.\+\-\_\s\[\]]+\.nidm)(?P<sep>\.|/)(?P<path>.*)$',
+        serve_nidm,
+        name='serve_nidm_files'),
+
+    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[A-Za-z0-9\.\+\-\_\s\[\]]+\.nidm)(?P<sep>\.|/)(?P<path>.*)$',
+        serve_nidm_image,
+        name='serve_nidm_images'),
+
+    url(r'^api/atlas_query_region/$',
         atlas_query_region,
         name = 'atlas_query_region'),
-    url(r'^api/atlas_query_voxel/$', 
+    url(r'^api/atlas_query_voxel/$',
         atlas_query_voxel,
         name = 'atlas_query_voxel')
 

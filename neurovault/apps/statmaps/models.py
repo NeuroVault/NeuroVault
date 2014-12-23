@@ -139,15 +139,20 @@ class Collection(models.Model):
         app_label = 'statmaps'
 
 
+def upload_nidm_to(instance, filename):
+    nidm_subdir = os.path.split(instance.zip_file.name)[-1].replace('.zip','')
+    return os.path.join('images',str(instance.collection.id), nidm_subdir, filename)
+
+
 def upload_img_to(instance, filename):
+
+    nidm_types = ['nidmresultstatisticmap']
+    if hasattr(instance,'polymorphic_ctype') and instance.polymorphic_ctype.model in nidm_types:
+        return upload_nidm_to(instance.nidm_results,filename)
     return os.path.join('images',str(instance.collection.id), filename)
 
 
 upload_to = upload_img_to  # for migration backwards compat.
-
-def upload_nidm_to(instance, filename):
-    nidm_subdir = instance.zip_file.name.replace('.zip','')
-    return os.path.join('images',str(instance.collection.id), nidm_subdir, filename)
 
 
 class KeyValueTag(TagBase):

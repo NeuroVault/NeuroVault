@@ -455,6 +455,23 @@ def serve_pycortex(request, collection_cid, path, pycortex_dir='pycortex_all'):
     return sendfile(request, int_path)
 
 
+def serve_nidm(request, collection_cid, nidmdir, sep, path):
+    collection = get_collection(collection_cid, request, mode='file')
+    basepath = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images')
+    fpath = path if sep is '/' else ''.join([nidmdir,sep,path])
+    if path in ['zip','ttl','provn']:
+        nidmr = collection.nidmresults_set.filter(name=nidmdir).first()
+        fieldf = getattr(nidmr,'{0}_file'.format(path))
+        fpath = fieldf.path
+    return sendfile(request, os.path.join(basepath,fpath))
+
+
+def serve_nidm_image(request, collection_cid, nidmdir, sep, path):
+    collection = get_collection(collection_cid,request,mode='file')
+    path = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',str(collection.id),nidmdir,path)
+    return sendfile(request, path)
+
+
 def stats_view(request):
     collections_by_journals = {}
     for collection in Collection.objects.filter(
