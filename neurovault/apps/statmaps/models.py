@@ -143,6 +143,9 @@ def upload_img_to(instance, filename):
     return os.path.join('images',str(instance.collection.id), filename)
 
 
+upload_to = upload_img_to  # for migration backwards compat.
+
+
 def upload_nidm_to(instance, filename):
     nidm_subdir = instance.zip_file.name.replace('.zip','')
     return os.path.join('images',str(instance.collection.id), nidm_subdir, filename)

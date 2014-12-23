@@ -1,7 +1,7 @@
 from .models import Collection, Image
 from .forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, \
-    NIDMResultStatisticMapForm, NIDMResultStatisticMap
+    NIDMResultStatisticMapForm, NIDMResultStatisticMap, EditNIDMResultStatisticMapForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
@@ -162,7 +162,12 @@ def view_collection(request, cid):
     collection = get_collection(cid,request)
     edit_permission = True if owner_or_contrib(request,collection) else False
     delete_permission = True if collection.owner == request.user else False
+    images = collection.image_set.all()
+    for image in images:
+        if hasattr(image,'nidm_results_zip'):
+            image.zip_name = os.path.split(image.nidm_results_zip.zip_file.path)[-1]
     context = {'collection': collection,
+            'images': images,
             'user': request.user,
             'delete_permission': delete_permission,
             'edit_permission': edit_permission,
@@ -195,7 +200,7 @@ def edit_image(request, pk):
     elif isinstance(image, Atlas):
         form = EditAtlasForm
     elif isinstance(image, NIDMResultStatisticMap):
-        form = NIDMResultStatisticMapForm
+        form = EditNIDMResultStatisticMapForm
     else:
         raise Exception("unsuported image type")
     if not owner_or_contrib(request,image.collection):
@@ -431,6 +436,10 @@ def view_collection_with_pycortex(request, cid):
         generate_pycortex_static(volumes, output_dir)
 
     return redirect(pycortex_url)
+
+
+def view_nidm_results(request, collection_cid, nidm_dir):
+    pass
 
 
 def serve_image(request, collection_cid, img_name):

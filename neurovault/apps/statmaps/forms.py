@@ -443,7 +443,7 @@ class PolymorphicImageForm(ImageForm):
             if self.instance.polymorphic_ctype.model == 'atlas':
                 self.fields = AtlasForm.base_fields
             elif self.instance.polymorphic_ctype.model == 'nidmresultstatisticmap':
-                self.fields = NIDMResultStatisticMapForm(instance=self.instance).fields
+                self.fields = NIDMResultStatisticMapForm(self.instance.collection.owner,instance=self.instance).fields
             else:
                 self.fields = StatisticMapForm.base_fields
 
@@ -610,8 +610,7 @@ class NIDMResultsForm(forms.ModelForm):
                 fname = os.path.split(sinfo['file'])[-1]
                 statmap = NIDMResultStatisticMap(name=sinfo['name'])
                 statmap.collection = self.instance.collection
-                statmap.description = 'Extracted from <a href="{0}">{1}</a>'.format(
-                                                self.instance.zip_file.url,self.instance.name)
+                statmap.description = self.instance.description
                 statmap.map_type = sinfo['type'][0]
                 statmap.nidm_results_zip = self.instance
                 statmap.save()
@@ -621,7 +620,7 @@ class NIDMResultsForm(forms.ModelForm):
 
 
 class NIDMResultStatisticMapForm(ImageForm):
-    class Meta(ImageForm.Meta):
+    class Meta():
         model = NIDMResultStatisticMap
         fields = ('name', 'collection', 'description', 'map_type',
                   'file', 'tags', 'nidm_results_zip')
@@ -641,12 +640,6 @@ class NIDMResultStatisticMapForm(ImageForm):
             self.fields['file'].widget = PathOnlyWidget()
 
 
-
-
-
-
-
-
-
-
-
+class EditNIDMResultStatisticMapForm(NIDMResultStatisticMapForm):
+    def __init__(self, user, *args, **kwargs):
+        super(EditNIDMResultStatisticMapForm,self).__init__(*args,**kwargs)
