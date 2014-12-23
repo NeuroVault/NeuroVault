@@ -220,7 +220,7 @@ def add_image_for_neurosynth(request):
         priv_token = generate_url_token()
         temp_collection = Collection(name=temp_collection_name,
                                      owner=request.user,
-                                     private=True,
+                                     private=False,
                                      private_token=priv_token)
         temp_collection.save()
     image = Image(collection=temp_collection)
@@ -409,25 +409,28 @@ def view_collection_with_pycortex(request, cid):
     volumes = {}
     collection = get_collection(cid,request,mode='file')
     images = Image.objects.filter(collection=collection)
-
-    basedir = os.path.split(images[0].file.path)[0]
-    baseurl = os.path.split(images[0].file.url)[0]
-    output_dir = os.path.join(basedir, "pycortex_all")
-    html_path = os.path.join(basedir, "pycortex_all/index.html")
-    pycortex_url = os.path.join(baseurl, "pycortex_all/index.html")
-
-    if os.path.exists(output_dir):
-        # check if collection contents have changed
-        if collection.modify_date > get_file_ctime(html_path):
-            shutil.rmtree(output_dir)
-            return view_collection_with_pycortex(request, cid)
+    
+    if not images:
+        return redirect(collection)
     else:
-        for image in images:
-            vol = generate_pycortex_volume(image)
-            volumes[image.name] = vol
-        generate_pycortex_static(volumes, output_dir)
-
-    return redirect(pycortex_url)
+        basedir = os.path.split(images[0].file.path)[0]
+        baseurl = os.path.split(images[0].file.url)[0]
+        output_dir = os.path.join(basedir, "pycortex_all")
+        html_path = os.path.join(basedir, "pycortex_all/index.html")
+        pycortex_url = os.path.join(baseurl, "pycortex_all/index.html")
+    
+        if os.path.exists(output_dir):
+            # check if collection contents have changed
+            if (not os.path.exists(html_path)) or collection.modify_date > get_file_ctime(html_path):
+                shutil.rmtree(output_dir)
+                return view_collection_with_pycortex(request, cid)
+        else:
+            for image in images:
+                vol = generate_pycortex_volume(image)
+                volumes[image.name] = vol
+            generate_pycortex_static(volumes, output_dir)
+    
+        return redirect(pycortex_url)
 
 
 def serve_image(request, collection_cid, img_name):
