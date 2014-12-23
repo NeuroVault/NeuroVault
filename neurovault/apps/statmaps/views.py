@@ -544,8 +544,6 @@ def compare_images(request,pk1,pk2):
     # Name the data file based on the new volumes
     path, name1, ext = split_filename(image1.file.url)
     path, name2, ext = split_filename(image2.file.url)
-    table_file = "%s.csv" %("_".join(sorted([name1,name2])))
-    table_file = os.path.join(settings.COMPARE_DATASTORE,table_file)
     # image1.file.url is not correct --> /media/images does not exist
     # hardcoded for now- for Neurovault can change volume1 to image1.file.url and it should work
     volume1 = image1.file.url.replace("/media/images","/opt/image_data/images")
