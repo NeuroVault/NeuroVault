@@ -38,4 +38,4 @@
 
 - The upload image screen needs to remind users that everything they upload is immediately public and downloadable.
 
-- Add image comparison
+- Add image comparison, atlas selection for image comparison

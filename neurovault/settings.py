@@ -245,6 +245,8 @@ PRIVATE_MEDIA_REDIRECT_HEADER = 'X-Accel-Redirect'
 
 PYCORTEX_DATASTORE = os.path.join(BASE_DIR,'pycortex_data')
 
+COMPARE_DATASTORE = os.path.join(BASE_DIR,"..","..","..",'compare_data')
+
 # Pycortex static data is deployed by collectstatic at build time.
 STATICFILES_DIRS = (
     ('pycortex-resources', '/path/to/pycortex/cortex/webgl/resources'),

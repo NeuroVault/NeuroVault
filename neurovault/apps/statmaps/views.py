@@ -19,7 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
 from voxel_query_functions import *
-#from image_compare_functions import scatterplot_compare
+from compare import compare
 
 import zipfile
 import tarfile
@@ -540,29 +540,21 @@ def atlas_query_voxel(request):
 def compare_images(request,pk1,pk2):
     image1 = get_object_or_404(Image,pk=pk1)
     image2 = get_object_or_404(Image,pk=pk2)        
-    base1, fname1, _ = split_filename(image1.file.path)
-    base2, fname2, _ = split_filename(image2.file.path)
-    pycortex_dir1 = os.path.join(base1, fname1 + "_pycortex")
-    pycortex_dir2 = os.path.join(base2, fname2 + "_pycortex")
-
-    # TODO: Here we will add NeuroVault atlases, something like:
-    #atlas_image = Atlas.objects.filter(name=atlas)[0].file
-    #atlas_xml = Atlas.objects.filter(name=atlas)[0].label_description_file 
     
-    # Use same pycortex data to compare images
-    if not os.path.exists(pycortex_dir1):
-        volume1 = generate_pycortex_volume(image1)
-        generate_pycortex_static({image1.name: volume1}, pycortex_dir1)
-
-    if not os.path.exists(pycortex_dir2):
-        volume2 = generate_pycortex_volume(image2)
-        generate_pycortex_static({image2.name: volume2}, pycortex_dir2)
-
-    _, _, ext1 = split_filename(image1.file.url)
-    _, _, ext2 = split_filename(image2.file.url)
-    pycortex_url1 = image1.file.url[:-len(ext1)] + "_pycortex/index.html"
-    pycortex_url2 = image1.file.url[:-len(ext2)] + "_pycortex/index.html"
-    return redirect(pycortex_url1)
+    # Name the data file based on the new volumes
+    path, name1, ext = split_filename(image1.file.url)
+    path, name2, ext = split_filename(image2.file.url)
+    table_file = "%s.csv" %("_".join(sorted([name1,name2])))
+    table_file = os.path.join(settings.COMPARE_DATASTORE,table_file)
+    # image1.file.url is not correct --> /media/images does not exist
+    # hardcoded for now- for Neurovault can change volume1 to image1.file.url and it should work
+    volume1 = image1.file.url.replace("/media/images","/opt/image_data/images")
+    volume2 = image2.file.url.replace("/media/images","/opt/image_data/images")
+    html_snippet = compare.scatterplot_compare(image1=volume1,image2=volume2,software="FREESURFER",voxdim=[8,8,8])
+    
+    html = [h.strip("\n") for h in html_snippet]
+    context = {'html': html}
+    return render(request, 'statmaps/compare_images.html', context)
 
 class JSONResponse(HttpResponse):
     """
