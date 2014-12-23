@@ -6,7 +6,7 @@ import rdflib
 from rdflib.plugins.parsers.notation3 import BadSyntax
 from collections import Counter
 from urlparse import urlparse
-
+import shutil
 
 class NIDMUpload:
 
@@ -140,6 +140,18 @@ class NIDMUpload:
                 path = path.replace(sep,self.ttl_relpath,1)
         return os.path.join(self.workdir,path)
 
+    def copy_to_dest(self,dest):
+        source = os.path.join(self.workdir,self.ttl_relpath)
+        flist = [v for v in os.listdir(source) if self.valid_path(v)]
+        for dfile in flist:
+            sourcepath = os.path.join(source,dfile)
+            destpath = os.path.join(dest,dfile)
+            if not os.path.exists(destpath):
+                shutil.move(sourcepath, destpath)
+
+    def cleanup(self):
+        shutil.rmtree(self.workdir)
+
     @classmethod
     def uri_to_path(self,map_uri):
         # NIDM schema namespace url, or arbitrary string just in case
@@ -166,6 +178,14 @@ class NIDMUpload:
             if relpath.startswith(sep):
                 relpath = relpath.replace(sep,'',1)
         return relpath
+
+    @staticmethod
+    def valid_path(path):
+        if fnmatch(path,'__MACOSX*'):
+            return False
+        if path[0] is '.' and path[1] is not ('/' or '.'):
+            return False
+        return True
 
     @staticmethod
     def print_sparql_results(res):

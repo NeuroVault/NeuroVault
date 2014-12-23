@@ -604,7 +604,6 @@ class NIDMResultsForm(forms.ModelForm):
                 self.save_nidm()
         return nidm_r
 
-
     def save_nidm(self):
         if self.nidm and 'zip_file' in self.changed_data:
             # todo: delete existing images
@@ -619,9 +618,9 @@ class NIDMResultsForm(forms.ModelForm):
                 statmap.save()
                 statmap.file.save(fname,File(open(sinfo['file'])))
 
-
-            # copy files
-            # delete workdir
+            dest = os.path.dirname(self.instance.nidmresultstatisticmap_set.first().file.path)
+            self.nidm.copy_to_dest(dest)
+            self.nidm.cleanup()
             # todo: rewrite ttl
 
 
