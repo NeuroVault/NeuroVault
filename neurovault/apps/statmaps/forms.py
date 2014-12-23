@@ -612,7 +612,7 @@ class NIDMResultsForm(forms.ModelForm):
                 statmap.collection = self.instance.collection
                 statmap.description = self.instance.description
                 statmap.map_type = sinfo['type'][0]
-                statmap.nidm_results_zip = self.instance
+                statmap.nidm_results = self.instance
                 statmap.save()
                 statmap.file.save(fname,File(open(sinfo['file'])))
                 # todo: handle tags
@@ -623,7 +623,7 @@ class NIDMResultStatisticMapForm(ImageForm):
     class Meta():
         model = NIDMResultStatisticMap
         fields = ('name', 'collection', 'description', 'map_type',
-                  'file', 'tags', 'nidm_results_zip')
+                  'file', 'tags', 'nidm_results')
 
     def __init__(self, *args, **kwargs):
         super(NIDMResultStatisticMapForm,self).__init__(*args,**kwargs)

@@ -164,8 +164,8 @@ def view_collection(request, cid):
     delete_permission = True if collection.owner == request.user else False
     images = collection.image_set.all()
     for image in images:
-        if hasattr(image,'nidm_results_zip'):
-            image.zip_name = os.path.split(image.nidm_results_zip.zip_file.path)[-1]
+        if hasattr(image,'nidm_results'):
+            image.zip_name = os.path.split(image.nidm_results.zip_file.path)[-1]
     context = {'collection': collection,
             'images': images,
             'user': request.user,

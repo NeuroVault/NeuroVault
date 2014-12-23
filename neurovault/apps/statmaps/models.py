@@ -145,7 +145,6 @@ def upload_img_to(instance, filename):
 
 upload_to = upload_img_to  # for migration backwards compat.
 
-
 def upload_nidm_to(instance, filename):
     nidm_subdir = instance.zip_file.name.replace('.zip','')
     return os.path.join('images',str(instance.collection.id), nidm_subdir, filename)
@@ -286,7 +285,7 @@ class NIDMResults(BaseCollectionItem):
 
 
 class NIDMResultStatisticMap(BaseStatisticMap):
-    nidm_results_zip = models.ForeignKey(NIDMResults)
+    nidm_results = models.ForeignKey(NIDMResults)
 
     #def save(self, *args, **kwargs):
     #    # enforce uneditable nifti

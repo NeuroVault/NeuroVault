@@ -27,7 +27,7 @@ class AtlasAdmin(PolymorphicChildModelAdmin, BaseImageAdmin):
 class NIDMStatisticMapAdmin(PolymorphicChildModelAdmin, BaseImageAdmin):
     base_model = NIDMResultStatisticMap
     base_form = NIDMResultStatisticMapForm
-    readonly_fields = BaseImageAdmin.readonly_fields + ['nidm_results_zip']
+    readonly_fields = BaseImageAdmin.readonly_fields + ['nidm_results']
 
 
 class ImageAdmin(PolymorphicParentModelAdmin):
