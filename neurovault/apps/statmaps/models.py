@@ -234,9 +234,6 @@ class Image(PolymorphicModel, BaseCollectionItem):
 
         return image
 
-    class Meta:
-        unique_together = ("collection", "name")
-
 
 class BaseStatisticMap(Image):
     Z = 'Z'
@@ -285,7 +282,6 @@ class NIDMResults(BaseCollectionItem):
                     null=False, blank=False, verbose_name='NIDM Results zip file')
 
     class Meta:
-        unique_together = ("collection", "zip_file")
         verbose_name_plural = "NIDMResults"
 
 
@@ -306,4 +302,3 @@ class Atlas(Image):
 
     class Meta:
         verbose_name_plural = "Atlases"
-
