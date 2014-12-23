@@ -32,9 +32,9 @@ class Test_atlas_queries(TestCase):
         root = tree.getroot()
         atlasRegions = [x.text.lower() for x in root.find('data').findall('label')]
         for region in atlasRegions:
-            orderedURL = 'http://127.0.0.1:8000/api/atlas_query_region/?region=%s&atlas=orderedAtlas' %region
+            orderedURL = 'http://127.0.0.1:8000/api/atlas_query_region/?region=%s&atlas=orderedAtlas&collection=atlasCollection' %region
             orderedResponse = self.client.get(orderedURL, follow=True)
-            unorderedURL = 'http://127.0.0.1:8000/api/atlas_query_region/?region=%s&atlas=unorderedAtlas' %region
+            unorderedURL = 'http://127.0.0.1:8000/api/atlas_query_region/?region=%s&atlas=unorderedAtlas&collection=atlasCollection' %region
             unorderedResponse = self.client.get(unorderedURL, follow=True)
             orderedList = eval(orderedResponse.content)['voxels']
             unorderedList = eval(unorderedResponse.content)['voxels']
@@ -48,7 +48,7 @@ class Test_atlas_queries(TestCase):
             
         testRegions = {'6v':[(58.00,-4.00,18.00),(62.00,6.00,30.00)], 'fop':[(56.00,20.00,24.00),(34.00,18.00,30.00)], 'fpm':[(8.00,62.00,10.00),(10.00,62.00,-16.00)]}
         for region, testVoxels in testRegions.items():
-            URL = 'http://127.0.0.1:8000/api/atlas_query_region/?region=%s&atlas=orderedAtlas' %region
+            URL = 'http://127.0.0.1:8000/api/atlas_query_region/?region=%s&atlas=orderedAtlas&collection=atlasCollection' %region
             response = self.client.get(URL, follow=True)
             voxelList = eval(response.content)['voxels']
             triples = [(voxelList[0][i],voxelList[1][i],voxelList[2][i]) for i in range(len(voxelList[0]))]
@@ -59,7 +59,7 @@ class Test_atlas_queries(TestCase):
         for region, testVoxels in testRegions.items():
             for triple in testVoxels:
                 X, Y, Z = triple[0], triple[1], triple[2]
-                URL = 'http://127.0.0.1:8000/api/atlas_query_voxel/?x=%s&y=%s&z=%s&atlas=orderedAtlas' % (X, Y, Z)
+                URL = 'http://127.0.0.1:8000/api/atlas_query_voxel/?x=%s&y=%s&z=%s&atlas=orderedAtlas&collection=atlasCollection' % (X, Y, Z)
                 response = self.client.get(URL, follow=True)
                 responseText = eval(response.content)
                 self.assertEqual(responseText, region)
