@@ -19,6 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
 from voxel_query_functions import *
+#from image_compare_functions import scatterplot_compare
 
 import zipfile
 import tarfile
@@ -548,20 +549,19 @@ def compare_images(request,pk1,pk2):
     #atlas_image = Atlas.objects.filter(name=atlas)[0].file
     #atlas_xml = Atlas.objects.filter(name=atlas)[0].label_description_file 
     
-    # call image_compare function to read in data, do regional comparisons for different metrics
-
+    # Use same pycortex data to compare images
     if not os.path.exists(pycortex_dir1):
-        volume = generate_pycortex_volume(image1)
-        generate_pycortex_static({image.name: volume}, pycortex_dir1)
+        volume1 = generate_pycortex_volume(image1)
+        generate_pycortex_static({image1.name: volume1}, pycortex_dir1)
 
     if not os.path.exists(pycortex_dir2):
-        volume = generate_pycortex_volume(image2)
-        generate_pycortex_static({image.name: volume}, pycortex_dir2)
+        volume2 = generate_pycortex_volume(image2)
+        generate_pycortex_static({image2.name: volume2}, pycortex_dir2)
 
     _, _, ext1 = split_filename(image1.file.url)
-    _, _, ext2 = split_filename(image1.file.url)
+    _, _, ext2 = split_filename(image2.file.url)
     pycortex_url1 = image1.file.url[:-len(ext1)] + "_pycortex/index.html"
-    pycortex_url2 = image1.file.url[:-len(ext1)] + "_pycortex/index.html"
+    pycortex_url2 = image1.file.url[:-len(ext2)] + "_pycortex/index.html"
     return redirect(pycortex_url1)
 
 class JSONResponse(HttpResponse):
