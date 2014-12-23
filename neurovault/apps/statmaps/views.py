@@ -421,7 +421,7 @@ def view_collection_with_pycortex(request, cid):
     
         if os.path.exists(output_dir):
             # check if collection contents have changed
-            if collection.modify_date > get_file_ctime(html_path):
+            if (not os.path.exists(html_path)) or collection.modify_date > get_file_ctime(html_path):
                 shutil.rmtree(output_dir)
                 return view_collection_with_pycortex(request, cid)
         else:
