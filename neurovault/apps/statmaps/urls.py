@@ -2,11 +2,11 @@ from django.conf.urls import patterns, url
 from django.views.generic import ListView
 from .models import Collection
 from .views import edit_collection, edit_images, view_image, delete_image, edit_image, \
-                    view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
-                    serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
-                    papaya_js_embed, atlas_query_region, atlas_query_voxel
-from neurovault.apps.statmaps.views import view_images_by_tag, \
-    view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image
+                view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
+                serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
+                papaya_js_embed, atlas_query_region, atlas_query_voxel, view_images_by_tag, \
+                view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
+                view_nidm_results
 from neurovault.apps.statmaps.models import KeyValueTag
 from django.db.models import Count
 from django.contrib.auth.decorators import login_required
@@ -94,6 +94,9 @@ urlpatterns = patterns('',
     url(r'^images/(?P<pk>\d+)/js/embed$',
         papaya_js_embed,
         name='papaya_js_embed'),
+    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[A-Za-z0-9\.\+\-\_\s\[\]]+\.nidm)/?$',
+        view_nidm_results,
+        name='view_nidm_results'),
 
     url(r'^images/(?P<pk>\d+)/papaya/embedview$',
         papaya_js_embed,

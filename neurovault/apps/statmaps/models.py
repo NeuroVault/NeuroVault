@@ -164,7 +164,7 @@ class ValueTaggedItem(GenericTaggedItemBase):
 
 
 class BaseCollectionItem(models.Model):
-    name = models.CharField(max_length=200, null=False, blank=False)
+    name = models.CharField(max_length=200, null=False, blank=False, db_index=True)
     description = models.TextField(blank=False)
     collection = models.ForeignKey(Collection)
     add_date = models.DateTimeField('date published', auto_now_add=True)
@@ -298,6 +298,13 @@ class NIDMResults(BaseCollectionItem):
     class Meta:
         verbose_name_plural = "NIDMResults"
         unique_together = ('collection','name')
+
+    def get_absolute_url(self):
+        return_args = [str(self.collection_id),self.name]
+        url_name = 'view_nidm_results'
+        if self.collection.private:
+            return_args.insert(0,str(self.collection.private_token))
+        return reverse(url_name, args=return_args)
 
 
 class NIDMResultStatisticMap(BaseStatisticMap):

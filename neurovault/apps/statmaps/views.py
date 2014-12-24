@@ -438,7 +438,7 @@ def view_collection_with_pycortex(request, cid):
     return redirect(pycortex_url)
 
 
-def view_nidm_results(request, collection_cid, nidm_dir):
+def view_nidm_results(request, collection_cid, nidmdir):
     pass
 
 
@@ -460,7 +460,7 @@ def serve_nidm(request, collection_cid, nidmdir, sep, path):
     basepath = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images')
     fpath = path if sep is '/' else ''.join([nidmdir,sep,path])
     if path in ['zip','ttl','provn']:
-        nidmr = collection.nidmresults_set.filter(name=nidmdir).first()
+        nidmr = collection.nidmresults_set.filter(zip_file__endswith=nidmdir+'.zip').first()
         fieldf = getattr(nidmr,'{0}_file'.format(path))
         fpath = fieldf.path
     return sendfile(request, os.path.join(basepath,fpath))
