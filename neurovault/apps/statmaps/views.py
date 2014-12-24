@@ -89,6 +89,7 @@ def edit_images(request, collection_cid):
             return HttpResponseRedirect(collection.get_absolute_url())
     else:
         formset = CollectionFormSet(instance=collection)
+
     context = {"formset": formset}
     return render(request, "statmaps/edit_images.html.haml", context)
 
@@ -460,7 +461,10 @@ def serve_nidm(request, collection_cid, nidmdir, sep, path):
     basepath = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images')
     fpath = path if sep is '/' else ''.join([nidmdir,sep,path])
     if path in ['zip','ttl','provn']:
-        nidmr = collection.nidmresults_set.filter(zip_file__endswith=nidmdir+'.zip').first()
+        try:
+            nidmr = collection.nidmresults_set.get(name=nidmdir)
+        except:
+            return HttpResponseForbidden
         fieldf = getattr(nidmr,'{0}_file'.format(path))
         fpath = fieldf.path
     return sendfile(request, os.path.join(basepath,fpath))

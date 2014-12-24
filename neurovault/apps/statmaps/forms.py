@@ -447,8 +447,6 @@ class PolymorphicImageForm(ImageForm):
                                                          instance=self.instance).fields
             else:
                 self.fields = StatisticMapForm.base_fields
-        else:
-            raise "A polymorphic model was expected."
 
 
 class EditStatisticMapForm(StatisticMapForm):
@@ -575,6 +573,7 @@ class NIDMResultsForm(forms.ModelForm):
         self.helper.form_class = 'form-horizontal'
         self.helper.form_tag = False
         self.nidm = None
+        self.new_statmaps = []
 
     def clean(self):
 
@@ -585,6 +584,10 @@ class NIDMResultsForm(forms.ModelForm):
                 self.nidm = NIDMUpload(cleaned_data.get('zip_file'))
             except Exception,e:
                 raise ValidationError("The NIDM file was not readable: {0}".format(e))
+            try:
+                self.clean_nidm()
+            except Exception,e:
+                raise ValidationError(e)
 
             ttl_name = os.path.split(self.nidm.ttl.filename)[-1]
             provn_name = os.path.split(self.nidm.provn.filename)[-1]
@@ -607,31 +610,35 @@ class NIDMResultsForm(forms.ModelForm):
                 self.save_nidm()
         return nidm_r
 
-    def save_nidm(self):
+    def clean_nidm(self):
         if self.nidm and 'zip_file' in self.changed_data:
             # todo: delete existing images
 
-            for sinfo in self.nidm.statmaps:
-                fname = os.path.split(sinfo['file'])[-1]
-                statmap = NIDMResultStatisticMap(name=sinfo['name'])
-                statmap.collection = self.instance.collection
-                statmap.description = self.instance.description
-                statmap.map_type = sinfo['type'][0]
-                statmap.nidm_results = self.instance
-                statmap.file = self.instance.zip_file.field.upload_to(self.instance,fname)
+            for s in self.nidm.statmaps:
+                s['fname'] = os.path.split(s['file'])[-1]
+                s['statmap'] = NIDMResultStatisticMap(name=s['name'])
+                s['statmap'].collection = self.cleaned_data['collection']
+                s['statmap'].description = self.cleaned_data['description']
+                s['statmap'].map_type = s['type'][0]  # strip the first char
+                s['statmap'].nidm_results = self.instance
+                s['statmap'].file = 'images/1/foo/bar/'
 
                 try:
-                    statmap.full_clean()
-                    statmap.save()
-                    statmap.file.save(fname,File(open(sinfo['file'])))
+                    s['statmap'].clean_fields(exclude=('nidm_results','file'))
+                    s['statmap'].validate_unique()
                 except Exception,e:
-                    # todo: prevalidate unsaved sub-images at clean() for nicer failure
+                    import traceback
                     raise ValidationError("There was a problem validating the Statistic Maps " +
-                                "for this NIDM Result: \n{0}.  \nSome data ".format(e) +
-                                "might be missing. Please delete this NIDM Result and " +
-                                "try your upload again.")
+                            "for this NIDM Result: \n{0}\n{1}".format(e, traceback.format_exc()))
 
-            dest = os.path.dirname(self.instance.nidmresultstatisticmap_set.first().file.path)
+    def save_nidm(self):
+        if self.nidm and 'zip_file' in self.changed_data:
+            for s in self.nidm.statmaps:
+                s['statmap'].nidm_results = self.instance
+                s['statmap'].save()
+                s['statmap'].file.save(os.path.split(s['file'])[-1], File(open(s['file'])))
+
+            dest = os.path.dirname(self.instance.zip_file.path)
             self.nidm.copy_to_dest(dest)
             self.nidm.cleanup()
 

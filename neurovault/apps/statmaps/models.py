@@ -129,9 +129,9 @@ class Collection(models.Model):
         return self.name
 
     def save(self):
-        if self.DOI != None and self.DOI.strip() == "":
+        if self.DOI is not None and self.DOI.strip() == "":
             self.DOI = None
-        if self.private_token != None and self.private_token.strip() == "":
+        if self.private_token is not None and self.private_token.strip() == "":
             self.private_token = None
         super(Collection, self).save()
 
@@ -140,12 +140,18 @@ class Collection(models.Model):
 
 
 def upload_nidm_to(instance, filename):
-    nidm_subdir = os.path.split(instance.zip_file.name)[-1].replace('.zip','')
-    return os.path.join('images',str(instance.collection.id), nidm_subdir, filename)
+
+    base_subdir = os.path.split(instance.zip_file.name)[-1].replace('.zip','')
+    nres = NIDMResults.objects.filter(collection=instance.collection,
+                                      name__startswith=base_subdir).count()
+    if instance.pk is not None and nres != 0:  # don't count current instance
+        nres -= 1
+    use_subdir = base_subdir if nres == 0 else '{0}_{1}'.format(base_subdir,nres)
+
+    return os.path.join('images',str(instance.collection.id), use_subdir,filename)
 
 
 def upload_img_to(instance, filename):
-
     nidm_types = ['nidmresultstatisticmap']
     if hasattr(instance,'polymorphic_ctype') and instance.polymorphic_ctype.model in nidm_types:
         return upload_nidm_to(instance.nidm_results,filename)
@@ -305,6 +311,15 @@ class NIDMResults(BaseCollectionItem):
         if self.collection.private:
             return_args.insert(0,str(self.collection.private_token))
         return reverse(url_name, args=return_args)
+
+    def save(self):
+        base_subdir = os.path.split(self.zip_file.name)[-1].replace('.zip','')
+        nres = NIDMResults.objects.filter(collection=self.collection,
+                                          name__startswith=base_subdir).count()
+        if self.pk is not None and nres != 0:  # don't count current instance
+            nres -= 1
+        self.name = base_subdir if nres == 0 else '{0}_{1}'.format(base_subdir,nres)
+        super(NIDMResults, self).save()
 
 
 class NIDMResultStatisticMap(BaseStatisticMap):
