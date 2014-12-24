@@ -122,6 +122,7 @@ class NIDMUpload:
             # Make the contrast names unique
             if incidences[contrast['contrastName']] > 1:
                 map['name'] = self.get_unique_mapname(contrast)
+
             self.statmaps.append(map)
         return self.statmaps
 
@@ -181,8 +182,10 @@ class NIDMUpload:
 
     @staticmethod
     def valid_path(path):
+        # os x resource fork
         if fnmatch(path,'__MACOSX*'):
             return False
+        # ignore hidden, allow relative paths
         if path[0] is '.' and path[1] is not ('/' or '.'):
             return False
         return True

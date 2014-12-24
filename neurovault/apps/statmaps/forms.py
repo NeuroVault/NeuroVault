@@ -443,9 +443,12 @@ class PolymorphicImageForm(ImageForm):
             if self.instance.polymorphic_ctype.model == 'atlas':
                 self.fields = AtlasForm.base_fields
             elif self.instance.polymorphic_ctype.model == 'nidmresultstatisticmap':
-                self.fields = NIDMResultStatisticMapForm(self.instance.collection.owner,instance=self.instance).fields
+                self.fields = NIDMResultStatisticMapForm(self.instance.collection.owner,
+                                                         instance=self.instance).fields
             else:
                 self.fields = StatisticMapForm.base_fields
+        else:
+            raise "A polymorphic model was expected."
 
 
 class EditStatisticMapForm(StatisticMapForm):
@@ -615,12 +618,23 @@ class NIDMResultsForm(forms.ModelForm):
                 statmap.description = self.instance.description
                 statmap.map_type = sinfo['type'][0]
                 statmap.nidm_results = self.instance
-                statmap.save()
-                statmap.file.save(fname,File(open(sinfo['file'])))
+                statmap.file = self.instance.zip_file.field.upload_to(self.instance,fname)
+
+                try:
+                    statmap.full_clean()
+                    statmap.save()
+                    statmap.file.save(fname,File(open(sinfo['file'])))
+                except Exception,e:
+                    # todo: prevalidate unsaved sub-images at clean() for nicer failure
+                    raise ValidationError("There was a problem validating the Statistic Maps " +
+                                "for this NIDM Result: \n{0}.  \nSome data ".format(e) +
+                                "might be missing. Please delete this NIDM Result and " +
+                                "try your upload again.")
 
             dest = os.path.dirname(self.instance.nidmresultstatisticmap_set.first().file.path)
             self.nidm.copy_to_dest(dest)
             self.nidm.cleanup()
+
             # todo: rewrite ttl
 
 

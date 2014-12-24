@@ -45,6 +45,10 @@ class Migration(migrations.Migration):
             },
             bases=('statmaps.image',),
         ),
+        migrations.AlterUniqueTogether(
+            name='nidmresults',
+            unique_together=set([('collection', 'name')]),
+        ),
         migrations.AlterModelOptions(
             name='atlas',
             options={'verbose_name_plural': 'Atlases'},

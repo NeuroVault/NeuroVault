@@ -190,6 +190,20 @@ class BaseCollectionItem(models.Model):
         self.collection.save()
         super(BaseCollectionItem, self).delete()
 
+    def validate_unique(self, *args, **kwargs):
+
+        # Centralized validation for all needed uniqueness constraints.
+        # unique_together creates db constraints that break polymorphic children.
+        # Won't anyone please think of the children?!
+        if isinstance(self,NIDMResultStatisticMap):
+            if self.__class__.objects.filter(nidm_results=self.nidm_results, name=self.name):
+                raise ValidationError({"name":"A statistic map with this name already " +
+                                       "exists in this NIDM Results zip file."})
+        else:
+            if self.__class__.objects.filter(collection=self.collection, name=self.name):
+                raise ValidationError({"name":"An object with this name already exists in this " +
+                                      "collection."})
+
 
 class Image(PolymorphicModel, BaseCollectionItem):
     file = models.FileField(upload_to=upload_img_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='File with the unthresholded map (.img, .nii, .nii.gz)')
@@ -283,14 +297,11 @@ class NIDMResults(BaseCollectionItem):
 
     class Meta:
         verbose_name_plural = "NIDMResults"
+        unique_together = ('collection','name')
 
 
 class NIDMResultStatisticMap(BaseStatisticMap):
     nidm_results = models.ForeignKey(NIDMResults)
-
-    #def save(self, *args, **kwargs):
-    #    # enforce uneditable nifti
-    #    super(NIDMResultStatisticMap, self).save(*args, **kwargs)
 
 
 class Atlas(Image):
