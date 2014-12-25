@@ -129,7 +129,14 @@
                             %tr
                                 %td= image.id
                                 %td
-                                    %a{ href: "{{image.get_absolute_url}}" }= image.name
+                                     - if image.zip_name
+                                        %a{ href: "{{image.nidm_results.get_absolute_url}}" }
+                                            {{image.nidm_results.name}}
+                                        %span.divider{}&nbsp;&gt;&nbsp;
+                                        %a{ href: "{{image.get_absolute_url}}" }
+                                            {{ image.name }}
+                                     - else
+                                        %a{ href: "{{image.get_absolute_url}}" }= image.name
                                 %td
                                     - for tag in image.tags.all
                                         %a{ href: "/images/tags/{{tag.name}}" }= tag.name

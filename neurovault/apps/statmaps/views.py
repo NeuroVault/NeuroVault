@@ -1,7 +1,7 @@
-from .models import Collection, Image
+from .models import Collection, Image, NIDMResultStatisticMap, Atlas, StatisticMap
 from .forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, \
-    NIDMResultStatisticMapForm, NIDMResultStatisticMap, EditNIDMResultStatisticMapForm
+    NIDMResultStatisticMapForm, EditNIDMResultStatisticMapForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
@@ -89,7 +89,6 @@ def edit_images(request, collection_cid):
             return HttpResponseRedirect(collection.get_absolute_url())
     else:
         formset = CollectionFormSet(instance=collection)
-
     context = {"formset": formset}
     return render(request, "statmaps/edit_images.html.haml", context)
 
@@ -146,12 +145,23 @@ def view_image(request, pk, collection_cid=None):
     image = get_image(pk,collection_cid,request)
     user_owns_image = True if owner_or_contrib(request,image.collection) else False
     api_cid = pk
+
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
-    context = {'image': image, 'user': image.collection.owner, 'user_owns_image': user_owns_image,
-               'api_cid':api_cid}
+    context = {
+        'image': image,
+        'user': image.collection.owner,
+        'user_owns_image': user_owns_image,
+        'api_cid':api_cid,
+    }
     if isinstance(image, StatisticMap):
         template = 'statmaps/statisticmap_details.html.haml'
+    elif isinstance(image, NIDMResultStatisticMap):
+        template = 'statmaps/image_details.html.haml'
+        context['img_basename'] = os.path.basename(image.file.url)
+        context['ttl_basename'] = os.path.basename(image.nidm_results.ttl_file.url)
+        context['provn_basename'] = os.path.basename(image.nidm_results.provn_file.url)
+
     elif isinstance(image, Atlas):
         template = 'statmaps/atlas_details.html.haml'
     else:
@@ -173,6 +183,7 @@ def view_collection(request, cid):
             'delete_permission': delete_permission,
             'edit_permission': edit_permission,
             'cid':cid}
+
     if owner_or_contrib(request,collection):
         form = UploadFileForm()
         c = RequestContext(request)
