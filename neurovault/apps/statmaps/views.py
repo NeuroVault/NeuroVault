@@ -538,8 +538,8 @@ def atlas_query_voxel(request):
 
 # Compare Two Images
 def compare_images(request,pk1,pk2):
-    image1 = get_object_or_404(Image,pk=pk1)
-    image2 = get_object_or_404(Image,pk=pk2)        
+    image1 = get_image(pk1,None,request)
+    image2 = get_image(pk2,None,request)
     
     # Name the data file based on the new volumes
     path, name1, ext = split_filename(image1.file.url)
