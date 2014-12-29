@@ -14,8 +14,8 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Submit, HTML, Button, Row, Field, Hidden
 from crispy_forms.bootstrap import AppendedText, PrependedText, FormActions, TabHolder, Tab
 
-from .models import Collection, Image, ValueTaggedItem, User, StatisticMap, Atlas, \
-    NIDMResults, NIDMResultStatisticMap
+from .models import Collection, Image, ValueTaggedItem, User, StatisticMap, BaseStatisticMap, \
+    Atlas, NIDMResults, NIDMResultStatisticMap
 
 from django.forms.forms import Form
 from django.forms.fields import FileField
@@ -555,6 +555,14 @@ class PathOnlyWidget(forms.Widget):
         return mark_safe('<a target="_blank" href="%s">%s</a><br /><br />' % (value.url,value.url))
 
 
+class MapTypeListWidget(forms.Widget):
+
+    def render(self, name, value, attrs=None):
+        map_type = [v for k,v in BaseStatisticMap.MAP_TYPE_CHOICES if k == value].pop()
+        input = '<input type="hidden" name="%s" value="%s" />' % (name, value)
+        return mark_safe('%s<strong>%s</strong><br /><br />' % (input, map_type))
+
+
 class NIDMResultsForm(forms.ModelForm):
     class Meta:
         model = NIDMResults
@@ -661,8 +669,10 @@ class NIDMResultStatisticMapForm(ImageForm):
         else:
             for fld in self.fields:
                 self.fields[fld].widget.attrs['readonly'] = 'readonly'
-                self.fields[fld].widget.attrs['disabled'] = 'disabled'
-
+            # 'disabled' causes the values to not be sent in the POST (?)
+            #   self.fields[fld].widget.attrs['disabled'] = 'disabled'
+            self.fields['nidm_results'].widget = HiddenInput()
+            self.fields['map_type'].widget = MapTypeListWidget()
             self.fields['file'].widget = PathOnlyWidget()
 
 

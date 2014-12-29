@@ -18,6 +18,7 @@ import nibabel as nb
 from django.core.exceptions import ValidationError
 from neurovault import settings
 from polymorphic.polymorphic_model import PolymorphicModel
+from django.db.models import Q
 # from django.db.models.signals import post_save
 # from django.dispatch import receiver
 
@@ -202,11 +203,13 @@ class BaseCollectionItem(models.Model):
         # unique_together creates db constraints that break polymorphic children.
         # Won't anyone please think of the children?!
         if isinstance(self,NIDMResultStatisticMap):
-            if self.__class__.objects.filter(nidm_results=self.nidm_results, name=self.name):
+            if self.__class__.objects.filter(~Q(id=self.pk),nidm_results=self.nidm_results,
+                                             name=self.name):
                 raise ValidationError({"name":"A statistic map with this name already " +
                                        "exists in this NIDM Results zip file."})
         else:
-            if self.__class__.objects.filter(collection=self.collection, name=self.name):
+            if self.__class__.objects.filter(~Q(id=self.pk),collection=self.collection,
+                                             name=self.name):
                 raise ValidationError({"name":"An object with this name already exists in this " +
                                       "collection."})
 

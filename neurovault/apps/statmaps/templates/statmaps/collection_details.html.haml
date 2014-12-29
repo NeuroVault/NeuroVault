@@ -132,7 +132,7 @@
                                      - if image.zip_name
                                         %a{ href: "{{image.nidm_results.get_absolute_url}}" }
                                             {{image.nidm_results.name}}
-                                        %span.divider{}&nbsp;&gt;&nbsp;
+                                        &nbsp;<i class="icon-double-angle-right"></i>&nbsp;
                                         %a{ href: "{{image.get_absolute_url}}" }
                                             {{ image.name }}
                                      - else
@@ -146,7 +146,8 @@
                                 %td
                                     - if image.zip_name
                                         NIDMResults:
-                                        %a{href: "{{image.nidm_results.zip_file.url}}" }= image.zip_name
+                                        %a{href: "{{image.nidm_results.zip_file.url}}" }
+                                            {{image.nidm_results.name}}.zip
                                     - else
                                         {{image.description}}
             #details.tab-pane
