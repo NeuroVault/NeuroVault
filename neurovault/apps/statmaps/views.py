@@ -1,7 +1,7 @@
-from .models import Collection, Image, NIDMResultStatisticMap, Atlas, StatisticMap
+from .models import Collection, Image, NIDMResultStatisticMap, Atlas, StatisticMap, NIDMResults
 from .forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, \
-    NIDMResultStatisticMapForm, EditNIDMResultStatisticMapForm
+    NIDMResultStatisticMapForm, EditNIDMResultStatisticMapForm, NIDMResultsForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
@@ -231,6 +231,28 @@ def edit_image(request, pk):
 
 
 @login_required
+def view_nidm_results(request, collection_cid, nidm_name):
+    collection = get_collection(collection_cid,request)
+    try:
+        nidmr = NIDMResults.objects.get(collection=collection,name=nidm_name)
+    except NIDMResults.DoesNotExist:
+        return Http404("This NIDM Result was not found.")
+    if request.method == "POST":
+        if not owner_or_contrib(request,collection):
+            return HttpResponseForbidden()
+        form = NIDMResultsForm(request.POST, request.FILES, instance=nidmr)
+        if form.is_valid():
+            instance = form.save(commit=False)
+            instance.save()
+            return HttpResponseRedirect(collection.get_absolute_url())
+    else:
+        form = NIDMResultsForm(instance=nidmr)
+
+    context = {"form": form}
+    return render(request, "statmaps/edit_nidm_results.html.haml", context)
+
+
+@login_required
 def add_image_for_neurosynth(request):
     temp_collection_name = "%s's temporary collection" % request.user.username
     #this is a hack we need to make sure this collection can be only
@@ -449,10 +471,6 @@ def view_collection_with_pycortex(request, cid):
         generate_pycortex_static(volumes, output_dir)
 
     return redirect(pycortex_url)
-
-
-def view_nidm_results(request, collection_cid, nidmdir):
-    pass
 
 
 def serve_image(request, collection_cid, img_name):

@@ -579,9 +579,13 @@ class NIDMResultsForm(forms.ModelForm):
 
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
-        self.helper.form_tag = False
+        self.helper.form_tag = True
+        self.helper.add_input(Submit('submit', 'Submit'))
         self.nidm = None
         self.new_statmaps = []
+
+        self.fields['name'].widget = HiddenInput()
+        self.fields['collection'].widget = HiddenInput()
 
     def clean(self):
 
@@ -611,6 +615,15 @@ class NIDMResultsForm(forms.ModelForm):
                                     self.nidm.provn.file_size, "utf-8")
 
     def save(self,commit=True):
+        if self.instance.pk is None or 'zip_file' in self.changed_data:
+            base_subdir = os.path.split(self.cleaned_data['zip_file'].name)[-1].replace('.zip','')
+            nres = NIDMResults.objects.filter(collection=self.instance.collection,
+                                              name__startswith=base_subdir).count()
+            if self.instance.pk is not None and nres != 0:  # don't count current instance
+                nres -= 1
+            safe_name = '{0}_{1}'.format(base_subdir,nres)
+            self.cleaned_data['name'] = base_subdir if nres == 0 else safe_name
+
         nidm_r = super(NIDMResultsForm, self).save(commit)
         if commit:
             self.save_m2m()
@@ -671,7 +684,9 @@ class NIDMResultStatisticMapForm(ImageForm):
                 self.fields[fld].widget.attrs['readonly'] = 'readonly'
             # 'disabled' causes the values to not be sent in the POST (?)
             #   self.fields[fld].widget.attrs['disabled'] = 'disabled'
-            self.fields['nidm_results'].widget = HiddenInput()
+
+            if self.fields.get('nidm_results'):
+                self.fields['nidm_results'].widget = HiddenInput()
             self.fields['map_type'].widget = MapTypeListWidget()
             self.fields['file'].widget = PathOnlyWidget()
 

@@ -315,15 +315,6 @@ class NIDMResults(BaseCollectionItem):
             return_args.insert(0,str(self.collection.private_token))
         return reverse(url_name, args=return_args)
 
-    def save(self):
-        base_subdir = os.path.split(self.zip_file.name)[-1].replace('.zip','')
-        nres = NIDMResults.objects.filter(collection=self.collection,
-                                          name__startswith=base_subdir).count()
-        if self.pk is not None and nres != 0:  # don't count current instance
-            nres -= 1
-        self.name = base_subdir if nres == 0 else '{0}_{1}'.format(base_subdir,nres)
-        super(NIDMResults, self).save()
-
 
 class NIDMResultStatisticMap(BaseStatisticMap):
     nidm_results = models.ForeignKey(NIDMResults)

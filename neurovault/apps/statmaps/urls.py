@@ -94,7 +94,7 @@ urlpatterns = patterns('',
     url(r'^images/(?P<pk>\d+)/js/embed$',
         papaya_js_embed,
         name='papaya_js_embed'),
-    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[A-Za-z0-9\.\+\-\_\s\[\]]+\.nidm\_?[0-9]*)/?$',
+    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidm_name>[A-Za-z0-9\.\+\-\_\s\[\]]+\.nidm\_?[0-9]*)/?$',
         view_nidm_results,
         name='view_nidm_results'),
 
