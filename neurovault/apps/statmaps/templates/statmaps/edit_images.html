@@ -86,6 +86,14 @@
 			{% for form in formset %}
 			<div id='image-{{forloop.counter0}}' class='image-form'>
 				<input id="id_image_set-{{forloop.counter0}}-image_ptr" name="image_set-{{forloop.counter0}}-image_ptr" type="hidden" value="{{form.instance.image_ptr_id}}" />
+				{% if form.instance.nidm_results %}
+
+				<div class="alert alert-info">
+  				<button type="button" class="close" data-dismiss="alert">&times;</button>
+  				This statistic map is embedded in <strong><a href="{{form.instance.nidm_results.get_absolute_url}}">{{form.instance.nidm_results.name}}.zip</a></strong>.  Edit the NIDM zip file to modify this image's properties.
+				</div>
+				{% endif %}
+
 				{{form | crispy }}
 			</div>
 			{% endfor %}
