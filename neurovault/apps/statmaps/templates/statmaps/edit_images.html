@@ -5,10 +5,40 @@
 
 <script src="{% static "scripts/clone-form.js"%}" type="text/javascript"></script>
 
-{% comment %}
 <script type="text/javascript">
+
+	function uploadZip() {
+		return document.getElementById("{{upload_form.file.auto_id}}").click();
+	}
+
+	$(document).ready(function() {
+
+		$('#{{upload_form.file.auto_id}}').change(function(e) {
+		  var csrftoken, data, files, i, paths, xhr;
+		  paths = "";
+		  files = e.target.files;
+		  xhr = new XMLHttpRequest();
+		  data = new FormData();
+		  for (i in files) {
+		    if (files[i].name !== "." && files[i].webkitRelativePath !== void 0) {
+		      data.append('paths[]', files[i].webkitRelativePath);
+		    }
+		  }
+		  for (i in files) {
+		    if (files[i].name !== "." && files[i].webkitRelativePath !== void 0) {
+		      data.append('file_input[]', files[i]);
+		    }
+		  }
+		  csrftoken = $.cookie('csrftoken');
+		  xhr.open('POST', "upload_folder", false);
+		  xhr.setRequestHeader("X-CSRFToken", csrftoken);
+		  xhr.send(data);
+		  return document.location = "";
+		});
+
+	});
+
 </script>
-{% endcomment %}
 
 {% endblock %}
 {% block content %}
@@ -31,7 +61,7 @@
 				{% if form.nidm_results %}
 				<li id="showform-image-{{forloop.counter0}}"{% if forloop.first %} class="active"{% endif %}><a href="#"><i class="icon-archive"></i>&nbsp;{{form.instance.nidm_results}}&nbsp;<i class="icon-double-angle-right"></i>&nbsp;{{form.name.value}}</a></li>
 				{% else %}
-				<li id="showform-image-{{forloop.counter0}}"{% if forloop.first %} class="active"{% endif %}><a href="#"><i class="icon-file-alt"></i>&nbsp;{{form.name.value}}</a></li>
+				<li id="showform-image-{{forloop.counter0}}"{% if forloop.first %} class="active"{% endif %}><a href="#"><i class="icon-file"></i>&nbsp;{{form.name.value}}</a></li>
 				{% endif %}
 				{% endfor %}
 			</ul>
@@ -41,7 +71,7 @@
       <ul class="dropdown-menu" id="add-image-form">
           <li><a href="#statmap">Statistic Map</a></li>
           <li><a href="#atlas">Atlas</a></li>
-          <li><a href="#zip">Zip File <span class="muted">(NIDM Results)</span></a></li>
+          <li><a href="#zip">Zip File (NIDM Results)</a></li>
       </ul>
     </div>
 	</div>
@@ -65,6 +95,14 @@
 		</div>
 		<div id='blank_statmap' class='hide'>
 			{{blank_statmap | crispy }}
+		</div>
+		<div id='upload_form'>
+			<form id="upload_folder" action="{{ formset.0.instance.collection.get_absolute_url }}upload_folder" enctype="multipart/form-data" method="POST" name="upload_folder_form">
+		    {% csrf_token %}
+		    <div style="height: 0px;width: 0px; overflow:hidden;">
+		      {{ upload_form.file }}
+		    </div>
+			</form>
 		</div>
 	</div>
 </div>

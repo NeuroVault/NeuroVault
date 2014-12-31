@@ -87,7 +87,7 @@ def edit_images(request, collection_cid):
     if request.method == "POST":
         formset = CollectionFormSet(request.POST, request.FILES, instance=collection)
         for n,form in enumerate(formset):
-            # hack: look for more elegant to identify content type and populate fields
+            # hack: check fields to determine polymorphic type
             if form.instance.polymorphic_ctype is None:
                 atlas_f = 'image_set-{0}-label_description_file'.format(n)
                 has_atlas = [v for v in form.files if v == atlas_f]
@@ -108,8 +108,9 @@ def edit_images(request, collection_cid):
 
     blank_statmap = StatisticMapForm(instance=StatisticMap(collection=collection))
     blank_atlas = AtlasForm(instance=Atlas(collection=collection))
-
-    context = {"formset": formset, "blank_statmap": blank_statmap, "blank_atlas": blank_atlas}
+    upload_form = UploadFileForm()
+    context = {"formset": formset, "blank_statmap": blank_statmap,
+               "blank_atlas": blank_atlas, "upload_form":upload_form}
 
     return render(request, "statmaps/edit_images.html", context)
 
@@ -346,7 +347,7 @@ def upload_folder(request, collection_cid):
                 elif "file_input[]" in request.FILES:
                     for f, path in zip(request.FILES.getlist(
                                        "file_input[]"), request.POST.getlist("paths[]")):
-                        if fnmatch(path,'*.nidm.zip'):
+                        if fnmatch(f.name,'*.nidm.zip'):
                             request.FILES['file'] = f
                             populate_nidm_results(request,collection)
                             continue

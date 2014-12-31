@@ -92,6 +92,7 @@ $(document).ready(function() {
     e.preventDefault();
     var nextIndex;
     var newType = e.target.href.split('#')[1];
+    if(newType == 'zip') return uploadZip();
     cloneMore('div.image-form:last', 'image', newType);
     nextIndex = $('.image-form').length - 1;
     $('#image-select').append($('<li id="showform-image-'+nextIndex+'"><a href="#"><i class="icon-file-alt"></i>&nbsp;[new image]</a></li>'));
