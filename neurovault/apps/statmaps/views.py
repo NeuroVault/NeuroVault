@@ -1,7 +1,7 @@
 from .models import Collection, Image, NIDMResultStatisticMap, Atlas, StatisticMap, NIDMResults
 from .forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
-    NIDMResultStatisticMapForm, EditNIDMResultStatisticMapForm, NIDMResultsForm
+    NIDMResultStatisticMapForm, EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
@@ -251,7 +251,6 @@ def edit_image(request, pk):
     return render(request, "statmaps/edit_image.html.haml", context)
 
 
-@login_required
 def view_nidm_results(request, collection_cid, nidm_name):
     collection = get_collection(collection_cid,request)
     try:
@@ -269,7 +268,10 @@ def view_nidm_results(request, collection_cid, nidm_name):
             form.save_m2m()
             return HttpResponseRedirect(collection.get_absolute_url())
     else:
-        form = NIDMResultsForm(instance=nidmr)
+        if owner_or_contrib(request,collection):
+            form = NIDMResultsForm(instance=nidmr)
+        else:
+            form = NIDMViewForm(instance=nidmr)
 
     context = {"form": form}
     return render(request, "statmaps/edit_nidm_results.html.haml", context)

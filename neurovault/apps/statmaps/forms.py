@@ -674,6 +674,28 @@ class NIDMResultsForm(forms.ModelForm):
             # todo: rewrite ttl
 
 
+class NIDMViewForm(forms.ModelForm):
+
+    class Meta:
+        model = NIDMResults
+        exclude = []
+
+    def __init__(self,*args, **kwargs):
+        super(NIDMViewForm,self).__init__(*args,**kwargs)
+
+        for fld in ['ttl_file','provn_file','zip_file']:
+            self.fields[fld].widget = PathOnlyWidget()
+        for fld in self.fields:
+            self.fields[fld].widget.attrs['readonly'] = 'readonly'
+        self.fields['name'].widget = HiddenInput()
+        if self.fields.get('collection'):
+                self.fields['collection'].widget = HiddenInput()
+
+        self.helper = FormHelper(self)
+        self.helper.form_class = 'form-horizontal'
+        self.helper.form_tag = True
+
+
 class NIDMResultStatisticMapForm(ImageForm):
     class Meta():
         model = NIDMResultStatisticMap

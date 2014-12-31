@@ -8,7 +8,7 @@
 {% block content %}
 .row
     .span11
-        %h2 NIDM Results: {{ form.instance.name }}
+        <h2><a href="{{form.instance.collection.get_absolute_url}}">{{form.instance.collection.name}}</a> / {{ form.instance.name }}.zip</h2>
         %hr
 .row
     .span11
