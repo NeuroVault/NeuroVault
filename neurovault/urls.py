@@ -59,7 +59,6 @@ class NIDMDescriptionSerializedField(serializers.CharField):
 
     def to_native(self, value):
         if value and self.parent.object is not None:
-            #import ipdb; ipdb.set_trace()
             parent = self.parent.object.nidm_results.name
             fname = os.path.split(self.parent.object.file.name)[-1]
             return 'NIDM Results: {0}.zip > {1}'.format(parent,fname)

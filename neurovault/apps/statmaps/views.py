@@ -29,11 +29,13 @@ import nibabel as nib
 import re
 import tempfile
 import neurovault
+from fnmatch import fnmatch
 import os
 from collections import OrderedDict
 from neurovault.apps.statmaps.models import StatisticMap, Atlas
 from xml.dom import minidom
 from django.db.models.aggregates import Count
+
 
 
 def owner_or_contrib(request,collection):
@@ -298,6 +300,7 @@ def add_image(request, collection_cid):
 
 @login_required
 def upload_folder(request, collection_cid):
+    collection = get_collection(collection_cid,request)
     allowed_extensions = ['.nii', '.img', '.nii.gz']
     niftiFiles = []
     if request.method == 'POST':
@@ -311,6 +314,18 @@ def upload_folder(request, collection_cid):
                 # Save archive (.zip or .tar.gz) to disk
                 if "file" in request.FILES:
                     archive_name = request.FILES['file'].name
+                    if fnmatch(archive_name,'*.nidm.zip'):
+                        inst = NIDMResults(collection=collection)
+                        request.POST['name'] = 'NIDM'
+                        request.POST['description'] = 'NIDM Results'
+                        request.POST['collection'] = collection.pk
+                        request.FILES['zip_file'] = request.FILES['file']
+
+                        form = NIDMResultsForm(request.POST,request.FILES,instance=inst)
+                        if form.is_valid():
+                            form.save()
+                        return HttpResponseRedirect(collection.get_absolute_url())
+
                     _, archive_ext = os.path.splitext(archive_name)
                     if archive_ext == '.zip':
                         compressed = zipfile.ZipFile(request.FILES['file'])
@@ -350,7 +365,6 @@ def upload_folder(request, collection_cid):
                             niftiFiles.extend(split_afni4D_to_3D(nii_path))
                         else:
                             niftiFiles.append((fname,nii_path))
-
 
                 for label,fpath in niftiFiles:
                     # Read nifti file information

@@ -584,13 +584,15 @@ class NIDMResultsForm(forms.ModelForm):
         self.nidm = None
         self.new_statmaps = []
 
-        self.fields['name'].widget = HiddenInput()
-        self.fields['collection'].widget = HiddenInput()
+        if self.instance.pk is not None:
+            self.fields['name'].widget = HiddenInput()
+            if self.fields.get('collection'):
+                self.fields['collection'].widget = HiddenInput()
 
     def clean(self):
-
         cleaned_data = super(NIDMResultsForm, self).clean()
         # only process new uploads or replaced zips
+
         if self.instance.pk is None or 'zip_file' in self.changed_data:
             try:
                 self.nidm = NIDMUpload(cleaned_data.get('zip_file'))
@@ -600,6 +602,14 @@ class NIDMResultsForm(forms.ModelForm):
                 self.clean_nidm()
             except Exception,e:
                 raise ValidationError(e)
+
+            base_subdir = os.path.split(self.cleaned_data['zip_file'].name)[-1].replace('.zip','')
+            nres = NIDMResults.objects.filter(collection=self.cleaned_data['collection'],
+                                              name__startswith=base_subdir).count()
+            if self.instance.pk is not None and nres != 0:  # don't count current instance
+                nres -= 1
+            safe_name = '{0}_{1}'.format(base_subdir,nres)
+            self.cleaned_data['name'] = base_subdir if nres == 0 else safe_name
 
             ttl_name = os.path.split(self.nidm.ttl.filename)[-1]
             provn_name = os.path.split(self.nidm.provn.filename)[-1]
@@ -615,18 +625,9 @@ class NIDMResultsForm(forms.ModelForm):
                                     self.nidm.provn.file_size, "utf-8")
 
     def save(self,commit=True):
-        if self.instance.pk is None or 'zip_file' in self.changed_data:
-            base_subdir = os.path.split(self.cleaned_data['zip_file'].name)[-1].replace('.zip','')
-            nres = NIDMResults.objects.filter(collection=self.instance.collection,
-                                              name__startswith=base_subdir).count()
-            if self.instance.pk is not None and nres != 0:  # don't count current instance
-                nres -= 1
-            safe_name = '{0}_{1}'.format(base_subdir,nres)
-            self.cleaned_data['name'] = base_subdir if nres == 0 else safe_name
-
         nidm_r = super(NIDMResultsForm, self).save(commit)
+
         if commit:
-            self.save_m2m()
             if self.instance.pk is None or 'zip_file' in self.changed_data:
                 self.save_nidm()
         return nidm_r
