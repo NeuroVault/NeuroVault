@@ -93,8 +93,7 @@ def generate_pycortex_volume(image):
         #this avoids problems with white spaces in file names
         tmp_link = os.path.join(temp_dir, "tmp.nii.gz")
         os.symlink(nifti_file, tmp_link)
-        tklog = open(os.path.join(temp_dir,'tkreg2.log'),'w')
-        exit_code = subprocess.call([os.path.join(os.environ['FREESURFER_HOME'],
+        subprocess.check_output([os.path.join(os.environ['FREESURFER_HOME'],
                                      "bin", "tkregister2"),
                                      "--mov",
                                      tmp_link,
@@ -105,9 +104,7 @@ def generate_pycortex_volume(image):
                                      "--noedit",
                                      "--nofix",
                                      "--fslregout",
-                                     mni_mat],stdout=tklog)
-        if exit_code:
-            raise RuntimeError("tkregister2 exited with status %d" % exit_code)
+                                     mni_mat])
 
         x = np.loadtxt(mni_mat)
         xfm = cortex.xfm.Transform.from_fsl(x, nifti_file, reference)
