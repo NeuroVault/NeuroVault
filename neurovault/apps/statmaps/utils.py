@@ -19,6 +19,7 @@ import nibabel as nib
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from ast import literal_eval
+from subprocess import CalledProcessError
 
 
 # see CollectionRedirectMiddleware
@@ -93,18 +94,22 @@ def generate_pycortex_volume(image):
         #this avoids problems with white spaces in file names
         tmp_link = os.path.join(temp_dir, "tmp.nii.gz")
         os.symlink(nifti_file, tmp_link)
-        subprocess.check_output([os.path.join(os.environ['FREESURFER_HOME'],
-                                     "bin", "tkregister2"),
-                                     "--mov",
-                                     tmp_link,
-                                     "--targ",
-                                     reference,
-                                     "--reg",
-                                     new_mni_dat,
-                                     "--noedit",
-                                     "--nofix",
-                                     "--fslregout",
-                                     mni_mat])
+        try:
+            subprocess.check_output([os.path.join(os.environ['FREESURFER_HOME'],
+                                         "bin", "tkregister2"),
+                                         "--mov",
+                                         tmp_link,
+                                         "--targ",
+                                         reference,
+                                         "--reg",
+                                         new_mni_dat,
+                                         "--noedit",
+                                         "--nofix",
+                                         "--fslregout",
+                                         mni_mat])
+        except CalledProcessError, e:
+            raise RuntimeError(str(e.cmd) + " returned code " + str(e.returncode) + " with output " + e.output)
+            
 
         x = np.loadtxt(mni_mat)
         xfm = cortex.xfm.Transform.from_fsl(x, nifti_file, reference)
