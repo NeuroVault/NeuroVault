@@ -136,8 +136,9 @@ ul.collection_nav li {
 	margin-top: 8px;
 }
 
-.collection_hldr {
-    max-height: 350px;
+#collection_hldr {
+    max-height: 331px;
+    margin-bottom: 12px;
     overflow-y:auto;
     overflow-x: hidden;
 }

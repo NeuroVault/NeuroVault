@@ -1,6 +1,6 @@
 from .models import Collection, Image, NIDMResultStatisticMap, Atlas, StatisticMap, NIDMResults
 from .forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
-    StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, \
+    StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     NIDMResultStatisticMapForm, EditNIDMResultStatisticMapForm, NIDMResultsForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
@@ -86,14 +86,32 @@ def edit_images(request, collection_cid):
         return HttpResponseForbidden()
     if request.method == "POST":
         formset = CollectionFormSet(request.POST, request.FILES, instance=collection)
+        for n,form in enumerate(formset):
+            # hack: look for more elegant to identify content type and populate fields
+            if form.instance.polymorphic_ctype is None:
+                atlas_f = 'image_set-{0}-label_description_file'.format(n)
+                has_atlas = [v for v in form.files if v == atlas_f]
+                if has_atlas:
+                    use_model = Atlas
+                    use_form = AtlasForm
+                else:
+                    use_model = StatisticMap
+                    use_form = StatisticMapForm
+                form.instance = use_model(collection=collection)
+                form.base_fields = use_form.base_fields
+                form.fields = use_form.base_fields
         if formset.is_valid():
             formset.save()
             return HttpResponseRedirect(collection.get_absolute_url())
     else:
         formset = CollectionFormSet(instance=collection)
-    context = {"formset": formset}
 
-    return render(request, "statmaps/edit_images.html.haml", context)
+    blank_statmap = StatisticMapForm(instance=StatisticMap(collection=collection))
+    blank_atlas = AtlasForm(instance=Atlas(collection=collection))
+
+    context = {"formset": formset, "blank_statmap": blank_statmap, "blank_atlas": blank_atlas}
+
+    return render(request, "statmaps/edit_images.html", context)
 
 
 @login_required
