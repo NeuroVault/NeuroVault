@@ -594,6 +594,7 @@ class NIDMResultsForm(forms.ModelForm):
         # only process new uploads or replaced zips
 
         if self.instance.pk is None or 'zip_file' in self.changed_data:
+
             try:
                 self.nidm = NIDMUpload(cleaned_data.get('zip_file'))
             except Exception,e:
@@ -602,6 +603,14 @@ class NIDMResultsForm(forms.ModelForm):
                 self.clean_nidm()
             except Exception,e:
                 raise ValidationError(e)
+
+            # delete existing images and files when changing file
+            if self.instance.pk is not None:
+                for statmap in self.instance.nidmresultstatisticmap_set.all():
+                    statmap.delete()
+                cdir = os.path.dirname(self.instance.zip_file.path)
+                if os.path.isdir(cdir):
+                    shutil.rmtree(cdir)
 
             base_subdir = os.path.split(self.cleaned_data['zip_file'].name)[-1].replace('.zip','')
             nres = NIDMResults.objects.filter(collection=self.cleaned_data['collection'],
@@ -626,7 +635,6 @@ class NIDMResultsForm(forms.ModelForm):
 
     def save(self,commit=True):
         nidm_r = super(NIDMResultsForm, self).save(commit)
-
         if commit:
             if self.instance.pk is None or 'zip_file' in self.changed_data:
                 self.save_nidm()
@@ -634,7 +642,6 @@ class NIDMResultsForm(forms.ModelForm):
 
     def clean_nidm(self):
         if self.nidm and 'zip_file' in self.changed_data:
-            # todo: delete existing images
 
             for s in self.nidm.statmaps:
                 s['fname'] = os.path.split(s['file'])[-1]

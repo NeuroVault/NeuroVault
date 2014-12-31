@@ -265,6 +265,8 @@ def view_nidm_results(request, collection_cid, nidm_name):
         if form.is_valid():
             instance = form.save(commit=False)
             instance.save()
+            form.save_nidm()
+            form.save_m2m()
             return HttpResponseRedirect(collection.get_absolute_url())
     else:
         form = NIDMResultsForm(instance=nidmr)
