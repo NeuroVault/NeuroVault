@@ -252,7 +252,7 @@ def split_afni4D_to_3D(nii_file,with_labels=True,tmp_dir=None):
     slices = np.split(nii.get_data(), nii.get_shape()[-1], len(nii.get_shape())-1)
     labels = get_afni_subbrick_labels(nii_file)
     for n,slice in enumerate(slices):
-        nifti = nib.Nifti1Image(slice,nii.get_header().get_best_affine())
+        nifti = nib.Nifti1Image(np.squeeze(slice),nii.get_header().get_best_affine())
         layer_nm = labels[n] if n < len(labels) else 'slice_%s' % n
         outpath = os.path.join(out_dir,'%s__%s%s' % (fname,layer_nm,ext))
         nib.save(nifti,outpath)
