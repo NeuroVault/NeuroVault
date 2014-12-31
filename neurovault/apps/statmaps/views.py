@@ -10,7 +10,7 @@ from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
     get_file_ctime, detect_afni4D, split_afni4D_to_3D, splitext_nii_gz, mkdir_p, \
-    send_email_notification
+    send_email_notification, populate_nidm_results
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponse
 from django.db.models import Q
@@ -315,15 +315,7 @@ def upload_folder(request, collection_cid):
                 if "file" in request.FILES:
                     archive_name = request.FILES['file'].name
                     if fnmatch(archive_name,'*.nidm.zip'):
-                        inst = NIDMResults(collection=collection)
-                        request.POST['name'] = 'NIDM'
-                        request.POST['description'] = 'NIDM Results'
-                        request.POST['collection'] = collection.pk
-                        request.FILES['zip_file'] = request.FILES['file']
-
-                        form = NIDMResultsForm(request.POST,request.FILES,instance=inst)
-                        if form.is_valid():
-                            form.save()
+                        populate_nidm_results(request,collection)
                         return HttpResponseRedirect(collection.get_absolute_url())
 
                     _, archive_ext = os.path.splitext(archive_name)
@@ -336,6 +328,10 @@ def upload_folder(request, collection_cid):
                 elif "file_input[]" in request.FILES:
                     for f, path in zip(request.FILES.getlist(
                                        "file_input[]"), request.POST.getlist("paths[]")):
+                        if fnmatch(path,'*.nidm.zip'):
+                            request.FILES['file'] = f
+                            populate_nidm_results(request,collection)
+                            continue
                         new_path, _ = os.path.split(os.path.join(tmp_directory, path))
                         mkdir_p(new_path)
                         filename = os.path.join(new_path,f.name)

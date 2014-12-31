@@ -315,6 +315,11 @@ class NIDMResults(BaseCollectionItem):
             return_args.insert(0,str(self.collection.private_token))
         return reverse(url_name, args=return_args)
 
+    @staticmethod
+    def get_form_class():
+        from neurovault.apps.statmaps.forms import NIDMResultsForm
+        return NIDMResultsForm
+
 
 class NIDMResultStatisticMap(BaseStatisticMap):
     nidm_results = models.ForeignKey(NIDMResults)
