@@ -19,6 +19,10 @@ from django.core.exceptions import ValidationError
 from neurovault import settings
 from polymorphic.polymorphic_model import PolymorphicModel
 from django.db.models import Q
+from django.db.models.signals import post_delete
+from django.dispatch.dispatcher import receiver
+import shutil
+
 # from django.db.models.signals import post_save
 # from django.dispatch import receiver
 
@@ -319,6 +323,13 @@ class NIDMResults(BaseCollectionItem):
     def get_form_class():
         from neurovault.apps.statmaps.forms import NIDMResultsForm
         return NIDMResultsForm
+
+
+@receiver(post_delete, sender=NIDMResults)
+def mymodel_delete(sender, instance, **kwargs):
+    nidm_path = os.path.dirname(instance.zip_file.path)
+    if os.path.isdir(nidm_path):
+        shutil.rmtree(nidm_path)
 
 
 class NIDMResultStatisticMap(BaseStatisticMap):
