@@ -528,13 +528,19 @@ def serve_nidm(request, collection_cid, nidmdir, sep, path):
     collection = get_collection(collection_cid, request, mode='file')
     basepath = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images')
     fpath = path if sep is '/' else ''.join([nidmdir,sep,path])
+    try:
+        nidmr = collection.nidmresults_set.get(name=nidmdir)
+    except:
+        return HttpResponseForbidden
+
     if path in ['zip','ttl','provn']:
-        try:
-            nidmr = collection.nidmresults_set.get(name=nidmdir)
-        except:
-            return HttpResponseForbidden
         fieldf = getattr(nidmr,'{0}_file'.format(path))
         fpath = fieldf.path
+    else:
+        zipfile = nidmr.zip_file.path
+        fpathbase = os.path.dirname(zipfile)
+        fpath = ''.join([fpathbase,sep,path])
+
     return sendfile(request, os.path.join(basepath,fpath))
 
 
