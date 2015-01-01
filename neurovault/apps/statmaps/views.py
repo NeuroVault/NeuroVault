@@ -489,12 +489,18 @@ def atlas_query_region(request):
     # i was previously in contact with NIF and it seems like it wouldn't be too hard to download all the synonym data
     search = request.GET.get('region','')
     atlas = request.GET.get('atlas','').replace('\'', '')
+    collection = name=request.GET.get('collection','')
     neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))
     try:
-        atlas_image = Atlas.objects.filter(name=atlas)[0].file
-        atlas_xml = Atlas.objects.filter(name=atlas)[0].label_description_file
+        collection_object = Collection.objects.filter(name=collection)[0]
     except IndexError:
-        return JSONResponse('could not find %s' % atlas, status=400)
+        return JSONResponse('error: could not find collection: %s' % collection, status=400)
+    try:
+        atlas_object = Atlas.objects.filter(name=atlas, collection=collection_object)[0]
+        atlas_image = atlas_object.file
+        atlas_xml = atlas_object.label_description_file
+    except IndexError:
+        return JSONResponse('error: could not find atlas: %s' % atlas, status=400)
     if request.method == 'GET':       
         atlas_xml.open()
         root = ET.fromstring(atlas_xml.read())
@@ -511,13 +517,13 @@ def atlas_query_region(request):
             try:
                 searchList = toAtlas(search, graph, atlasRegions, synonymsDict)
             except ValueError:
-                return JSONResponse('region not in atlas or ontology', status=400)
+                return JSONResponse('error: region not in atlas or ontology', status=400)
             if searchList == 'none':
-                return JSONResponse('could not map specified region to region in specified atlas', status=400)
+                return JSONResponse('error: could not map specified region to region in specified atlas', status=400)
         try:
             data = {'voxels':getAtlasVoxels(searchList, atlas_image, atlas_xml)}
         except ValueError:
-            return JSONResponse('region not in atlas', status=400)
+            return JSONResponse('error: region not in atlas', status=400)
 
         return JSONResponse(data)
 
@@ -526,16 +532,22 @@ def atlas_query_voxel(request):
     X = request.GET.get('x','')
     Y = request.GET.get('y','')
     Z = request.GET.get('z','')
+    collection = name=request.GET.get('collection','')
     atlas = request.GET.get('atlas','').replace('\'', '')
     try:
-        atlas_image = Atlas.objects.filter(name=atlas)[0].file
-        atlas_xml = Atlas.objects.filter(name=atlas)[0].label_description_file
+        collection_object = Collection.objects.filter(name=collection)[0]
     except IndexError:
-        return JSONResponse('could not find %s' % atlas, status=400)
+        return JSONResponse('error: could not find collection: %s' % collection, status=400)
+    try:
+        atlas_object = Atlas.objects.filter(name=atlas, collection=collection_object)[0]
+        atlas_image = atlas_object.file
+        atlas_xml = atlas_object.label_description_file
+    except IndexError:
+        return JSONResponse('error: could not find atlas: %s' % atlas, status=400)
     try:
         data = voxelToRegion(X,Y,Z,atlas_image, atlas_xml)
     except IndexError:
-        return JSONResponse('one or more coordinates are out of range', status=400)
+        return JSONResponse('error: one or more coordinates are out of range', status=400)
     return JSONResponse(data)
 
 class JSONResponse(HttpResponse):
