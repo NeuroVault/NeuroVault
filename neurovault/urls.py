@@ -200,7 +200,8 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
     def datatable(self, request, pk=None):
         collection = get_collection(pk,request,mode='api')
         data = CollectionSerializer(collection, context={'request': request}).data
-        data['description'] = data['description'].replace('\n', '<br />')
+        if data and 'description' in data:
+            data['description'] = data['description'].replace('\n', '<br />')
         return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date', 'images'])
 
     def retrieve(self, request, pk=None):
