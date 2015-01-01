@@ -220,7 +220,7 @@ def add_image_for_neurosynth(request):
         priv_token = generate_url_token()
         temp_collection = Collection(name=temp_collection_name,
                                      owner=request.user,
-                                     private=True,
+                                     private=False,
                                      private_token=priv_token)
         temp_collection.save()
     image = Image(collection=temp_collection)
@@ -409,25 +409,28 @@ def view_collection_with_pycortex(request, cid):
     volumes = {}
     collection = get_collection(cid,request,mode='file')
     images = Image.objects.filter(collection=collection)
-
-    basedir = os.path.split(images[0].file.path)[0]
-    baseurl = os.path.split(images[0].file.url)[0]
-    output_dir = os.path.join(basedir, "pycortex_all")
-    html_path = os.path.join(basedir, "pycortex_all/index.html")
-    pycortex_url = os.path.join(baseurl, "pycortex_all/index.html")
-
-    if os.path.exists(output_dir):
-        # check if collection contents have changed
-        if collection.modify_date > get_file_ctime(html_path):
-            shutil.rmtree(output_dir)
-            return view_collection_with_pycortex(request, cid)
+    
+    if not images:
+        return redirect(collection)
     else:
-        for image in images:
-            vol = generate_pycortex_volume(image)
-            volumes[image.name] = vol
-        generate_pycortex_static(volumes, output_dir)
-
-    return redirect(pycortex_url)
+        basedir = os.path.split(images[0].file.path)[0]
+        baseurl = os.path.split(images[0].file.url)[0]
+        output_dir = os.path.join(basedir, "pycortex_all")
+        html_path = os.path.join(basedir, "pycortex_all/index.html")
+        pycortex_url = os.path.join(baseurl, "pycortex_all/index.html")
+    
+        if os.path.exists(output_dir):
+            # check if collection contents have changed
+            if (not os.path.exists(html_path)) or collection.modify_date > get_file_ctime(html_path):
+                shutil.rmtree(output_dir)
+                return view_collection_with_pycortex(request, cid)
+        else:
+            for image in images:
+                vol = generate_pycortex_volume(image)
+                volumes[image.name] = vol
+            generate_pycortex_static(volumes, output_dir)
+    
+        return redirect(pycortex_url)
 
 
 def serve_image(request, collection_cid, img_name):
@@ -486,12 +489,18 @@ def atlas_query_region(request):
     # i was previously in contact with NIF and it seems like it wouldn't be too hard to download all the synonym data
     search = request.GET.get('region','')
     atlas = request.GET.get('atlas','').replace('\'', '')
+    collection = name=request.GET.get('collection','')
     neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))
     try:
-        atlas_image = Atlas.objects.filter(name=atlas)[0].file
-        atlas_xml = Atlas.objects.filter(name=atlas)[0].label_description_file
+        collection_object = Collection.objects.filter(name=collection)[0]
     except IndexError:
-        return JSONResponse('could not find %s' % atlas, status=400)
+        return JSONResponse('error: could not find collection: %s' % collection, status=400)
+    try:
+        atlas_object = Atlas.objects.filter(name=atlas, collection=collection_object)[0]
+        atlas_image = atlas_object.file
+        atlas_xml = atlas_object.label_description_file
+    except IndexError:
+        return JSONResponse('error: could not find atlas: %s' % atlas, status=400)
     if request.method == 'GET':       
         atlas_xml.open()
         root = ET.fromstring(atlas_xml.read())
@@ -508,13 +517,13 @@ def atlas_query_region(request):
             try:
                 searchList = toAtlas(search, graph, atlasRegions, synonymsDict)
             except ValueError:
-                return JSONResponse('region not in atlas or ontology', status=400)
+                return JSONResponse('error: region not in atlas or ontology', status=400)
             if searchList == 'none':
-                return JSONResponse('could not map specified region to region in specified atlas', status=400)
+                return JSONResponse('error: could not map specified region to region in specified atlas', status=400)
         try:
             data = {'voxels':getAtlasVoxels(searchList, atlas_image, atlas_xml)}
         except ValueError:
-            return JSONResponse('region not in atlas', status=400)
+            return JSONResponse('error: region not in atlas', status=400)
 
         return JSONResponse(data)
 
@@ -523,16 +532,22 @@ def atlas_query_voxel(request):
     X = request.GET.get('x','')
     Y = request.GET.get('y','')
     Z = request.GET.get('z','')
+    collection = name=request.GET.get('collection','')
     atlas = request.GET.get('atlas','').replace('\'', '')
     try:
-        atlas_image = Atlas.objects.filter(name=atlas)[0].file
-        atlas_xml = Atlas.objects.filter(name=atlas)[0].label_description_file
+        collection_object = Collection.objects.filter(name=collection)[0]
     except IndexError:
-        return JSONResponse('could not find %s' % atlas, status=400)
+        return JSONResponse('error: could not find collection: %s' % collection, status=400)
+    try:
+        atlas_object = Atlas.objects.filter(name=atlas, collection=collection_object)[0]
+        atlas_image = atlas_object.file
+        atlas_xml = atlas_object.label_description_file
+    except IndexError:
+        return JSONResponse('error: could not find atlas: %s' % atlas, status=400)
     try:
         data = voxelToRegion(X,Y,Z,atlas_image, atlas_xml)
     except IndexError:
-        return JSONResponse('one or more coordinates are out of range', status=400)
+        return JSONResponse('error: one or more coordinates are out of range', status=400)
     return JSONResponse(data)
 
 # Compare Two Images

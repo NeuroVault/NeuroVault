@@ -19,6 +19,7 @@ import nibabel as nib
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from ast import literal_eval
+from subprocess import CalledProcessError
 
 
 # see CollectionRedirectMiddleware
@@ -93,21 +94,22 @@ def generate_pycortex_volume(image):
         #this avoids problems with white spaces in file names
         tmp_link = os.path.join(temp_dir, "tmp.nii.gz")
         os.symlink(nifti_file, tmp_link)
-        tklog = open(os.path.join(temp_dir,'tkreg2.log'),'w')
-        exit_code = subprocess.call([os.path.join(os.environ['FREESURFER_HOME'],
-                                     "bin", "tkregister2"),
-                                     "--mov",
-                                     tmp_link,
-                                     "--targ",
-                                     reference,
-                                     "--reg",
-                                     new_mni_dat,
-                                     "--noedit",
-                                     "--nofix",
-                                     "--fslregout",
-                                     mni_mat],stdout=tklog)
-        if exit_code:
-            raise RuntimeError("tkregister2 exited with status %d" % exit_code)
+        try:
+            subprocess.check_output([os.path.join(os.environ['FREESURFER_HOME'],
+                                         "bin", "tkregister2"),
+                                         "--mov",
+                                         tmp_link,
+                                         "--targ",
+                                         reference,
+                                         "--reg",
+                                         new_mni_dat,
+                                         "--noedit",
+                                         "--nofix",
+                                         "--fslregout",
+                                         mni_mat])
+        except CalledProcessError, e:
+            raise RuntimeError(str(e.cmd) + " returned code " + str(e.returncode) + " with output " + e.output)
+            
 
         x = np.loadtxt(mni_mat)
         xfm = cortex.xfm.Transform.from_fsl(x, nifti_file, reference)
@@ -250,7 +252,7 @@ def split_afni4D_to_3D(nii_file,with_labels=True,tmp_dir=None):
     slices = np.split(nii.get_data(), nii.get_shape()[-1], len(nii.get_shape())-1)
     labels = get_afni_subbrick_labels(nii_file)
     for n,slice in enumerate(slices):
-        nifti = nib.Nifti1Image(slice,nii.get_header().get_best_affine())
+        nifti = nib.Nifti1Image(np.squeeze(slice),nii.get_header().get_best_affine())
         layer_nm = labels[n] if n < len(labels) else 'slice_%s' % n
         outpath = os.path.join(out_dir,'%s__%s%s' % (fname,layer_nm,ext))
         nib.save(nifti,outpath)
