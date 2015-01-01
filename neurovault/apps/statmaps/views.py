@@ -484,13 +484,15 @@ def view_image_with_pycortex(request, pk, collection_cid=None):
 def view_collection_with_pycortex(request, cid):
     volumes = {}
     collection = get_collection(cid,request,mode='file')
-    images = Image.objects.filter(collection=collection)
+    images = collection.image_set.all()
 
     if not images:
         return redirect(collection)
     else:
-        basedir = os.path.split(images[0].file.path)[0]
-        baseurl = os.path.split(images[0].file.url)[0]
+
+        basedir = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',cid)
+        baseurl = os.path.join(settings.PRIVATE_MEDIA_URL,cid)
+
         output_dir = os.path.join(basedir, "pycortex_all")
         html_path = os.path.join(basedir, "pycortex_all/index.html")
         pycortex_url = os.path.join(baseurl, "pycortex_all/index.html")
