@@ -19,8 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
 from voxel_query_functions import *
-from compare import compare
-
+from compare import compare, atlas as pybrainatlas
 import zipfile
 import tarfile
 import gzip
@@ -544,12 +543,22 @@ def compare_images(request,pk1,pk2):
     # Name the data file based on the new volumes
     path, name1, ext = split_filename(image1.file.url)
     path, name2, ext = split_filename(image2.file.url)
+
     # image1.file.url is not correct --> /media/images does not exist
     # hardcoded for now- for Neurovault can change volume1 to image1.file.url and it should work
     volume1 = image1.file.url.replace("/media/images","/opt/image_data/images")
     volume2 = image2.file.url.replace("/media/images","/opt/image_data/images")
-    html_snippet = compare.scatterplot_compare(image1=volume1,image2=volume2,software="FREESURFER",voxdim=[8,8,8])
-    
+
+    # For now, manually choose an atlas - this can be user choice
+    atlas_file = "/opt/image_data/pybraincompare/mr/MNI-maxprob-thr25-2mm.nii"
+    atlas_xml = "/opt/image_data/pybraincompare/mr/MNI.xml"
+    atlas = pybrainatlas.atlas(atlas_xml,atlas_file) # Default slice views are "coronal","axial","sagittal"
+
+    # The default coloring is random - here we can change all to a uniform color
+    atlas.set_color("#F5F5F5")
+
+    html_snippet,data_table = compare.scatterplot_compare(image1=volume1,image2=volume2,software="FREESURFER",voxdim=[8,8,8],atlas=atlas)
+
     html = [h.strip("\n") for h in html_snippet]
     context = {'html': html}
     return render(request, 'statmaps/compare_images.html', context)

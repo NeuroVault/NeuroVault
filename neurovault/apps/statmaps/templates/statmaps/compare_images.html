@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load coffeescript %}
+{% block head %}
+<script type="text/javascript"> 
+var addthis_config = {
+     data_track_clickback: false 
+} 
+</script>
+{% endblock %}
+{% block content %}
+
+ {% autoescape off %}
+    {% for snippet in html %}
+       {{ snippet }}
+    {% endfor %}
+ {% endautoescape %}
+
+{% endblock %}
