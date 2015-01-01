@@ -103,7 +103,5 @@ class NIDMResultsTest(TestCase):
             map_img = nidm.nidmresultstatisticmap_set.filter(map_type=map_type).first()
 
             # this fails due to the multiple contrasts issue
-            if name == 'two_contrasts':
-                continue
-
-            self.assertEquals(map_img.name,info['output_row']['name'])
+            if name not in ['two_contrasts','spm_nosubdir']:
+                self.assertEquals(map_img.name,info['output_row']['name'])
