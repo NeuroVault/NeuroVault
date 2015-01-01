@@ -634,11 +634,33 @@ class NIDMResultsForm(forms.ModelForm):
                                     self.nidm.provn.file_size, "utf-8")
 
     def save(self,commit=True):
+
+        if self.instance.pk is None or 'zip_file' in self.changed_data:
+            do_update = True
+
         nidm_r = super(NIDMResultsForm, self).save(commit)
-        if commit:
-            if self.instance.pk is None or 'zip_file' in self.changed_data:
-                self.save_nidm()
+        if commit and do_update is not None:
+            self.save_nidm()
+            self.update_ttl_urls()
         return nidm_r
+
+    def update_ttl_urls(self):
+        import re
+        ttl_content = self.instance.ttl_file.file.read()
+        fname = os.path.basename(self.instance.nidmresultstatisticmap_set.first().file.name)
+        ttl_regx = re.compile(r'(prov:atLocation\ \")(file:\/.*\/)(' +
+                              fname + ')(\"\^\^xsd\:anyURI\ \;)')
+
+        hdr, urlprefix, nifti, ftr = re.search(ttl_regx,ttl_content).groups()
+        base_url = 'http://neurovault.org'
+        replace_path = base_url + os.path.join(self.instance.collection.get_absolute_url(),
+                                    self.instance.name)+'/'
+
+        updated_ttl = ttl_content.replace(urlprefix,replace_path)
+        self.instance.ttl_file.file.close()
+        with open(self.instance.ttl_file.path,'w') as ttlf:
+            ttlf.write(updated_ttl)
+            ttlf.close()
 
     def clean_nidm(self):
         if self.nidm and 'zip_file' in self.changed_data:
