@@ -46,6 +46,7 @@ class NIDMResultsAdmin(BaseImageAdmin):
         instance = form.save(commit=False)
         instance.save()
         form.save_nidm()
+        form.update_ttl_urls()
         form.save_m2m()
 
 admin.site.register(Image, ImageAdmin)

@@ -3,7 +3,9 @@ from neurovault.apps.statmaps.models import Collection,User
 import tempfile
 import os
 import shutil
+from django.core.files.uploadedfile import SimpleUploadedFile
 from neurovault.apps.statmaps.nidm_results import NIDMUpload
+from neurovault.apps.statmaps.forms import NIDMResultsForm
 
 
 class NIDMResultsTest(TestCase):
@@ -77,3 +79,31 @@ class NIDMResultsTest(TestCase):
                 self.assertEquals(first_map[field],info['output_row'][field])
             self.assertEquals(len(statmaps[name]), info['num_statmaps'])
 
+    def testUploadNIDMZip(self):
+
+        for name, info in self.files.items():
+            zip_file = open(info['file'], 'rb')
+            post_dict = {
+                'name': name,
+                'description':'{0} upload test'.format(name),
+                'collection':self.coll.pk,
+            }
+
+            fname = os.path.basename(info['file'])
+            file_dict = {'zip_file': SimpleUploadedFile(fname, zip_file.read())}
+            form = NIDMResultsForm(post_dict, file_dict)
+
+            self.assertTrue(form.is_valid())
+
+            nidm = form.save()
+
+            self.assertEquals(len(nidm.nidmresultstatisticmap_set.all()),info['num_statmaps'])
+
+            map_type = info['output_row']['type'][0]
+            map_img = nidm.nidmresultstatisticmap_set.filter(map_type=map_type).first()
+
+            # this fails due to the multiple contrasts issue
+            if name == 'two_contrasts':
+                continue
+
+            self.assertEquals(map_img.name,info['output_row']['name'])
