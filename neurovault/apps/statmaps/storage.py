@@ -3,6 +3,7 @@ import itertools
 from django.core.files.storage import FileSystemStorage
 from neurovault import settings
 from django.db.models import get_model
+from fnmatch import fnmatch
 
 
 class NiftiGzStorage(FileSystemStorage):
@@ -37,12 +38,33 @@ class NiftiGzStorage(FileSystemStorage):
         return name
 
     def url(self, name):
+        collection_id = None
         spath,file_name = os.path.split(name)
-        spath,collection_id = os.path.split(spath)
+        urlsects = [v for v in spath.split('/') if v]
+        for i in range(len(urlsects)):
+            sect = urlsects.pop(0)
+            if sect.isdigit():
+                collection_id = sect
+                break
+        cont_path = '/'.join(urlsects)
         coll_model = get_model('statmaps','Collection')
         collection = coll_model.objects.get(id=collection_id)
         if collection.private:
             cid = collection.private_token
         else:
             cid = collection.id
-        return os.path.join(self.base_url,str(cid),file_name)
+        return os.path.join(self.base_url,str(cid),cont_path,file_name)
+
+
+class NIDMStorage(NiftiGzStorage):
+    def __init__(self, location=None, base_url=None):
+        return super(NIDMStorage, self).__init__(location, base_url)
+
+    def url(self,name):
+        rpath = super(NIDMStorage, self).url(name)
+        rpath = rpath.replace(self.base_url,'/collections').split('/')
+        for ext in ['.ttl','.provn','.zip']:
+            if fnmatch(rpath[-1],'*{0}'.format(ext)):
+                rpath.pop()
+                return '/'.join(rpath) + ext
+        return '/'.join(rpath)

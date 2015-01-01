@@ -1,5 +1,4 @@
-from django.test import TestCase
-from django.test import Client
+from django.test import TestCase, Client, override_settings
 from django.core.urlresolvers import reverse
 from neurovault.apps.statmaps.models import Collection,User
 from uuid import uuid4
@@ -7,7 +6,6 @@ import tempfile
 import os
 import shutil
 from neurovault.apps.statmaps.utils import detect_afni4D, split_afni4D_to_3D
-from glob import glob
 
 
 class CollectionSharingTest(TestCase):
@@ -33,7 +31,9 @@ class CollectionSharingTest(TestCase):
     def uniqid(self):
         return str(uuid4())[:8]
 
+    @override_settings(CRISPY_FAIL_SILENTLY=False)
     def testCollectionSharing(self):
+
         #view_url = self.coll.get_absolute_url()
         edit_url = reverse('edit_collection',kwargs={'cid': self.coll.pk})
         resp = {}

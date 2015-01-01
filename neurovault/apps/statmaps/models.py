@@ -3,7 +3,9 @@
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db import models
-from neurovault.apps.statmaps.storage import NiftiGzStorage
+from neurovault.apps.statmaps.storage import NiftiGzStorage, NIDMStorage
+#asdf
+
 from taggit.managers import TaggableManager
 from taggit.models import GenericTaggedItemBase, TagBase
 from xml import etree
@@ -16,6 +18,7 @@ import nibabel as nb
 from django.core.exceptions import ValidationError
 from neurovault import settings
 from polymorphic.polymorphic_model import PolymorphicModel
+from django.db.models import Q
 # from django.db.models.signals import post_save
 # from django.dispatch import receiver
 
@@ -127,9 +130,9 @@ class Collection(models.Model):
         return self.name
 
     def save(self):
-        if self.DOI != None and self.DOI.strip() == "":
+        if self.DOI is not None and self.DOI.strip() == "":
             self.DOI = None
-        if self.private_token != None and self.private_token.strip() == "":
+        if self.private_token is not None and self.private_token.strip() == "":
             self.private_token = None
         super(Collection, self).save()
 
@@ -137,8 +140,26 @@ class Collection(models.Model):
         app_label = 'statmaps'
 
 
-def upload_to(instance, filename):
+def upload_nidm_to(instance, filename):
+
+    base_subdir = os.path.split(instance.zip_file.name)[-1].replace('.zip','')
+    nres = NIDMResults.objects.filter(collection=instance.collection,
+                                      name__startswith=base_subdir).count()
+    if instance.pk is not None and nres != 0:  # don't count current instance
+        nres -= 1
+    use_subdir = base_subdir if nres == 0 else '{0}_{1}'.format(base_subdir,nres)
+
+    return os.path.join('images',str(instance.collection.id), use_subdir,filename)
+
+
+def upload_img_to(instance, filename):
+    nidm_types = ['nidmresultstatisticmap']
+    if hasattr(instance,'polymorphic_ctype') and instance.polymorphic_ctype.model in nidm_types:
+        return upload_nidm_to(instance.nidm_results,filename)
     return os.path.join('images',str(instance.collection.id), filename)
+
+
+upload_to = upload_img_to  # for migration backwards compat.
 
 
 class KeyValueTag(TagBase):
@@ -149,18 +170,52 @@ class ValueTaggedItem(GenericTaggedItemBase):
     tag = models.ForeignKey(KeyValueTag, related_name="tagged_items")
 
 
-class Image(PolymorphicModel):
-
-    collection = models.ForeignKey(Collection)
-    name = models.CharField(max_length=200, null=False, blank=False)
+class BaseCollectionItem(models.Model):
+    name = models.CharField(max_length=200, null=False, blank=False, db_index=True)
     description = models.TextField(blank=False)
-    file = models.FileField(upload_to=upload_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='File with the unthresholded map (.img, .nii, .nii.gz)')
+    collection = models.ForeignKey(Collection)
     add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
     tags = TaggableManager(through=ValueTaggedItem, blank=True)
 
     def __unicode__(self):
         return self.name
+
+    def set_name(self, new_name):
+        self.name = new_name
+
+    class Meta:
+        abstract = True
+
+    def save(self):
+        self.collection.modify_date = datetime.now()
+        self.collection.save()
+        super(BaseCollectionItem, self).save()
+
+    def delete(self):
+        self.collection.modify_date = datetime.now()
+        self.collection.save()
+        super(BaseCollectionItem, self).delete()
+
+    def validate_unique(self, *args, **kwargs):
+
+        # Centralized validation for all needed uniqueness constraints.
+        # unique_together creates db constraints that break polymorphic children.
+        # Won't anyone please think of the children?!
+        if isinstance(self,NIDMResultStatisticMap):
+            if self.__class__.objects.filter(~Q(id=self.pk),nidm_results=self.nidm_results,
+                                             name=self.name):
+                raise ValidationError({"name":"A statistic map with this name already " +
+                                       "exists in this NIDM Results zip file."})
+        else:
+            if self.__class__.objects.filter(~Q(id=self.pk),collection=self.collection,
+                                             name=self.name):
+                raise ValidationError({"name":"An object with this name already exists in this " +
+                                      "collection."})
+
+
+class Image(PolymorphicModel, BaseCollectionItem):
+    file = models.FileField(upload_to=upload_img_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='File with the unthresholded map (.img, .nii, .nii.gz)')
 
     def get_absolute_url(self):
         return_args = [str(self.id)]
@@ -170,22 +225,6 @@ class Image(PolymorphicModel):
             url_name = 'private_image_details'
         return reverse(url_name, args=return_args)
 
-    def set_name(self, new_name):
-        self.name = new_name
-
-    class Meta:
-        unique_together = ("collection", "name")
-
-    def save(self):
-        self.collection.modify_date = datetime.now()
-        self.collection.save()
-        super(Image, self).save()
-
-    def delete(self):
-        self.collection.modify_date = datetime.now()
-        self.collection.save()
-        super(Image, self).delete()
-
     @classmethod
     def create(cls, my_file, my_file_name, my_name, my_desc, my_collection_pk, my_map_type):
         my_collection = Collection.objects.get(pk=my_collection_pk)
@@ -193,18 +232,18 @@ class Image(PolymorphicModel):
         # Copy the nifti file into the proper location
         image = cls(description=my_desc, name=my_name, collection=my_collection)
         f = open(my_file)
-        niftiFile = File(f);
-        image.file.save(my_file_name, niftiFile);
+        niftiFile = File(f)
+        image.file.save(my_file_name, niftiFile)
 
         # If a .img file was loaded then load the correspoding .hdr file as well
         _, ext = os.path.splitext(my_file_name)
         print ext
         if ext in ['.img']:
             f = open(my_file[:-3] + "hdr")
-            hdrFile = File(f);
-            image.hdr_file.save(my_file_name[:-3] + "hdr", hdrFile);
+            hdrFile = File(f)
+            image.hdr_file.save(my_file_name[:-3] + "hdr", hdrFile)
 
-        image.map_type = my_map_type;
+        image.map_type = my_map_type
 
         #create JSON file for neurosynth viewer
         if os.path.exists(image.file.path):
@@ -214,11 +253,12 @@ class Image(PolymorphicModel):
             f = open(nifti_gz_file)
             image.nifti_gz_file.save(nifti_gz_file.split(os.path.sep)[-1], File(f), save=False)
 
-        image.save();
+        image.save()
 
         return image
 
-class StatisticMap(Image):
+
+class BaseStatisticMap(Image):
     Z = 'Z'
     T = 'T'
     F = 'F'
@@ -233,28 +273,59 @@ class StatisticMap(Image):
         (P, 'P map (given null hypothesis)'),
         (OTHER, 'Other'),
     )
-    map_type = models.CharField(help_text=("Type of statistic that is the basis of the inference"), verbose_name="Map type",
-                                                       max_length=200, null=False, blank=False, choices=MAP_TYPE_CHOICES)
+    map_type = models.CharField(
+                    help_text=("Type of statistic that is the basis of the inference"),
+                    verbose_name="Map type",
+                    max_length=200, null=False, blank=False, choices=MAP_TYPE_CHOICES)
+
+    class Meta:
+        abstract = True
+
+
+class StatisticMap(BaseStatisticMap):
     statistic_parameters = models.FloatField(help_text="Parameters of the null distribution of the test statisic, typically degrees of freedom (should be clear from the test statistic what these are).", null=True, verbose_name="Statistic parameters", blank=True)
     smoothness_fwhm = models.FloatField(help_text="Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.", verbose_name="Smoothness FWHM", null=True, blank=True)
     contrast_definition = models.CharField(help_text="Exactly what terms are subtracted from what? Define these in terms of task or stimulus conditions (e.g., 'one-back task with objects versus zero-back task with objects') instead of underlying psychological concepts (e.g., 'working memory').", verbose_name="Contrast definition", max_length=200, null=True, blank=True)
     contrast_definition_cogatlas = models.CharField(help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast", verbose_name="Cognitive Atlas definition", max_length=200, null=True, blank=True)
 
+
+class NIDMResults(BaseCollectionItem):
+    ttl_file = models.FileField(upload_to=upload_nidm_to,
+                    storage=NIDMStorage(),
+                    null=True, blank=True,
+                    verbose_name='Turtle serialization of NIDM Results (.ttl)')
+
+    provn_file = models.FileField(upload_to=upload_nidm_to,
+                    storage=NIDMStorage(),
+                    null=False, blank=True,
+                    verbose_name='Provenance store serialization of NIDM Results (.provn)')
+
+    zip_file = models.FileField(upload_to=upload_nidm_to,
+                    storage=NIDMStorage(),
+                    null=False, blank=False, verbose_name='NIDM Results zip file')
+
+    class Meta:
+        verbose_name_plural = "NIDMResults"
+        unique_together = ('collection','name')
+
+    def get_absolute_url(self):
+        return_args = [str(self.collection_id),self.name]
+        url_name = 'view_nidm_results'
+        if self.collection.private:
+            return_args.insert(0,str(self.collection.private_token))
+        return reverse(url_name, args=return_args)
+
+
+class NIDMResultStatisticMap(BaseStatisticMap):
+    nidm_results = models.ForeignKey(NIDMResults)
+
+
 class Atlas(Image):
-    label_description_file = models.FileField(upload_to=upload_to,
-                                              null=False, blank=False,
-                                              storage=NiftiGzStorage(),
-                                              verbose_name='FSL compatible label description file (.xml)')
-
-
-class NIDMResults(Image):
-    ttl_file = models.FileField(upload_to=upload_to,
+    label_description_file = models.FileField(
+                                upload_to=upload_img_to,
                                 null=False, blank=False,
                                 storage=NiftiGzStorage(),
-                                verbose_name='Turtle serialization of NIDM Results (.ttl)')
+                                verbose_name='FSL compatible label description file (.xml)')
 
-    def save(self):
-        self._unpack_nidm_zip()
-        self._update_ttl_paths()
-        self._update_nidm_zip()
-        super(NIDMResults, self).save()
+    class Meta:
+        verbose_name_plural = "Atlases"

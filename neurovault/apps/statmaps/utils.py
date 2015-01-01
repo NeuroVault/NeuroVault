@@ -270,3 +270,4 @@ def memory_uploadfile(new_file, fname, old_file):
 
     return InMemoryUploadedFile(cfile, "file", fname,
                                 content_type, cfile.size, charset)
+
