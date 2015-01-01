@@ -397,10 +397,11 @@ class ImageForm(ModelForm):
                     #Papaya does not handle float64, but by converting files we loose precision
                     #if nii.get_data_dtype() == np.float64:
                     #ii.set_data_dtype(np.float32)
-                    nii_tmp = os.path.join(tmp_dir, fname + ".nii.gz")
+                    new_name = fname + ".nii.gz"
+                    nii_tmp = os.path.join(tmp_dir, new_name)
                     nb.save(nii, nii_tmp)
 
-                    cleaned_data['file'] = memory_uploadfile(nii_tmp, fname + "nii.gz",
+                    cleaned_data['file'] = memory_uploadfile(nii_tmp, new_name,
                                                              cleaned_data['file'])
 
                 # detect AFNI 4D files and prepare 3D slices
