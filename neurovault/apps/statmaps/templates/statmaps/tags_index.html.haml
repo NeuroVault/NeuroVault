@@ -5,10 +5,9 @@
         {% inlinecoffeescript %}
             $(document).ready ->
                 $("table").dataTable
-                    # sDom: "<'row'<'span5'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
-                    sDom: "fit"
-                    sPaginationType: "bootstrap"
-                    iDisplayLength: 10
+                    # dom: "<'row'<'span5'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
+                    dom: "fit"
+                    length: 10
                     fnRowCallback: (nRow, aData, iDisplayIndex) ->
                         $cell=$('td:eq(0)', nRow)
                         tag_name = $cell.text()
@@ -19,11 +18,11 @@
 {% endblock %}
 {% block content %}
 .row
-    .span11
+    .col-md-11
         %h2 Image tags
         .lead Browse or search NeuroVault images by tag.
         .row
-            .span5
+            .col-md-11
                 %table.table.table-condensed.table-striped.table-hover.tag-list-datatable
                     %thead
                         %tr

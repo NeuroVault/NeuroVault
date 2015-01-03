@@ -76,16 +76,16 @@
 {% endblock %}
 {% block content %}
 .row
-	.span11
-		.row
-			.span9
-				%h2 Edit images
-				.lead Select an image from the list at left and edit its properties in the form at right.
-			.span2
-				%button#submit-form.btn.btn-large.btn-primary{style:"margin: 35px 0px 0px 20px; font-size: 24px; padding: 10px 20px; line-height: 1.4em"} Save
+	.col-md-7
+		%h2 Edit images
+		.bigtext Select an image from the list at left and edit its properties in the form at right.
+	.col-md-2
+		%button#submit-form.btn.btn-lg.btn-primary{style:"margin: 35px 0px 0px 20px; font-size: 24px; padding: 10px 20px; line-height: 1.4em"} Save
+.row
+	.col-md-9
 		%hr
 .row
-	.span3
+	.col-md-3
 		%h4 Images in collection:
 		%select{id: 'image-select', size: '10'}
 			- for form in formset
@@ -93,8 +93,8 @@
 					- if forloop.first
 						selected="selected"
 				>{{ form.name.value }}</option>
-		%button#add-image-form.btn.btn-large.btn-secondary{style:"margin: 0px 0px 0px 20px;"} Add a new image
-	.span8{style: 'padding-left: 15px'}
+		%button#add-image-form.btn.btn-lg.btn-default{style:"margin: 0px 0px 0px 20px;"} Add a new image
+	.col-md-6{style: 'padding-left: 15px'}
 		#current-image{style: 'text-align: center; font-size: 40px; padding: 10px 0px 50px 0px;'}= formset.0.name.value
 		<form class="form-horizontal" enctype="multipart/form-data" method="post" action="">{% csrf_token %}
 			{{ formset.management_form }}

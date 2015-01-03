@@ -6,16 +6,15 @@
         {% inlinecoffeescript %}
             $(document).ready ->
                 $("#collections-table").dataTable
-                    sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
-                    sPaginationType: "bootstrap"
-                    iDisplayLength: 10
-                    aoColumns: [ { sWidth: '45%' }, { sWidth: '10%'}, { sWidth: '45%'}]
+                    dom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
+                    length: 10
+                    columns: [ { width: '45%' }, { width: '10%'}, { width: '45%'}]
         {% endinlinecoffeescript %}
 {% endblock %}
 
 {% block content %}
 .row
-	.span11
+	.col-md-11
 		%h2 My collections
 		.lead
 			%p A collection is a set of images grouped together for some sensible reason.
