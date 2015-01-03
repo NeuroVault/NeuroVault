@@ -67,8 +67,9 @@ class NIDMUpload:
         prefix nidm: <http://www.incf.org/ns/nidash/nidm#>
         prefix spm: <http://www.incf.org/ns/nidash/spm#>
         prefix fsl: <http://www.incf.org/ns/nidash/fsl#>
+        prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-        SELECT ?contrastName ?statFile ?statType WHERE {
+        SELECT ?rdfLabel ?contrastName ?statFile ?statType WHERE {
          ?cid a nidm:ContrastMap ;
               nidm:contrastName ?contrastName ;
               prov:atLocation ?cfile .
@@ -76,6 +77,7 @@ class NIDMUpload:
          ?cid prov:wasGeneratedBy ?cea .
          ?sid a nidm:StatisticMap ;
               nidm:statisticType ?statType ;
+              rdfs:label ?rdfLabel ;
               prov:atLocation ?statFile .
         }
         """
@@ -93,6 +95,10 @@ class NIDMUpload:
             for key, val in sorted(row.items()):
                 c_row[str(key)] = val.decode()
             self.contrasts.append(c_row)
+
+        # uniquify contrast values by file
+        self.contrasts = {v['statFile']:v for v in self.contrasts}.values()
+
         return self.contrasts
 
     def unpack_nidm_zip(self):
@@ -113,14 +119,14 @@ class NIDMUpload:
         if not self.contrasts:
             raise self.NoStatMapsException("No eligible data found in this file")
 
-        incidences = Counter([v['contrastName'] for v in self.contrasts])
+        incidences = Counter([v['rdfLabel'] for v in self.contrasts])
         for contrast in self.contrasts:
-            map = {'name':contrast['contrastName'],
+            map = {'name':contrast['rdfLabel'],
                    'type':self.parse_statmap_type(contrast['statType']),
                    'file':self.validate_statmap_uri(contrast)}
 
             # Make the contrast names unique
-            if incidences[contrast['contrastName']] > 1:
+            if incidences[contrast['rdfLabel']] > 1:
                 map['name'] = self.get_unique_mapname(contrast)
 
             self.statmaps.append(map)
@@ -164,7 +170,7 @@ class NIDMUpload:
     @classmethod
     def get_unique_mapname(self,contrast):
         type = self.parse_statmap_type(contrast['statType'])
-        return '{0} {1}'.format(contrast['contrastName'], type)
+        return '{0} {1}'.format(contrast['rdfLabel'], type)
 
     @staticmethod
     def parse_statmap_type(stattype):

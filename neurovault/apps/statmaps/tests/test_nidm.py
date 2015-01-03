@@ -15,29 +15,28 @@ class NIDMResultsTest(TestCase):
         self.files = {
             'fsl_nidm': {
                 'file': os.path.join(testpath,'test_data/nidm/fsl.nidm.zip'),
-                'output_row': {'type': u'TStatistic','name': 'Generation TStatistic',},
+                'output_row': {'type': u'TStatistic','name': u'Statistic Map: Generation',},
                 'num_statmaps': 2,
             },
             'two_contrasts': {
                 'file': os.path.join(testpath,'test_data/nidm/two_contrasts.nidm.zip'),
-                'output_row': {'type': u'FStatistic', 'name': 'Generation FStatistic',},
-                'num_statmaps': 18,
+                'output_row': {'type': u'FStatistic', 'name': 'Statistic Map: Generation FStatistic',},
+                'num_statmaps': 6,
             },
             'spm_example': {
                 'file': os.path.join(testpath,'test_data/nidm/spm_example.nidm.zip'),
-                'output_row': {'type': u'TStatistic', 'name': u'passive listening > rest', },
+                'output_row': {'type': u'TStatistic', 'name': u'Statistic Map: passive listening > rest', },
                 'num_statmaps': 1,
             },
             # case for a zip with no enclosed directory
             'spm_nosubdir': {
                 'file': os.path.join(testpath,'test_data/nidm/spm_nosubdir.nidm.zip'),
-                'output_row': {'type': u'FStatistic', 'name': u'Generation FStatistic',},
-                'num_statmaps': 18,
+                'output_row': {'type': u'FStatistic', 'name': u'Statistic Map: Generation FStatistic',},
+                'num_statmaps': 6,
             },
         }
 
         self.failing_files = {
-            # corrupted ttl
             'spm_bad_ttl':   os.path.join(testpath,'test_data/nidm/spm_bad_ttl.nidm.zip'),
         }
 
@@ -102,6 +101,4 @@ class NIDMResultsTest(TestCase):
             map_type = info['output_row']['type'][0]
             map_img = nidm.nidmresultstatisticmap_set.filter(map_type=map_type).first()
 
-            # this fails due to the multiple contrasts issue
-            if name not in ['two_contrasts','spm_nosubdir']:
-                self.assertEquals(map_img.name,info['output_row']['name'])
+            self.assertEquals(map_img.name,info['output_row']['name'])
