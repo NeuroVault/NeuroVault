@@ -292,6 +292,8 @@ class CollectionForm(ModelForm):
 
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-md-3'
+        self.helper.field_class = 'col-md-6'
         self.helper.layout = Layout()
         tab_holder = TabHolder()
         for fs in collection_fieldsets:
@@ -301,7 +303,7 @@ class CollectionForm(ModelForm):
             )
             )
         self.helper.layout.extend([tab_holder, Submit(
-                                  'submit','Save', css_class="btn-large offset2")])
+                                  'submit','Save', css_class="btn-lg btn-primary col-md-offset-3")])
 
 
 class OwnerCollectionForm(CollectionForm):
@@ -330,6 +332,8 @@ class ImageForm(ModelForm):
         super(ImageForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-md-3'
+        self.helper.field_class = 'col-md-6'
         self.helper.form_tag = False
         self.afni_subbricks = []
         self.afni_tmp = None
