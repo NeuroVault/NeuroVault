@@ -443,7 +443,8 @@ class EditStatisticMapForm(StatisticMapForm):
     def __init__(self, user, *args, **kwargs):
         super(EditStatisticMapForm, self).__init__(*args, **kwargs)
         self.helper.form_tag = True
-        self.helper.add_input(Submit('submit', 'Submit'))
+        self.helper.add_input(Submit(
+                                  'submit','Submit', css_class="btn-lg btn-primary col-md-offset-3"))
 
 
 class EditAtlasForm(AtlasForm):
