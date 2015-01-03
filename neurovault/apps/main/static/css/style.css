@@ -1,19 +1,20 @@
 body {
-	background: url('/static/images/denim.png');
+	/*background: url('/static/images/denim.png');*/
+	background: white;
 }
 
 #main {
 	background: white;
-	border-left: 1px solid #666;
+/*	border-left: 1px solid #666;
 	border-right: 1px solid #666;
-	border-bottom: 1px solid #999;
-	margin: 0 auto
-	margin-bottom: 30px
-	float: none
+	border-bottom: 1px solid #999;*/
+	margin: 0 auto;
+	margin-bottom: 30px;
+	float: none;
 }
 
 #content {
-	padding: 20px;
+	padding-top: 70px;
 }
 
 
@@ -23,7 +24,7 @@ body {
 
 .massive {
 	font-size: 80px;
-	padding: 0px 0px 20px 0px;
+	padding: 0px 0px 0px 0px;
 	line-height: 1em;
 	font-family: "HelveticaNeue-Light", Helvetica, Arial, sans-serif;
 	text-align: center;
@@ -67,11 +68,19 @@ body {
 	font-size: 20px;
 	font-family: "HelveticaNeue-Light", Helvetica, Arial, sans-serif;
 	line-height: 1.3em;
-	padding: 0px 15px 0px 35px;
+	/*padding: 0px 15px 0px 35px;*/
+}
+ul.benefit-list {
+	margin-left: 40px;
 }
 
 .benefit-list li {
 	line-height: 1.3em;
+
+}
+
+.sponsors {
+	margin-left: 60px;
 }
 
 .btn-gigantic {
@@ -109,4 +118,18 @@ ul.nav-tabs li {
 
 .papaya-menu-input {
     padding: 0;
+}
+
+hr {
+	border-top: 1px solid #ddddff;
+}
+
+.navbar {
+	background: #f0f8ff;
+	border-bottom: 1px solid #d0d8ee;
+	font-size: 1.2em;
+}
+
+#image-select {
+	width: 200px;
 }
