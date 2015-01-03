@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
                 ('authors', models.CharField(max_length=200, null=True, blank=True)),
                 ('url', models.CharField(max_length=200, null=True, blank=True)),
                 ('description', models.TextField(null=True, blank=True)),
-                ('private', models.BooleanField(default=False, verbose_name=b'Accesibility', choices=[(False, b'Public (The collection will be accessible by anyone and all the data in it will be distributed under CC0 license)'), (True, b'Private (The collection will be not listed in the NeuroVault index. It will be possible to shared it with others at a private URL.)')])),
+                ('private', models.BooleanField(default=False, verbose_name=b'Accessibility', choices=[(False, b'Public (The collection will be accessible by anyone and all the data in it will be distributed under CC0 license)'), (True, b'Private (The collection will be not listed in the NeuroVault index. It will be possible to shared it with others at a private URL.)')])),
                 ('private_token', models.CharField(db_index=True, max_length=8, unique=True, null=True, blank=True)),
                 ('add_date', models.DateTimeField(auto_now_add=True, verbose_name=b'date published')),
                 ('modify_date', models.DateTimeField(auto_now=True, verbose_name=b'date modified')),
