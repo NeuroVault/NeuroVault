@@ -5,7 +5,7 @@ import shutil
 import numpy as np
 import string
 import random
-from .models import Collection
+from .models import Collection, NIDMResults
 from neurovault import settings
 import urllib2
 from lxml import etree
@@ -270,3 +270,18 @@ def memory_uploadfile(new_file, fname, old_file):
 
     return InMemoryUploadedFile(cfile, "file", fname,
                                 content_type, cfile.size, charset)
+
+
+def populate_nidm_results(request,collection):
+    inst = NIDMResults(collection=collection)
+    # resolves a odd circular import issue
+    nidmr_form = NIDMResults.get_form_class()
+    request.POST['name'] = 'NIDM'
+    request.POST['description'] = 'NIDM Results'
+    request.POST['collection'] = collection.pk
+    request.FILES['zip_file'] = request.FILES['file']
+
+    form = nidmr_form(request.POST,request.FILES,instance=inst)
+    if form.is_valid():
+        form.save()
+    return form.instance

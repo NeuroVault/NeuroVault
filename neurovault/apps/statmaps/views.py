@@ -1,6 +1,7 @@
-from .models import Collection, Image
+from .models import Collection, Image, NIDMResultStatisticMap, Atlas, StatisticMap, NIDMResults
 from .forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
-    StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm
+    StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
+    NIDMResultStatisticMapForm, EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
@@ -9,7 +10,7 @@ from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
     get_file_ctime, detect_afni4D, split_afni4D_to_3D, splitext_nii_gz, mkdir_p, \
-    send_email_notification
+    send_email_notification, populate_nidm_results
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponse
 from django.db.models import Q
@@ -28,12 +29,13 @@ import nibabel as nib
 import re
 import tempfile
 import neurovault
+from fnmatch import fnmatch
 import os
 from collections import OrderedDict
 from neurovault.apps.statmaps.models import StatisticMap, Atlas
 from xml.dom import minidom
-from neurovault.apps.statmaps.forms import EditAtlasForm
 from django.db.models.aggregates import Count
+
 
 
 def owner_or_contrib(request,collection):
@@ -84,14 +86,33 @@ def edit_images(request, collection_cid):
         return HttpResponseForbidden()
     if request.method == "POST":
         formset = CollectionFormSet(request.POST, request.FILES, instance=collection)
+        for n,form in enumerate(formset):
+            # hack: check fields to determine polymorphic type
+            if form.instance.polymorphic_ctype is None:
+                atlas_f = 'image_set-{0}-label_description_file'.format(n)
+                has_atlas = [v for v in form.files if v == atlas_f]
+                if has_atlas:
+                    use_model = Atlas
+                    use_form = AtlasForm
+                else:
+                    use_model = StatisticMap
+                    use_form = StatisticMapForm
+                form.instance = use_model(collection=collection)
+                form.base_fields = use_form.base_fields
+                form.fields = use_form.base_fields
         if formset.is_valid():
             formset.save()
             return HttpResponseRedirect(collection.get_absolute_url())
     else:
         formset = CollectionFormSet(instance=collection)
 
-    context = {"formset": formset}
-    return render(request, "statmaps/edit_images.html.haml", context)
+    blank_statmap = StatisticMapForm(instance=StatisticMap(collection=collection))
+    blank_atlas = AtlasForm(instance=Atlas(collection=collection))
+    upload_form = UploadFileForm()
+    context = {"formset": formset, "blank_statmap": blank_statmap,
+               "blank_atlas": blank_atlas, "upload_form":upload_form}
+
+    return render(request, "statmaps/edit_images.html", context)
 
 
 @login_required
@@ -146,12 +167,23 @@ def view_image(request, pk, collection_cid=None):
     image = get_image(pk,collection_cid,request)
     user_owns_image = True if owner_or_contrib(request,image.collection) else False
     api_cid = pk
+
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
-    context = {'image': image, 'user': image.collection.owner, 'user_owns_image': user_owns_image,
-               'api_cid':api_cid}
+    context = {
+        'image': image,
+        'user': image.collection.owner,
+        'user_owns_image': user_owns_image,
+        'api_cid':api_cid,
+    }
     if isinstance(image, StatisticMap):
         template = 'statmaps/statisticmap_details.html.haml'
+    elif isinstance(image, NIDMResultStatisticMap):
+        template = 'statmaps/image_details.html.haml'
+        context['img_basename'] = os.path.basename(image.file.url)
+        context['ttl_basename'] = os.path.basename(image.nidm_results.ttl_file.url)
+        context['provn_basename'] = os.path.basename(image.nidm_results.provn_file.url)
+
     elif isinstance(image, Atlas):
         template = 'statmaps/atlas_details.html.haml'
     else:
@@ -163,11 +195,17 @@ def view_collection(request, cid):
     collection = get_collection(cid,request)
     edit_permission = True if owner_or_contrib(request,collection) else False
     delete_permission = True if collection.owner == request.user else False
+    images = collection.image_set.all()
+    for image in images:
+        if hasattr(image,'nidm_results'):
+            image.zip_name = os.path.split(image.nidm_results.zip_file.path)[-1]
     context = {'collection': collection,
+            'images': images,
             'user': request.user,
             'delete_permission': delete_permission,
             'edit_permission': edit_permission,
             'cid':cid}
+
     if owner_or_contrib(request,collection):
         form = UploadFileForm()
         c = RequestContext(request)
@@ -182,6 +220,8 @@ def delete_collection(request, cid):
     collection = get_collection(cid,request)
     if collection.owner != request.user:
         return HttpResponseForbidden()
+    for image in collection.image_set.all():
+        image.delete()
     collection.delete()
     return render(request, "statmaps/deleted_collection.html")
 
@@ -193,6 +233,8 @@ def edit_image(request, pk):
         form = EditStatisticMapForm
     elif isinstance(image, Atlas):
         form = EditAtlasForm
+    elif isinstance(image, NIDMResultStatisticMap):
+        form = EditNIDMResultStatisticMapForm
     else:
         raise Exception("unsuported image type")
     if not owner_or_contrib(request,image.collection):
@@ -207,6 +249,32 @@ def edit_image(request, pk):
 
     context = {"form": form}
     return render(request, "statmaps/edit_image.html.haml", context)
+
+
+def view_nidm_results(request, collection_cid, nidm_name):
+    collection = get_collection(collection_cid,request)
+    try:
+        nidmr = NIDMResults.objects.get(collection=collection,name=nidm_name)
+    except NIDMResults.DoesNotExist:
+        return Http404("This NIDM Result was not found.")
+    if request.method == "POST":
+        if not owner_or_contrib(request,collection):
+            return HttpResponseForbidden()
+        form = NIDMResultsForm(request.POST, request.FILES, instance=nidmr)
+        if form.is_valid():
+            instance = form.save(commit=False)
+            instance.save()
+            form.save_nidm()
+            form.save_m2m()
+            return HttpResponseRedirect(collection.get_absolute_url())
+    else:
+        if owner_or_contrib(request,collection):
+            form = NIDMResultsForm(instance=nidmr)
+        else:
+            form = NIDMViewForm(instance=nidmr)
+
+    context = {"form": form}
+    return render(request, "statmaps/edit_nidm_results.html.haml", context)
 
 
 @login_required
@@ -255,6 +323,7 @@ def add_image(request, collection_cid):
 
 @login_required
 def upload_folder(request, collection_cid):
+    collection = get_collection(collection_cid,request)
     allowed_extensions = ['.nii', '.img', '.nii.gz']
     niftiFiles = []
     if request.method == 'POST':
@@ -268,6 +337,10 @@ def upload_folder(request, collection_cid):
                 # Save archive (.zip or .tar.gz) to disk
                 if "file" in request.FILES:
                     archive_name = request.FILES['file'].name
+                    if fnmatch(archive_name,'*.nidm.zip'):
+                        populate_nidm_results(request,collection)
+                        return HttpResponseRedirect(collection.get_absolute_url())
+
                     _, archive_ext = os.path.splitext(archive_name)
                     if archive_ext == '.zip':
                         compressed = zipfile.ZipFile(request.FILES['file'])
@@ -278,6 +351,10 @@ def upload_folder(request, collection_cid):
                 elif "file_input[]" in request.FILES:
                     for f, path in zip(request.FILES.getlist(
                                        "file_input[]"), request.POST.getlist("paths[]")):
+                        if fnmatch(f.name,'*.nidm.zip'):
+                            request.FILES['file'] = f
+                            populate_nidm_results(request,collection)
+                            continue
                         new_path, _ = os.path.split(os.path.join(tmp_directory, path))
                         mkdir_p(new_path)
                         filename = os.path.join(new_path,f.name)
@@ -307,7 +384,6 @@ def upload_folder(request, collection_cid):
                             niftiFiles.extend(split_afni4D_to_3D(nii_path))
                         else:
                             niftiFiles.append((fname,nii_path))
-                        
 
                 for label,fpath in niftiFiles:
                     # Read nifti file information
@@ -349,7 +425,7 @@ def upload_folder(request, collection_cid):
                     collection = get_collection(collection_cid,request)
 
                     if os.path.join(path, name) in atlases:
-                        
+
                         new_image = Atlas(name=spaced_name,
                                           description=raw_hdr['descrip'], collection=collection)
 
@@ -376,7 +452,7 @@ def upload_folder(request, collection_cid):
 @login_required
 def delete_image(request, pk):
     image = get_object_or_404(Image,pk=pk)
-    if image.collection.owner != request.user:
+    if not owner_or_contrib(request,image.collection):
         return HttpResponseForbidden()
     image.delete()
     return render(request, "statmaps/deleted_image.html")
@@ -408,17 +484,19 @@ def view_image_with_pycortex(request, pk, collection_cid=None):
 def view_collection_with_pycortex(request, cid):
     volumes = {}
     collection = get_collection(cid,request,mode='file')
-    images = Image.objects.filter(collection=collection)
-    
+    images = collection.image_set.all()
+
     if not images:
         return redirect(collection)
     else:
-        basedir = os.path.split(images[0].file.path)[0]
-        baseurl = os.path.split(images[0].file.url)[0]
+
+        basedir = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',cid)
+        baseurl = os.path.join(settings.PRIVATE_MEDIA_URL,cid)
+
         output_dir = os.path.join(basedir, "pycortex_all")
         html_path = os.path.join(basedir, "pycortex_all/index.html")
         pycortex_url = os.path.join(baseurl, "pycortex_all/index.html")
-    
+
         if os.path.exists(output_dir):
             # check if collection contents have changed
             if (not os.path.exists(html_path)) or collection.modify_date > get_file_ctime(html_path):
@@ -429,7 +507,7 @@ def view_collection_with_pycortex(request, cid):
                 vol = generate_pycortex_volume(image)
                 volumes[image.name] = vol
             generate_pycortex_static(volumes, output_dir)
-    
+
         return redirect(pycortex_url)
 
 
@@ -446,6 +524,32 @@ def serve_pycortex(request, collection_cid, path, pycortex_dir='pycortex_all'):
     return sendfile(request, int_path)
 
 
+def serve_nidm(request, collection_cid, nidmdir, sep, path):
+    collection = get_collection(collection_cid, request, mode='file')
+    basepath = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images')
+    fpath = path if sep is '/' else ''.join([nidmdir,sep,path])
+    try:
+        nidmr = collection.nidmresults_set.get(name=nidmdir)
+    except:
+        return HttpResponseForbidden
+
+    if path in ['zip','ttl','provn']:
+        fieldf = getattr(nidmr,'{0}_file'.format(path))
+        fpath = fieldf.path
+    else:
+        zipfile = nidmr.zip_file.path
+        fpathbase = os.path.dirname(zipfile)
+        fpath = ''.join([fpathbase,sep,path])
+
+    return sendfile(request, os.path.join(basepath,fpath))
+
+
+def serve_nidm_image(request, collection_cid, nidmdir, sep, path):
+    collection = get_collection(collection_cid,request,mode='file')
+    path = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',str(collection.id),nidmdir,path)
+    return sendfile(request, path)
+
+
 def stats_view(request):
     collections_by_journals = {}
     for collection in Collection.objects.filter(
@@ -459,7 +563,7 @@ def stats_view(request):
             collections_by_journals[collection.journal_name] += 1
     collections_by_journals = OrderedDict(sorted(collections_by_journals.items(
                                                 ), key=lambda t: t[1], reverse=True))
-    
+
     non_empty_collections_count = Collection.objects.annotate(num_submissions=Count('image')).filter(num_submissions__gt = 0).count()
     public_collections_count = Collection.objects.filter(private=False).annotate(num_submissions=Count('image')).filter(num_submissions__gt = 0).count()
     public_collections_with_DOIs_count = Collection.objects.filter(private=False).exclude(Q(DOI__isnull=True) | Q(DOI__exact='')).annotate(num_submissions=Count('image')).filter(num_submissions__gt = 0).count()
@@ -500,8 +604,8 @@ def atlas_query_region(request):
         atlas_image = atlas_object.file
         atlas_xml = atlas_object.label_description_file
     except IndexError:
-        return JSONResponse('error: could not find atlas: %s' % atlas, status=400)
-    if request.method == 'GET':       
+        return JSONResponse('could not find %s' % atlas, status=400)
+    if request.method == 'GET':
         atlas_xml.open()
         root = ET.fromstring(atlas_xml.read())
         atlas_xml.close()
