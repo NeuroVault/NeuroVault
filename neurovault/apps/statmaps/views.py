@@ -375,7 +375,7 @@ def upload_folder(request, collection_cid):
                             dom = minidom.parse(os.path.join(root, fname))
                             for atlas in dom.getElementsByTagName("summaryimagefile"):
                                 print "found atlas"
-                                path, base, ext = split_filename(atlas.lastChild.nodeValue)
+                                path, base = os.path.split(atlas.lastChild.nodeValue)
                                 nifti_name = os.path.join(path, base)
                                 atlases[str(os.path.join(root,nifti_name[1:]))] = os.path.join(root, fname)
                         elif ext not in allowed_extensions:
