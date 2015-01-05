@@ -400,11 +400,11 @@ def upload_folder(request, collection_cid):
                     # Fregexp = re.compile('spmF.*')
 
                     if Tregexp.search(fpath) is not None:
-                        map_type = Image.T
+                        map_type = StatisticMap.T
                     else:
                         # Check if filename corresponds to a F-map
                         if Tregexp.search(fpath) is not None:
-                            map_type = Image.F
+                            map_type = StatisticMap.F
                         else:
                             map_type = StatisticMap.OTHER
 
