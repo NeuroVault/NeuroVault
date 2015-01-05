@@ -291,7 +291,7 @@ def add_image_for_neurosynth(request):
                                      private=False,
                                      private_token=priv_token)
         temp_collection.save()
-    image = Image(collection=temp_collection)
+    image = StatisticMap(collection=temp_collection)
     if request.method == "POST":
         form = SimplifiedStatisticMapForm(request.user, request.POST, request.FILES, instance=image)
         if form.is_valid():
