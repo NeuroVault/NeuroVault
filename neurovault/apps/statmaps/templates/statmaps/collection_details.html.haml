@@ -126,18 +126,31 @@
                             %th Type
                             %th Description
                     %tbody
-                        - for image in collection.image_set.all
+                        - for image in images
                             %tr
                                 %td= image.id
                                 %td
-                                    %a{ href: "{{image.get_absolute_url}}" }= image.name
+                                     - if image.zip_name
+                                        %a{ href: "{{image.nidm_results.get_absolute_url}}" }
+                                            {{image.nidm_results.name}}
+                                        &nbsp;<i class="icon-double-angle-right"></i>&nbsp;
+                                        %a{ href: "{{image.get_absolute_url}}" }
+                                            {{ image.name }}
+                                     - else
+                                        %a{ href: "{{image.get_absolute_url}}" }= image.name
                                 %td
                                     - for tag in image.tags.all
                                         %a{ href: "/images/tags/{{tag.name}}" }= tag.name
                                         - if not forloop.last
 
                                 %td= image.polymorphic_ctype.name
-                                %td= image.description
+                                %td
+                                    - if image.zip_name
+                                        NIDMResults:
+                                        %a{href: "{{image.nidm_results.zip_file.url}}" }
+                                            {{image.nidm_results.name}}.zip
+                                    - else
+                                        {{image.description}}
             #details.tab-pane
                 %table.table.table-condensed.table-striped.table-hover.collection-details-datatable
                     %thead

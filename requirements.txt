@@ -32,3 +32,4 @@ python-openid
 django-sendfile
 django-polymorphic
 networkx
+rdflib>=4.1.0

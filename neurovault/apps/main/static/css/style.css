@@ -39,7 +39,7 @@ body {
 .small-light-head {
 	font-size: 26px;
 	font-family: "HelveticaNeue-Light", Helvetica, Arial, sans-serif;
-	line-height: 1.4em;	
+	line-height: 1.4em;
 }
 
 .center-text {
@@ -109,4 +109,36 @@ ul.nav-tabs li {
 
 .papaya-menu-input {
     padding: 0;
+}
+
+ul.collection_nav li {
+	font-size: 12px;
+	line-height: 12px;
+	background: #FFF;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+
+}
+
+.well-lite {
+	background-color: rgba(245, 245, 245, 0.52);
+}
+
+#current-image {
+	font-size: 32px;
+	padding: 20px;
+	background-color: rgba(245, 245, 245, 0.52);
+}
+
+.form-horizontal .controls {
+	margin-right: 45px;
+	margin-top: 8px;
+}
+
+#collection_hldr {
+    max-height: 331px;
+    margin-bottom: 12px;
+    overflow-y:auto;
+    overflow-x: hidden;
 }

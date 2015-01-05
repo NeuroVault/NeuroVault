@@ -14,24 +14,33 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Submit, HTML, Button, Row, Field, Hidden
 from crispy_forms.bootstrap import AppendedText, PrependedText, FormActions, TabHolder, Tab
 
-from .models import Collection, Image, ValueTaggedItem, User, StatisticMap, Atlas
+from .models import Collection, Image, ValueTaggedItem, User, StatisticMap, BaseStatisticMap, \
+    Atlas, NIDMResults, NIDMResultStatisticMap
 
 from django.forms.forms import Form
 from django.forms.fields import FileField
 import tempfile
 from neurovault.apps.statmaps.utils import split_filename, get_paper_properties, \
                                         detect_afni4D, split_afni4D_to_3D, memory_uploadfile
+from neurovault.apps.statmaps.nidm_results import NIDMUpload
 from django import forms
 from django.utils.encoding import smart_str
 from django.utils.safestring import mark_safe
 from django.forms.util import flatatt
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.core.files.base import ContentFile
+from django.forms.widgets import HiddenInput
+from neurovault import settings
+from django.core.files import File
 
 
 # Create the form class.
 collection_fieldsets = [
     ('Essentials', {'fields': ['name',
                                'DOI',
-                               'description'],
+                               'description',
+                               'contributors',
+                               'private',],
                     'legend': 'Essentials'}),
     ('Participants', {'fields': ['number_of_subjects',
                                  'subject_age_mean',
@@ -295,11 +304,9 @@ class CollectionForm(ModelForm):
         self.helper.layout = Layout()
         tab_holder = TabHolder()
         for fs in collection_fieldsets:
-            tab_holder.append(Tab(
-                fs[1]['legend'],
-                *fs[1]['fields']
-            )
-            )
+            # manually enforce field exclusion
+            fs[1]['fields'] = [v for v in fs[1]['fields'] if v not in self.Meta.exclude]
+            tab_holder.append(Tab(fs[1]['legend'], *fs[1]['fields']))
         self.helper.layout.extend([tab_holder, Submit(
                                   'submit','Save', css_class="btn-large offset2")])
 
@@ -315,10 +322,6 @@ class OwnerCollectionForm(CollectionForm):
         }
 
     def __init__(self, *args, **kwargs):
-        # explicitly populate owner-only fields to fieldsets
-        for field in ['contributors','private']:
-            if field not in collection_fieldsets[0][1]['fields']:
-                collection_fieldsets[0][1]['fields'].append(field)
         super(OwnerCollectionForm, self).__init__(*args, **kwargs)
         self.fields['contributors'].queryset = User.objects.exclude(pk=self.instance.owner.pk)
 
@@ -336,7 +339,7 @@ class ImageForm(ModelForm):
 
     class Meta:
         model = Image
-        exclude = ('collection', )
+        exclude = []
 
     def clean(self, **kwargs):
 
@@ -434,6 +437,19 @@ class AtlasForm(ImageForm):
                   'file', 'hdr_file', 'label_description_file', 'tags')
 
 
+class PolymorphicImageForm(ImageForm):
+    def __init__(self, *args, **kwargs):
+        super(PolymorphicImageForm, self).__init__(*args, **kwargs)
+        if self.instance.polymorphic_ctype is not None:
+            if self.instance.polymorphic_ctype.model == 'atlas':
+                self.fields = AtlasForm.base_fields
+            elif self.instance.polymorphic_ctype.model == 'nidmresultstatisticmap':
+                self.fields = NIDMResultStatisticMapForm(self.instance.collection.owner,
+                                                         instance=self.instance).fields
+            else:
+                self.fields = StatisticMapForm.base_fields
+
+
 class EditStatisticMapForm(StatisticMapForm):
 
     def __init__(self, user, *args, **kwargs):
@@ -463,6 +479,9 @@ class SimplifiedStatisticMapForm(EditStatisticMapForm):
 
 class CollectionInlineFormset(BaseInlineFormSet):
 
+    def add_fields(self, form, index):
+        super(CollectionInlineFormset, self).add_fields(form, index)
+
     def save_afni_slices(self,form,commit):
         try:
             orig_img = form.instance
@@ -471,9 +490,10 @@ class CollectionInlineFormset(BaseInlineFormSet):
             for n,(label,brick) in enumerate(form.afni_subbricks):
                 brick_fname = os.path.split(brick)[-1]
                 mfile = memory_uploadfile(brick, brick_fname, orig_img.file)
-                brick_img = Image(name='%s - %s' % (orig_img.name, label), file=mfile)
-                for field in ['collection','description','map_type']:
+                brick_img = StatisticMap(name='%s - %s' % (orig_img.name, label), file=mfile)
+                for field in ['collection','description']:
                     setattr(brick_img, field, form.cleaned_data[field])
+                setattr(brick_img, 'map_type', form.data['%s-map_type' % form.prefix])
 
                 if n == 0:
                     form.instance = brick_img
@@ -503,16 +523,18 @@ class CollectionInlineFormset(BaseInlineFormSet):
             return super(CollectionInlineFormset, self).save_existing(
                                                             form, instance, commit=commit)
 
+
 CollectionFormSet = inlineformset_factory(
-    Collection, StatisticMap, form=StatisticMapForm,
+    Collection, Image, form=PolymorphicImageForm,
     exclude=['json_path', 'nifti_gz_file', 'collection'],
-    extra=1, formset=CollectionInlineFormset)
+    extra=1, formset=CollectionInlineFormset, can_delete=False)
 
 
 class UploadFileForm(Form):
 
-    # TODO Need to uplaod in a temp directory
-    file = FileField(required=False);  #(upload_to="images/%s/%s"%(instance.collection.id, filename))
+    # TODO Need to upload in a temp directory
+    # (upload_to="images/%s/%s"%(instance.collection.id, filename))
+    file = FileField(required=False)
 
     def __init__(self, *args, **kwargs):
         super(UploadFileForm, self).__init__(*args, **kwargs)
@@ -526,3 +548,202 @@ class UploadFileForm(Form):
             ext = ext.lower()
             if ext not in ['.zip', '.gz']:
                 raise ValidationError("Not allowed filetype!")
+
+
+class PathOnlyWidget(forms.Widget):
+
+    def render(self, name, value, attrs=None):
+        return mark_safe('<a target="_blank" href="%s">%s</a><br /><br />' % (value.url,value.url))
+
+
+class MapTypeListWidget(forms.Widget):
+
+    def render(self, name, value, attrs=None):
+        map_type = [v for k,v in BaseStatisticMap.MAP_TYPE_CHOICES if k == value].pop()
+        input = '<input type="hidden" name="%s" value="%s" />' % (name, value)
+        return mark_safe('%s<strong>%s</strong><br /><br />' % (input, map_type))
+
+
+class NIDMResultsForm(forms.ModelForm):
+    class Meta:
+        model = NIDMResults
+        exclude = []
+
+    def __init__(self,*args, **kwargs):
+        super(NIDMResultsForm,self).__init__(*args,**kwargs)
+
+        for fld in ['ttl_file','provn_file']:
+            if self.instance.pk is None:
+                self.fields[fld].widget = HiddenInput()
+            else:
+                self.fields[fld].widget = PathOnlyWidget()
+
+        self.helper = FormHelper(self)
+        self.helper.form_class = 'form-horizontal'
+        self.helper.form_tag = True
+        self.helper.add_input(Submit('submit', 'Submit'))
+        self.nidm = None
+        self.new_statmaps = []
+
+        if self.instance.pk is not None:
+            self.fields['name'].widget = HiddenInput()
+            if self.fields.get('collection'):
+                self.fields['collection'].widget = HiddenInput()
+
+    def clean(self):
+        cleaned_data = super(NIDMResultsForm, self).clean()
+        # only process new uploads or replaced zips
+
+        if self.instance.pk is None or 'zip_file' in self.changed_data:
+
+            try:
+                self.nidm = NIDMUpload(cleaned_data.get('zip_file'))
+            except Exception,e:
+                raise ValidationError("The NIDM file was not readable: {0}".format(e))
+            try:
+                self.clean_nidm()
+            except Exception,e:
+                raise ValidationError(e)
+
+            # delete existing images and files when changing file
+            if self.instance.pk is not None:
+                for statmap in self.instance.nidmresultstatisticmap_set.all():
+                    statmap.delete()
+                cdir = os.path.dirname(self.instance.zip_file.path)
+                if os.path.isdir(cdir):
+                    shutil.rmtree(cdir)
+
+            base_subdir = os.path.split(self.cleaned_data['zip_file'].name)[-1].replace('.zip','')
+            nres = NIDMResults.objects.filter(collection=self.cleaned_data['collection'],
+                                              name__startswith=base_subdir).count()
+            if self.instance.pk is not None and nres != 0:  # don't count current instance
+                nres -= 1
+            safe_name = '{0}_{1}'.format(base_subdir,nres)
+            self.cleaned_data['name'] = base_subdir if nres == 0 else safe_name
+
+            ttl_name = os.path.split(self.nidm.ttl.filename)[-1]
+            provn_name = os.path.split(self.nidm.provn.filename)[-1]
+
+            self.cleaned_data['ttl_file'] = InMemoryUploadedFile(
+                                    ContentFile(self.nidm.zip.read(self.nidm.ttl)),
+                                    "file", ttl_name, "text/turtle",
+                                    self.nidm.ttl.file_size, "utf-8")
+
+            self.cleaned_data['provn_file'] = InMemoryUploadedFile(
+                                    ContentFile(self.nidm.zip.read(self.nidm.provn)),
+                                    "file", provn_name, "text/provenance-notation",
+                                    self.nidm.provn.file_size, "utf-8")
+
+    def save(self,commit=True):
+
+        if self.instance.pk is None or 'zip_file' in self.changed_data:
+            do_update = True
+
+        nidm_r = super(NIDMResultsForm, self).save(commit)
+        if commit and do_update is not None:
+            self.save_nidm()
+            self.update_ttl_urls()
+        return nidm_r
+
+    def update_ttl_urls(self):
+        import re
+        ttl_content = self.instance.ttl_file.file.read()
+        fname = os.path.basename(self.instance.nidmresultstatisticmap_set.first().file.name)
+        ttl_regx = re.compile(r'(prov:atLocation\ \")(file:\/.*\/)(' +
+                              fname + ')(\"\^\^xsd\:anyURI\ \;)')
+
+        hdr, urlprefix, nifti, ftr = re.search(ttl_regx,ttl_content).groups()
+        base_url = 'http://neurovault.org'
+        replace_path = base_url + os.path.join(self.instance.collection.get_absolute_url(),
+                                    self.instance.name)+'/'
+
+        updated_ttl = ttl_content.replace(urlprefix,replace_path)
+        self.instance.ttl_file.file.close()
+        with open(self.instance.ttl_file.path,'w') as ttlf:
+            ttlf.write(updated_ttl)
+            ttlf.close()
+
+    def clean_nidm(self):
+        if self.nidm and 'zip_file' in self.changed_data:
+
+            for s in self.nidm.statmaps:
+                s['fname'] = os.path.split(s['file'])[-1]
+                s['statmap'] = NIDMResultStatisticMap(name=s['name'])
+                s['statmap'].collection = self.cleaned_data['collection']
+                s['statmap'].description = self.cleaned_data['description']
+                s['statmap'].map_type = s['type'][0]  # strip the first char
+                s['statmap'].nidm_results = self.instance
+                s['statmap'].file = 'images/1/foo/bar/'
+
+                try:
+                    s['statmap'].clean_fields(exclude=('nidm_results','file'))
+                    s['statmap'].validate_unique()
+                except Exception,e:
+                    import traceback
+                    raise ValidationError("There was a problem validating the Statistic Maps " +
+                            "for this NIDM Result: \n{0}\n{1}".format(e, traceback.format_exc()))
+
+    def save_nidm(self):
+        if self.nidm and 'zip_file' in self.changed_data:
+            for s in self.nidm.statmaps:
+                s['statmap'].nidm_results = self.instance
+                s['statmap'].save()
+                s['statmap'].file.save(os.path.split(s['file'])[-1], File(open(s['file'])))
+
+            dest = os.path.dirname(self.instance.zip_file.path)
+            self.nidm.copy_to_dest(dest)
+            self.nidm.cleanup()
+
+            # todo: rewrite ttl
+
+
+class NIDMViewForm(forms.ModelForm):
+
+    class Meta:
+        model = NIDMResults
+        exclude = []
+
+    def __init__(self,*args, **kwargs):
+        super(NIDMViewForm,self).__init__(*args,**kwargs)
+
+        for fld in ['ttl_file','provn_file','zip_file']:
+            self.fields[fld].widget = PathOnlyWidget()
+        for fld in self.fields:
+            self.fields[fld].widget.attrs['readonly'] = 'readonly'
+        self.fields['name'].widget = HiddenInput()
+        if self.fields.get('collection'):
+                self.fields['collection'].widget = HiddenInput()
+
+        self.helper = FormHelper(self)
+        self.helper.form_class = 'form-horizontal'
+        self.helper.form_tag = True
+
+
+class NIDMResultStatisticMapForm(ImageForm):
+    class Meta():
+        model = NIDMResultStatisticMap
+        fields = ('name', 'collection', 'description', 'map_type',
+                  'file', 'tags', 'nidm_results')
+
+    def __init__(self, *args, **kwargs):
+        super(NIDMResultStatisticMapForm,self).__init__(*args,**kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_class = 'form-horizontal'
+        self.fields['hdr_file'].widget = HiddenInput()  # problem with exclude() and fields()
+        if self.instance.pk is None:
+            self.fields['file'].widget = HiddenInput()
+        else:
+            for fld in self.fields:
+                self.fields[fld].widget.attrs['readonly'] = 'readonly'
+            # 'disabled' causes the values to not be sent in the POST (?)
+            #   self.fields[fld].widget.attrs['disabled'] = 'disabled'
+
+            if self.fields.get('nidm_results'):
+                self.fields['nidm_results'].widget = HiddenInput()
+            self.fields['map_type'].widget = MapTypeListWidget()
+            self.fields['file'].widget = PathOnlyWidget()
+
+
+class EditNIDMResultStatisticMapForm(NIDMResultStatisticMapForm):
+    def __init__(self, user, *args, **kwargs):
+        super(EditNIDMResultStatisticMapForm,self).__init__(*args,**kwargs)
