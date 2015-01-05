@@ -362,7 +362,7 @@ def upload_folder(request, collection_cid):
                         tmp_file.write(f.read())
                         tmp_file.close()
                 else:
-                    raise
+                    raise Exception("Unable to find uploaded files.")
 
                 atlases = {}
                 for root, _, filenames in os.walk(tmp_directory, topdown=False):
