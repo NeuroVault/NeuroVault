@@ -569,9 +569,6 @@ def compare_images(request,pk1,pk2):
     atlas_xml = "/opt/image_data/pybraincompare/mr/MNI.xml"
     atlas = pybrainatlas.atlas(atlas_xml,atlas_file) # Default slice views are "coronal","axial","sagittal"
 
-    # The default coloring is random - here we can change all to a uniform color
-    atlas.set_color("#F5F5F5")
-
     html_snippet,data_table = compare.scatterplot_compare(image1=volume1,image2=volume2,software="FREESURFER",voxdim=[8,8,8],atlas=atlas)
 
     html = [h.strip("\n") for h in html_snippet]
