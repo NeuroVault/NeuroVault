@@ -109,7 +109,7 @@ def generate_pycortex_volume(image):
                                          mni_mat])
         except CalledProcessError, e:
             raise RuntimeError(str(e.cmd) + " returned code " + str(e.returncode) + " with output " + e.output)
-            
+
 
         x = np.loadtxt(mni_mat)
         xfm = cortex.xfm.Transform.from_fsl(x, nifti_file, reference)
@@ -285,3 +285,11 @@ def populate_nidm_results(request,collection):
     if form.is_valid():
         form.save()
     return form.instance
+
+
+def get_server_url(request):
+    if request.META.get('HTTP_ORIGIN'):
+        return request.META['HTTP_ORIGIN']
+    urlpref = 'https://' if request.is_secure() else 'http://'
+    return '{0}{1}'.format(urlpref,request.META['HTTP_HOST'])
+

@@ -10,7 +10,7 @@ from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
     get_file_ctime, detect_afni4D, split_afni4D_to_3D, splitext_nii_gz, mkdir_p, \
-    send_email_notification, populate_nidm_results
+    send_email_notification, populate_nidm_results, get_server_url
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponse
 from django.db.models import Q
@@ -147,7 +147,7 @@ def edit_collection(request, cid=None):
                 context = {
                     'owner': collection.owner.username,
                     'collection': collection.name,
-                    'url': request.META['HTTP_ORIGIN'] + collection.get_absolute_url(),
+                    'url': get_server_url(request) + collection.get_absolute_url(),
                 }
                 subj = '%s has added you to a NeuroVault collection' % context['owner']
                 send_email_notification('new_contributor', subj, new_contribs, context)
