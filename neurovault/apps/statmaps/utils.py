@@ -225,7 +225,8 @@ def detect_afni4D(nii_file):
 def get_afni_subbrick_labels(nii_file):
     # AFNI header is nifti1 header extension 4
     # http://nifti.nimh.nih.gov/nifti-1/AFNIextension1
-    extensions = nib.load(nii_file).get_header().extensions
+
+    extensions = getattr(nib.load(nii_file).get_header(), 'extensions', [])
     header = [ext for ext in extensions if ext.get_code() == 4]
     if not header:
         return []
