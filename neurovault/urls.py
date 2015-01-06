@@ -289,3 +289,6 @@ urlpatterns = patterns('',
                        url(r'^api-auth/', include(
                            'rest_framework.urls', namespace='rest_framework'))
                        )
+
+if settings.DEBUG:
+    urlpatterns += static('/', document_root=os.path.join(settings.STATIC_ROOT,'images'))
