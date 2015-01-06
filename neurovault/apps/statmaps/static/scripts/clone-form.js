@@ -1,4 +1,4 @@
-var active_form, showForm, updateImageName, cloneMore;
+var active_form, showForm, updateImageName, cloneMore, mapNavLink, getLastTextNode;
 
 active_form = 0;
 
@@ -19,9 +19,15 @@ showForm = function(id) {
   });
 };
 
+getLastTextNode = function(selector) {
+  return $(selector).contents().filter(function() {
+    return this.nodeType == 3;
+  }).last();
+};
+
 updateImageName = function(name) {
   $('#current-image').text(name);
-  return $("#image-select option[value='" + active_form + "']").text(name);
+  return getLastTextNode('#image-select li#showform-image-' + active_form + ' a').replaceWith('&nbsp;' + name);
 };
 
 cloneMore = function (selector, type, imgtype) {
@@ -66,9 +72,18 @@ cloneMore = function (selector, type, imgtype) {
   $(selector).after(newElement);
 };
 
+mapNavLink = function(ele) {
+  console.log('worky');
+  $(ele).siblings().removeClass('active');
+  $(ele).addClass('active');
+  id = $(ele).attr('id').replace('showform-image-','');
+  return showForm(id);
+};
+
 $(document).ready(function() {
   var num_forms;
   num_forms = $('.image-form').length;
+
   if (num_forms > 1) {
     $('.image-form').last().remove();
     $('#id_image_set-TOTAL_FORMS').val(num_forms - 1);
@@ -76,18 +91,19 @@ $(document).ready(function() {
   } else {
     $("#id_image_set-" + (num_forms - 1) + "-id").val('');
   }
+
   showForm(active_form);
+
   $('#image-select li').click(function(e) {
     e.preventDefault();
-    $(this).siblings().removeClass('active');
-    $(this).addClass('active');
-    id = $(this).attr('id').replace('showform-image-','');
-    return showForm(id);
+    mapNavLink(this);
   });
+
   $('#submit-form').click(function(e) {
     e.preventDefault();
     return $('#formset').submit();
   });
+
   $('#add-image-form').click(function(e) {
     e.preventDefault();
     var nextIndex;
@@ -99,6 +115,11 @@ $(document).ready(function() {
     $('.image-form:last').attr('id', 'image-' + nextIndex);
     $('#image-select li:last').siblings().removeClass('active');
     $('#image-select li:last').addClass('active');
+    $('#image-select li:last').click(function(e) {
+      e.preventDefault();
+      mapNavLink(this);
+    });
+
     return showForm(nextIndex);
   });
 
