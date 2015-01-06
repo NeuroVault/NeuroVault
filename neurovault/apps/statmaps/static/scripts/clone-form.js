@@ -73,7 +73,6 @@ cloneMore = function (selector, type, imgtype) {
 };
 
 mapNavLink = function(ele) {
-  console.log('worky');
   $(ele).siblings().removeClass('active');
   $(ele).addClass('active');
   id = $(ele).attr('id').replace('showform-image-','');
