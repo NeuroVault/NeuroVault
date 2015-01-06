@@ -12,6 +12,11 @@ showForm = function(id) {
     name = '[untitled image]';
   }
   updateImageName(name);
+
+  if($('#empty_collection_msg').is(":visible")) {
+    $('#empty_collection_msg').hide();
+  }
+
   return $("input#id_image_set-" + active_form + "-name").keyup(function(e) {
     var val;
     val = $(e.target).val();
@@ -80,8 +85,7 @@ mapNavLink = function(ele) {
 };
 
 $(document).ready(function() {
-  var num_forms;
-  num_forms = $('.image-form').length;
+  var num_forms = $('.image-form').length;
 
   if (num_forms > 1) {
     $('.image-form').last().remove();
@@ -107,6 +111,7 @@ $(document).ready(function() {
     e.preventDefault();
     var nextIndex;
     var newType = e.target.href.split('#')[1];
+
     if(newType == 'zip') return uploadZip();
     cloneMore('div.image-form:last', 'image', newType);
     nextIndex = $('.image-form').length - 1;
@@ -122,10 +127,19 @@ $(document).ready(function() {
     return showForm(nextIndex);
   });
 
+  if( !$('input#id_image_set-0-id').val() && num_forms === 1) {
+    $('.image-form').last().hide();
+    $('#id_image_set-TOTAL_FORMS').val(num_forms - 1);
+    $('#image-select li').last().remove();
+    $('#current-image').text('no images');
+    $('#empty_collection_msg').show();
+  }
+
   return $("input[id$='image_ptr']").each(function() {
     if ($(this).val() === "None") {
       return $(this).val("");
     }
   });
+
 });
 
