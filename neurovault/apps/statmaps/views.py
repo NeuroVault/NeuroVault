@@ -1,7 +1,7 @@
-from .models import Collection, Image, NIDMResultStatisticMap, Atlas, StatisticMap, NIDMResults
+from .models import Collection, Image, Atlas, StatisticMap, NIDMResults
 from .forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
-    NIDMResultStatisticMapForm, EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm
+    EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
@@ -18,7 +18,6 @@ from neurovault import settings
 from sendfile import sendfile
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.renderers import JSONRenderer
-from rest_framework.parsers import JSONParser
 from voxel_query_functions import *
 
 import zipfile
@@ -32,10 +31,8 @@ import neurovault
 from fnmatch import fnmatch
 import os
 from collections import OrderedDict
-from neurovault.apps.statmaps.models import StatisticMap, Atlas
 from xml.dom import minidom
 from django.db.models.aggregates import Count
-
 
 
 def owner_or_contrib(request,collection):
