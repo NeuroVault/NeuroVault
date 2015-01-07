@@ -287,8 +287,11 @@ urlpatterns = patterns('',
                        url(r'^admin/', include(admin.site.urls)),
                        url(r'^api/', include(router.urls)),
                        url(r'^api-auth/', include(
-                           'rest_framework.urls', namespace='rest_framework'))
+                           'rest_framework.urls', namespace='rest_framework')),
                        )
 
 if settings.DEBUG:
-    urlpatterns += static('/', document_root=os.path.join(settings.STATIC_ROOT,'images'))
+    urlpatterns += patterns('',
+        url(r'^(?P<path>favicon\.ico)$', 'django.views.static.serve', {
+            'document_root': os.path.join(settings.STATIC_ROOT,'images')}),
+    )

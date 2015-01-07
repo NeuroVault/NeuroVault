@@ -108,8 +108,8 @@ def generate_pycortex_volume(image):
                                          "--fslregout",
                                          mni_mat])
         except CalledProcessError, e:
-            raise RuntimeError(str(e.cmd) + " returned code " + str(e.returncode) + " with output " + e.output)
-
+            raise RuntimeError(str(e.cmd) + " returned code " +
+                               str(e.returncode) + " with output " + e.output)
 
         x = np.loadtxt(mni_mat)
         xfm = cortex.xfm.Transform.from_fsl(x, nifti_file, reference)
