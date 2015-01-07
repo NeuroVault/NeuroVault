@@ -53,11 +53,9 @@ class NIDMUpload:
 
         self.ttl = metafiles['.ttl'][0]
         self.provn = metafiles['.provn'][0]
-        self.raw_ttl = self.zip.read(metafiles['.ttl'][0])
-        self.ttl_relpath = self.parse_ttl_relative_path(metafiles['.ttl'][0].filename)
-
         # fix incorrect property format in earlier versions of SPM12 output
-        self.raw_ttl = self.raw_ttl.replace("nidm_NoiseModel", "nidm:NoiseModel")
+        self.raw_ttl = self.fix_spm12_ttl(self.zip.read(metafiles['.ttl'][0]))
+        self.ttl_relpath = self.parse_ttl_relative_path(metafiles['.ttl'][0].filename)
 
         return self.raw_ttl if extract_ttl else True
 
@@ -205,3 +203,6 @@ class NIDMUpload:
                 rowfmt.append('%s-->%s' % (key, val.decode()))
             print '\n'.join(rowfmt)
 
+    @staticmethod
+    def fix_spm12_ttl(ttl):
+        return ttl.replace("nidm_NoiseModel", "nidm:NoiseModel")
