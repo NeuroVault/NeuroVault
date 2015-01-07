@@ -74,7 +74,12 @@ cloneMore = function (selector, type, imgtype) {
 
   total++;
   $('#id_' + type + '_set-TOTAL_FORMS').val(total);
-  $(selector).after(newElement);
+
+  if(total === 1) {
+    $(selector).replaceWith(newElement);
+  } else {
+    $(selector).after(newElement);
+  }
 };
 
 mapNavLink = function(ele) {
