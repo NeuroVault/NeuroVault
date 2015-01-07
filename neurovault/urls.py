@@ -276,11 +276,11 @@ class AtlasViewSet(ImageViewSet):
             except ValueError:
                 return Response('error: region not in atlas', status=400)
     
-            return Response({'voxels':data})
+            return Response(data)
         
     @list_route()
     def atlas_query_voxel(self, request, pk=None):
-        ''' Returns a dictionary containing the region name that matches specified coordinates in the specified atlas.\n 
+        ''' Returns the region name that matches specified coordinates in the specified atlas.\n 
         Parameters: x, y, z, collection, atlas \n
         Example: '/api/atlases/atlas_query_voxel/?x=30&y=30&z=30&collection=Harvard-Oxford cortical and subcortical structural atlases&atlas=HarvardOxford cort maxprob thr25 1mm' '''
         X = request.GET.get('x','')
@@ -302,7 +302,7 @@ class AtlasViewSet(ImageViewSet):
             data = voxelToRegion(X,Y,Z,atlas_image, atlas_xml)
         except IndexError:
             return JSONResponse('error: one or more coordinates are out of range', status=400)
-        return Response({'region': data})
+        return Response(data)
 
 class CollectionViewSet(mixins.RetrieveModelMixin,
                         mixins.ListModelMixin,
