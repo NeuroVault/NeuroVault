@@ -374,7 +374,8 @@ def upload_folder(request, collection_cid):
                                 print "found atlas"
                                 path, base, ext = split_filename(atlas.lastChild.nodeValue)
                                 nifti_name = os.path.join(path, base)
-                                atlases[str(os.path.join(root,nifti_name[1:]))] = os.path.join(root, fname)
+                                atlases[str(os.path.join(root,
+                                            nifti_name[1:]))] = os.path.join(root, fname)
                         elif ext not in allowed_extensions:
                             continue
                         elif detect_afni4D(nii_path):
@@ -410,11 +411,11 @@ def upload_folder(request, collection_cid):
                     spaced_name = name.replace('_',' ').replace('-',' ')
 
                     if ext.lower() != ".nii.gz":
-                        new_file_tmp_directory = tempfile.mkdtemp()
-                        nib.save(nii, os.path.join(new_file_tmp_directory, name))
-                        f = ContentFile(open(os.path.join(
-                                        new_file_tmp_directory, name)).read(), name=dname)
-                        shutil.rmtree(new_file_tmp_directory)
+                        new_file_tmp_dir = tempfile.mkdtemp()
+                        new_file_tmp = os.path.join(new_file_tmp_dir, name) + '.nii.gz'
+                        nib.save(nii, new_file_tmp)
+                        f = ContentFile(open(new_file_tmp).read(), name=dname)
+                        shutil.rmtree(new_file_tmp_dir)
                         label += " (old ext: %s)" % ext
                     else:
                         f = ContentFile(open(fpath).read(), name=dname)
