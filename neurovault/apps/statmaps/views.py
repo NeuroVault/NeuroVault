@@ -1,4 +1,4 @@
-from .models import Collection, Image, Atlas, StatisticMap, NIDMResults
+from .models import Collection, Image, Atlas, StatisticMap, NIDMResults, NIDMResultStatisticMap
 from .forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm
@@ -173,18 +173,16 @@ def view_image(request, pk, collection_cid=None):
         'user_owns_image': user_owns_image,
         'api_cid':api_cid,
     }
-    if isinstance(image, StatisticMap):
-        template = 'statmaps/statisticmap_details.html.haml'
-    elif isinstance(image, NIDMResultStatisticMap):
-        template = 'statmaps/image_details.html.haml'
+
+    if isinstance(image, NIDMResultStatisticMap):
         context['img_basename'] = os.path.basename(image.file.url)
         context['ttl_basename'] = os.path.basename(image.nidm_results.ttl_file.url)
         context['provn_basename'] = os.path.basename(image.nidm_results.provn_file.url)
 
-    elif isinstance(image, Atlas):
+    if isinstance(image, Atlas):
         template = 'statmaps/atlas_details.html.haml'
     else:
-        template = 'statmaps/image_details.html.haml'
+        template = 'statmaps/statisticmap_details.html.haml'
     return render(request, template, context)
 
 
