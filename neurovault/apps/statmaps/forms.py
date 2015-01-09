@@ -624,8 +624,9 @@ class NIDMResultsForm(forms.ModelForm):
             ttl_name = os.path.split(self.nidm.ttl.filename)[-1]
             provn_name = os.path.split(self.nidm.provn.filename)[-1]
 
-            self.cleaned_data['ttl_file'] = InMemoryUploadedFile(
-                                    ContentFile(self.nidm.zip.read(self.nidm.ttl)),
+            self.cleaned_data['ttl_file'] = InMemoryUploadedFile(ContentFile(
+                                    # fix ttl for spm12
+                                    self.nidm.fix_spm12_ttl(self.nidm.zip.read(self.nidm.ttl))),
                                     "file", ttl_name, "text/turtle",
                                     self.nidm.ttl.file_size, "utf-8")
 

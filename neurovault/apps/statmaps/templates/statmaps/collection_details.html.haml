@@ -5,6 +5,7 @@
     :javascript
         {% inlinecoffeescript %}
             $(document).ready ->
+
                 $('#show-viewer').click( () =>
                     window.viewer.paint()
                     setTimeout(() ->
@@ -65,7 +66,8 @@
                 	document.location = ""
                 )
 
-
+                if navigator.userAgent.indexOf("Safari") > -1 and navigator.userAgent.indexOf("Chrome") == -1
+                    $('a[href="pycortex"]').hide()
 
         {% endinlinecoffeescript %}
 {% endblock %}

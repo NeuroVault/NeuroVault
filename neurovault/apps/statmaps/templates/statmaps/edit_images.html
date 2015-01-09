@@ -8,12 +8,12 @@
 <script type="text/javascript">
 
 	function uploadZip() {
-		return document.getElementById("{{upload_form.file.auto_id}}").click();
+		return $('#upload_form #{{upload_form.file.auto_id}}').click();
 	}
 
 	$(document).ready(function() {
 
-		$('#{{upload_form.file.auto_id}}').change(function(e) {
+		$('#upload_form #{{upload_form.file.auto_id}}').change(function(e) {
 		  var csrftoken, data, files, i, paths, xhr;
 		  paths = "";
 		  files = e.target.files;
@@ -68,12 +68,12 @@
 		</div>
 		<div class="btn-group">
 			<a class="btn btn-large btn-secondary dropdown-toggle" style="margin: 0px 0px 0px 20px;" data-toggle="dropdown" href="#">Add a new image&nbsp;&nbsp;<span class="caret"></span></a>
-      <ul class="dropdown-menu" id="add-image-form">
-          <li><a href="#statmap">Statistic Map</a></li>
-          <li><a href="#atlas">Atlas</a></li>
-          <li><a href="#zip">Zip File (NIDM Results)</a></li>
-      </ul>
-    </div>
+      		<ul class="dropdown-menu" id="add-image-form">
+          		<li><a href="#statmap">Statistic Map</a></li>
+          		<li><a href="#atlas">Atlas</a></li>
+          		<li><a href="#zip">Zip File (NIDM Results)</a></li>
+      		</ul>
+    	</div>
 	</div>
 	<div class="span8">
 		<ul class="breadcrumb">
@@ -81,6 +81,10 @@
 				<div id="current-image">{{ formset.0.name.value }}</div>
 			</li>
 		</ul>
+		<div id="empty_collection_msg" class="alert alert-info hide">
+			<button type="button" class="close" data-dismiss="alert">&times;</button>
+			<i class="icon-arrow-left"></i>&nbsp; Click 'Add a new image' to add content to this collection.
+		</div>
 		<form id="formset" class="form-horizontal" enctype="multipart/form-data" method="post" action="">{% csrf_token %}
 			{{ formset.management_form }}
 			{% for form in formset %}
