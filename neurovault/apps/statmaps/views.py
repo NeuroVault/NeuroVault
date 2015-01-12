@@ -10,7 +10,7 @@ from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
     get_file_ctime, detect_afni4D, split_afni4D_to_3D, splitext_nii_gz, mkdir_p, \
-    send_email_notification, populate_nidm_results, get_server_url
+    send_email_notification, populate_nidm_results, get_server_url, populate_feat_directory
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponse
 from django.db.models import Q
@@ -334,6 +334,8 @@ def upload_folder(request, collection_cid):
                     archive_name = request.FILES['file'].name
                     if fnmatch(archive_name,'*.nidm.zip'):
                         populate_nidm_results(request,collection)
+                    elif fnmatch(archive_name,'*.feat.zip'):
+                        populate_feat_directory(request,collection)
                         return HttpResponseRedirect(collection.get_absolute_url())
 
                     _, archive_ext = os.path.splitext(archive_name)
@@ -350,6 +352,11 @@ def upload_folder(request, collection_cid):
                             request.FILES['file'] = f
                             populate_nidm_results(request,collection)
                             continue
+                        elif fnmatch(f.name,'*.feat.zip'):
+                            request.FILES['file'] = f
+                            populate_feat_directory(request,collection)
+                            continue
+
                         new_path, _ = os.path.split(os.path.join(tmp_directory, path))
                         mkdir_p(new_path)
                         filename = os.path.join(new_path,f.name)

@@ -20,6 +20,8 @@ from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from ast import literal_eval
 from subprocess import CalledProcessError
+from django.core.exceptions import ValidationError
+import zipfile
 
 
 # see CollectionRedirectMiddleware
@@ -281,11 +283,65 @@ def populate_nidm_results(request,collection):
     request.POST['description'] = 'NIDM Results'
     request.POST['collection'] = collection.pk
     request.FILES['zip_file'] = request.FILES['file']
-
     form = nidmr_form(request.POST,request.FILES,instance=inst)
     if form.is_valid():
         form.save()
     return form.instance
+
+
+def populate_feat_directory(request,collection):
+    from nidmfsl.fsl_exporter.fsl_exporter import FSLtoNIDMExporter
+    tmp_dir = tempfile.mkdtemp()
+    exc = ValidationError
+
+    try:
+        zip = zipfile.ZipFile(request.FILES['file'])
+        zip.extractall(path=tmp_dir)
+
+        rootpaths = [v for v in os.listdir(tmp_dir) if not v.startswith('.')]
+        if not rootpaths:
+            raise exc("No contents found in the FEAT zip file.")
+        subdir = os.path.join(tmp_dir,rootpaths[0])
+        feat_dir = subdir if len(rootpaths) and os.path.isdir(subdir) else tmp_dir
+    except:
+        raise exc("Unable to unzip the FEAT zip file: \n{0}.".format(get_traceback()))
+    try:
+        fslnidm = FSLtoNIDMExporter(feat_dir=feat_dir, version="0.2.0")
+        fslnidm.parse()
+        export_dir = fslnidm.export()
+    except:
+        raise exc("Unable to parse the FEAT directory: \n{0}.".format(get_traceback()))
+
+    if not os.path.exists(export_dir):
+        raise exc("Unable find nidm export of FEAT directory.")
+
+    try:
+        destname = request.FILES['file'].name.replace('feat.zip','feat.nidm.zip')
+        destpath = os.path.join(tmp_dir,destname)
+        nidm_zip = zipfile.ZipFile(destpath, 'w', zipfile.ZIP_DEFLATED)
+        rootlen = len(feat_dir) + 1
+        for root, dirs, files in os.walk(export_dir):
+            for dfile in files:
+                filenm = os.path.join(root, dfile)
+                print filenm
+                nidm_zip.write(filenm, filenm[rootlen:])
+        nidm_zip.close()
+        fh = open(destpath,'r')
+        request.FILES['file'] = InMemoryUploadedFile(
+                                    ContentFile(fh.read()), "file", fh.name.split('/')[-1],
+                                    "application/zip", os.path.getsize(destpath), "utf-8")
+
+    except Exception:
+        raise exc("Unable to convert NIDM results for NeuroVault: \n{0}".format(get_traceback()))
+    else:
+        return populate_nidm_results(request,collection)
+    finally:
+        shutil.rmtree(tmp_dir)
+
+
+def get_traceback():
+    import traceback
+    return traceback.format_exc() if settings.DEBUG else ''
 
 
 def get_server_url(request):
@@ -293,4 +349,37 @@ def get_server_url(request):
         return request.META['HTTP_ORIGIN']
     urlpref = 'https://' if request.is_secure() else 'http://'
     return '{0}{1}'.format(urlpref,request.META['HTTP_HOST'])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
