@@ -567,9 +567,12 @@ def compare_images(request,pk1,pk2):
     # For now, manually choose an atlas - this can be user choice
     atlas_file = "/opt/image_data/pybraincompare/mr/MNI-maxprob-thr25-2mm.nii"
     atlas_xml = "/opt/image_data/pybraincompare/mr/MNI.xml"
-    atlas = pybrainatlas.atlas(atlas_xml,atlas_file) # Default slice views are "coronal","axial","sagittal"
+    atlas = pybrainatlas.atlas(atlas_xml,atlas_file) # Default slices are "coronal","axial","sagittal"
 
-    html_snippet,data_table = compare.scatterplot_compare(image1=volume1,image2=volume2,software="FREESURFER",voxdim=[8,8,8],atlas=atlas)
+    # Create custom image names for the visualization
+    custom = {"image 1":"%s:%s" %(image1.name,image1.map_type),"image 2": "%s:%s" %(image2.name,image2.map_type)}
+
+    html_snippet,data_table = compare.scatterplot_compare(image1=volume1,image2=volume2,software="FREESURFER",voxdim=[8,8,8],atlas=atlas,custom=custom,corr="pearson")
 
     html = [h.strip("\n") for h in html_snippet]
     context = {'html': html}
