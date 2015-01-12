@@ -10,7 +10,7 @@ from lxml.etree import xmlfile
 admin.autodiscover()
 from django.contrib.auth.models import User, Group
 from rest_framework import viewsets, routers, serializers, mixins
-from rest_framework.decorators import link
+from rest_framework.decorators import detail_route
 from rest_framework.response import Response
 from taggit.models import Tag
 from neurovault.apps.statmaps.views import get_image,get_collection
@@ -88,7 +88,7 @@ class APIHelper:
 class ImageSerializer(serializers.HyperlinkedModelSerializer):
 
     file = HyperlinkedFileField(source='file')
-    collection = HyperlinkedRelatedURL(source='collection')
+    collection = HyperlinkedRelatedURL(source='collection', read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
 
     class Meta:
@@ -116,7 +116,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
 class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
 
     file = HyperlinkedFileField(source='file')
-    collection = HyperlinkedRelatedURL(source='collection')
+    collection = HyperlinkedRelatedURL(source='collection', read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
 
     class Meta:
@@ -126,9 +126,9 @@ class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
 
 class NIDMResultStatisticMapSerializer(serializers.HyperlinkedModelSerializer):
     file = HyperlinkedFileField(source='file')
-    collection = HyperlinkedRelatedURL(source='collection')
+    collection = HyperlinkedRelatedURL(source='collection', read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
-    nidm_results = HyperlinkedRelatedURL(source='nidm_results')
+    nidm_results = HyperlinkedRelatedURL(source='nidm_results', read_only=True)
     description = NIDMDescriptionSerializedField(source='get_absolute_url')
 
     class Meta:
@@ -139,7 +139,7 @@ class NIDMResultStatisticMapSerializer(serializers.HyperlinkedModelSerializer):
 class AtlasSerializer(serializers.HyperlinkedModelSerializer):
 
     label_description_file = HyperlinkedFileField(source='label_description_file')
-    collection = HyperlinkedRelatedURL(source='collection')
+    collection = HyperlinkedRelatedURL(source='collection', read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
 
     class Meta:
@@ -152,7 +152,7 @@ class NIDMResultsSerializer(serializers.ModelSerializer):
     zip_file = HyperlinkedFileField(source='zip_file')
     ttl_file = HyperlinkedFileField(source='ttl_file')
     provn_file = HyperlinkedFileField(source='provn_file')
-    collection = HyperlinkedRelatedURL(source='collection')
+    collection = HyperlinkedRelatedURL(source='collection', read_only=True)
     statmaps = ImageSerializer(source='nidmresultstatisticmap_set')
 
     class Meta:
@@ -186,7 +186,7 @@ class ImageViewSet(mixins.RetrieveModelMixin,
             collection_cid = base_image.collection.id
         return get_image(pk,collection_cid,request,mode='api')
 
-    @link()
+    @detail_route()
     def datatable(self, request, pk=None):
         ''' A wrapper around standard retrieve() request that formats the
         object for the Datatables plugin. '''
@@ -205,7 +205,7 @@ class AtlasViewSet(ImageViewSet):
     queryset = Atlas.objects.filter(collection__private=False)
     serializer_class = AtlasSerializer
 
-    @link()
+    @detail_route()
     def datatable(self, request, pk=None):
         ''' A wrapper around standard retrieve() request that formats the
         object for the Datatables plugin. '''
@@ -214,7 +214,7 @@ class AtlasViewSet(ImageViewSet):
         return APIHelper.wrap_for_datatables(data, ['name', 'modify_date',
                                                     'description', 'add_date'])
 
-    @link()
+    @detail_route()
     def regions_table(self, request, pk=None):
         ''' A wrapper around standard retrieve() request that formats the
         object for the regions_table plugin. '''
@@ -239,7 +239,7 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
     serializer_class = CollectionSerializer
     filter_backends = (DjangoFilterBackend,)
 
-    @link()
+    @detail_route()
     def datatable(self, request, pk=None):
         collection = get_collection(pk,request,mode='api')
         data = CollectionSerializer(collection, context={'request': request}).data
@@ -265,7 +265,7 @@ class TagViewSet(viewsets.ModelViewSet):
 
     model = Tag
 
-    @link()
+    @detail_route()
     def datatable(self, request, pk=None):
         from django.db.models import Count
         data = Tag.objects.annotate(action_count=Count('action'))
