@@ -131,12 +131,5 @@ urlpatterns = patterns('',
     url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[A-Za-z0-9\.\+\-\_\s\[\]]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
         serve_nidm_image,
         name='serve_nidm_images')
-# 
-#     url(r'^api/atlas_query_region/$',
-#         atlas_query_region,
-#         name = 'atlas_query_region'),
-#     url(r'^api/atlas_query_voxel/$',
-#         atlas_query_voxel,
-#         name = 'atlas_query_voxel')
 
 )
