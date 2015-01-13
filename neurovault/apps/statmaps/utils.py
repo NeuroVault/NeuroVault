@@ -351,7 +351,7 @@ def detect_feat_directory(path):
         return False
     # detect FEAT directory, check for for stats/, logs/, logs/feat4_post
     for root, dirs, files in os.walk(path):
-        if('stats' in dirs and 'logs' in dirs
+        if('stats' in dirs and 'logs' in dirs and 'design.fsf' in files
            and 'feat4_post' in os.listdir(os.path.join(root,'logs'))):
             return True
         else:
