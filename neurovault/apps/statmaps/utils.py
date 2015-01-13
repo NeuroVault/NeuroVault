@@ -368,37 +368,3 @@ def get_server_url(request):
         return request.META['HTTP_ORIGIN']
     urlpref = 'https://' if request.is_secure() else 'http://'
     return '{0}{1}'.format(urlpref,request.META['HTTP_HOST'])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

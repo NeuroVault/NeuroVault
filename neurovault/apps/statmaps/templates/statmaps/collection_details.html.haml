@@ -53,10 +53,11 @@
                 	data = new FormData()
 
                 	for i of files
-                		if files[i].name != undefined
-                			if files[i].name.indexOf(".") != 0 && files[i].webkitRelativePath != undefined
+                		if files[i].name != undefined && files[i].webkitRelativePath != undefined
+                			if files[i].name.indexOf(".") != 0  && files[i].webkitRelativePath.indexOf('.files') == -1
                 				data.append('paths[]', files[i].webkitRelativePath)
                 				data.append('file_input[]', files[i])
+
                 	csrftoken = $.cookie('csrftoken')
                 	xhr.open 'POST', "upload_folder", false
                 	xhr.setRequestHeader "X-CSRFToken", csrftoken
