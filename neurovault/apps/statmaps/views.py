@@ -10,7 +10,8 @@ from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
     get_file_ctime, detect_afni4D, split_afni4D_to_3D, splitext_nii_gz, mkdir_p, \
-    send_email_notification, populate_nidm_results, get_server_url, populate_feat_directory
+    send_email_notification, populate_nidm_results, get_server_url, populate_feat_directory, \
+    detect_feat_directory
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponse
 from django.db.models import Q
@@ -346,6 +347,7 @@ def upload_folder(request, collection_cid):
                     compressed.extractall(path=tmp_directory)
 
                 elif "file_input[]" in request.FILES:
+
                     for f, path in zip(request.FILES.getlist(
                                        "file_input[]"), request.POST.getlist("paths[]")):
                         if fnmatch(f.name,'*.nidm.zip'):
@@ -368,6 +370,10 @@ def upload_folder(request, collection_cid):
 
                 atlases = {}
                 for root, _, filenames in os.walk(tmp_directory, topdown=False):
+                    if detect_feat_directory(root):
+                        populate_feat_directory(request,collection,root)
+                        continue
+
                     filenames = [f for f in filenames if not f[0] == '.']
                     for fname in filenames:
                         name, ext = splitext_nii_gz(fname)
