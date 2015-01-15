@@ -239,7 +239,10 @@ def get_afni_subbrick_labels(nii_file):
     lnode = [v for v in tree.findall('.//AFNI_atr') if v.attrib['atr_name'] == 'BRICK_LABS']
 
     # header xml is wrapped in string literals
-    return [] + literal_eval(lnode[0].text.strip()).split('~')
+    retval = []
+    if lnode:
+        retval += literal_eval(lnode[0].text.strip()).split('~')
+    return retval
 
 
 def split_afni4D_to_3D(nii_file,with_labels=True,tmp_dir=None):
