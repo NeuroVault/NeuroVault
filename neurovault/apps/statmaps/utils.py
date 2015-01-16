@@ -218,6 +218,9 @@ def send_email_notification(notif_type, subject, users, tpl_context=None):
 
 
 def detect_afni4D(nii_file):
+    shape = nib.load(nii_file).shape
+    if not (len(shape) == 5 and shape[3] == 1):
+        return False 
     # don't split afni files with no subbricks
     return bool(len(get_afni_subbrick_labels(nii_file)) > 1)
 
@@ -235,13 +238,17 @@ def get_afni_subbrick_labels(nii_file):
     # <AFNI_atr atr_name="BRICK_LABS" >
     #   "SetA-SetB_mean~SetA-SetB_Zscr~SetA_mean~SetA_Zscr~SetB_mean~SetB_Zscr"
     # </AFNI_atr>
-    tree = etree.fromstring(header[0].get_content())
-    lnode = [v for v in tree.findall('.//AFNI_atr') if v.attrib['atr_name'] == 'BRICK_LABS']
-
-    # header xml is wrapped in string literals
     retval = []
-    if lnode:
-        retval += literal_eval(lnode[0].text.strip()).split('~')
+    try:
+        tree = etree.fromstring(header[0].get_content())
+        lnode = [v for v in tree.findall('.//AFNI_atr') if v.attrib['atr_name'] == 'BRICK_LABS']
+    
+        # header xml is wrapped in string literals
+        
+        if lnode:
+            retval += literal_eval(lnode[0].text.strip()).split('~')
+    except:
+        pass
     return retval
 
 
