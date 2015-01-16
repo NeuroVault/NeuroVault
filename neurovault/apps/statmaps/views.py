@@ -438,7 +438,7 @@ def upload_folder(request, collection_cid):
             finally:
                 shutil.rmtree(tmp_directory)
 
-            return HttpResponseRedirect('')
+            return HttpResponseRedirect(collection.get_absolute_url())
     else:
         form = UploadFileForm()
     return render_to_response("statmaps/upload_folder.html",
