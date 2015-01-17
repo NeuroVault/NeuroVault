@@ -36,7 +36,7 @@ from django.db.models.aggregates import Count
 
 
 def owner_or_contrib(request,collection):
-    if collection.owner == request.user or request.user in collection.contributors.all():
+    if collection.owner == request.user or request.user in collection.contributors.all() or request.user.is_superuser:
         return True
     return False
 
