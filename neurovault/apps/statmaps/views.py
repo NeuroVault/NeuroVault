@@ -369,10 +369,16 @@ def upload_folder(request, collection_cid):
                     raise Exception("Unable to find uploaded files.")
 
                 atlases = {}
-                for root, _, filenames in os.walk(tmp_directory, topdown=False):
+                for root, subdirs, filenames in os.walk(tmp_directory):
                     if detect_feat_directory(root):
                         populate_feat_directory(request,collection,root)
-                        continue
+                        del(subdirs)
+                        filenames = []
+
+                    # .gfeat parent dir under cope*.feat should not be added as statmaps
+                    # this may be affected by future nidm-results_fsl parsing changes
+                    if root.endswith('.gfeat'):
+                        filenames = []
 
                     filenames = [f for f in filenames if not f[0] == '.']
                     for fname in filenames:
@@ -448,6 +454,10 @@ def upload_folder(request, collection_cid):
 
                     new_image.file = f
                     new_image.save()
+            except:
+                #todo: send failure messages as cookie notifications
+                pass
+
             finally:
                 shutil.rmtree(tmp_directory)
 
