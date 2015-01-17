@@ -330,7 +330,6 @@ def populate_feat_directory(request,collection,existing_dir=None):
         for root, dirs, files in os.walk(export_dir):
             for dfile in files:
                 filenm = os.path.join(root, dfile)
-                print filenm
                 nidm_zip.write(filenm, filenm[rootlen:])
         nidm_zip.close()
         fh = open(destpath,'r')

@@ -36,8 +36,8 @@ if __name__ == '__main__':
                 fail += 1
                 print("Unable to parse the FEAT directory: \n{0}.".format(get_traceback()))
             finally:
-                shutil.rmtree(tmpdir)
                 print 'ttl length: {}'.format(os.path.getsize(os.path.join(export_dir,'nidm.ttl')))
+                shutil.rmtree(tmpdir)
 
     print 'found {0} FEAT dirs, {1} successfully processed, {2} failures.'.format(find,parse,fail)
 
