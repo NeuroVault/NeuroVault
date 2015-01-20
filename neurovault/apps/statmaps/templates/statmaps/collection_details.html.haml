@@ -118,6 +118,17 @@
                             <em>Private Collection</em>: To share the link to this collection, please use the private url:
                                     %a{href: "{{ request.path }}" }
                                         {{ request.path }}
+
+        {% if messages %}
+        %ul.messages
+        {% for message in messages %}
+            .alert.fade.in{class:"{{ message.tags }}"}
+                %button.close{"data-dismiss" => "alert", :type => "button"} ×
+                {{ message }}
+        {% endfor %}
+        {% endif %}
+
+
         %ul#collection-tabs.nav.nav-tabs
             %li
                 %a{href:'#images', data-toggle:'tab'} Images

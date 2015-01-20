@@ -34,6 +34,8 @@ import os
 from collections import OrderedDict
 from xml.dom import minidom
 from django.db.models.aggregates import Count
+from django.contrib import messages
+import traceback
 
 
 def owner_or_contrib(request,collection):
@@ -448,8 +450,10 @@ def upload_folder(request, collection_cid):
                     new_image.file = f
                     new_image.save()
             except:
-                #todo: send failure messages as cookie notifications
-                pass
+                error = traceback.format_exc().splitlines()[-1]
+                msg = "An error occurred with this upload: {}".format(error)
+                messages.warning(request, msg)
+                return
 
             finally:
                 shutil.rmtree(tmp_directory)
