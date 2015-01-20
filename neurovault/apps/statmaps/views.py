@@ -335,9 +335,6 @@ def upload_folder(request, collection_cid):
                     archive_name = request.FILES['file'].name
                     if fnmatch(archive_name,'*.nidm.zip'):
                         populate_nidm_results(request,collection)
-                    elif fnmatch(archive_name,'*.feat.zip'):
-                        populate_feat_directory(request,collection)
-                        return HttpResponseRedirect(collection.get_absolute_url())
 
                     _, archive_ext = os.path.splitext(archive_name)
                     if archive_ext == '.zip':
@@ -353,10 +350,6 @@ def upload_folder(request, collection_cid):
                         if fnmatch(f.name,'*.nidm.zip'):
                             request.FILES['file'] = f
                             populate_nidm_results(request,collection)
-                            continue
-                        elif fnmatch(f.name,'*.feat.zip'):
-                            request.FILES['file'] = f
-                            populate_feat_directory(request,collection)
                             continue
 
                         new_path, _ = os.path.split(os.path.join(tmp_directory, path))
@@ -460,8 +453,7 @@ def upload_folder(request, collection_cid):
 
             finally:
                 shutil.rmtree(tmp_directory)
-
-            return HttpResponseRedirect('')
+            return HttpResponseRedirect(collection.get_absolute_url())
     else:
         form = UploadFileForm()
     return render_to_response("statmaps/upload_folder.html",
