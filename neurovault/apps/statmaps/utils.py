@@ -20,7 +20,7 @@ from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from ast import literal_eval
 from subprocess import CalledProcessError
-
+from nilearn.plotting import plot_glass_brain
 
 # see CollectionRedirectMiddleware
 class HttpRedirectException(Exception):
@@ -145,6 +145,13 @@ def generate_url_token(length=8):
         return generate_url_token()
     else:
         return token
+
+def generate_glassbrain_image(image):
+    nifti_file = str(image.file.path)
+    png_img_name = "glass_brain_%s.png" % image.pk
+    png_img_path = os.path.join(os.path.split(nifti_file)[0],png_img_name)
+    glass_brain = plot_glass_brain(nifti_file)
+    glass_brain.savefig(png_img_path)
 
 
 def get_paper_properties(doi):

@@ -213,7 +213,7 @@ class Image(PolymorphicModel):
             nb.save(nii, nifti_gz_file)
             f = open(nifti_gz_file)
             image.nifti_gz_file.save(nifti_gz_file.split(os.path.sep)[-1], File(f), save=False)
-
+   
         image.save();
 
         return image
