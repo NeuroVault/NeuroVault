@@ -1,6 +1,7 @@
 # Django settings for neurovault project.
 import os
-
+import djcelery
+djcelery.setup_loader()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -145,8 +146,17 @@ INSTALLED_APPS = (
     #'south',
     'corsheaders',
     'dbbackup',
-    'polymorphic'
+    'polymorphic',
+    'djcelery'
 )
+
+# CELERY SETTINGS
+BROKER_URL = 'redis://localhost:6379/0'
+# comment out this line if you don't want to save results to backend
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
@@ -154,6 +164,7 @@ INSTALLED_APPS = (
 # See http://docs.djangoproject.com/en/dev/topics/logging for
 # more details on how to customize your logging configuration.
 # LOGGING = {
+
 #     'version': 1,
 #     'disable_existing_loggers': False,
 #     'filters': {

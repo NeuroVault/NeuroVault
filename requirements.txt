@@ -32,3 +32,5 @@ python-openid
 django-sendfile
 django-polymorphic
 networkx
+celery-with-redis
+django-celery

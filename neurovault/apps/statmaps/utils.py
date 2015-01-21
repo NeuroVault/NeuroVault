@@ -146,6 +146,7 @@ def generate_url_token(length=8):
     else:
         return token
 
+
 def generate_glassbrain_image(image):
     nifti_file = str(image.file.path)
     png_img_name = "glass_brain_%s.png" % image.pk
