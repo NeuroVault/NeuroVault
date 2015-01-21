@@ -42,9 +42,11 @@ Celery requires a task server. They recommend rabbitmq (and I tested this for th
 
 #### start redis!
 Note - I had to use sudo to do this. Not sure if this means potential permissions errors down the line...
+     
      sudo /etc/init.d/redis_6379 start
 
 Test to see if it's working (this is like Marco Polo!)
+     
      /opt/nv_env/local/bin/redis-cli ping
      PONG
 
