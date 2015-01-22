@@ -5,7 +5,7 @@ import shutil
 import numpy as np
 import string
 import random
-from .models import Collection
+from neurovault.apps.statmaps.models import Collection
 from neurovault import settings
 import urllib2
 from lxml import etree
@@ -20,7 +20,6 @@ from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from ast import literal_eval
 from subprocess import CalledProcessError
-from nilearn.plotting import plot_glass_brain
 
 # see CollectionRedirectMiddleware
 class HttpRedirectException(Exception):
