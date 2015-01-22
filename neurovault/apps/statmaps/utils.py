@@ -146,15 +146,6 @@ def generate_url_token(length=8):
     else:
         return token
 
-
-def generate_glassbrain_image(image):
-    nifti_file = str(image.file.path)
-    png_img_name = "glass_brain_%s.png" % image.pk
-    png_img_path = os.path.join(os.path.split(nifti_file)[0],png_img_name)
-    glass_brain = plot_glass_brain(nifti_file)
-    glass_brain.savefig(png_img_path)
-
-
 def get_paper_properties(doi):
     xmlurl = 'http://doi.crossref.org/servlet/query'
     xmlpath = xmlurl + '?pid=k.j.gorgolewski@sms.ed.ac.uk&format=unixref&id=' + urllib2.quote(doi)

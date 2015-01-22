@@ -16,6 +16,7 @@ import nibabel as nb
 from django.core.exceptions import ValidationError
 from neurovault import settings
 from polymorphic.polymorphic_model import PolymorphicModel
+from neurovault.apps.statmaps.tasks import generate_glassbrain_image
 # from django.db.models.signals import post_save
 # from django.dispatch import receiver
 
@@ -215,6 +216,9 @@ class Image(PolymorphicModel):
             image.nifti_gz_file.save(nifti_gz_file.split(os.path.sep)[-1], File(f), save=False)
    
         image.save();
+
+        # Celery job to generate glass brain image in image directory
+        generate_glassbrain_image.delay(nifti_gz_file,image.pk)
 
         return image
 
