@@ -5,7 +5,7 @@ import shutil
 import numpy as np
 import string
 import random
-from neurovault.apps.statmaps.models import Collection
+from neurovault.apps.statmaps.models import Collection, NIDMResults
 from neurovault import settings
 import urllib2
 from lxml import etree
@@ -107,8 +107,8 @@ def generate_pycortex_volume(image):
                                          "--fslregout",
                                          mni_mat])
         except CalledProcessError, e:
-            raise RuntimeError(str(e.cmd) + " returned code " + str(e.returncode) + " with output " + e.output)
-            
+            raise RuntimeError(str(e.cmd) + " returned code " +
+                               str(e.returncode) + " with output " + e.output)
 
         x = np.loadtxt(mni_mat)
         xfm = cortex.xfm.Transform.from_fsl(x, nifti_file, reference)
@@ -216,6 +216,9 @@ def send_email_notification(notif_type, subject, users, tpl_context=None):
 
 
 def detect_afni4D(nii_file):
+    shape = nib.load(nii_file).shape
+    if not (len(shape) == 5 and shape[3] == 1):
+        return False 
     # don't split afni files with no subbricks
     return bool(len(get_afni_subbrick_labels(nii_file)) > 1)
 
@@ -223,7 +226,8 @@ def detect_afni4D(nii_file):
 def get_afni_subbrick_labels(nii_file):
     # AFNI header is nifti1 header extension 4
     # http://nifti.nimh.nih.gov/nifti-1/AFNIextension1
-    extensions = nib.load(nii_file).get_header().extensions
+
+    extensions = getattr(nib.load(nii_file).get_header(), 'extensions', [])
     header = [ext for ext in extensions if ext.get_code() == 4]
     if not header:
         return []
@@ -232,11 +236,18 @@ def get_afni_subbrick_labels(nii_file):
     # <AFNI_atr atr_name="BRICK_LABS" >
     #   "SetA-SetB_mean~SetA-SetB_Zscr~SetA_mean~SetA_Zscr~SetB_mean~SetB_Zscr"
     # </AFNI_atr>
-    tree = etree.fromstring(header[0].get_content())
-    lnode = [v for v in tree.findall('.//AFNI_atr') if v.attrib['atr_name'] == 'BRICK_LABS']
-
-    # header xml is wrapped in string literals
-    return [] + literal_eval(lnode[0].text.strip()).split('~')
+    retval = []
+    try:
+        tree = etree.fromstring(header[0].get_content())
+        lnode = [v for v in tree.findall('.//AFNI_atr') if v.attrib['atr_name'] == 'BRICK_LABS']
+    
+        # header xml is wrapped in string literals
+        
+        if lnode:
+            retval += literal_eval(lnode[0].text.strip()).split('~')
+    except:
+        pass
+    return retval
 
 
 def split_afni4D_to_3D(nii_file,with_labels=True,tmp_dir=None):
@@ -268,3 +279,26 @@ def memory_uploadfile(new_file, fname, old_file):
 
     return InMemoryUploadedFile(cfile, "file", fname,
                                 content_type, cfile.size, charset)
+
+
+def populate_nidm_results(request,collection):
+    inst = NIDMResults(collection=collection)
+    # resolves a odd circular import issue
+    nidmr_form = NIDMResults.get_form_class()
+    request.POST['name'] = 'NIDM'
+    request.POST['description'] = 'NIDM Results'
+    request.POST['collection'] = collection.pk
+    request.FILES['zip_file'] = request.FILES['file']
+
+    form = nidmr_form(request.POST,request.FILES,instance=inst)
+    if form.is_valid():
+        form.save()
+    return form.instance
+
+
+def get_server_url(request):
+    if request.META.get('HTTP_ORIGIN'):
+        return request.META['HTTP_ORIGIN']
+    urlpref = 'https://' if request.is_secure() else 'http://'
+    return '{0}{1}'.format(urlpref,request.META['HTTP_HOST'])
+

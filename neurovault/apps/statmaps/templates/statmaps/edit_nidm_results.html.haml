@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block head %}
+    %link{ href:"{% static 'css/studies.css' %}", media:"screen", rel:"stylesheet", type:"text/css"}
+{% endblock %}
+
+{% block content %}
+.row
+    .span11
+        <h2><a href="{{form.instance.collection.get_absolute_url}}">{{form.instance.collection.name}}</a> / {{ form.instance.name }}.zip</h2>
+        %hr
+.row
+    .span11
+
+        {% crispy form %}
+{% endblock %}

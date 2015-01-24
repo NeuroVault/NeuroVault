@@ -2,11 +2,11 @@ from django.conf.urls import patterns, url
 from django.views.generic import ListView
 from .models import Collection
 from .views import edit_collection, edit_images, view_image, delete_image, edit_image, \
-                    view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
-                    serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
-                    papaya_js_embed, atlas_query_region, atlas_query_voxel, compare_images, compare_search
-from neurovault.apps.statmaps.views import view_images_by_tag, \
-    view_image_with_pycortex, stats_view
+                view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
+                serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
+                papaya_js_embed, atlas_query_region, atlas_query_voxel, view_images_by_tag, \
+                view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
+                view_nidm_results, compare_search, compare_images
 from neurovault.apps.statmaps.models import KeyValueTag
 from django.db.models import Count
 from django.contrib.auth.decorators import login_required
@@ -94,6 +94,9 @@ urlpatterns = patterns('',
     url(r'^images/(?P<pk>\d+)/js/embed$',
         papaya_js_embed,
         name='papaya_js_embed'),
+    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidm_name>[A-Za-z0-9\.\+\-\_\s\[\]]+\.nidm\_?[0-9]*)/?$',
+        view_nidm_results,
+        name='view_nidm_results'),
 
     url(r'^images/(?P<pk>\d+)/papaya/embedview$',
         papaya_js_embed,
@@ -120,10 +123,19 @@ urlpatterns = patterns('',
     url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/pycortex_all/(?P<path>.*)$',
         serve_pycortex,
         name='serve_pycortex_collection'),
-    url(r'^api/atlas_query_region/$', 
+
+    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[A-Za-z0-9\.\+\-\_\s\[\]]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
+        serve_nidm,
+        name='serve_nidm_files'),
+
+    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[A-Za-z0-9\.\+\-\_\s\[\]]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
+        serve_nidm_image,
+        name='serve_nidm_images'),
+
+    url(r'^api/atlas_query_region/$',
         atlas_query_region,
         name = 'atlas_query_region'),
-    url(r'^api/atlas_query_voxel/$', 
+    url(r'^api/atlas_query_voxel/$',
         atlas_query_voxel,
         name = 'atlas_query_voxel'),
 
