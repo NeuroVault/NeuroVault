@@ -128,9 +128,10 @@ def edit_collection(request, cid=None):
         is_owner = True
         collection = Collection(owner=request.user)
     if request.method == "POST":
-        form = CollectionForm(request.POST, request.FILES, instance=collection)
         if is_owner:
             form = OwnerCollectionForm(request.POST, request.FILES, instance=collection)
+        else:
+            form = CollectionForm(request.POST, request.FILES, instance=collection)
         if form.is_valid():
             previous_contribs = set()
             if form.instance.pk is not None:
