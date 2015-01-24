@@ -32,13 +32,9 @@ python-openid
 django-sendfile
 django-polymorphic
 networkx
-<<<<<<< HEAD
 rdflib>=4.1.0
-=======
 celery-with-redis
 django-celery
 scikit-learn
 nilearn
 pybraincompare
-
->>>>>>> ed704bac183ee370a7799b9c9468880c5e30ca49

@@ -5,11 +5,7 @@ import shutil
 import numpy as np
 import string
 import random
-<<<<<<< HEAD
-from .models import Collection, NIDMResults
-=======
-from neurovault.apps.statmaps.models import Collection
->>>>>>> ed704bac183ee370a7799b9c9468880c5e30ca49
+from neurovault.apps.statmaps.models import Collection, NIDMResults
 from neurovault import settings
 import urllib2
 from lxml import etree

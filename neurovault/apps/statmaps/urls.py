@@ -2,19 +2,11 @@ from django.conf.urls import patterns, url
 from django.views.generic import ListView
 from .models import Collection
 from .views import edit_collection, edit_images, view_image, delete_image, edit_image, \
-<<<<<<< HEAD
                 view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
                 serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
                 papaya_js_embed, atlas_query_region, atlas_query_voxel, view_images_by_tag, \
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
-                view_nidm_results
-=======
-                    view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
-                    serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
-                    papaya_js_embed, atlas_query_region, atlas_query_voxel, compare_images, compare_search
-from neurovault.apps.statmaps.views import view_images_by_tag, \
-    view_image_with_pycortex, stats_view
->>>>>>> ed704bac183ee370a7799b9c9468880c5e30ca49
+                view_nidm_results, compare_search, compare_images
 from neurovault.apps.statmaps.models import KeyValueTag
 from django.db.models import Count
 from django.contrib.auth.decorators import login_required

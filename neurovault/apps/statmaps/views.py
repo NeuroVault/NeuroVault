@@ -166,7 +166,11 @@ def view_image(request, pk, collection_cid=None):
     image = get_image(pk,collection_cid,request)
     user_owns_image = True if owner_or_contrib(request,image.collection) else False
     api_cid = pk
-<<<<<<< HEAD
+
+    # Comparison is possible if pk is in matrix columns
+    corr_df = pandas.read_pickle(os.path.abspath(os.path.join(os.path.dirname( neurovault.settings.BASE_DIR ), '../..', 'image_data/matrices/pearson_corr.pkl')))
+    comparison_is_possible = True if int(pk) in corr_df.columns else False
+
 
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
@@ -175,6 +179,7 @@ def view_image(request, pk, collection_cid=None):
         'user': image.collection.owner,
         'user_owns_image': user_owns_image,
         'api_cid':api_cid,
+        'comparison_is_possible':comparison_is_possible
     }
 
     if isinstance(image, NIDMResultStatisticMap):
@@ -183,18 +188,6 @@ def view_image(request, pk, collection_cid=None):
         context['provn_basename'] = os.path.basename(image.nidm_results.provn_file.url)
 
     if isinstance(image, Atlas):
-=======
-    # Comparison is possible if pk is in matrix columns
-    corr_df = pandas.read_pickle("/opt/image_data/matrices/pearson_corr.pkl")
-    comparison_is_possible = True if int(pk) in corr_df.columns else False
-    if image.collection.private:
-        api_cid = '%s-%s' % (image.collection.private_token,pk)
-    context = {'image': image, 'user': image.collection.owner, 'user_owns_image': user_owns_image,
-               'api_cid':api_cid, 'comparison_is_possible' : comparison_is_possible}
-    if isinstance(image, StatisticMap):
-        template = 'statmaps/statisticmap_details.html.haml'
-    elif isinstance(image, Atlas):
->>>>>>> ed704bac183ee370a7799b9c9468880c5e30ca49
         template = 'statmaps/atlas_details.html.haml'
     else:
         template = 'statmaps/statisticmap_details.html.haml'
