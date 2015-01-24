@@ -18,11 +18,15 @@ import nibabel as nb
 from django.core.exceptions import ValidationError
 from neurovault import settings
 from polymorphic.polymorphic_model import PolymorphicModel
+<<<<<<< HEAD
 from django.db.models import Q
 from django.db.models.signals import post_delete
 from django.dispatch.dispatcher import receiver
 import shutil
 
+=======
+# from neurovault.apps.statmaps.tasks import generate_glassbrain_image
+>>>>>>> ed704bac183ee370a7799b9c9468880c5e30ca49
 # from django.db.models.signals import post_save
 # from django.dispatch import receiver
 
@@ -258,8 +262,16 @@ class Image(PolymorphicModel, BaseCollectionItem):
             nb.save(nii, nifti_gz_file)
             f = open(nifti_gz_file)
             image.nifti_gz_file.save(nifti_gz_file.split(os.path.sep)[-1], File(f), save=False)
+<<<<<<< HEAD
 
         image.save()
+=======
+   
+        image.save();
+>>>>>>> ed704bac183ee370a7799b9c9468880c5e30ca49
+
+        # Celery job to generate glass brain image in image directory
+        generate_glassbrain_image.delay(nifti_gz_file,image.pk)
 
         return image
 

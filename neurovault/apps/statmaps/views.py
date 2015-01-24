@@ -19,7 +19,9 @@ from sendfile import sendfile
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.renderers import JSONRenderer
 from voxel_query_functions import *
-
+from compare import compare, atlas as pybrainatlas
+from glob import glob
+import pandas
 import zipfile
 import tarfile
 import gzip
@@ -164,6 +166,7 @@ def view_image(request, pk, collection_cid=None):
     image = get_image(pk,collection_cid,request)
     user_owns_image = True if owner_or_contrib(request,image.collection) else False
     api_cid = pk
+<<<<<<< HEAD
 
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
@@ -180,6 +183,18 @@ def view_image(request, pk, collection_cid=None):
         context['provn_basename'] = os.path.basename(image.nidm_results.provn_file.url)
 
     if isinstance(image, Atlas):
+=======
+    # Comparison is possible if pk is in matrix columns
+    corr_df = pandas.read_pickle("/opt/image_data/matrices/pearson_corr.pkl")
+    comparison_is_possible = True if int(pk) in corr_df.columns else False
+    if image.collection.private:
+        api_cid = '%s-%s' % (image.collection.private_token,pk)
+    context = {'image': image, 'user': image.collection.owner, 'user_owns_image': user_owns_image,
+               'api_cid':api_cid, 'comparison_is_possible' : comparison_is_possible}
+    if isinstance(image, StatisticMap):
+        template = 'statmaps/statisticmap_details.html.haml'
+    elif isinstance(image, Atlas):
+>>>>>>> ed704bac183ee370a7799b9c9468880c5e30ca49
         template = 'statmaps/atlas_details.html.haml'
     else:
         template = 'statmaps/statisticmap_details.html.haml'
@@ -649,6 +664,63 @@ def atlas_query_voxel(request):
     except IndexError:
         return JSONResponse('error: one or more coordinates are out of range', status=400)
     return JSONResponse(data)
+
+# Compare Two Images
+def compare_images(request,pk1,pk2):
+    image1 = get_image(pk1,None,request)
+    image2 = get_image(pk2,None,request)
+    
+    # Name the data file based on the new volumes
+    path, name1, ext = split_filename(image1.file.url)
+    path, name2, ext = split_filename(image2.file.url)
+
+    # For now, manually choose an atlas - this can be user choice
+    atlas_file = os.path.abspath(os.path.join(os.path.dirname( neurovault.settings.BASE_DIR ), '../..','image_data/atlas/MNI-maxprob-thr25-2mm.nii'))
+    atlas_xml = os.path.abspath(os.path.join(os.path.dirname( neurovault.settings.BASE_DIR ), '../..','image_data/atlas/MNI.xml'))
+    atlas = pybrainatlas.atlas(atlas_xml,atlas_file) # Default slices are "coronal","axial","sagittal"
+
+    # Create custom image names for the visualization
+    custom = {"image 1":"%s:%s" %(image1.name,image1.map_type),"image 2": "%s:%s" %(image2.name,image2.map_type)}
+
+    html_snippet,data_table = compare.scatterplot_compare(image1=image1.file.path,image2=image2.file.path,software="FREESURFER",voxdim=[8,8,8],atlas=atlas,custom=custom,corr="pearson")
+
+    html = [h.strip("\n") for h in html_snippet]
+    context = {'html': html}
+    return render(request, 'statmaps/compare_images.html', context)
+
+# Return search interface for one image vs rest
+def compare_search(request,pk1):
+    image1 = get_image(pk1,None,request)
+    # This df should ONLY contain public images! see tasks.py for generation
+    corr_df = pandas.read_pickle(os.path.abspath(os.path.join(os.path.dirname( neurovault.settings.BASE_DIR ), '../..', 'image_data/matrices/pearson_corr.pkl')))
+    public_images = Image.objects.filter(collection__private=False,id__in=corr_df.columns)
+
+    # Get all image png paths
+    image_paths = [image.file.path for image in public_images]
+    png_img_names = ["glass_brain_%s.png" % image.pk for image in public_images]  
+    png_img_paths = [ os.path.join(os.path.split(image_paths[i])[0],png_img_names[i]) for i in range(0,len(image_paths))]
+    png_img_paths = [imagepath.replace("opt/image_data","media") for imagepath in png_img_paths]  
+    
+    # Get image tags, for now we will just do map type
+    tags = [[str(image.map_type)] for image in public_images]
+    
+    # Tags and png paths should be put in same data frame, so image ids are associated with both
+    corr_df["png"] = png_img_paths
+    corr_df["tags"] = tags
+    compare_url = "/compare" # format will be prefix/[query_id]/[other_id]
+    image_url = "/images" # format will be prefix/[other_id]
+    
+    # Here is the query image
+    query = os.path.join(os.path.split(image1.file.path)[0],"glass_brain_%s.png" %(image1.pk))
+    query = query.replace("opt/image_data","media") # This may need to change for deployment?
+    
+    # Do similarity search and return html to put in page
+    html_snippet = compare.similarity_search(corr_df=corr_df,button_url=compare_url,image_url=image_url,query=query)
+    html_snippet = html_snippet[9:len(html_snippet)-2]  # get rid of body and html tags
+    html = [h.strip("\n") for h in html_snippet]
+    context = {'html': html}
+    return render(request, 'statmaps/compare_search.html', context)
+
 
 class JSONResponse(HttpResponse):
     """
