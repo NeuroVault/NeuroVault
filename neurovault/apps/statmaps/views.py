@@ -128,7 +128,7 @@ def edit_collection(request, cid=None):
         is_owner = True
         collection = Collection(owner=request.user)
     if request.method == "POST":
-        if is_owner:1
+        if is_owner:
             form = OwnerCollectionForm(request.POST, request.FILES, instance=collection)
         else:
             form = CollectionForm(request.POST, request.FILES, instance=collection)
