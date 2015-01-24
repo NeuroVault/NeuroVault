@@ -22,7 +22,7 @@ def generate_glassbrain_image(nifti_file,pk):
 @shared_task
 def make_correlation_df(resample_dim=[4,4,4],pkl_path=None):
   if not pkl_path:
-    pkl_path = os.path.abspath(os.path.join(os.path.dirname( neurovault.settings.BASE_DIR ), '../..', 'image_data/matrices/pearson_corr.pkl'))
+    pkl_path = os.path.abspath(os.path.join(neurovault.settings.PRIVATE_MEDIA_ROOT,'matrices/pearson_corr.pkl'))
   # Get standard space brain
   reference = os.path.join(os.environ['FREESURFER_HOME'],'subjects', 'fsaverage', 'mri', 'brainmask.nii.gz')
   public_images = Image.objects.filter(collection__private=False)

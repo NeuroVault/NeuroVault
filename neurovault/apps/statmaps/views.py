@@ -168,7 +168,7 @@ def view_image(request, pk, collection_cid=None):
     api_cid = pk
 
     # Comparison is possible if pk is in matrix columns
-    corr_df = pandas.read_pickle(os.path.abspath(os.path.join(os.path.dirname( neurovault.settings.BASE_DIR ), '../..', 'image_data/matrices/pearson_corr.pkl')))
+    corr_df = pandas.read_pickle(os.path.abspath(os.path.join(neurovault.settings.PRIVATE_MEDIA_ROOT,'matrices/pearson_corr.pkl')))
     comparison_is_possible = True if int(pk) in corr_df.columns else False
 
 
@@ -668,8 +668,8 @@ def compare_images(request,pk1,pk2):
     path, name2, ext = split_filename(image2.file.url)
 
     # For now, manually choose an atlas - this can be user choice
-    atlas_file = os.path.abspath(os.path.join(os.path.dirname( neurovault.settings.BASE_DIR ), 'neurovault/static/atlas/MNI-maxprob-thr25-2mm.nii'))
-    atlas_xml = os.path.abspath(os.path.join(os.path.dirname( neurovault.settings.BASE_DIR ), 'neurovault/static/atlas/MNI.xml'))
+    atlas_file = os.path.abspath(os.path.join(neurovault.settings.STATIC_ROOT, 'atlas/MNI-maxprob-thr25-2mm.nii'))
+    atlas_xml = os.path.abspath(os.path.join(neurovault.settings.STATIC_ROOT, 'atlas/MNI.xml'))
     atlas = pybrainatlas.atlas(atlas_xml,atlas_file) # Default slices are "coronal","axial","sagittal"
 
     # Create custom image names for the visualization
@@ -685,7 +685,7 @@ def compare_images(request,pk1,pk2):
 def find_similar(request,pk):
     image1 = get_image(pk,None,request)
     # This df should ONLY contain public images! see tasks.py for generation
-    corr_df = pandas.read_pickle(os.path.abspath(os.path.join(os.path.dirname( neurovault.settings.BASE_DIR ), '../..', 'image_data/matrices/pearson_corr.pkl')))
+    corr_df = pandas.read_pickle(os.path.abspath(os.path.join(neurovault.settings.PRIVATE_MEDIA_ROOT,'matrices/pearson_corr.pkl')))
     public_images = Image.objects.filter(collection__private=False,id__in=corr_df.columns)
 
     # Get all image png paths
