@@ -668,8 +668,8 @@ def compare_images(request,pk1,pk2):
     path, name2, ext = split_filename(image2.file.url)
 
     # For now, manually choose an atlas - this can be user choice
-    atlas_file = os.path.abspath(os.path.join(os.path.dirname( neurovault.settings.BASE_DIR ), '../..','image_data/atlas/MNI-maxprob-thr25-2mm.nii'))
-    atlas_xml = os.path.abspath(os.path.join(os.path.dirname( neurovault.settings.BASE_DIR ), '../..','image_data/atlas/MNI.xml'))
+    atlas_file = os.path.abspath(os.path.join(os.path.dirname( neurovault.settings.BASE_DIR ), 'neurovault/static/atlas/MNI-maxprob-thr25-2mm.nii'))
+    atlas_xml = os.path.abspath(os.path.join(os.path.dirname( neurovault.settings.BASE_DIR ), 'neurovault/static/atlas/MNI.xml'))
     atlas = pybrainatlas.atlas(atlas_xml,atlas_file) # Default slices are "coronal","axial","sagittal"
 
     # Create custom image names for the visualization
@@ -682,17 +682,16 @@ def compare_images(request,pk1,pk2):
     return render(request, 'statmaps/compare_images.html', context)
 
 # Return search interface for one image vs rest
-def compare_search(request,pk1):
-    image1 = get_image(pk1,None,request)
+def find_similar(request,pk):
+    image1 = get_image(pk,None,request)
     # This df should ONLY contain public images! see tasks.py for generation
     corr_df = pandas.read_pickle(os.path.abspath(os.path.join(os.path.dirname( neurovault.settings.BASE_DIR ), '../..', 'image_data/matrices/pearson_corr.pkl')))
     public_images = Image.objects.filter(collection__private=False,id__in=corr_df.columns)
 
     # Get all image png paths
-    image_paths = [image.file.path for image in public_images]
+    image_paths = [image.file.url for image in public_images]
     png_img_names = ["glass_brain_%s.png" % image.pk for image in public_images]  
     png_img_paths = [ os.path.join(os.path.split(image_paths[i])[0],png_img_names[i]) for i in range(0,len(image_paths))]
-    png_img_paths = [imagepath.replace("opt/image_data","media") for imagepath in png_img_paths]  
     
     # Get image tags, for now we will just do map type
     tags = [[str(image.map_type)] for image in public_images]
@@ -704,12 +703,10 @@ def compare_search(request,pk1):
     image_url = "/images" # format will be prefix/[other_id]
     
     # Here is the query image
-    query = os.path.join(os.path.split(image1.file.path)[0],"glass_brain_%s.png" %(image1.pk))
-    query = query.replace("opt/image_data","media") # This may need to change for deployment?
+    query = os.path.join(os.path.split(image1.file.url)[0],"glass_brain_%s.png" %(image1.pk))
     
     # Do similarity search and return html to put in page
     html_snippet = compare.similarity_search(corr_df=corr_df,button_url=compare_url,image_url=image_url,query=query)
-    html_snippet = html_snippet[9:len(html_snippet)-2]  # get rid of body and html tags
     html = [h.strip("\n") for h in html_snippet]
     context = {'html': html}
     return render(request, 'statmaps/compare_search.html', context)

@@ -81,7 +81,7 @@
                 %a.btn.btn-primary.btn-large{href: "{{ image.file.url }}" } Download
             %a.btn.btn-primary.btn-large{href: "http://neurosynth.org/decode/?neurovault={{ api_cid }}" } Decode with neurosynth
             - if comparison_is_possible
-                %a.btn.btn-primary.btn-large{href: "/search/{{ image.id }}" } Find similar
+                %a.btn.btn-primary.btn-large{href: "{% url 'find_similar' image.id %}" } Find similar
             - if user_owns_image
                 %a.btn.btn-primary.btn-large{href: "{% url 'edit_image' image.id %}" } Edit details
                 .float-right-wrapper

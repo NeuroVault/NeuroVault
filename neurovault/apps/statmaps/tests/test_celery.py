@@ -1,3 +1,10 @@
+from django.test import TestCase
+from neurovault.apps.statmaps.tasks import generate_glassbrain_image, make_correlation_df
+from django.shortcuts import get_object_or_404
+from neurovault.apps.statmaps.models import Image
+
+# This needs to be refined to test whatever actual celery implementation is done
+# I will leave manual notes here for now
 # in one terminal window: 
 # activate always: source /opt/nv_env/bin/activate
 # start redis: sudo /etc/init.d/redis_6379 start
@@ -7,25 +14,17 @@
 # cd /opt/nv_env/NeuroVault
 # python manage.py shell
 # sudo service uwsgi restart must be done each time, as well as
-from neurovault.apps.statmaps.tasks import generate_glassbrain_image, make_correlation_df
-from django.shortcuts import get_object_or_404
-from neurovault.apps.statmaps.models import Image
 
-pks = [1,2,3,4,5]
-for pk in pks:
-  try:
-    image = get_object_or_404(Image,pk=pk)
-    generate_glassbrain_image.delay(image.file.path,pk)
-  except:
-    print "Cannot do pk %s" %(pk)
+class Test_celery_tasks(pk):
+    def setUp(self):
+      image = get_object_or_404(Image,pk=pk)
 
-# How do I get a collection?
-cid=1
-keyargs = {'pk':cid}
-collection = Collection.objects.get(**keyargs)
+    def test_generate_glass_brain(self):
+      generate_glassbrain_image.delay(image.file.path,pk)
 
-# Testing image pairwise matrix generation  
-# defaults: pkl_path = "/opt/image_data/matrices/pearson_corr.pkl"
-# defaults: resample_dim = [4,4,4]
-make_correlation_df()
+    def test_make_correlation_df(self):
+      # Testing image pairwise matrix generation  
+      # defaults: pkl_path = "/opt/image_data/matrices/pearson_corr.pkl"
+      # defaults: resample_dim = [4,4,4]
+      make_correlation_df()
 

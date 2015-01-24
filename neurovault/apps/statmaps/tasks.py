@@ -8,6 +8,7 @@ import nibabel as nib
 from nilearn.plotting import plot_glass_brain
 from nilearn.image import resample_img
 from neurovault.apps.statmaps.models import Image
+import neurovault
 
 @shared_task
 def generate_glassbrain_image(nifti_file,pk):
@@ -19,7 +20,9 @@ def generate_glassbrain_image(nifti_file,pk):
 
 
 @shared_task
-def make_correlation_df(resample_dim=[4,4,4],pkl_path="/opt/image_data/matrices/pearson_corr.pkl"):
+def make_correlation_df(resample_dim=[4,4,4],pkl_path=None):
+  if not pkl_path:
+    pkl_path = os.path.abspath(os.path.join(os.path.dirname( neurovault.settings.BASE_DIR ), '../..', 'image_data/matrices/pearson_corr.pkl'))
   # Get standard space brain
   reference = os.path.join(os.environ['FREESURFER_HOME'],'subjects', 'fsaverage', 'mri', 'brainmask.nii.gz')
   public_images = Image.objects.filter(collection__private=False)
