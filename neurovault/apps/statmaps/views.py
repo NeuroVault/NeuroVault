@@ -149,10 +149,13 @@ def view_image(request, pk, collection_cid=None):
     image = get_image(pk,collection_cid,request)
     user_owns_image = True if owner_or_contrib(request,image.collection) else False
     api_cid = pk
+    # Comparison is possible if pk is in matrix columns
+    corr_df = pandas.read_pickle("/opt/image_data/matrices/pearson_corr.pkl")
+    comparison_is_possible = True if int(pk) in corr_df.columns else False
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
     context = {'image': image, 'user': image.collection.owner, 'user_owns_image': user_owns_image,
-               'api_cid':api_cid}
+               'api_cid':api_cid, 'comparison_is_possible' : comparison_is_possible}
     if isinstance(image, StatisticMap):
         template = 'statmaps/statisticmap_details.html.haml'
     elif isinstance(image, Atlas):
@@ -584,9 +587,10 @@ def compare_images(request,pk1,pk2):
 # Return search interface for one image vs rest
 def compare_search(request,pk1):
     image1 = get_image(pk1,None,request)
+    # This df should ONLY contain public images! see tasks.py for generation
     corr_df = pandas.read_pickle("/opt/image_data/matrices/pearson_corr.pkl") 
-    public_images = Image.objects.filter(collection__private=False)
-    
+    public_images = Image.objects.filter(collection__private=False,id__in=corr_df.columns)
+
     # Get all image png paths
     image_paths = [image.file.path for image in public_images]
     png_img_names = ["glass_brain_%s.png" % image.pk for image in public_images]  
