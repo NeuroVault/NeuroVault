@@ -34,3 +34,7 @@ django-polymorphic
 networkx
 celery-with-redis
 django-celery
+scikit-learn
+nilearn
+pybraincompare
+

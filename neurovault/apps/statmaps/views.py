@@ -22,7 +22,6 @@ from voxel_query_functions import *
 from compare import compare, atlas as pybrainatlas
 from glob import glob
 import pandas
-
 import zipfile
 import tarfile
 import gzip
@@ -565,20 +564,15 @@ def compare_images(request,pk1,pk2):
     path, name1, ext = split_filename(image1.file.url)
     path, name2, ext = split_filename(image2.file.url)
 
-    # image1.file.url is not correct --> /media/images does not exist
-    # hardcoded for now- for Neurovault can change volume1 to image1.file.url and it should work
-    volume1 = image1.file.url.replace("/media/images","/opt/image_data/images")
-    volume2 = image2.file.url.replace("/media/images","/opt/image_data/images")
-
     # For now, manually choose an atlas - this can be user choice
-    atlas_file = "/opt/image_data/pybraincompare/mr/MNI-maxprob-thr25-2mm.nii"
-    atlas_xml = "/opt/image_data/pybraincompare/mr/MNI.xml"
+    atlas_file = os.path.abspath(os.path.join(os.path.dirname( neurovault.settings.BASE_DIR ), '../..','image_data/atlas/MNI-maxprob-thr25-2mm.nii'))
+    atlas_xml = os.path.abspath(os.path.join(os.path.dirname( neurovault.settings.BASE_DIR ), '../..','image_data/atlas/MNI.xml'))
     atlas = pybrainatlas.atlas(atlas_xml,atlas_file) # Default slices are "coronal","axial","sagittal"
 
     # Create custom image names for the visualization
     custom = {"image 1":"%s:%s" %(image1.name,image1.map_type),"image 2": "%s:%s" %(image2.name,image2.map_type)}
 
-    html_snippet,data_table = compare.scatterplot_compare(image1=volume1,image2=volume2,software="FREESURFER",voxdim=[8,8,8],atlas=atlas,custom=custom,corr="pearson")
+    html_snippet,data_table = compare.scatterplot_compare(image1=image1.file.path,image2=image2.file.path,software="FREESURFER",voxdim=[8,8,8],atlas=atlas,custom=custom,corr="pearson")
 
     html = [h.strip("\n") for h in html_snippet]
     context = {'html': html}
@@ -588,7 +582,7 @@ def compare_images(request,pk1,pk2):
 def compare_search(request,pk1):
     image1 = get_image(pk1,None,request)
     # This df should ONLY contain public images! see tasks.py for generation
-    corr_df = pandas.read_pickle("/opt/image_data/matrices/pearson_corr.pkl") 
+    corr_df = pandas.read_pickle(os.path.abspath(os.path.join(os.path.dirname( neurovault.settings.BASE_DIR ), '../..', 'image_data/matrices/pearson_corr.pkl')))
     public_images = Image.objects.filter(collection__private=False,id__in=corr_df.columns)
 
     # Get all image png paths
