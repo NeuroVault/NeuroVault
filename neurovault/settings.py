@@ -145,7 +145,8 @@ INSTALLED_APPS = (
     #'south',
     'corsheaders',
     'dbbackup',
-    'polymorphic'
+    'polymorphic',
+    'djcelery',
 )
 
 # A sample logging configuration. The only tangible logging
@@ -272,3 +273,9 @@ os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
 # provToolbox path
 os.environ["PATH"] += os.pathsep + '/path/to/lib/provToolbox/bin'
 
+# Celery config
+BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'

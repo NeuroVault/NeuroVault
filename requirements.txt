@@ -33,3 +33,5 @@ django-sendfile
 django-polymorphic
 networkx
 rdflib>=4.1.0
+celery[redis]
+django-celery
