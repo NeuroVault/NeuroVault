@@ -668,8 +668,9 @@ def compare_images(request,pk1,pk2):
     path, name2, ext = split_filename(image2.file.url)
 
     # For now, manually choose an atlas - this can be user choice
-    atlas_file = os.path.abspath(os.path.join(neurovault.settings.STATIC_ROOT, 'atlas/MNI-maxprob-thr25-2mm.nii'))
-    atlas_xml = os.path.abspath(os.path.join(neurovault.settings.STATIC_ROOT, 'atlas/MNI.xml'))
+    neurovault_static = os.path.dirname(os.path.realpath(neurovault.apps.statmaps.models.__file__))
+    atlas_file = os.path.abspath(os.path.join(neurovault_static, 'static/atlas/MNI-maxprob-thr25-2mm.nii'))
+    atlas_xml = os.path.abspath(os.path.join(neurovault_static, 'static/atlas/MNI.xml'))
     atlas = pybrainatlas.atlas(atlas_xml,atlas_file) # Default slices are "coronal","axial","sagittal"
 
     # Create custom image names for the visualization
@@ -705,8 +706,8 @@ def find_similar(request,pk):
     # Here is the query image
     query = os.path.join(os.path.split(image1.file.url)[0],"glass_brain_%s.png" %(image1.pk))
     
-    # Do similarity search and return html to put in page
-    html_snippet = compare.similarity_search(corr_df=corr_df,button_url=compare_url,image_url=image_url,query=query)
+    # Do similarity search and return html to put in page, specify 100 max results, take absolute value of scores
+    html_snippet = compare.similarity_search(corr_df=corr_df,button_url=compare_url,image_url=image_url,query=query,absolute_value=True,max_results=100)
     html = [h.strip("\n") for h in html_snippet]
     context = {'html': html}
     return render(request, 'statmaps/compare_search.html', context)
