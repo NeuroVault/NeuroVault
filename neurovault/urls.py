@@ -26,7 +26,7 @@ template.add_to_builtins('django.contrib.staticfiles.templatetags.staticfiles')
 
 class HyperlinkedFileField(serializers.FileField):
 
-    def to_native(self, value):
+    def to_representation(self, value):
         if value:
             request = self.context.get('request', None)
             return request.build_absolute_uri(value.url)
@@ -34,7 +34,7 @@ class HyperlinkedFileField(serializers.FileField):
 
 class HyperlinkedRelatedURL(serializers.RelatedField):
 
-    def to_native(self, value):
+    def to_representation(self, value):
         if value:
             request = self.context.get('request', None)
             return request.build_absolute_uri(value.get_absolute_url())
@@ -42,7 +42,7 @@ class HyperlinkedRelatedURL(serializers.RelatedField):
 
 class HyperlinkedImageURL(serializers.CharField):
 
-    def to_native(self, value):
+    def to_representation(self, value):
         if value:
             request = self.context.get('request', None)
             return request.build_absolute_uri(value)
@@ -50,14 +50,14 @@ class HyperlinkedImageURL(serializers.CharField):
 
 class SerializedContributors(serializers.CharField):
 
-    def to_native(self, value):
+    def to_representation(self, value):
         if value:
             return ', '.join([v.username for v in value.all()])
 
 
 class NIDMDescriptionSerializedField(serializers.CharField):
 
-    def to_native(self, value):
+    def to_representation(self, value):
         if value and self.parent.object is not None:
             parent = self.parent.object.nidm_results.name
             fname = os.path.split(self.parent.object.file.name)[-1]
@@ -87,36 +87,36 @@ class APIHelper:
 
 class ImageSerializer(serializers.HyperlinkedModelSerializer):
 
-    file = HyperlinkedFileField(source='file')
-    collection = HyperlinkedRelatedURL(source='collection', read_only=True)
+    file = HyperlinkedFileField()
+    collection = HyperlinkedRelatedURL(read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
 
     class Meta:
         model = Image
         exclude = ['polymorphic_ctype']
 
-    def to_native(self, obj):
+    def to_representation(self, obj):
         """
         Because GalleryItem is Polymorphic
         """
         if isinstance(obj, StatisticMap):
             return StatisticMapSerializer(obj, context={
-                                'request': self.context['request']}).to_native(obj)
+                                'request': self.context['request']}).to_representation(obj)
         if isinstance(obj, Atlas):
             return AtlasSerializer(obj, context={
-                                'request': self.context['request']}).to_native(obj)
+                                'request': self.context['request']}).to_representation(obj)
 
         if isinstance(obj, NIDMResultStatisticMap):
             return NIDMResultStatisticMapSerializer(obj, context={
-                                'request': self.context['request']}).to_native(obj)
+                                'request': self.context['request']}).to_representation(obj)
 
-        return super(ImageSerializer, self).to_native(obj)
+        return super(ImageSerializer, self).to_representation(obj)
 
 
 class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
 
-    file = HyperlinkedFileField(source='file')
-    collection = HyperlinkedRelatedURL(source='collection', read_only=True)
+    file = HyperlinkedFileField()
+    collection = HyperlinkedRelatedURL(read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
 
     class Meta:
@@ -125,8 +125,8 @@ class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class NIDMResultStatisticMapSerializer(serializers.HyperlinkedModelSerializer):
-    file = HyperlinkedFileField(source='file')
-    collection = HyperlinkedRelatedURL(source='collection', read_only=True)
+    file = HyperlinkedFileField()
+    collection = HyperlinkedRelatedURL(read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
     nidm_results = HyperlinkedRelatedURL(source='nidm_results', read_only=True)
     description = NIDMDescriptionSerializedField(source='get_absolute_url')
@@ -138,8 +138,8 @@ class NIDMResultStatisticMapSerializer(serializers.HyperlinkedModelSerializer):
 
 class AtlasSerializer(serializers.HyperlinkedModelSerializer):
 
-    label_description_file = HyperlinkedFileField(source='label_description_file')
-    collection = HyperlinkedRelatedURL(source='collection', read_only=True)
+    label_description_file = HyperlinkedFileField()
+    collection = HyperlinkedRelatedURL(read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
 
     class Meta:
@@ -149,21 +149,21 @@ class AtlasSerializer(serializers.HyperlinkedModelSerializer):
 
 class NIDMResultsSerializer(serializers.ModelSerializer):
     url = HyperlinkedImageURL(source='get_absolute_url')
-    zip_file = HyperlinkedFileField(source='zip_file')
-    ttl_file = HyperlinkedFileField(source='ttl_file')
-    provn_file = HyperlinkedFileField(source='provn_file')
-    collection = HyperlinkedRelatedURL(source='collection', read_only=True)
+    zip_file = HyperlinkedFileField()
+    ttl_file = HyperlinkedFileField()
+    provn_file = HyperlinkedFileField()
+    collection = HyperlinkedRelatedURL(read_only=True)
     statmaps = ImageSerializer(source='nidmresultstatisticmap_set')
 
     class Meta:
         model = NIDMResults
-        exclude = ['polymorphic_ctype','id']
+        exclude = ['id']
 
 
 class CollectionSerializer(serializers.ModelSerializer):
-    images = ImageSerializer(source='image_set')
-    nidm_results = NIDMResultsSerializer(source='nidmresults_set')
-    contributors = SerializedContributors(source='contributors')
+#     images = ImageSerializer(source='image_set')
+#     nidm_results = NIDMResultsSerializer(source='nidmresults_set')
+    contributors = SerializedContributors()
 
     class Meta:
         model = Collection
@@ -243,9 +243,10 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
     def datatable(self, request, pk=None):
         collection = get_collection(pk,request,mode='api')
         data = CollectionSerializer(collection, context={'request': request}).data
+        print data
         if data and 'description' in data and data['description']:
             data['description'] = data['description'].replace('\n', '<br />')
-        return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date', 'images'])
+        return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date'])
 
     def retrieve(self, request, pk=None):
         collection = get_collection(pk,request,mode='api')
