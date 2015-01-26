@@ -20,6 +20,8 @@ from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from ast import literal_eval
 from subprocess import CalledProcessError
+from django.core.exceptions import ValidationError
+import zipfile
 
 
 # see CollectionRedirectMiddleware
@@ -108,8 +110,8 @@ def generate_pycortex_volume(image):
                                          "--fslregout",
                                          mni_mat])
         except CalledProcessError, e:
-            raise RuntimeError(str(e.cmd) + " returned code " + str(e.returncode) + " with output " + e.output)
-            
+            raise RuntimeError(str(e.cmd) + " returned code " +
+                               str(e.returncode) + " with output " + e.output)
 
         x = np.loadtxt(mni_mat)
         xfm = cortex.xfm.Transform.from_fsl(x, nifti_file, reference)
@@ -218,6 +220,9 @@ def send_email_notification(notif_type, subject, users, tpl_context=None):
 
 
 def detect_afni4D(nii_file):
+    shape = nib.load(nii_file).shape
+    if not (len(shape) == 5 and shape[3] == 1):
+        return False 
     # don't split afni files with no subbricks
     return bool(len(get_afni_subbrick_labels(nii_file)) > 1)
 
@@ -225,7 +230,8 @@ def detect_afni4D(nii_file):
 def get_afni_subbrick_labels(nii_file):
     # AFNI header is nifti1 header extension 4
     # http://nifti.nimh.nih.gov/nifti-1/AFNIextension1
-    extensions = nib.load(nii_file).get_header().extensions
+
+    extensions = getattr(nib.load(nii_file).get_header(), 'extensions', [])
     header = [ext for ext in extensions if ext.get_code() == 4]
     if not header:
         return []
@@ -234,11 +240,18 @@ def get_afni_subbrick_labels(nii_file):
     # <AFNI_atr atr_name="BRICK_LABS" >
     #   "SetA-SetB_mean~SetA-SetB_Zscr~SetA_mean~SetA_Zscr~SetB_mean~SetB_Zscr"
     # </AFNI_atr>
-    tree = etree.fromstring(header[0].get_content())
-    lnode = [v for v in tree.findall('.//AFNI_atr') if v.attrib['atr_name'] == 'BRICK_LABS']
-
-    # header xml is wrapped in string literals
-    return [] + literal_eval(lnode[0].text.strip()).split('~')
+    retval = []
+    try:
+        tree = etree.fromstring(header[0].get_content())
+        lnode = [v for v in tree.findall('.//AFNI_atr') if v.attrib['atr_name'] == 'BRICK_LABS']
+    
+        # header xml is wrapped in string literals
+        
+        if lnode:
+            retval += literal_eval(lnode[0].text.strip()).split('~')
+    except:
+        pass
+    return retval
 
 
 def split_afni4D_to_3D(nii_file,with_labels=True,tmp_dir=None):
@@ -280,8 +293,87 @@ def populate_nidm_results(request,collection):
     request.POST['description'] = 'NIDM Results'
     request.POST['collection'] = collection.pk
     request.FILES['zip_file'] = request.FILES['file']
-
     form = nidmr_form(request.POST,request.FILES,instance=inst)
     if form.is_valid():
         form.save()
     return form.instance
+
+
+def populate_feat_directory(request,collection,existing_dir=None):
+    from nidmfsl.fsl_exporter.fsl_exporter import FSLtoNIDMExporter
+    tmp_dir = tempfile.mkdtemp() if existing_dir is None else existing_dir
+    exc = ValidationError
+
+    try:
+        if existing_dir is None:
+            zip = zipfile.ZipFile(request.FILES['file'])
+            zip.extractall(path=tmp_dir)
+
+        rootpaths = [v for v in os.listdir(tmp_dir)
+                     if not v.startswith('.') and not v.startswith('__MACOSX')]
+        if not rootpaths:
+            raise exc("No contents found in the FEAT directory.")
+        subdir = os.path.join(tmp_dir,rootpaths[0])
+        feat_dir = subdir if len(rootpaths) is 1 and os.path.isdir(subdir) else tmp_dir
+    except:
+        raise exc("Unable to unzip the FEAT directory: \n{0}.".format(get_traceback()))
+    try:
+        fslnidm = FSLtoNIDMExporter(feat_dir=feat_dir, version="0.2.0")
+        fslnidm.parse()
+        export_dir = fslnidm.export()
+    except:
+        raise exc("Unable to parse the FEAT directory: \n{0}.".format(get_traceback()))
+
+    if not os.path.exists(export_dir):
+        raise exc("Unable find nidm export of FEAT directory.")
+
+    try:
+        if existing_dir is not None:
+            dname = os.path.basename(feat_dir)
+            suffix = '.nidm.zip' if dname.endswith('feat') else '.feat.nidm.zip'
+            destname = dname + suffix
+        else:
+            destname = request.FILES['file'].name.replace('feat.zip','feat.nidm.zip')
+        destpath = os.path.join(tmp_dir,destname)
+        nidm_zip = zipfile.ZipFile(destpath, 'w', zipfile.ZIP_DEFLATED)
+        rootlen = len(feat_dir) + 1
+        for root, dirs, files in os.walk(export_dir):
+            for dfile in files:
+                filenm = os.path.join(root, dfile)
+                nidm_zip.write(filenm, filenm[rootlen:])
+        nidm_zip.close()
+        fh = open(destpath,'r')
+        request.FILES['file'] = InMemoryUploadedFile(
+                                    ContentFile(fh.read()), "file", fh.name.split('/')[-1],
+                                    "application/zip", os.path.getsize(destpath), "utf-8")
+
+    except:
+        raise exc("Unable to convert NIDM results for NeuroVault: \n{0}".format(get_traceback()))
+    else:
+        return populate_nidm_results(request,collection)
+    finally:
+        shutil.rmtree(tmp_dir)
+
+
+def detect_feat_directory(path):
+    if not os.path.isdir(path):
+        return False
+    # detect FEAT directory, check for for stats/, logs/, logs/feat4_post
+    for root, dirs, files in os.walk(path):
+        if('stats' in dirs and 'logs' in dirs and 'design.fsf' in files
+           and 'feat4_post' in os.listdir(os.path.join(root,'logs'))):
+            return True
+        else:
+            return False
+
+
+def get_traceback():
+    import traceback
+    return traceback.format_exc() if settings.DEBUG else ''
+
+
+def get_server_url(request):
+    if request.META.get('HTTP_ORIGIN'):
+        return request.META['HTTP_ORIGIN']
+    urlpref = 'https://' if request.is_secure() else 'http://'
+    return '{0}{1}'.format(urlpref,request.META['HTTP_HOST'])

@@ -1,7 +1,7 @@
-from .models import Collection, Image, NIDMResultStatisticMap, Atlas, StatisticMap, NIDMResults
+from .models import Collection, Image, Atlas, StatisticMap, NIDMResults, NIDMResultStatisticMap
 from .forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
-    NIDMResultStatisticMapForm, EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm
+    EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
@@ -10,7 +10,8 @@ from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
     get_file_ctime, detect_afni4D, split_afni4D_to_3D, splitext_nii_gz, mkdir_p, \
-    send_email_notification, populate_nidm_results
+    send_email_notification, populate_nidm_results, get_server_url, populate_feat_directory, \
+    detect_feat_directory
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponse
 from django.db.models import Q
@@ -18,7 +19,6 @@ from neurovault import settings
 from sendfile import sendfile
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.renderers import JSONRenderer
-from rest_framework.parsers import JSONParser
 from voxel_query_functions import *
 
 import zipfile
@@ -32,14 +32,14 @@ import neurovault
 from fnmatch import fnmatch
 import os
 from collections import OrderedDict
-from neurovault.apps.statmaps.models import StatisticMap, Atlas
 from xml.dom import minidom
 from django.db.models.aggregates import Count
-
+from django.contrib import messages
+import traceback
 
 
 def owner_or_contrib(request,collection):
-    if collection.owner == request.user or request.user in collection.contributors.all():
+    if collection.owner == request.user or request.user in collection.contributors.all() or request.user.is_superuser:
         return True
     return False
 
@@ -128,9 +128,10 @@ def edit_collection(request, cid=None):
         is_owner = True
         collection = Collection(owner=request.user)
     if request.method == "POST":
-        form = CollectionForm(request.POST, request.FILES, instance=collection)
         if is_owner:
             form = OwnerCollectionForm(request.POST, request.FILES, instance=collection)
+        else:
+            form = CollectionForm(request.POST, request.FILES, instance=collection)
         if form.is_valid():
             previous_contribs = set()
             if form.instance.pk is not None:
@@ -147,7 +148,7 @@ def edit_collection(request, cid=None):
                 context = {
                     'owner': collection.owner.username,
                     'collection': collection.name,
-                    'url': request.META['HTTP_ORIGIN'] + collection.get_absolute_url(),
+                    'url': get_server_url(request) + collection.get_absolute_url(),
                 }
                 subj = '%s has added you to a NeuroVault collection' % context['owner']
                 send_email_notification('new_contributor', subj, new_contribs, context)
@@ -176,18 +177,16 @@ def view_image(request, pk, collection_cid=None):
         'user_owns_image': user_owns_image,
         'api_cid':api_cid,
     }
-    if isinstance(image, StatisticMap):
-        template = 'statmaps/statisticmap_details.html.haml'
-    elif isinstance(image, NIDMResultStatisticMap):
-        template = 'statmaps/image_details.html.haml'
+
+    if isinstance(image, NIDMResultStatisticMap):
         context['img_basename'] = os.path.basename(image.file.url)
         context['ttl_basename'] = os.path.basename(image.nidm_results.ttl_file.url)
         context['provn_basename'] = os.path.basename(image.nidm_results.provn_file.url)
 
-    elif isinstance(image, Atlas):
+    if isinstance(image, Atlas):
         template = 'statmaps/atlas_details.html.haml'
     else:
-        template = 'statmaps/image_details.html.haml'
+        template = 'statmaps/statisticmap_details.html.haml'
     return render(request, template, context)
 
 
@@ -291,7 +290,7 @@ def add_image_for_neurosynth(request):
                                      private=False,
                                      private_token=priv_token)
         temp_collection.save()
-    image = Image(collection=temp_collection)
+    image = StatisticMap(collection=temp_collection)
     if request.method == "POST":
         form = SimplifiedStatisticMapForm(request.user, request.POST, request.FILES, instance=image)
         if form.is_valid():
@@ -339,7 +338,6 @@ def upload_folder(request, collection_cid):
                     archive_name = request.FILES['file'].name
                     if fnmatch(archive_name,'*.nidm.zip'):
                         populate_nidm_results(request,collection)
-                        return HttpResponseRedirect(collection.get_absolute_url())
 
                     _, archive_ext = os.path.splitext(archive_name)
                     if archive_ext == '.zip':
@@ -349,12 +347,14 @@ def upload_folder(request, collection_cid):
                     compressed.extractall(path=tmp_directory)
 
                 elif "file_input[]" in request.FILES:
+
                     for f, path in zip(request.FILES.getlist(
                                        "file_input[]"), request.POST.getlist("paths[]")):
                         if fnmatch(f.name,'*.nidm.zip'):
                             request.FILES['file'] = f
                             populate_nidm_results(request,collection)
                             continue
+
                         new_path, _ = os.path.split(os.path.join(tmp_directory, path))
                         mkdir_p(new_path)
                         filename = os.path.join(new_path,f.name)
@@ -362,10 +362,20 @@ def upload_folder(request, collection_cid):
                         tmp_file.write(f.read())
                         tmp_file.close()
                 else:
-                    raise
+                    raise Exception("Unable to find uploaded files.")
 
                 atlases = {}
-                for root, _, filenames in os.walk(tmp_directory, topdown=False):
+                for root, subdirs, filenames in os.walk(tmp_directory):
+                    if detect_feat_directory(root):
+                        populate_feat_directory(request,collection,root)
+                        del(subdirs)
+                        filenames = []
+
+                    # .gfeat parent dir under cope*.feat should not be added as statmaps
+                    # this may be affected by future nidm-results_fsl parsing changes
+                    if root.endswith('.gfeat'):
+                        filenames = []
+
                     filenames = [f for f in filenames if not f[0] == '.']
                     for fname in filenames:
                         name, ext = splitext_nii_gz(fname)
@@ -375,9 +385,10 @@ def upload_folder(request, collection_cid):
                             dom = minidom.parse(os.path.join(root, fname))
                             for atlas in dom.getElementsByTagName("summaryimagefile"):
                                 print "found atlas"
-                                path, base, ext = split_filename(atlas.lastChild.nodeValue)
+                                path, base = os.path.split(atlas.lastChild.nodeValue)
                                 nifti_name = os.path.join(path, base)
-                                atlases[str(os.path.join(root,nifti_name[1:]))] = os.path.join(root, fname)
+                                atlases[str(os.path.join(root,
+                                            nifti_name[1:]))] = os.path.join(root, fname)
                         elif ext not in allowed_extensions:
                             continue
                         elif detect_afni4D(nii_path):
@@ -400,11 +411,11 @@ def upload_folder(request, collection_cid):
                     # Fregexp = re.compile('spmF.*')
 
                     if Tregexp.search(fpath) is not None:
-                        map_type = Image.T
+                        map_type = StatisticMap.T
                     else:
                         # Check if filename corresponds to a F-map
                         if Tregexp.search(fpath) is not None:
-                            map_type = Image.F
+                            map_type = StatisticMap.F
                         else:
                             map_type = StatisticMap.OTHER
 
@@ -413,11 +424,11 @@ def upload_folder(request, collection_cid):
                     spaced_name = name.replace('_',' ').replace('-',' ')
 
                     if ext.lower() != ".nii.gz":
-                        new_file_tmp_directory = tempfile.mkdtemp()
-                        nib.save(nii, os.path.join(new_file_tmp_directory, name))
-                        f = ContentFile(open(os.path.join(
-                                        new_file_tmp_directory, name)).read(), name=dname)
-                        shutil.rmtree(new_file_tmp_directory)
+                        new_file_tmp_dir = tempfile.mkdtemp()
+                        new_file_tmp = os.path.join(new_file_tmp_dir, name) + '.nii.gz'
+                        nib.save(nii, new_file_tmp)
+                        f = ContentFile(open(new_file_tmp).read(), name=dname)
+                        shutil.rmtree(new_file_tmp_dir)
                         label += " (old ext: %s)" % ext
                     else:
                         f = ContentFile(open(fpath).read(), name=dname)
@@ -439,10 +450,21 @@ def upload_folder(request, collection_cid):
 
                     new_image.file = f
                     new_image.save()
+            except:
+                error = traceback.format_exc().splitlines()[-1]
+                msg = "An error occurred with this upload: {}".format(error)
+                messages.warning(request, msg)
+
+                # redirect error messages for .zip requests
+                if "file" in request.FILES:
+                    return HttpResponseRedirect(collection.get_absolute_url())
+                else:
+                    return
+
             finally:
                 shutil.rmtree(tmp_directory)
 
-            return HttpResponseRedirect('')
+            return HttpResponseRedirect(collection.get_absolute_url())
     else:
         form = UploadFileForm()
     return render_to_response("statmaps/upload_folder.html",

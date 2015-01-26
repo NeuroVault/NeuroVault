@@ -1,4 +1,4 @@
-var active_form, showForm, updateImageName, cloneMore;
+var active_form, showForm, updateImageName, cloneMore, mapNavLink, getLastTextNode;
 
 active_form = 0;
 
@@ -12,6 +12,11 @@ showForm = function(id) {
     name = '[untitled image]';
   }
   updateImageName(name);
+
+  if($('#empty_collection_msg').is(":visible")) {
+    $('#empty_collection_msg').hide();
+  }
+
   return $("input#id_image_set-" + active_form + "-name").keyup(function(e) {
     var val;
     val = $(e.target).val();
@@ -19,9 +24,15 @@ showForm = function(id) {
   });
 };
 
+getLastTextNode = function(selector) {
+  return $(selector).contents().filter(function() {
+    return this.nodeType == 3;
+  }).last();
+};
+
 updateImageName = function(name) {
   $('#current-image').text(name);
-  return $("#image-select option[value='" + active_form + "']").text(name);
+  return getLastTextNode('#image-select li#showform-image-' + active_form + ' a').replaceWith('&nbsp;' + name);
 };
 
 cloneMore = function (selector, type, imgtype) {
@@ -63,12 +74,24 @@ cloneMore = function (selector, type, imgtype) {
 
   total++;
   $('#id_' + type + '_set-TOTAL_FORMS').val(total);
-  $(selector).after(newElement);
+
+  if(total === 1) {
+    $(selector).replaceWith(newElement);
+  } else {
+    $(selector).after(newElement);
+  }
+};
+
+mapNavLink = function(ele) {
+  $(ele).siblings().removeClass('active');
+  $(ele).addClass('active');
+  id = $(ele).attr('id').replace('showform-image-','');
+  return showForm(id);
 };
 
 $(document).ready(function() {
-  var num_forms;
-  num_forms = $('.image-form').length;
+  var num_forms = $('.image-form').length;
+
   if (num_forms > 1) {
     $('.image-form').last().remove();
     $('#id_image_set-TOTAL_FORMS').val(num_forms - 1);
@@ -76,22 +99,24 @@ $(document).ready(function() {
   } else {
     $("#id_image_set-" + (num_forms - 1) + "-id").val('');
   }
+
   showForm(active_form);
+
   $('#image-select li').click(function(e) {
     e.preventDefault();
-    $(this).siblings().removeClass('active');
-    $(this).addClass('active');
-    id = $(this).attr('id').replace('showform-image-','');
-    return showForm(id);
+    mapNavLink(this);
   });
+
   $('#submit-form').click(function(e) {
     e.preventDefault();
     return $('#formset').submit();
   });
+
   $('#add-image-form').click(function(e) {
     e.preventDefault();
     var nextIndex;
     var newType = e.target.href.split('#')[1];
+
     if(newType == 'zip') return uploadZip();
     cloneMore('div.image-form:last', 'image', newType);
     nextIndex = $('.image-form').length - 1;
@@ -99,13 +124,27 @@ $(document).ready(function() {
     $('.image-form:last').attr('id', 'image-' + nextIndex);
     $('#image-select li:last').siblings().removeClass('active');
     $('#image-select li:last').addClass('active');
+    $('#image-select li:last').click(function(e) {
+      e.preventDefault();
+      mapNavLink(this);
+    });
+
     return showForm(nextIndex);
   });
+
+  if( !$('input#id_image_set-0-id').val() && num_forms === 1) {
+    $('.image-form').last().hide();
+    $('#id_image_set-TOTAL_FORMS').val(num_forms - 1);
+    $('#image-select li').last().remove();
+    $('#current-image').text('no images');
+    $('#empty_collection_msg').show();
+  }
 
   return $("input[id$='image_ptr']").each(function() {
     if ($(this).val() === "None") {
       return $(this).val("");
     }
   });
+
 });
 

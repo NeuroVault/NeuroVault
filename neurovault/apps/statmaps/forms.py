@@ -390,23 +390,37 @@ class ImageForm(ModelForm):
                     self._errors["file"] = self.error_class([str(e)])
                     del cleaned_data["file"]
                     return cleaned_data
-
-                # convert to nii.gz if needed
-                if ext.lower() != ".nii.gz":
-
-                    #Papaya does not handle float64, but by converting files we loose precision
-                    #if nii.get_data_dtype() == np.float64:
-                    #ii.set_data_dtype(np.float32)
-                    new_name = fname + ".nii.gz"
-                    nii_tmp = os.path.join(tmp_dir, new_name)
-                    nb.save(nii, nii_tmp)
-
-                    cleaned_data['file'] = memory_uploadfile(nii_tmp, new_name,
-                                                             cleaned_data['file'])
-
+                
                 # detect AFNI 4D files and prepare 3D slices
                 if nii_tmp is not None and detect_afni4D(nii_tmp):
                     self.afni_subbricks = split_afni4D_to_3D(nii_tmp)
+                else:
+                
+                    squeezable_dimensions = len(filter(lambda a: a not in [0,1], nii.shape))
+                    
+                    if squeezable_dimensions != 3:
+                        self._errors["file"] = self.error_class(["4D files are not supported.\n If it's multiple maps in one file please split them and upload separately"])
+                        del cleaned_data["file"]
+                        return cleaned_data
+    
+                    # convert to nii.gz if needed
+                    if ext.lower() != ".nii.gz" or squeezable_dimensions < len(nii.shape):
+                        
+                        #convert pseudo 4D to 3D
+                        if squeezable_dimensions < len(nii.shape):
+                            new_data = np.squeeze(nii.get_data())
+                            nii = nb.Nifti1Image(new_data, nii.get_affine(), nii.get_header())
+    
+                        #Papaya does not handle float64, but by converting files we loose precision
+                        #if nii.get_data_dtype() == np.float64:
+                        #ii.set_data_dtype(np.float32)
+                        new_name = fname + ".nii.gz"
+                        nii_tmp = os.path.join(tmp_dir, new_name)
+                        nb.save(nii, nii_tmp)
+    
+                        cleaned_data['file'] = memory_uploadfile(nii_tmp, new_name,
+                                                                 cleaned_data['file'])
+                
 
             finally:
                 try:
@@ -425,7 +439,7 @@ class ImageForm(ModelForm):
 class StatisticMapForm(ImageForm):
     class Meta(ImageForm.Meta):
         model = StatisticMap
-        fields = ('name', 'collection', 'description', 'map_type',
+        fields = ('name', 'collection', 'description', 'map_type', 'figure',
                   'file', 'hdr_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'contrast_definition', 'contrast_definition_cogatlas')
 
@@ -433,7 +447,7 @@ class StatisticMapForm(ImageForm):
 class AtlasForm(ImageForm):
     class Meta(ImageForm.Meta):
         model = Atlas
-        fields = ('name', 'collection', 'description',
+        fields = ('name', 'collection', 'description', 'figure',
                   'file', 'hdr_file', 'label_description_file', 'tags')
 
 
@@ -624,8 +638,9 @@ class NIDMResultsForm(forms.ModelForm):
             ttl_name = os.path.split(self.nidm.ttl.filename)[-1]
             provn_name = os.path.split(self.nidm.provn.filename)[-1]
 
-            self.cleaned_data['ttl_file'] = InMemoryUploadedFile(
-                                    ContentFile(self.nidm.zip.read(self.nidm.ttl)),
+            self.cleaned_data['ttl_file'] = InMemoryUploadedFile(ContentFile(
+                                    # fix ttl for spm12
+                                    self.nidm.fix_spm12_ttl(self.nidm.zip.read(self.nidm.ttl))),
                                     "file", ttl_name, "text/turtle",
                                     self.nidm.ttl.file_size, "utf-8")
 
@@ -722,7 +737,7 @@ class NIDMViewForm(forms.ModelForm):
 class NIDMResultStatisticMapForm(ImageForm):
     class Meta():
         model = NIDMResultStatisticMap
-        fields = ('name', 'collection', 'description', 'map_type',
+        fields = ('name', 'collection', 'description', 'map_type', 'figure',
                   'file', 'tags', 'nidm_results')
 
     def __init__(self, *args, **kwargs):
