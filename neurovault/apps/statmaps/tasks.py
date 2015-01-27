@@ -9,6 +9,7 @@ from nilearn.plotting import plot_glass_brain
 from nilearn.image import resample_img
 from neurovault.apps.statmaps.models import Image
 import neurovault
+import pylab as plt
 
 @shared_task
 def generate_glassbrain_image(nifti_file,pk):
@@ -17,6 +18,7 @@ def generate_glassbrain_image(nifti_file,pk):
   png_img_path = os.path.join(os.path.split(nifti_file)[0],png_img_name)
   glass_brain = plot_glass_brain(nifti_file)
   glass_brain.savefig(png_img_path)
+  plt.close('all')
 
 
 @shared_task
@@ -24,7 +26,7 @@ def make_correlation_df(resample_dim=[4,4,4],pkl_path=None):
   if not pkl_path:
     pkl_path = os.path.abspath(os.path.join(neurovault.settings.PRIVATE_MEDIA_ROOT,'matrices/pearson_corr.pkl'))
   # Get standard space brain
-  reference = os.path.join(os.environ['FREESURFER_HOME'],'subjects', 'fsaverage', 'mri', 'brainmask.nii.gz')
+  reference = os.path.join(os.environ['FREESURFER_HOME'],'subjects', 'fsaverage', 'mri', 'brain.nii.gz')
   public_images = Image.objects.filter(collection__private=False)
   # Get all image paths
   image_paths = [image.file.path for image in public_images]
@@ -39,6 +41,8 @@ def make_correlation_df(resample_dim=[4,4,4],pkl_path=None):
   image_pks = [image.pk for image in public_images]
   corr_df.columns = image_pks
   corr_df.index = image_pks
+  if not os.path.exists(os.path.join(neurovault.settings.PRIVATE_MEDIA_ROOT,'matrices')):
+      os.mkdir(os.path.join(neurovault.settings.PRIVATE_MEDIA_ROOT,'matrices'))
   corr_df.to_pickle(pkl_path)
 
 
