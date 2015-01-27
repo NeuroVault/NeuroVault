@@ -111,7 +111,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
                                 'request': self.context['request']}).to_representation(obj)
 
         return super(ImageSerializer, self).to_representation(obj)
-
+    
 
 class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
 
@@ -159,10 +159,10 @@ class NIDMResultsSerializer(serializers.ModelSerializer):
         model = NIDMResults
         exclude = ['id']
 
-
+    
 class CollectionSerializer(serializers.ModelSerializer):
-#     images = ImageSerializer(source='image_set')
-#     nidm_results = NIDMResultsSerializer(source='nidmresults_set')
+    images = ImageSerializer(many=True, source='image_set')
+    nidm_results = NIDMResultsSerializer(many=True, source='nidmresults_set')
     contributors = SerializedContributors()
 
     class Meta:
@@ -243,7 +243,6 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
     def datatable(self, request, pk=None):
         collection = get_collection(pk,request,mode='api')
         data = CollectionSerializer(collection, context={'request': request}).data
-        print data
         if data and 'description' in data and data['description']:
             data['description'] = data['description'].replace('\n', '<br />')
         return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date'])
