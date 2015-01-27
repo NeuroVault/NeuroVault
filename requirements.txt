@@ -37,4 +37,4 @@ celery-with-redis
 django-celery
 scikit-learn
 -e git://github.com/nilearn/nilearn.git@master#egg=nilearn
--e git://github.com/vsoch/pybraincompare.git@48b6174c92829281d03cb18f64ab9854f74644aa#egg=pybraincompare
+-e git://github.com/vsoch/pybraincompare.git@afe0a917d8237b83ab6259663d70c80a6e230e1e#egg=pybraincompare

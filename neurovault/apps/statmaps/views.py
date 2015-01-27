@@ -673,8 +673,8 @@ def compare_images(request,pk1,pk2):
     atlas_xml = os.path.abspath(os.path.join(neurovault_static, 'static/atlas/MNI.xml'))
     atlas = pybrainatlas.atlas(atlas_xml,atlas_file) # Default slices are "coronal","axial","sagittal"
 
-    # Create custom image names for the visualization
-    custom = {"image 1":"%s:%s" %(image1.name,image1.map_type),"image 2": "%s:%s" %(image2.name,image2.map_type)}
+    # Create custom image names and links for the visualization
+    custom = {"IMAGE_1":"%s : %s [%s]" %(image1.name,image1.collection.name,image1.map_type),"IMAGE_2": "%s : %s [%s]" %(image2.name,image2.collection.name,image2.map_type),"IMAGE_1_LINK":"/images/%s" %(image1.pk),"IMAGE_2_LINK":"/images/%s" %(image2.pk)}
 
     html_snippet,data_table = compare.scatterplot_compare(image1=image1.file.path,image2=image2.file.path,software="FREESURFER",voxdim=[8,8,8],atlas=atlas,custom=custom,corr="pearson")
 
@@ -697,6 +697,9 @@ def find_similar(request,pk):
     # Get image tags, for now we will just do map type
     tags = [[str(image.map_type)] for image in public_images]
     
+    # Generate image names to appear below pictures
+    image_names = [ "%s:%s ,%s" %(image.name,image.collection.name,image.map_type) for image in public_images]
+
     # Tags and png paths should be put in same data frame, so image ids are associated with both
     corr_df["png"] = png_img_paths
     corr_df["tags"] = tags
@@ -707,7 +710,7 @@ def find_similar(request,pk):
     query = os.path.join(os.path.split(image1.file.url)[0],"glass_brain_%s.png" %(image1.pk))
     
     # Do similarity search and return html to put in page, specify 100 max results, take absolute value of scores
-    html_snippet = compare.similarity_search(corr_df=corr_df,button_url=compare_url,image_url=image_url,query=query,absolute_value=True,max_results=100)
+    html_snippet = compare.similarity_search(corr_df=corr_df,button_url=compare_url,image_url=image_url,query=query,absolute_value=True,max_results=100,image_names=image_names)
     html = [h.strip("\n") for h in html_snippet]
     context = {'html': html}
     return render(request, 'statmaps/compare_search.html', context)
