@@ -36,5 +36,5 @@ rdflib>=4.1.0
 celery-with-redis
 django-celery
 scikit-learn
-nilearn
--e git://github.com/vsoch/pybraincompare.git@48b6174c92829281d03cb18f64ab9854f74644aa
+-e git://github.com/nilearn/nilearn.git@master#egg=nilearn
+-e git://github.com/vsoch/pybraincompare.git@48b6174c92829281d03cb18f64ab9854f74644aa#egg=pybraincompare
