@@ -1,8 +1,10 @@
 from __future__ import absolute_import
 from neurovault.celery import nvcelery as celery_app
 from celery import shared_task
+from celery.decorators import periodic_task
 from nilearn.plotting import plot_glass_brain
 import os
+import datetime
 
 
 @shared_task
@@ -16,3 +18,8 @@ def generate_glassbrain_image(image_pk):
     glass_brain = plot_glass_brain(img.file.path)
     glass_brain.savefig(png_img_path)
     return png_img_path
+
+
+@shared_task
+def make_correlation_df():
+    print 'run make_correlation_df'

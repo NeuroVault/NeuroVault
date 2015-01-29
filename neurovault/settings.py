@@ -1,6 +1,6 @@
 # Django settings for neurovault project.
 import os
-
+from datetime import timedelta
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -279,3 +279,12 @@ CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
+
+CELERYBEAT_SCHEDULE = {
+    'run_make_correlation_df': {
+        'task': 'neurovault.apps.statmaps.tasks.make_correlation_df',
+        'schedule': timedelta(minutes=30),
+    },
+}
+# or manage periodic schedule in django admin
+#CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
