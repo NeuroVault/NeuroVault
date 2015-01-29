@@ -6,7 +6,7 @@ from .views import edit_collection, edit_images, view_image, delete_image, edit_
                 serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
                 papaya_js_embed, atlas_query_region, atlas_query_voxel, view_images_by_tag, \
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
-                view_nidm_results
+                view_nidm_results, find_similar, compare_images
 from neurovault.apps.statmaps.models import KeyValueTag
 from django.db.models import Count
 from django.contrib.auth.decorators import login_required
@@ -137,6 +137,14 @@ urlpatterns = patterns('',
         name = 'atlas_query_region'),
     url(r'^api/atlas_query_voxel/$',
         atlas_query_voxel,
-        name = 'atlas_query_voxel')
+        name = 'atlas_query_voxel'),
+
+   # Compare images
+    url(r'^compare/(?P<pk1>\d+)/(?P<pk2>\d+)$',
+        compare_images,
+        name='compare_images'),
+    url(r'^(?P<pk>\d+)/find_similar$',
+        find_similar,
+        name='find_similar')
 
 )

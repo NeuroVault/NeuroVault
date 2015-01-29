@@ -10,3 +10,5 @@ nvcelery = Celery('neurovault')
 # pickle the object when using Windows.
 nvcelery.config_from_object('django.conf:settings')
 nvcelery.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
+
+# global non-app tasks ...
