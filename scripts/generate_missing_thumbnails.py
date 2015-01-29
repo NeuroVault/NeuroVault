@@ -11,4 +11,4 @@ def mkdir_p(path):
         else: raise
 
 for image in Image.objects.filter(collection__private=False):
-    generate_glassbrain_image(image.file.path, image.id)
+    generate_glassbrain_image(image.id)
