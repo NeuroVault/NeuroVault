@@ -4,12 +4,10 @@ from celery import shared_task
 from celery.decorators import periodic_task
 from nilearn.plotting import plot_glass_brain
 import os
-import datetime
 import numpy
 import pandas as pd
 import nibabel as nib
 from nilearn.image import resample_img
-from neurovault.apps.statmaps.models import Image
 import neurovault
 import pylab as plt
 
@@ -31,6 +29,7 @@ def generate_glassbrain_image(image_pk):
 @periodic_task
 @shared_task
 def make_correlation_df(resample_dim=[4,4,4],pkl_path=None):
+  from neurovault.apps.statmaps.models import Image
   if not pkl_path:
     pkl_path = os.path.abspath(os.path.join(neurovault.settings.PRIVATE_MEDIA_ROOT,'matrices/pearson_corr.pkl'))
   # Get standard space brain
