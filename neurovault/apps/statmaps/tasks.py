@@ -3,13 +3,16 @@ from __future__ import absolute_import
 import os
 import numpy
 import pandas as pd
-from celery import shared_task
-import nibabel as nib
-from nilearn.plotting import plot_glass_brain
-from nilearn.image import resample_img
-from neurovault.apps.statmaps.models import Image
 import neurovault
 import pylab as plt
+import nibabel as nib
+from celery import shared_task
+from scipy.stats.stats import pearsonr
+from nilearn.plotting import plot_glass_brain
+from nilearn.image import resample_img
+from django.shortcuts import get_object_or_404
+from neurovault.apps.statmaps.models import Image, Similarity, Comparison
+
 
 @shared_task
 def generate_glassbrain_image(nifti_file,pk):
@@ -44,6 +47,43 @@ def make_correlation_df(resample_dim=[4,4,4],pkl_path=None):
   if not os.path.exists(os.path.join(neurovault.settings.PRIVATE_MEDIA_ROOT,'matrices')):
       os.mkdir(os.path.join(neurovault.settings.PRIVATE_MEDIA_ROOT,'matrices'))
   corr_df.to_pickle(pkl_path)
+
+
+@shared_task
+def calculate_voxelwise_pearson_similarity(pk1,pk2,resample_dim=[4,4,4]):
+  image1 = get_object_or_404(Image, pk=pk1)
+  image2 = get_object_or_404(Image, pk=pk2)
+ 
+  # Sort images by the key (I'm sure there is a better way to do this)
+  # We will always calculate Comparison 1 vs 2, never 2 vs 1
+  images = dict()
+  images[image1.pk] = image1
+  images[image2.pk] = image2
+  inputs = [] 
+  for pks,image in images.iteritems():
+    inputs.append(image)
+  
+  # Now image 1 and 2 are ordered by the primary keys
+  image1 = inputs[0]; image2 = inputs[1]
+
+  # Get standard space brain
+  reference = os.path.join(os.environ['FREESURFER_HOME'],'subjects', 'fsaverage', 'mri', 'brain.nii.gz')
+  image_paths = [image.file.path for image in inputs]
+  images_resamp, reference_resamp = resample_multi_images_ref(image_paths,reference,resample_dim)
+
+  # Calculate pearson correlation
+  corr_df = pd.DataFrame()
+  corr_df[0] = images_resamp[0].get_data().flatten()
+  corr_df[1] = images_resamp[1].get_data().flatten()
+  pearson_score = corr_df.corr(method="pearson")[1][0]
+
+  # create new Comparison with the voxelwise pearson similarity metric
+  pearson_metric = Similarity.objects.filter(similarity_metric="pearson product-moment correlation coefficient",transformation="voxelwise")
+  pearson_comparison = Comparison(image1=image1,
+                                  image2=image2,
+                                  similarity_metric=pearson_metric[0],
+                                  similarity_score=pearson_score)
+  pearson_comparison.save()
 
 
 # Helper functions
