@@ -18,7 +18,6 @@ from django.db.models import Q
 from neurovault import settings
 from sendfile import sendfile
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.staticfiles.templatetags.staticfiles import static
 from rest_framework.renderers import JSONRenderer
 from voxel_query_functions import *
 from compare import compare, atlas as pybrainatlas
@@ -697,8 +696,8 @@ def compare_images(request,pk1,pk2):
     path, name2, ext = split_filename(image2.file.url)
 
     # For now, manually choose an atlas - this can be user choice
-    atlas_file = static('atlas/MNI-maxprob-thr25-2mm.nii')
-    atlas_xml = static('static/atlas/MNI.xml')
+    atlas_file = os.path.join(settings.STATIC_ROOT,'atlas','MNI-maxprob-thr25-2mm.nii')
+    atlas_xml = os.path.join(settings.STATIC_ROOT,'atlas','MNI.xml')
     # Default slices are "coronal","axial","sagittal"
     atlas = pybrainatlas.atlas(atlas_xml,atlas_file)
 
@@ -724,8 +723,8 @@ def compare_images(request,pk1,pk2):
 def find_similar(request,pk):
     image1 = get_image(pk,None,request)
     # This df should ONLY contain public images! see tasks.py for generation
-    corr_df = pandas.read_pickle(os.path.join(neurovault.settings.PRIVATE_MEDIA_ROOT,
-                                              'matrices/pearson_corr.pkl'))
+    corr_df = pandas.read_pickle(os.path.join(settings.PRIVATE_MEDIA_ROOT,
+                                              'matrices','pearson_corr.pkl'))
     public_images = Image.objects.filter(collection__private=False,id__in=corr_df.columns)
 
     # Get all image png paths
