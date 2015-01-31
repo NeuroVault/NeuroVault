@@ -725,7 +725,8 @@ def find_similar(request,pk):
     # This df should ONLY contain public images! see tasks.py for generation
     corr_df = pandas.read_pickle(os.path.join(settings.PRIVATE_MEDIA_ROOT,
                                               'matrices','pearson_corr.pkl'))
-    public_images = Image.objects.filter(collection__private=False,id__in=corr_df.columns)
+    public_images = Image.objects.filter(collection__private=False,
+                    id__in=corr_df.columns).exclude(polymorphic_ctype__model='image')
 
     # Get all image png paths
     image_paths = [image.file.url for image in public_images]

@@ -34,7 +34,8 @@ def make_correlation_df(resample_dim=[4, 4, 4], pkl_path=None):
     # Get standard space brain
     reference = os.path.join(os.environ['FREESURFER_HOME'],
                              'subjects', 'fsaverage', 'mri', 'brain.nii.gz')
-    public_images = Image.objects.filter(collection__private=False)
+    public_images = Image.objects.filter(collection__private=False).exclude(
+                                         polymorphic_ctype__model='image')
     # Get all image paths
     image_paths = [image.file.path for image in public_images]
     images_resamp, reference_resamp = resample_multi_images_ref(
