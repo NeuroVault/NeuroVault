@@ -27,4 +27,3 @@ class Test_celery_tasks(pk):
       # defaults: pkl_path = "/opt/image_data/matrices/pearson_corr.pkl"
       # defaults: resample_dim = [4,4,4]
       make_correlation_df()
-

@@ -51,11 +51,42 @@ def make_correlation_df(resample_dim=[4,4,4],pkl_path=None):
 
 @shared_task
 def save_voxelwise_pearson_similarity(pk1,pk2,resample_dim=[4,4,4]):
+
+  # We will always calculate Comparison 1 vs 2, never 2 vs 1
+  if pk1!=pk2:
+    sorted_images = get_images_by_ordered_id(pk1,pk2)
+    image1 = sorted_images[0]; image2 = sorted_images[1]
+    pearson_metric = Similarity.objects.filter(similarity_metric="pearson product-moment correlation coefficient",transformation="voxelwise")[0]
+
+    if not Comparison.objects.filter(image1=image1,image2=image2,similarity_metric=pearson_metric).exists():
+      pearson_score = calculate_voxelwise_pearson_similarity(image1,image2,resample_dim)
+
+      # create new Comparison with the voxelwise pearson similarity metric
+      pearson_comparison = Comparison(image1=image1,
+                                  image2=image2,
+                                  similarity_metric=pearson_metric,
+                                  similarity_score=pearson_score)
+      pearson_comparison.save()
+
+
+@shared_task
+def update_voxelwise_pearson_similarity(pk1,pk2,resample_dim=[4,4,4]):
+
+  if pk1!=pk2:
+    sorted_images = get_images_by_ordered_id(pk1,pk2)
+    image1 = sorted_images[0]; image2 = sorted_images[1]
+    pearson_metric = Similarity.objects.filter(similarity_metric="pearson product-moment correlation coefficient",transformation="voxelwise")[0]
+    if Comparison.objects.filter(image1=image1,image2=image2,similarity_metric=pearson_metric).exists():
+      pearson_score = calculate_voxelwise_pearson_similarity(image1,image2,resample_dim)
+      pearson_comparison = Comparison.objects.filter(image1=image1,image2=image2,similarity_metric=pearson_metric).update(similarity_score=pearson_score)
+
+# Helper functions
+'''Return list of Images sorted by the primary key'''
+def get_images_by_ordered_id(pk1,pk2):
   image1 = get_object_or_404(Image, pk=pk1)
   image2 = get_object_or_404(Image, pk=pk2)
  
   # Sort images by the key (I'm sure there is a better way to do this)
-  # We will always calculate Comparison 1 vs 2, never 2 vs 1
   images = dict()
   images[image1.pk] = image1
   images[image2.pk] = image2
@@ -64,35 +95,39 @@ def save_voxelwise_pearson_similarity(pk1,pk2,resample_dim=[4,4,4]):
     inputs.append(image)
   
   # Now image 1 and 2 are ordered by the primary keys
-  image1 = inputs[0]; image2 = inputs[1]
+  return inputs
 
-  # Check if already exists
-  pearson_metric = Similarity.objects.filter(similarity_metric="pearson product-moment correlation coefficient",transformation="voxelwise")
-  if not Comparison.objects.filter(image1=image1,image2=image2,similarity_metric=pearson_metric[0]).exists():
+'''Calculate a voxelwise pearson correlation via pairwise deletion'''
+def calculate_voxelwise_pearson_similarity(image1,image2,resample_dim):
 
     # Get standard space brain
     reference = os.path.join(os.environ['FREESURFER_HOME'],'subjects', 'fsaverage', 'mri', 'brain.nii.gz')
-    image_paths = [image.file.path for image in inputs]
+    image_paths = [image.file.path for image in [image1,image2]]
     images_resamp, reference_resamp = resample_multi_images_ref(image_paths,reference,resample_dim)
 
-    # Calculate pearson correlation
-    corr_df = pd.DataFrame()
-    corr_df[0] = images_resamp[0].get_data().flatten()
-    corr_df[1] = images_resamp[1].get_data().flatten()
-    pearson_score = corr_df.corr(method="pearson")[1][0]
+    # Calculate correlation only on voxels that are in both maps (not zero, and not nan)
+    binary_mask = make_binary_deletion_mask(images_resamp)
+    image1 = images_resamp[0]; image2 = images_resamp[1]
 
-    # create new Comparison with the voxelwise pearson similarity metric
-    pearson_comparison = Comparison(image1=image1,
-                                  image2=image2,
-                                  similarity_metric=pearson_metric[0],
-                                  similarity_score=pearson_score)
-    pearson_comparison.save()
+    # Calculate correlation with voxels within mask
+    return pearsonr(image1.get_data()[binary_mask==1],image2.get_data()[binary_mask==1])[0]
 
 
-# Helper functions
+'''Make a nonzero, non-nan mask for a or or more images (registered, equally sized)'''
+def make_binary_deletion_mask(images):
+
+    if isinstance(images,nib.nifti1.Nifti1Image): images = [images]
+    mask = numpy.zeros(images[0].shape)
+    for image in images: mask[(image.get_data()!=0) * (numpy.isnan(image.get_data()) == False)] += 1
+    mask[mask!=len(images)] = 0
+    mask[mask==len(images)] = 1
+    return mask
+
+
 '''Resample single image to match some other reference (continuous interpolation, not for atlas)'''
 def resample_single_img_ref(image,reference):
   return resample_img(image, target_affine=reference.get_affine(), target_shape=reference.get_shape())
+
 
 '''Resample multiple image to match some other reference (continuous interpolation, not for atlas)'''
 def resample_multi_images_ref(images,mask,resample_dim):
