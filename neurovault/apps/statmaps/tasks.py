@@ -50,7 +50,7 @@ def make_correlation_df(resample_dim=[4,4,4],pkl_path=None):
 
 
 @shared_task
-def calculate_voxelwise_pearson_similarity(pk1,pk2,resample_dim=[4,4,4]):
+def save_voxelwise_pearson_similarity(pk1,pk2,resample_dim=[4,4,4]):
   image1 = get_object_or_404(Image, pk=pk1)
   image2 = get_object_or_404(Image, pk=pk2)
  
@@ -66,24 +66,27 @@ def calculate_voxelwise_pearson_similarity(pk1,pk2,resample_dim=[4,4,4]):
   # Now image 1 and 2 are ordered by the primary keys
   image1 = inputs[0]; image2 = inputs[1]
 
-  # Get standard space brain
-  reference = os.path.join(os.environ['FREESURFER_HOME'],'subjects', 'fsaverage', 'mri', 'brain.nii.gz')
-  image_paths = [image.file.path for image in inputs]
-  images_resamp, reference_resamp = resample_multi_images_ref(image_paths,reference,resample_dim)
-
-  # Calculate pearson correlation
-  corr_df = pd.DataFrame()
-  corr_df[0] = images_resamp[0].get_data().flatten()
-  corr_df[1] = images_resamp[1].get_data().flatten()
-  pearson_score = corr_df.corr(method="pearson")[1][0]
-
-  # create new Comparison with the voxelwise pearson similarity metric
+  # Check if already exists
   pearson_metric = Similarity.objects.filter(similarity_metric="pearson product-moment correlation coefficient",transformation="voxelwise")
-  pearson_comparison = Comparison(image1=image1,
+  if not Comparison.objects.filter(image1=image1,image2=image2,similarity_metric=pearson_metric[0]).exists():
+
+    # Get standard space brain
+    reference = os.path.join(os.environ['FREESURFER_HOME'],'subjects', 'fsaverage', 'mri', 'brain.nii.gz')
+    image_paths = [image.file.path for image in inputs]
+    images_resamp, reference_resamp = resample_multi_images_ref(image_paths,reference,resample_dim)
+
+    # Calculate pearson correlation
+    corr_df = pd.DataFrame()
+    corr_df[0] = images_resamp[0].get_data().flatten()
+    corr_df[1] = images_resamp[1].get_data().flatten()
+    pearson_score = corr_df.corr(method="pearson")[1][0]
+
+    # create new Comparison with the voxelwise pearson similarity metric
+    pearson_comparison = Comparison(image1=image1,
                                   image2=image2,
                                   similarity_metric=pearson_metric[0],
                                   similarity_score=pearson_score)
-  pearson_comparison.save()
+    pearson_comparison.save()
 
 
 # Helper functions
