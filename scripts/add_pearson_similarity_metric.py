@@ -26,28 +26,3 @@ for image1 in Image.objects.filter(collection__private=False):
     if image1.pk < image2.pk:
       print "Calculating pearson similarity for images %s and %s" %(image1,image2)
       save_voxelwise_pearson_similarity(image1.pk,image2.pk)
-
-# After this we should have ((N*N)-N)/2
-# N^2 is N combinations total for N objects
-# we subtract N to account for diagonal
-# we divide by 2 to take order into account
-
-M = len(Comparison.objects.all())
-N = len(Image.objects.filter(collection__private=False))
-we_should_have = ((N*N)-N)/2
-print "We have %s comparisons after generating all of them, we should have %s" %(M,we_should_have)
-
-image1 = Image.objects.filter(pk=1)[0]
-image2 = Image.objects.filter(pk=2)[0]
-
-# Update a similarity, we should still have N
-update_voxelwise_pearson_similarity(image1.pk,image2.pk)
-
-M = len(Comparison.objects.all())
-print "We have %s comparisons after updating one, we should have %s." %(M,we_should_have)
-
-# Try adding it again, we should still have N
-save_voxelwise_pearson_similarity(image1.pk,image2.pk)
-
-M = len(Comparison.objects.all())
-print "We have %s comparisons after trying to add one a second time, we should have %s." %(M,we_should_have)
