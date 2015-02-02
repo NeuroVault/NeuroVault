@@ -25,31 +25,6 @@ def generate_glassbrain_image(nifti_file,pk):
 
 
 @shared_task
-def make_correlation_df(resample_dim=[4,4,4],pkl_path=None):
-  if not pkl_path:
-    pkl_path = os.path.abspath(os.path.join(neurovault.settings.PRIVATE_MEDIA_ROOT,'matrices/pearson_corr.pkl'))
-  # Get standard space brain
-  reference = os.path.join(os.environ['FREESURFER_HOME'],'subjects', 'fsaverage', 'mri', 'brain.nii.gz')
-  public_images = Image.objects.filter(collection__private=False)
-  # Get all image paths
-  image_paths = [image.file.path for image in public_images]
-  images_resamp, reference_resamp = resample_multi_images_ref(image_paths,reference,resample_dim)
-  # Read into pandas data frame
-  corr_df = pd.DataFrame()
-  row_count = 0
-  for image in images_resamp:
-    corr_df[row_count] = image.get_data().flatten()
-    row_count = row_count + 1
-  corr_df = corr_df.corr(method="pearson")
-  image_pks = [image.pk for image in public_images]
-  corr_df.columns = image_pks
-  corr_df.index = image_pks
-  if not os.path.exists(os.path.join(neurovault.settings.PRIVATE_MEDIA_ROOT,'matrices')):
-      os.mkdir(os.path.join(neurovault.settings.PRIVATE_MEDIA_ROOT,'matrices'))
-  corr_df.to_pickle(pkl_path)
-
-
-@shared_task
 def save_voxelwise_pearson_similarity(pk1,pk2,resample_dim=[4,4,4]):
 
   # We will always calculate Comparison 1 vs 2, never 2 vs 1
