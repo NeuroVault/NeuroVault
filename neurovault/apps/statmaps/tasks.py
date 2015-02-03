@@ -85,7 +85,7 @@ def calculate_voxelwise_pearson_similarity(image1,image2,resample_dim):
     image1 = images_resamp[0]; image2 = images_resamp[1]
 
     # Calculate correlation with voxels within mask
-    return pearsonr(image1.get_data()[binary_mask==1],image2.get_data()[binary_mask==1])[0]
+    return pearsonr(np.squeeze(image1.get_data())[binary_mask==1],np.squeeze(image2.get_data())[binary_mask==1])[0]
 
 
 '''Make a nonzero, non-nan mask for a or or more images (registered, equally sized)'''
@@ -93,7 +93,7 @@ def make_binary_deletion_mask(images):
 
     if isinstance(images,nib.nifti1.Nifti1Image): images = [images]
     mask = numpy.zeros(images[0].shape)
-    for image in images: mask[(image.get_data()!=0) * (numpy.isnan(image.get_data()) == False)] += 1
+    for image in images: mask[(np.squeeze(image.get_data()!=0)) * (numpy.isnan(np.squeeze(image.get_data())) == False)] += 1
     mask[mask!=len(images)] = 0
     mask[mask==len(images)] = 1
     return mask

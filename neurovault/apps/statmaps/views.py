@@ -690,7 +690,7 @@ def find_similar(request,pk):
     # Get all similarity calculations for this image, and ids of other images
     comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1))    
     scores = [comp.similarity_score for comp in comparisons]
-    image_ids = list(); image_ids.append(pk)
+    image_ids = [pk]
     for comp in comparisons: image_ids.append([image_id for image_id in [comp.image1_id,comp.image2_id] if image_id != pk][0])
     scores.insert(0,pk)
     data = pandas.Series(scores,index=image_ids, name=pk)
