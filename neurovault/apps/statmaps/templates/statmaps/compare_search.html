@@ -15,4 +15,16 @@ var addthis_config = {
     {% endfor %}
  {% endautoescape %}
 
+<script type="text/javascript"> 
+
+$(document).ready(function() {
+
+    $('li.portfolio-item').find('a.btn-danger').click(function(event) {
+        event.preventDefault;
+        debugger;
+    });
+});
+
+</script>
+
 {% endblock %}
