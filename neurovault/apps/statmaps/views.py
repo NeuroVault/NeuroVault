@@ -1,4 +1,4 @@
-from .models import Collection, Image, Atlas, StatisticMap, NIDMResults, NIDMResultStatisticMap
+from .models import Collection, Image, Atlas, Comparison, StatisticMap, NIDMResults, NIDMResultStatisticMap
 from .forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm
@@ -662,12 +662,13 @@ def atlas_query_region(request):
 
         return JSONResponse(data)
 
+
 @csrf_exempt
 def atlas_query_voxel(request):
     X = request.GET.get('x','')
     Y = request.GET.get('y','')
     Z = request.GET.get('z','')
-    collection = name=request.GET.get('collection','')
+    collection = name = request.GET.get('collection','')
     atlas = request.GET.get('atlas','').replace('\'', '')
     try:
         collection_object = Collection.objects.filter(name=collection)[0]
@@ -722,37 +723,42 @@ def compare_images(request,pk1,pk2):
 # Return search interface for one image vs rest
 def find_similar(request,pk):
     image1 = get_image(pk,None,request)
-    # This df should ONLY contain public images! see tasks.py for generation
-    corr_df = pandas.read_pickle(os.path.join(settings.PRIVATE_MEDIA_ROOT,
-                                              'matrices','pearson_corr.pkl'))
-    public_images = Image.objects.filter(collection__private=False,
-                    id__in=corr_df.columns).exclude(polymorphic_ctype__model='image')
+    pk = int(pk)
 
-    # Get all image png paths
+    # Get all similarity calculations for this image, and ids of other images
+    comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1))
+    scores = [comp.similarity_score for comp in comparisons]
+    image_ids = [pk]
+
+    for comp in comparisons:
+        image_ids.append([image_id for image_id in [comp.image1_id,
+                                              comp.image2_id] if image_id != pk][0])
+    scores.insert(0,pk)
+    data = pandas.Series(scores,index=image_ids, name=pk)
+
+    # Get all public images, filter data to public, and create png paths
+    public_images = Image.objects.filter(collection__private=False,id__in=image_ids)
+    public_keys = [image.pk for image in public_images]
+
+    # Data should be pandas series, with row names corresponding to image ids, and column name the query id
+    data = data.loc[public_keys]  # need to get intersection public images and comparisons
+    public_images = Image.objects.filter(collection__private=False,id__in=data.index)
     image_paths = [image.file.url for image in public_images]
     png_img_names = ["glass_brain_%s.png" % image.pk for image in public_images]
-    png_img_paths = [os.path.join(os.path.split(image_paths[i])[0],png_img_names[i])
-                     for i in range(0,len(image_paths))]
-
-    # Get image tags, for now we will just do map type
+    png_img_paths = [os.path.join(os.path.split(image_paths[i])[0],
+                                  png_img_names[i]) for i in range(0,len(image_paths))]
     tags = [[str(image.map_type)] for image in public_images]
-
-    # Generate image names to appear below pictures
-    image_names = ["%s:%s ,%s" % (image.name,image.collection.name,image.map_type)
-                   for image in public_images]
-
-    # Tags and png paths should be put in same data frame, so image ids are associated with both
-    corr_df["png"] = png_img_paths
-    corr_df["tags"] = tags
+    image_names = ["%s:%s ,%s" % (image.name,image.collection.name,
+                                  image.map_type) for image in public_images]
     compare_url = "/compare"  # format will be prefix/[query_id]/[other_id]
     image_url = "/images"  # format will be prefix/[other_id]
 
     # Here is the query image
-    query = os.path.join(os.path.split(image1.file.url)[0], "glass_brain_%s.png" % (image1.pk))
+    query = os.path.join(os.path.split(image1.file.url)[0],"glass_brain_%s.png" % (image1.pk))
 
-    # Do similarity search and return html to put in page, specify 100 max results,
-    # take absolute value of scores
-    html_snippet = compare.similarity_search(corr_df=corr_df,button_url=compare_url,
+    # Do similarity search and return html to put in page, specify 100 max results, take absolute value of scores
+    html_snippet = compare.similarity_search(data=data,tags=tags,
+                                             png_paths=png_img_paths,button_url=compare_url,
                                              image_url=image_url,query=query,absolute_value=True,
                                              max_results=100,image_names=image_names)
     html = [h.strip("\n") for h in html_snippet]
