@@ -145,7 +145,8 @@ INSTALLED_APPS = (
     #'south',
     'corsheaders',
     'dbbackup',
-    'polymorphic'
+    'polymorphic',
+    'rest_framework_swagger'
 )
 
 # A sample logging configuration. The only tangible logging
