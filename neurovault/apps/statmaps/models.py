@@ -21,7 +21,7 @@ from django.db.models import Q
 from django.db.models.signals import post_delete
 from django.dispatch.dispatcher import receiver
 import shutil
-from neurovault.apps.statmaps.tasks import generate_glassbrain_image
+from neurovault.apps.statmaps.tasks import generate_glassbrain_image, save_voxelwise_pearson_similarity
 
 
 class Collection(models.Model):
@@ -260,10 +260,22 @@ class Image(PolymorphicModel, BaseCollectionItem):
 
         return image
 
-    # Celery task to (re)generate glass brain image
+    # Celery task to (re)generate glass brain image and image comparisons
     def save(self):
+        file_changed = False
+        if self.pk is not None:
+            existing = Image.objects.get(pk=self.pk)
+            if existing.file != self.file:
+                file_changed = True
+        do_update = True if file_changed or self.pk is None else False
+
         super(Image, self).save()
-        generate_glassbrain_image.apply_async([self.pk])
+        if do_update:
+            generate_glassbrain_image.apply_async([self.pk])
+            for comp_img in Image.objects.filter(collection__private=False).exclude(pk=self.pk):
+                iargs = sorted([comp_img.pk,self.pk])
+                print "Calculating pearson similarity for images %s and %s" % (iargs[0],iargs[1])
+                save_voxelwise_pearson_similarity.apply_async(iargs)
 
 
 class BaseStatisticMap(Image):

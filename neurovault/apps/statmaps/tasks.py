@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from neurovault.celery import nvcelery as celery_app
 import os
 import numpy
 import pylab as plt
@@ -37,35 +38,17 @@ def save_voxelwise_pearson_similarity(pk1, pk2, resample_dim=[4, 4, 4]):
                             similarity_metric="pearson product-moment correlation coefficient",
                             transformation="voxelwise")
 
-        if not Comparison.objects.filter(image1=image1, image2=image2,
-                                         similarity_metric=pearson_metric).exists():
+        pearson_score = calculate_voxelwise_pearson_similarity(image1, image2, resample_dim)
 
-            pearson_score = calculate_voxelwise_pearson_similarity(image1, image2, resample_dim)
+        try:
+            compare = Comparison.objects.get(image1=image1, image2=image2,
+                                             similarity_metric=pearson_metric)
+        except Comparison.DoesNotExist:
+            compare = Comparison(image1=image1, image2=image2, similarity_metric=pearson_metric)
 
-            # create new Comparison with the voxelwise pearson similarity metric
-            pearson_comparison = Comparison(image1=image1,
-                                            image2=image2,
-                                            similarity_metric=pearson_metric,
-                                            similarity_score=pearson_score)
-            pearson_comparison.save()
+        compare.similarity_score = pearson_score
+        compare.save()
 
-
-@shared_task
-def update_voxelwise_pearson_similarity(pk1, pk2, resample_dim=[4, 4, 4]):
-    from neurovault.apps.statmaps.models import Similarity, Comparison
-
-    if pk1 != pk2:
-        sorted_images = get_images_by_ordered_id(pk1, pk2)
-        image1 = sorted_images[0]
-        image2 = sorted_images[1]
-        pearson_metric = Similarity.objects.get(
-            similarity_metric="pearson product-moment correlation coefficient",
-            transformation="voxelwise")
-        if Comparison.objects.filter(image1=image1, image2=image2,
-                                     similarity_metric=pearson_metric).exists():
-            pearson_score = calculate_voxelwise_pearson_similarity(image1, image2, resample_dim)
-            pearson_comparison = Comparison.objects.filter(image1=image1, image2=image2,
-                       similarity_metric=pearson_metric).update(similarity_score=pearson_score)
 
 # Helper functions
 '''Return list of Images sorted by the primary key'''
@@ -75,17 +58,7 @@ def get_images_by_ordered_id(pk1, pk2):
     from neurovault.apps.statmaps.models import Image
     image1 = get_object_or_404(Image, pk=pk1)
     image2 = get_object_or_404(Image, pk=pk2)
-
-    # Sort images by the key (I'm sure there is a better way to do this)
-    images = dict()
-    images[image1.pk] = image1
-    images[image2.pk] = image2
-    inputs = []
-    for pks, image in images.iteritems():
-        inputs.append(image)
-
-    # Now image 1 and 2 are ordered by the primary keys
-    return inputs
+    return sorted([image1,image2], key=lambda x: x.pk)
 
 
 '''Calculate a voxelwise pearson correlation via pairwise deletion'''
