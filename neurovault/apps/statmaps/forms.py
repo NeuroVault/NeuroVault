@@ -439,7 +439,7 @@ class ImageForm(ModelForm):
 class StatisticMapForm(ImageForm):
     class Meta(ImageForm.Meta):
         model = StatisticMap
-        fields = ('name', 'collection', 'description', 'map_type',
+        fields = ('name', 'collection', 'description', 'map_type', 'figure',
                   'file', 'hdr_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'contrast_definition', 'contrast_definition_cogatlas')
 
@@ -447,7 +447,7 @@ class StatisticMapForm(ImageForm):
 class AtlasForm(ImageForm):
     class Meta(ImageForm.Meta):
         model = Atlas
-        fields = ('name', 'collection', 'description',
+        fields = ('name', 'collection', 'description', 'figure',
                   'file', 'hdr_file', 'label_description_file', 'tags')
 
 
@@ -737,7 +737,7 @@ class NIDMViewForm(forms.ModelForm):
 class NIDMResultStatisticMapForm(ImageForm):
     class Meta():
         model = NIDMResultStatisticMap
-        fields = ('name', 'collection', 'description', 'map_type',
+        fields = ('name', 'collection', 'description', 'map_type', 'figure',
                   'file', 'tags', 'nidm_results')
 
     def __init__(self, *args, **kwargs):

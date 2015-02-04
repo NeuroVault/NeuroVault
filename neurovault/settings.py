@@ -279,3 +279,7 @@ os.environ["XDG_CONFIG_HOME"] = PYCORTEX_DATASTORE
 os.environ["FREESURFER_HOME"] = "/opt/freesurfer"
 os.environ["SUBJECTS_DIR"] = os.path.join(os.environ["FREESURFER_HOME"],"subjects")
 os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
+
+# provToolbox path
+os.environ["PATH"] += os.pathsep + '/path/to/lib/provToolbox/bin'
+

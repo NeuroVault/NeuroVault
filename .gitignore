@@ -8,6 +8,9 @@ neurovault/local_settings.py
 neurovault/secrets.py
 neurovault/static/
 
+# test data
+neurovault/apps/statmaps/tests/test_data/feat/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

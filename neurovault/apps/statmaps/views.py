@@ -10,7 +10,8 @@ from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
     get_file_ctime, detect_afni4D, split_afni4D_to_3D, splitext_nii_gz, mkdir_p, \
-    send_email_notification, populate_nidm_results, get_server_url
+    send_email_notification, populate_nidm_results, get_server_url, populate_feat_directory, \
+    detect_feat_directory
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponse
 from django.db.models import Q
@@ -35,6 +36,8 @@ import os
 from collections import OrderedDict
 from xml.dom import minidom
 from django.db.models.aggregates import Count
+from django.contrib import messages
+import traceback
 
 
 def owner_or_contrib(request,collection):
@@ -127,9 +130,10 @@ def edit_collection(request, cid=None):
         is_owner = True
         collection = Collection(owner=request.user)
     if request.method == "POST":
-        form = CollectionForm(request.POST, request.FILES, instance=collection)
         if is_owner:
             form = OwnerCollectionForm(request.POST, request.FILES, instance=collection)
+        else:
+            form = CollectionForm(request.POST, request.FILES, instance=collection)
         if form.is_valid():
             previous_contribs = set()
             if form.instance.pk is not None:
@@ -342,7 +346,6 @@ def upload_folder(request, collection_cid):
                     archive_name = request.FILES['file'].name
                     if fnmatch(archive_name,'*.nidm.zip'):
                         populate_nidm_results(request,collection)
-                        return HttpResponseRedirect(collection.get_absolute_url())
 
                     _, archive_ext = os.path.splitext(archive_name)
                     if archive_ext == '.zip':
@@ -352,12 +355,14 @@ def upload_folder(request, collection_cid):
                     compressed.extractall(path=tmp_directory)
 
                 elif "file_input[]" in request.FILES:
+
                     for f, path in zip(request.FILES.getlist(
                                        "file_input[]"), request.POST.getlist("paths[]")):
                         if fnmatch(f.name,'*.nidm.zip'):
                             request.FILES['file'] = f
                             populate_nidm_results(request,collection)
                             continue
+
                         new_path, _ = os.path.split(os.path.join(tmp_directory, path))
                         mkdir_p(new_path)
                         filename = os.path.join(new_path,f.name)
@@ -368,7 +373,17 @@ def upload_folder(request, collection_cid):
                     raise Exception("Unable to find uploaded files.")
 
                 atlases = {}
-                for root, _, filenames in os.walk(tmp_directory, topdown=False):
+                for root, subdirs, filenames in os.walk(tmp_directory):
+                    if detect_feat_directory(root):
+                        populate_feat_directory(request,collection,root)
+                        del(subdirs)
+                        filenames = []
+
+                    # .gfeat parent dir under cope*.feat should not be added as statmaps
+                    # this may be affected by future nidm-results_fsl parsing changes
+                    if root.endswith('.gfeat'):
+                        filenames = []
+
                     filenames = [f for f in filenames if not f[0] == '.']
                     for fname in filenames:
                         name, ext = splitext_nii_gz(fname)
@@ -443,6 +458,12 @@ def upload_folder(request, collection_cid):
 
                     new_image.file = f
                     new_image.save()
+            except:
+                error = traceback.format_exc().splitlines()[-1]
+                msg = "An error occurred with this upload: {}".format(error)
+                messages.warning(request, msg)
+                return HttpResponseRedirect(collection.get_absolute_url())
+
             finally:
                 shutil.rmtree(tmp_directory)
 
