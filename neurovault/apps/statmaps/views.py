@@ -172,10 +172,8 @@ def view_image(request, pk, collection_cid=None):
     user_owns_image = True if owner_or_contrib(request,image.collection) else False
     api_cid = pk
 
-    # Comparison is possible if pk is in matrix columns
-    corr_df = pandas.read_pickle(os.path.abspath(os.path.join(neurovault.settings.PRIVATE_MEDIA_ROOT,'matrices/pearson_corr.pkl')))
-    comparison_is_possible = True if int(pk) in corr_df.columns else False
-
+    num_comparisons = Comparison.objects.filter(Q(image1=image) | Q(image2=image)).count()
+    comparison_is_possible = True if num_comparisons >= 1 else False
 
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
@@ -736,12 +734,13 @@ def find_similar(request,pk):
     data = pandas.Series(scores,index=image_ids, name=pk)
 
     # Get all public images, filter data to public, and create png paths
-    public_images = Image.objects.filter(collection__private=False,id__in=image_ids)
+    public_images = Image.objects.filter(collection__private=False,id__in=image_ids).exclude(
+                        Q(polymorphic_ctype__model='image') | Q(polymorphic_ctype__model='atlas'))
     public_keys = [image.pk for image in public_images]
 
     # Data should be pandas series, with row names corresponding to image ids, and column name the query id
     data = data.loc[public_keys]  # need to get intersection public images and comparisons
-    public_images = Image.objects.filter(collection__private=False,id__in=data.index)
+    public_images = public_images.filter(id__in=data.index)
     image_paths = [image.file.url for image in public_images]
     png_img_names = ["glass_brain_%s.png" % image.pk for image in public_images]
     png_img_paths = [os.path.join(os.path.split(image_paths[i])[0],
