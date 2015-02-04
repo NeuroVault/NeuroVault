@@ -1,6 +1,6 @@
 from django.contrib import admin
 from neurovault.apps.statmaps.models import Collection, Image, StatisticMap, Atlas, \
-    NIDMResults, NIDMResultStatisticMap
+    NIDMResults, NIDMResultStatisticMap, Comparison, Similarity
 from neurovault.apps.statmaps.forms import StatisticMapForm, AtlasForm, \
     NIDMResultStatisticMapForm, NIDMResultsForm
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin
@@ -52,3 +52,5 @@ class NIDMResultsAdmin(BaseImageAdmin):
 admin.site.register(Image, ImageAdmin)
 admin.site.register(Collection)
 admin.site.register(NIDMResults,NIDMResultsAdmin)
+admin.site.register(Comparison)
+admin.site.register(Similarity)

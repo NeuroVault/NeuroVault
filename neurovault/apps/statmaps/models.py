@@ -380,8 +380,8 @@ class Similarity(models.Model):
 
 
 class Comparison(models.Model):
-    image1 = models.ForeignKey(Image,related_name="image1")
-    image2 = models.ForeignKey(Image,related_name="image2")
+    image1 = models.ForeignKey(Image,related_name="image1",db_index=True)
+    image2 = models.ForeignKey(Image,related_name="image2",db_index=True)
     similarity_metric = models.ForeignKey(Similarity)
     similarity_score = models.FloatField(help_text="the comparison score between two or more statistical maps", verbose_name="the comparison score between two or more statistical maps")
 
