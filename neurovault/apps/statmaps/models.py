@@ -272,7 +272,8 @@ class Image(PolymorphicModel, BaseCollectionItem):
         super(Image, self).save()
         if do_update:
             generate_glassbrain_image.apply_async([self.pk])
-            for comp_img in Image.objects.filter(collection__private=False).exclude(pk=self.pk):
+            for comp_img in Image.objects.filter(
+                                     collection__private=False).exclude(pk=self.pk).order_by('id'):
                 iargs = sorted([comp_img.pk,self.pk])
                 print "Calculating pearson similarity for images %s and %s" % (iargs[0],iargs[1])
                 save_voxelwise_pearson_similarity.apply_async(iargs)

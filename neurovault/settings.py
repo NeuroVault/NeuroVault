@@ -281,11 +281,11 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
-CELERYBEAT_SCHEDULE = {
-    'run_make_correlation_df': {
-        'task': 'neurovault.apps.statmaps.tasks.make_correlation_df',
-        'schedule': timedelta(minutes=30),
-    },
-}
+#CELERYBEAT_SCHEDULE = {
+#    'run_make_correlation_df': {
+#        'task': 'neurovault.apps.statmaps.tasks...',
+#        'schedule': timedelta(minutes=30),
+#    },
+#}
 # or manage periodic schedule in django admin
 #CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'

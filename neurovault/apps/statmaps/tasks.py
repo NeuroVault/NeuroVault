@@ -48,6 +48,7 @@ def save_voxelwise_pearson_similarity(pk1, pk2, resample_dim=[4, 4, 4]):
 
         compare.similarity_score = pearson_score
         compare.save()
+    return image1.pk,image2.pk,pearson_score
 
 
 # Helper functions
