@@ -454,12 +454,7 @@ def upload_folder(request, collection_cid):
                 error = traceback.format_exc().splitlines()[-1]
                 msg = "An error occurred with this upload: {}".format(error)
                 messages.warning(request, msg)
-
-                # redirect error messages for .zip requests
-                if "file" in request.FILES:
-                    return HttpResponseRedirect(collection.get_absolute_url())
-                else:
-                    return
+                return HttpResponseRedirect(collection.get_absolute_url())
 
             finally:
                 shutil.rmtree(tmp_directory)
