@@ -82,17 +82,18 @@ def get_images_by_ordered_id(pk1, pk2):
     images[image2.pk] = image2
     inputs = []
     for pks, image in images.iteritems():
-        inputs.append(image)    
+        inputs.append(image)
 
     # Now image 1 and 2 are ordered by the primary keys
     return inputs
+
 
 '''Calculate a voxelwise pearson correlation via pairwise deletion'''
 
 
 def calculate_voxelwise_pearson_similarity(image1, image2, resample_dim):
 
-        # Get standard space brain
+    # Get standard space brain
     reference = os.path.join(
         os.environ['FREESURFER_HOME'], 'subjects', 'fsaverage', 'mri', 'brain.nii.gz')
     image_paths = [image.file.path for image in [image1, image2]]
@@ -105,18 +106,21 @@ def calculate_voxelwise_pearson_similarity(image1, image2, resample_dim):
     image2 = images_resamp[1]
 
     # Calculate correlation with voxels within mask
-    return pearsonr(image1.get_data()[binary_mask == 1], image2.get_data()[binary_mask == 1])[0]
+    return pearsonr(numpy.squeeze(image1.get_data())[binary_mask == 1],
+                    numpy.squeeze(image2.get_data())[binary_mask == 1])[0]
 
 
 '''Make a nonzero, non-nan mask for a or or more images (registered, equally sized)'''
 
 
 def make_binary_deletion_mask(images):
+
     if isinstance(images, nib.nifti1.Nifti1Image):
         images = [images]
     mask = numpy.zeros(images[0].shape)
     for image in images:
-        mask[(image.get_data() != 0) * (numpy.isnan(image.get_data()) == False)] += 1
+        mask[(numpy.squeeze(image.get_data() != 0))
+             * (numpy.isnan(numpy.squeeze(image.get_data())) == False)] += 1
     mask[mask != len(images)] = 0
     mask[mask == len(images)] = 1
     return mask
