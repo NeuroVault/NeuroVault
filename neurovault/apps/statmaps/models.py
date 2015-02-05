@@ -272,9 +272,10 @@ class Image(PolymorphicModel, BaseCollectionItem):
         super(Image, self).save()
         if do_update:
             generate_glassbrain_image.apply_async([self.pk])
-            for comp_img in Image.objects.filter(collection__private=False).exclude(
-                                                 pk=self.pk).exclude(
-                                                 Q(polymorphic_ctype__model='image')|Q(polymorphic_ctype__model='atlas')).order_by('id'):
+
+            imgs = Image.objects.filter(collection__private=False).exclude(pk=self.pk)
+            comp_qs = imgs.exclude(polymorphic_ctype__model__in=['image','atlas']).order_by('id')
+            for comp_img in comp_qs:
                 iargs = sorted([comp_img.pk,self.pk])
                 print "Calculating pearson similarity for images %s and %s" % (iargs[0],iargs[1])
                 save_voxelwise_pearson_similarity.apply_async(iargs)
