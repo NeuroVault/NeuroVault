@@ -20,7 +20,7 @@ class Test_celery_tasks(pk):
       image = get_object_or_404(Image,pk=pk)
 
     def test_generate_glass_brain(self):
-      generate_glassbrain_image.delay(image.file.path,pk)
+      generate_glassbrain_image.delay(pk)
 
     def test_make_correlation_df(self):
       # Testing image pairwise matrix generation  

@@ -33,7 +33,7 @@ django-sendfile
 django-polymorphic
 networkx
 rdflib>=4.1.0
-celery-with-redis
+celery[redis]
 django-celery
 scikit-learn
 -e git://github.com/nilearn/nilearn.git@master#egg=nilearn

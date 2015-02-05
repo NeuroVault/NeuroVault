@@ -40,6 +40,7 @@ from django.contrib import messages
 import traceback
 
 
+
 def owner_or_contrib(request,collection):
     if collection.owner == request.user or request.user in collection.contributors.all() or request.user.is_superuser:
         return True
@@ -171,10 +172,8 @@ def view_image(request, pk, collection_cid=None):
     user_owns_image = True if owner_or_contrib(request,image.collection) else False
     api_cid = pk
 
-    # Comparison is possible if pk is in matrix columns
-    corr_df = pandas.read_pickle(os.path.abspath(os.path.join(neurovault.settings.PRIVATE_MEDIA_ROOT,'matrices/pearson_corr.pkl')))
-    comparison_is_possible = True if int(pk) in corr_df.columns else False
-
+    num_comparisons = Comparison.objects.filter(Q(image1=image) | Q(image2=image)).count()
+    comparison_is_possible = True if num_comparisons >= 1 else False
 
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
@@ -656,12 +655,13 @@ def atlas_query_region(request):
 
         return JSONResponse(data)
 
+
 @csrf_exempt
 def atlas_query_voxel(request):
     X = request.GET.get('x','')
     Y = request.GET.get('y','')
     Z = request.GET.get('z','')
-    collection = name=request.GET.get('collection','')
+    collection = name = request.GET.get('collection','')
     atlas = request.GET.get('atlas','').replace('\'', '')
     try:
         collection_object = Collection.objects.filter(name=collection)[0]
@@ -679,63 +679,81 @@ def atlas_query_voxel(request):
         return JSONResponse('error: one or more coordinates are out of range', status=400)
     return JSONResponse(data)
 
+
 # Compare Two Images
 def compare_images(request,pk1,pk2):
     image1 = get_image(pk1,None,request)
     image2 = get_image(pk2,None,request)
-    
+
     # Name the data file based on the new volumes
     path, name1, ext = split_filename(image1.file.url)
     path, name2, ext = split_filename(image2.file.url)
 
     # For now, manually choose an atlas - this can be user choice
-    neurovault_static = os.path.dirname(os.path.realpath(neurovault.apps.statmaps.models.__file__))
-    atlas_file = os.path.abspath(os.path.join(neurovault_static, 'static/atlas/MNI-maxprob-thr25-2mm.nii'))
-    atlas_xml = os.path.abspath(os.path.join(neurovault_static, 'static/atlas/MNI.xml'))
-    atlas = pybrainatlas.atlas(atlas_xml,atlas_file) # Default slices are "coronal","axial","sagittal"
+    atlas_file = os.path.join(settings.STATIC_ROOT,'atlas','MNI-maxprob-thr25-2mm.nii')
+    atlas_xml = os.path.join(settings.STATIC_ROOT,'atlas','MNI.xml')
+    # Default slices are "coronal","axial","sagittal"
+    atlas = pybrainatlas.atlas(atlas_xml,atlas_file)
 
     # Create custom image names and links for the visualization
-    custom = {"IMAGE_1":"%s : %s [%s]" %(image1.name,image1.collection.name,image1.map_type),"IMAGE_2": "%s : %s [%s]" %(image2.name,image2.collection.name,image2.map_type),"IMAGE_1_LINK":"/images/%s" %(image1.pk),"IMAGE_2_LINK":"/images/%s" %(image2.pk)}
+    custom = {
+            "IMAGE_1":"%s : %s [%s]" % (image1.name,image1.collection.name,image1.map_type),
+            "IMAGE_2": "%s : %s [%s]" % (image2.name,image2.collection.name,image2.map_type),
+            "IMAGE_1_LINK":"/images/%s" % (image1.pk),"IMAGE_2_LINK":"/images/%s" % (image2.pk)
+    }
 
-    html_snippet,data_table = compare.scatterplot_compare(image1=image1.file.path,image2=image2.file.path,software="FREESURFER",voxdim=[8,8,8],atlas=atlas,custom=custom,corr="pearson")
+    html_snippet,data_table = compare.scatterplot_compare(image1=image1.file.path,
+                                                          image2=image2.file.path,
+                                                          software="FREESURFER",
+                                                          voxdim=[8,8,8],
+                                                          atlas=atlas,custom=custom,corr="pearson")
 
     html = [h.strip("\n") for h in html_snippet]
     context = {'html': html}
     return render(request, 'statmaps/compare_images.html', context)
 
+
 # Return search interface for one image vs rest
 def find_similar(request,pk):
     image1 = get_image(pk,None,request)
-    pk = int(pk)    
+    pk = int(pk)
 
     # Get all similarity calculations for this image, and ids of other images
-    comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1))    
+    comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1))
     scores = [comp.similarity_score for comp in comparisons]
     image_ids = [pk]
-    for comp in comparisons: image_ids.append([image_id for image_id in [comp.image1_id,comp.image2_id] if image_id != pk][0])
+    for comp in comparisons:
+        image_ids.append([image_id for image_id in [comp.image1_id,
+                         comp.image2_id] if image_id != pk][0])
     scores.insert(0,pk)
     data = pandas.Series(scores,index=image_ids, name=pk)
-    
+
     # Get all public images, filter data to public, and create png paths
-    public_images = Image.objects.filter(collection__private=False,id__in=image_ids)
+    public_images = Image.objects.filter(collection__private=False,id__in=image_ids).exclude(
+                        Q(polymorphic_ctype__model='image') | Q(polymorphic_ctype__model='atlas'))
     public_keys = [image.pk for image in public_images]
 
     # Data should be pandas series, with row names corresponding to image ids, and column name the query id
     data = data.loc[public_keys]  # need to get intersection public images and comparisons
-    public_images = Image.objects.filter(collection__private=False,id__in=data.index) 
+    public_images = public_images.filter(id__in=data.index)
     image_paths = [image.file.url for image in public_images]
-    png_img_names = ["glass_brain_%s.png" % image.pk for image in public_images]  
-    png_img_paths = [ os.path.join(os.path.split(image_paths[i])[0],png_img_names[i]) for i in range(0,len(image_paths))]
-    tags = [[str(image.map_type)] for image in public_images]    
-    image_names = [ "%s:%s ,%s" %(image.name,image.collection.name,image.map_type) for image in public_images]
-    compare_url = "/compare" # format will be prefix/[query_id]/[other_id]
-    image_url = "/images" # format will be prefix/[other_id]
-    
+    png_img_names = ["glass_brain_%s.png" % image.pk for image in public_images]
+    png_img_paths = [os.path.join(os.path.split(image_paths[i])[0],
+                                  png_img_names[i]) for i in range(0,len(image_paths))]
+    tags = [[str(image.map_type)] for image in public_images]
+    image_names = ["%s:%s ,%s" % (image.name,image.collection.name,
+                                  image.map_type) for image in public_images]
+    compare_url = "/compare"  # format will be prefix/[query_id]/[other_id]
+    image_url = "/images"  # format will be prefix/[other_id]
+
     # Here is the query image
-    query = os.path.join(os.path.split(image1.file.url)[0],"glass_brain_%s.png" %(image1.pk))
-    
+    query = os.path.join(os.path.split(image1.file.url)[0],"glass_brain_%s.png" % (image1.pk))
+
     # Do similarity search and return html to put in page, specify 100 max results, take absolute value of scores
-    html_snippet = compare.similarity_search(data=data,tags=tags,png_paths=png_img_paths,button_url=compare_url,image_url=image_url,query=query,absolute_value=True,max_results=100,image_names=image_names)
+    html_snippet = compare.similarity_search(data=data,tags=tags,
+                                             png_paths=png_img_paths,button_url=compare_url,
+                                             image_url=image_url,query=query,absolute_value=True,
+                                             max_results=100,image_names=image_names)
     html = [h.strip("\n") for h in html_snippet]
     context = {'html': html}
     return render(request, 'statmaps/compare_search.html', context)

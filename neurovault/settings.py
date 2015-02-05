@@ -1,7 +1,6 @@
 # Django settings for neurovault project.
 import os
-import djcelery
-djcelery.setup_loader()
+from datetime import timedelta
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -147,16 +146,8 @@ INSTALLED_APPS = (
     'corsheaders',
     'dbbackup',
     'polymorphic',
-    'djcelery'
+    'djcelery',
 )
-
-# CELERY SETTINGS
-BROKER_URL = 'redis://localhost:6379/0'
-# comment out this line if you don't want to save results to backend
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
@@ -283,3 +274,18 @@ os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
 # provToolbox path
 os.environ["PATH"] += os.pathsep + '/path/to/lib/provToolbox/bin'
 
+# Celery config
+BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
+#CELERYBEAT_SCHEDULE = {
+#    'run_make_correlation_df': {
+#        'task': 'neurovault.apps.statmaps.tasks...',
+#        'schedule': timedelta(minutes=30),
+#    },
+#}
+# or manage periodic schedule in django admin
+#CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
