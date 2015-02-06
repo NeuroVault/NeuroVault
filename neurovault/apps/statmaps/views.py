@@ -725,6 +725,7 @@ def find_similar(request,pk):
     for comp in comparisons:
         image_ids.append([image_id for image_id in [comp.image1_id,
                          comp.image2_id] if image_id != pk][0])
+    images_processing = len(Image.objects.all()) - len(image_ids)
     scores.insert(0,pk)
     data = pandas.Series(scores,index=image_ids, name=pk)
 
@@ -755,7 +756,7 @@ def find_similar(request,pk):
                                              image_url=image_url,query=query,absolute_value=True,
                                              max_results=100,image_names=image_names)
     html = [h.strip("\n") for h in html_snippet]
-    context = {'html': html}
+    context = {'html': html,'images_processing':images_processing}
     return render(request, 'statmaps/compare_search.html', context)
 
 
