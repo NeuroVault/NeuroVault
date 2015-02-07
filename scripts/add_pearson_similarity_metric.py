@@ -9,7 +9,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.settings")
 django.setup()
 
 from neurovault.apps.statmaps.models import Similarity, Comparison, Image
-from neurovault.apps.statmaps.tasks import save_voxelwise_pearson_similarity, update_voxelwise_pearson_similarity
+from neurovault.apps.statmaps.tasks import save_voxelwise_pearson_similarity
 from django.db import IntegrityError
 import errno
 
