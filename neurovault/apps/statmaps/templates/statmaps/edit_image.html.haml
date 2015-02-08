@@ -14,4 +14,10 @@
             This statistic map is embedded in <strong><a href="{{form.instance.nidm_results.get_absolute_url}}">{{form.instance.nidm_results.name}}.zip</a></strong>.  Edit the NIDM zip file to modify this image's properties.
             </div>
         {% crispy form %}
+
+{% autoescape off %}
+    {% for snippet in cognitive_atlas_autocomplete %}
+       {{ snippet }}
+    {% endfor %}
+{% endautoescape %}
 {% endblock %}
