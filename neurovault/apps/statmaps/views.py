@@ -20,7 +20,7 @@ from sendfile import sendfile
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.renderers import JSONRenderer
 from voxel_query_functions import *
-
+from cognitiveatlas import views as cogatlas
 import zipfile
 import tarfile
 import gzip
@@ -246,7 +246,12 @@ def edit_image(request, pk):
     else:
         form = form(request.user, instance=image)
 
-    context = {"form": form}
+    # Retrieve cognitive atlas contrast selector autocomplete
+    django_field = "contrast_definition_cogatlas"
+    cogat_json = os.path.join(neurovault.settings.STATIC_ROOT,"cogatlas","cognitiveatlas_tasks.json")
+    html_snippet = cogatlas.contrast_selector_django_crispy_form(django_field=django_field,include_bootstrap=False,from_file=cogat_json)
+    html_snippet = [h.strip("\n") for h in html_snippet]
+    context = {"form": form, "cognitive_atlas_autocomplete":html_snippet}
     return render(request, "statmaps/edit_image.html.haml", context)
 
 
