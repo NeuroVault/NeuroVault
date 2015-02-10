@@ -1,6 +1,8 @@
 # Django settings for neurovault project.
 import os
 from datetime import timedelta
+import matplotlib
+matplotlib.use('Agg')
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
