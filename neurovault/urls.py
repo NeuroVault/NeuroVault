@@ -15,6 +15,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 import rest_framework_swagger
 from taggit.models import Tag
+from django.http import Http404, HttpResponse
+from rest_framework.renderers import JSONRenderer
 from neurovault.apps.statmaps.views import get_image,get_collection
 import re
 import xml.etree.ElementTree as ET
@@ -26,6 +28,15 @@ from neurovault.apps.statmaps.voxel_query_functions import voxelToRegion, getSyn
 from django import template
 template.add_to_builtins('django.templatetags.future')
 template.add_to_builtins('django.contrib.staticfiles.templatetags.staticfiles')
+
+class JSONResponse(HttpResponse):
+    """
+    An HttpResponse that renders its content into JSON.
+    """
+    def __init__(self, data, **kwargs):
+        content = JSONRenderer().render(data)
+        kwargs['content_type'] = 'application/json'
+        super(JSONResponse, self).__init__(content, **kwargs)
 
 
 class HyperlinkedFileField(serializers.FileField):
@@ -62,9 +73,10 @@ class SerializedContributors(serializers.CharField):
 class NIDMDescriptionSerializedField(serializers.CharField):
 
     def to_representation(self, value):
-        if value and self.parent.object is not None:
-            parent = self.parent.object.nidm_results.name
-            fname = os.path.split(self.parent.object.file.name)[-1]
+        print self.parent.instance.nidm_results.name
+        if value and self.parent.instance is not None:
+            parent = self.parent.instance.nidm_results.name
+            fname = os.path.split(self.parent.instance.file.name)[-1]
             return 'NIDM Results: {0}.zip > {1}'.format(parent,fname)
 
 
@@ -132,7 +144,7 @@ class NIDMResultStatisticMapSerializer(serializers.HyperlinkedModelSerializer):
     file = HyperlinkedFileField()
     collection = HyperlinkedRelatedURL(read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
-    nidm_results = HyperlinkedRelatedURL(source='nidm_results', read_only=True)
+    nidm_results = HyperlinkedRelatedURL(read_only=True)
     description = NIDMDescriptionSerializedField(source='get_absolute_url')
 
     class Meta:
@@ -157,7 +169,7 @@ class NIDMResultsSerializer(serializers.ModelSerializer):
     ttl_file = HyperlinkedFileField()
     provn_file = HyperlinkedFileField()
     collection = HyperlinkedRelatedURL(read_only=True)
-    statmaps = ImageSerializer(source='nidmresultstatisticmap_set')
+    statmaps = ImageSerializer(many=True, source='nidmresultstatisticmap_set')
 
     class Meta:
         model = NIDMResults
@@ -293,6 +305,8 @@ class AtlasViewSet(ImageViewSet):
         except IndexError:
             return JSONResponse('error: could not find collection: %s' % collection, status=400)
         try:
+            print atlas
+            print [x.name for x in Atlas.objects.filter(collection=collection_object)]
             atlas_object = Atlas.objects.filter(name=atlas, collection=collection_object)[0]
             atlas_image = atlas_object.file
             atlas_xml = atlas_object.label_description_file
