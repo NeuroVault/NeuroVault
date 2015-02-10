@@ -3,10 +3,16 @@ Created on 1 Sep 2014
 
 @author: gorgolewski
 '''
-from neurovault.apps.statmaps.models import Image
-import os
 
-import os, errno
+import os
+import django
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.settings")
+django.setup()
+
+from neurovault.apps.statmaps.models import Image
+
+import errno
 
 def mkdir_p(path):
     try:

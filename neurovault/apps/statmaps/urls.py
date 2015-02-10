@@ -6,7 +6,7 @@ from .views import edit_collection, edit_images, view_image, delete_image, edit_
                 serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
                 papaya_js_embed, view_images_by_tag, \
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
-                view_nidm_results
+                view_nidm_results, find_similar, compare_images
 from neurovault.apps.statmaps.models import KeyValueTag
 from django.db.models import Count
 from django.contrib.auth.decorators import login_required
@@ -130,6 +130,14 @@ urlpatterns = patterns('',
 
     url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[A-Za-z0-9\.\+\-\_\s\[\]]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
         serve_nidm_image,
-        name='serve_nidm_images')
+        name='serve_nidm_images'),
+
+   # Compare images
+    url(r'^compare/(?P<pk1>\d+)/(?P<pk2>\d+)$',
+        compare_images,
+        name='compare_images'),
+    url(r'^(?P<pk>\d+)/find_similar$',
+        find_similar,
+        name='find_similar')
 
 )
