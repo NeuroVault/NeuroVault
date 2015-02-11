@@ -270,7 +270,7 @@ class Image(PolymorphicModel, BaseCollectionItem):
         do_update = True if file_changed or self.pk is None else False
 
         super(Image, self).save()
-        if do_update and self.collection.private = False:
+        if do_update and self.collection and self.collection.private == False:
             generate_glassbrain_image.apply_async([self.pk])
 
             imgs = Image.objects.filter(collection__private=False).exclude(pk=self.pk)
