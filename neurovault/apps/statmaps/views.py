@@ -173,7 +173,8 @@ def view_image(request, pk, collection_cid=None):
     api_cid = pk
 
     num_comparisons = Comparison.objects.filter(Q(image1=image) | Q(image2=image)).count()
-    comparison_is_possible = True if num_comparisons >= 1 and not image.collection.private else False
+    #comparison_is_possible = True if num_comparisons >= 1 and not image.collection.private else False
+    comparison_is_possible = False
 
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
