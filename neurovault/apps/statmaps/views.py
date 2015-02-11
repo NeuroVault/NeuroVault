@@ -723,9 +723,11 @@ def find_similar(request,pk):
     
     images = [image1]
     for comp in comparisons:
-        images.append([image for image in [comp.image1,
-                         comp.image2] if image.id != pk][0])
-    
+        #pick the image we are comparing with
+        image = [image for image in [comp.image1,
+                         comp.image2] if image.id != pk][0]
+        if hasattr(image, "map_type"):
+            images.append(image)
     
     image_ids = [image.pk for image in images]
     scores = [pk] + [comp.similarity_score for comp in comparisons]
@@ -751,7 +753,7 @@ def find_similar(request,pk):
                                              max_results=100,image_names=image_names)
     html = [h.strip("\n") for h in html_snippet]
     
-    images_processing = Image.objects.filter(collection__private=False).count() - len(image_ids)
+    images_processing = StatisticMap.objects.filter(collection__private=False).count() - len(image_ids)
     context = {'html': html,'images_processing':images_processing}
     return render(request, 'statmaps/compare_search.html', context)
 
