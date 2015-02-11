@@ -173,7 +173,7 @@ def view_image(request, pk, collection_cid=None):
     api_cid = pk
 
     num_comparisons = Comparison.objects.filter(Q(image1=image) | Q(image2=image)).count()
-    comparison_is_possible = True if num_comparisons >= 1 else False
+    comparison_is_possible = True if num_comparisons >= 1 and not image.collection.private else False
 
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
@@ -725,7 +725,7 @@ def find_similar(request,pk):
     for comp in comparisons:
         image_ids.append([image_id for image_id in [comp.image1_id,
                          comp.image2_id] if image_id != pk][0])
-    images_processing = len(Image.objects.all()) - len(image_ids)
+    images_processing = Image.objects.all(collection__private=False).count() - len(image_ids)
     scores.insert(0,pk)
     data = pandas.Series(scores,index=image_ids, name=pk)
 
