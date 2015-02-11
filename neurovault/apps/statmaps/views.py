@@ -725,7 +725,7 @@ def find_similar(request,pk):
     for comp in comparisons:
         image_ids.append([image_id for image_id in [comp.image1_id,
                          comp.image2_id] if image_id != pk][0])
-    images_processing = Image.objects.all(collection__private=False).count() - len(image_ids)
+    images_processing = Image.objects.filter(collection__private=False).count() - len(image_ids)
     scores.insert(0,pk)
     data = pandas.Series(scores,index=image_ids, name=pk)
 
