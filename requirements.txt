@@ -1,6 +1,6 @@
 Django>=1.5
 python-social-auth>=0.1.23
-djangorestframework==2.3.13
+djangorestframework
 markdown
 django-filter
 django-taggit
@@ -33,3 +33,9 @@ django-sendfile
 django-polymorphic
 networkx
 rdflib>=4.1.0
+celery[redis]
+django-celery
+scikit-learn
+-e git://github.com/nilearn/nilearn.git@master#egg=nilearn
+-e git://github.com/vsoch/pybraincompare.git@955182ef6068dc056ab16586ef7c70e65d87301c#egg=pybraincompare
+django-rest-swagger

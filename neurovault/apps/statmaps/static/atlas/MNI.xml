@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<atlas version="1.0">
+  <header>
+    <name>MNI Structural Atlas</name>
+    <type>Probabilistic</type>
+    <images>
+      <imagefile>/MNI/MNI-prob-2mm</imagefile>
+      <summaryimagefile>/MNI/MNI-maxprob-thr25-2mm</summaryimagefile>
+    </images>
+    <images>
+      <imagefile>/MNI/MNI-prob-1mm</imagefile>
+      <summaryimagefile>/MNI/MNI-maxprob-thr25-1mm</summaryimagefile>
+    </images>
+  </header>
+  <data>
+<label index="0" x="39" y="73" z="36">Caudate</label>
+<label index="1" x="31" y="34" z="14">Cerebellum</label>
+<label index="2" x="45" y="84" z="31">Frontal Lobe</label>
+<label index="3" x="25" y="71" z="32">Insula</label>
+<label index="4" x="56" y="19" z="31">Occipital Lobe</label>
+<label index="5" x="26" y="35" z="60">Parietal Lobe</label>
+<label index="6" x="56" y="69" z="34">Putamen</label>
+<label index="7" x="17" y="61" z="30">Temporal Lobe</label>
+<label index="8" x="40" y="56" z="39">Thalamus</label>
+  </data>
+</atlas>

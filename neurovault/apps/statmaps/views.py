@@ -1,4 +1,4 @@
-from .models import Collection, Image, Atlas, StatisticMap, NIDMResults, NIDMResultStatisticMap
+from .models import Collection, Image, Atlas, Comparison, StatisticMap, NIDMResults, NIDMResultStatisticMap
 from .forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm
@@ -20,7 +20,9 @@ from sendfile import sendfile
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.renderers import JSONRenderer
 from voxel_query_functions import *
-
+from compare import compare, atlas as pybrainatlas
+from glob import glob
+import pandas
 import zipfile
 import tarfile
 import gzip
@@ -36,6 +38,7 @@ from xml.dom import minidom
 from django.db.models.aggregates import Count
 from django.contrib import messages
 import traceback
+
 
 
 def owner_or_contrib(request,collection):
@@ -169,6 +172,9 @@ def view_image(request, pk, collection_cid=None):
     user_owns_image = True if owner_or_contrib(request,image.collection) else False
     api_cid = pk
 
+    num_comparisons = Comparison.objects.filter(Q(image1=image) | Q(image2=image)).count()
+    comparison_is_possible = True if num_comparisons >= 1 else False
+
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
     context = {
@@ -176,6 +182,7 @@ def view_image(request, pk, collection_cid=None):
         'user': image.collection.owner,
         'user_owns_image': user_owns_image,
         'api_cid':api_cid,
+        'comparison_is_possible':comparison_is_possible
     }
 
     if isinstance(image, NIDMResultStatisticMap):
@@ -454,12 +461,7 @@ def upload_folder(request, collection_cid):
                 error = traceback.format_exc().splitlines()[-1]
                 msg = "An error occurred with this upload: {}".format(error)
                 messages.warning(request, msg)
-
-                # redirect error messages for .zip requests
-                if "file" in request.FILES:
-                    return HttpResponseRedirect(collection.get_absolute_url())
-                else:
-                    return
+                return HttpResponseRedirect(collection.get_absolute_url())
 
             finally:
                 shutil.rmtree(tmp_directory)
@@ -608,3 +610,162 @@ def papaya_js_embed(request, pk, iframe=None):
     context = {'image': image, 'request':request}
     return render_to_response('statmaps/%s' % tpl,
                               context, content_type=mimetype)
+
+
+@csrf_exempt
+def atlas_query_region(request):
+    # this query is significantly faster (from 2-4 seconds to <1 second) if the synonyms don't need to be queried
+    # i was previously in contact with NIF and it seems like it wouldn't be too hard to download all the synonym data
+    search = request.GET.get('region','')
+    atlas = request.GET.get('atlas','').replace('\'', '')
+    collection = name=request.GET.get('collection','')
+    neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))
+    try:
+        collection_object = Collection.objects.filter(name=collection)[0]
+    except IndexError:
+        return JSONResponse('error: could not find collection: %s' % collection, status=400)
+    try:
+        atlas_object = Atlas.objects.filter(name=atlas, collection=collection_object)[0]
+        atlas_image = atlas_object.file
+        atlas_xml = atlas_object.label_description_file
+    except IndexError:
+        return JSONResponse('could not find %s' % atlas, status=400)
+    if request.method == 'GET':
+        atlas_xml.open()
+        root = ET.fromstring(atlas_xml.read())
+        atlas_xml.close()
+        atlasRegions = [x.text.lower() for x in root.find('data').findall('label')]
+        if search in atlasRegions:
+            searchList = [search]
+        else:
+            synonymsDict = {}
+            with open(os.path.join(neurovault_root, 'neurovault/apps/statmaps/NIFgraph.pkl'),'rb') as input:
+                graph = pickle.load(input)
+            for atlasRegion in atlasRegions:
+                synonymsDict[atlasRegion] = getSynonyms(atlasRegion)
+            try:
+                searchList = toAtlas(search, graph, atlasRegions, synonymsDict)
+            except ValueError:
+                return JSONResponse('error: region not in atlas or ontology', status=400)
+            if searchList == 'none':
+                return JSONResponse('error: could not map specified region to region in specified atlas', status=400)
+        try:
+            data = {'voxels':getAtlasVoxels(searchList, atlas_image, atlas_xml)}
+        except ValueError:
+            return JSONResponse('error: region not in atlas', status=400)
+
+        return JSONResponse(data)
+
+
+@csrf_exempt
+def atlas_query_voxel(request):
+    X = request.GET.get('x','')
+    Y = request.GET.get('y','')
+    Z = request.GET.get('z','')
+    collection = name = request.GET.get('collection','')
+    atlas = request.GET.get('atlas','').replace('\'', '')
+    try:
+        collection_object = Collection.objects.filter(name=collection)[0]
+    except IndexError:
+        return JSONResponse('error: could not find collection: %s' % collection, status=400)
+    try:
+        atlas_object = Atlas.objects.filter(name=atlas, collection=collection_object)[0]
+        atlas_image = atlas_object.file
+        atlas_xml = atlas_object.label_description_file
+    except IndexError:
+        return JSONResponse('error: could not find atlas: %s' % atlas, status=400)
+    try:
+        data = voxelToRegion(X,Y,Z,atlas_image, atlas_xml)
+    except IndexError:
+        return JSONResponse('error: one or more coordinates are out of range', status=400)
+    return JSONResponse(data)
+
+
+# Compare Two Images
+def compare_images(request,pk1,pk2):
+    image1 = get_image(pk1,None,request)
+    image2 = get_image(pk2,None,request)
+
+    # Name the data file based on the new volumes
+    path, name1, ext = split_filename(image1.file.url)
+    path, name2, ext = split_filename(image2.file.url)
+
+    # For now, manually choose an atlas - this can be user choice
+    atlas_file = os.path.join(settings.STATIC_ROOT,'atlas','MNI-maxprob-thr25-2mm.nii')
+    atlas_xml = os.path.join(settings.STATIC_ROOT,'atlas','MNI.xml')
+    # Default slices are "coronal","axial","sagittal"
+    atlas = pybrainatlas.atlas(atlas_xml,atlas_file)
+
+    # Create custom image names and links for the visualization
+    custom = {
+            "IMAGE_1":"%s : %s [%s]" % (image1.name,image1.collection.name,image1.map_type),
+            "IMAGE_2": "%s : %s [%s]" % (image2.name,image2.collection.name,image2.map_type),
+            "IMAGE_1_LINK":"/images/%s" % (image1.pk),"IMAGE_2_LINK":"/images/%s" % (image2.pk)
+    }
+
+    html_snippet,data_table = compare.scatterplot_compare(image1=image1.file.path,
+                                                          image2=image2.file.path,
+                                                          software="FREESURFER",
+                                                          voxdim=[8,8,8],
+                                                          atlas=atlas,custom=custom,corr="pearson")
+
+    html = [h.strip("\n") for h in html_snippet]
+    context = {'html': html}
+    return render(request, 'statmaps/compare_images.html', context)
+
+
+# Return search interface for one image vs rest
+def find_similar(request,pk):
+    image1 = get_image(pk,None,request)
+    pk = int(pk)
+
+    # Get all similarity calculations for this image, and ids of other images
+    comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1))
+    scores = [comp.similarity_score for comp in comparisons]
+    image_ids = [pk]
+    for comp in comparisons:
+        image_ids.append([image_id for image_id in [comp.image1_id,
+                         comp.image2_id] if image_id != pk][0])
+    images_processing = len(Image.objects.all()) - len(image_ids)
+    scores.insert(0,pk)
+    data = pandas.Series(scores,index=image_ids, name=pk)
+
+    # Get all public images, filter data to public, and create png paths
+    public_images = Image.objects.filter(collection__private=False,id__in=image_ids).exclude(
+                        Q(polymorphic_ctype__model='image') | Q(polymorphic_ctype__model='atlas'))
+    public_keys = [image.pk for image in public_images]
+
+    # Data should be pandas series, with row names corresponding to image ids, and column name the query id
+    data = data.loc[public_keys]  # need to get intersection public images and comparisons
+    public_images = public_images.filter(id__in=data.index)
+    image_paths = [image.file.url for image in public_images]
+    png_img_names = ["glass_brain_%s.png" % image.pk for image in public_images]
+    png_img_paths = [os.path.join(os.path.split(image_paths[i])[0],
+                                  png_img_names[i]) for i in range(0,len(image_paths))]
+    tags = [[str(image.map_type)] for image in public_images]
+    image_names = ["%s:%s ,%s" % (image.name,image.collection.name,
+                                  image.map_type) for image in public_images]
+    compare_url = "/compare"  # format will be prefix/[query_id]/[other_id]
+    image_url = "/images"  # format will be prefix/[other_id]
+
+    # Here is the query image
+    query = os.path.join(os.path.split(image1.file.url)[0],"glass_brain_%s.png" % (image1.pk))
+
+    # Do similarity search and return html to put in page, specify 100 max results, take absolute value of scores
+    html_snippet = compare.similarity_search(data=data,tags=tags,
+                                             png_paths=png_img_paths,button_url=compare_url,
+                                             image_url=image_url,query=query,absolute_value=True,
+                                             max_results=100,image_names=image_names)
+    html = [h.strip("\n") for h in html_snippet]
+    context = {'html': html,'images_processing':images_processing}
+    return render(request, 'statmaps/compare_search.html', context)
+
+
+class JSONResponse(HttpResponse):
+    """
+    An HttpResponse that renders its content into JSON.
+    """
+    def __init__(self, data, **kwargs):
+        content = JSONRenderer().render(data)
+        kwargs['content_type'] = 'application/json'
+        super(JSONResponse, self).__init__(content, **kwargs)

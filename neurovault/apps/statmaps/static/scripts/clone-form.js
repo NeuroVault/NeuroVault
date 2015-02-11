@@ -1,4 +1,4 @@
-var active_form, showForm, updateImageName, cloneMore, mapNavLink, getLastTextNode;
+var active_form, showForm, updateImageName, cloneMore, mapNavLink, getLastTextNode, formIsClean;
 
 active_form = 0;
 
@@ -89,18 +89,20 @@ mapNavLink = function(ele) {
   return showForm(id);
 };
 
-$(document).ready(function() {
-  var num_forms = $('.image-form').length;
-
-  if (num_forms > 1) {
-    $('.image-form').last().remove();
-    $('#id_image_set-TOTAL_FORMS').val(num_forms - 1);
-    $('#image-select li').last().remove()
-  } else {
-    $("#id_image_set-" + (num_forms - 1) + "-id").val('');
+formIsClean = function(sele) {
+  if(typeof sele === "undefined") {
+    sele = '.image-form';
   }
+  if($(sele).find('div.errors').length === 0 && 
+        $(sele).find('div.error').length === 0 &&
+        $(sele).find('div.alert-error').length === 0) {
+    return true;
+  } else {
+    return false;
+  }
+};
 
-  showForm(active_form);
+$(document).ready(function() {
 
   $('#image-select li').click(function(e) {
     e.preventDefault();
@@ -132,7 +134,32 @@ $(document).ready(function() {
     return showForm(nextIndex);
   });
 
-  if( !$('input#id_image_set-0-id').val() && num_forms === 1) {
+  var num_forms = $('.image-form').length;
+
+  // extra blank form isn't sent when there are errors
+
+  if (num_forms > 1 && formIsClean()) {
+    $('.image-form').last().remove();
+    $('#id_image_set-TOTAL_FORMS').val(num_forms - 1);
+    $('#image-select li').last().remove()
+  }
+
+  if(num_forms === 1 && formIsClean()) {
+    $("#id_image_set-" + (num_forms - 1) + "-id").val('');
+  }
+
+  // focus first error on any form
+  $('.image-form').each(function(ele) {
+    if(!formIsClean('.image-form#' + $(this).attr('id'))) {
+      return mapNavLink($('#showform-' + $(this).attr('id')));
+    }
+  });
+
+  showForm(active_form);
+
+  // populate 'no images' view for completely empty collection
+
+  if( !$('input#id_image_set-0-id').val() && num_forms === 1 && formIsClean()) {
     $('.image-form').last().hide();
     $('#id_image_set-TOTAL_FORMS').val(num_forms - 1);
     $('#image-select li').last().remove();
