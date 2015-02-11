@@ -140,10 +140,10 @@ urlpatterns = patterns('',
         name = 'atlas_query_voxel'),
 
    # Compare images
-    url(r'^compare/(?P<pk1>\d+)/(?P<pk2>\d+)$',
+    url(r'^images/compare/(?P<pk1>\d+)/(?P<pk2>\d+)$',
         compare_images,
         name='compare_images'),
-    url(r'^(?P<pk>\d+)/find_similar$',
+    url(r'^images/(?P<pk>\d+)/find_similar$',
         find_similar,
         name='find_similar')
 

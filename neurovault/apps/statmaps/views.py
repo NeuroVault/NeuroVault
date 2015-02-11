@@ -744,7 +744,7 @@ def find_similar(request,pk):
     tags = [[str(image.map_type)] for image in public_images]
     image_names = ["%s:%s ,%s" % (image.name,image.collection.name,
                                   image.map_type) for image in public_images]
-    compare_url = "/compare"  # format will be prefix/[query_id]/[other_id]
+    compare_url = "/images/compare"  # format will be prefix/[query_id]/[other_id]
     image_url = "/images"  # format will be prefix/[other_id]
 
     # Here is the query image
