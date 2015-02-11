@@ -48,7 +48,9 @@ def save_voxelwise_pearson_similarity(pk1, pk2, resample_dim=[4, 4, 4]):
 
         compare.similarity_score = pearson_score
         compare.save()
-    return image1.pk,image2.pk,pearson_score
+        return image1.pk,image2.pk,pearson_score
+    else:
+        raise Exception("You are trying to compare image with itself!")
 
 
 # Helper functions
@@ -73,15 +75,20 @@ def calculate_voxelwise_pearson_similarity(image1, image2, resample_dim):
     image_paths = [image.file.path for image in [image1, image2]]
     images_resamp, reference_resamp = resample_multi_images_ref(
         image_paths, reference, resample_dim)
+    
+    for image_nii, image_obj in zip(images_resamp, [image1, image2]):
+        if len(numpy.squeeze(image_nii.get_data()).shape) != 3:
+            raise Exception("Image %s (id=%d) has incorrect number of dimensions %s"%(image_obj.name, image_obj.id, str(image_nii.get_data().shape)))
 
     # Calculate correlation only on voxels that are in both maps (not zero, and not nan)
     binary_mask = make_binary_deletion_mask(images_resamp)
-    image1 = images_resamp[0]
-    image2 = images_resamp[1]
+    image1_res = images_resamp[0]
+    image2_res = images_resamp[1]
+    
 
     # Calculate correlation with voxels within mask
-    return pearsonr(numpy.squeeze(image1.get_data())[binary_mask == 1],
-                    numpy.squeeze(image2.get_data())[binary_mask == 1])[0]
+    return pearsonr(numpy.squeeze(image1_res.get_data())[binary_mask == 1],
+                    numpy.squeeze(image2_res.get_data())[binary_mask == 1])[0]
 
 
 '''Make a nonzero, non-nan mask for a or or more images (registered, equally sized)'''
@@ -91,12 +98,10 @@ def make_binary_deletion_mask(images):
 
     if isinstance(images, nib.nifti1.Nifti1Image):
         images = [images]
-    mask = numpy.zeros(images[0].shape)
-    for image in images:
-        mask[(numpy.squeeze(image.get_data() != 0))
-             * (numpy.isnan(numpy.squeeze(image.get_data())) == False)] += 1
-    mask[mask != len(images)] = 0
-    mask[mask == len(images)] = 1
+    images_data = [numpy.squeeze(image.get_data()) for image in images]
+    mask = numpy.ones(images_data[0].shape)
+    for image_data in images_data:
+        mask *= (image_data != 0) & ~numpy.isnan(image_data)
     return mask
 
 
