@@ -722,15 +722,16 @@ def find_similar(request,pk):
     comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1), image1__collection__private=False, image2__collection__private=False)
     
     images = [image1]
+    scores = [pk]
     for comp in comparisons:
         #pick the image we are comparing with
         image = [image for image in [comp.image1,
                          comp.image2] if image.id != pk][0]
         if hasattr(image, "map_type"):
             images.append(image)
+            scores.append(comp.similarity_score)
     
     image_ids = [image.pk for image in images]
-    scores = [pk] + [comp.similarity_score for comp in comparisons]
     data = pandas.Series(scores,index=image_ids, name=pk)
     
     image_paths = [image.file.url for image in images]
