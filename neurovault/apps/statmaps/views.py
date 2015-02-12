@@ -720,21 +720,21 @@ def find_similar(request,pk):
     pk = int(pk)
 
     # Get all similarity calculations for this image, and ids of other images
-    comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1), image1__collection__private=False, image2__collection__private=False)
+    comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1),
+                  image1__collection__private=False, image2__collection__private=False)
     
     images = [image1]
-    scores = [pk]
+    scores = [1] # pearsonr
     for comp in comparisons:
-        #pick the image we are comparing with
-        image = [image for image in [comp.image1,
+      #pick the image we are comparing with
+      image = [image for image in [comp.image1,
                          comp.image2] if image.id != pk][0]
-        if hasattr(image, "map_type"):
-            images.append(image)
-            scores.append(comp.similarity_score)
+      if hasattr(image, "map_type"):
+        images.append(image)
+        scores.append(comp.similarity_score)
     
+    # We will need lists of image ids, png paths, query id, query path, tags, names, scores
     image_ids = [image.pk for image in images]
-    data = pandas.Series(scores,index=image_ids, name=pk)
-    
     image_paths = [image.file.url for image in images]
     png_img_names = ["glass_brain_%s.png" % image.pk for image in images]
     png_img_paths = [os.path.join(os.path.split(image_paths[i])[0],
@@ -746,13 +746,14 @@ def find_similar(request,pk):
     image_url = "/images"  # format will be prefix/[other_id]
 
     # Here is the query image
-    query = os.path.join(os.path.split(image1.file.url)[0],"glass_brain_%s.png" % (image1.pk))
+    query_png = os.path.join(os.path.split(image1.file.url)[0],"glass_brain_%s.png" % (image1.pk))
 
     # Do similarity search and return html to put in page, specify 100 max results, take absolute value of scores
-    html_snippet = compare.similarity_search(data=data,tags=tags,
-                                             png_paths=png_img_paths,button_url=compare_url,
-                                             image_url=image_url,query=query,absolute_value=True,
-                                             max_results=100,image_names=image_names)
+    html_snippet = compare.similarity_search(image_scores=scores,tags=tags,png_paths=png_img_paths,
+                                button_url=compare_url,image_url=image_url,query_png=query_png,
+                                query_id=pk,image_names=image_names,image_ids=image_ids,
+                                max_results=100,absolute_value=True)
+
     html = [h.strip("\n") for h in html_snippet]
     
     images_processing = StatisticMap.objects.filter(collection__private=False).count() - len(image_ids)
