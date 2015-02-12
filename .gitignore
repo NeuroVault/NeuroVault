@@ -11,6 +11,9 @@ neurovault/static/
 # test data
 neurovault/apps/statmaps/tests/test_data/feat/*
 
+# celery generated schedule
+celerybeat-schedule
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

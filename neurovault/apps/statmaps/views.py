@@ -1,4 +1,4 @@
-from .models import Collection, Image, Atlas, StatisticMap, NIDMResults, NIDMResultStatisticMap
+from .models import Collection, Image, Atlas, Comparison, StatisticMap, NIDMResults, NIDMResultStatisticMap
 from .forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm
@@ -20,7 +20,9 @@ from sendfile import sendfile
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.renderers import JSONRenderer
 from voxel_query_functions import *
-
+from compare import compare, atlas as pybrainatlas
+from glob import glob
+import pandas
 import zipfile
 import tarfile
 import gzip
@@ -36,6 +38,7 @@ from xml.dom import minidom
 from django.db.models.aggregates import Count
 from django.contrib import messages
 import traceback
+
 
 
 def owner_or_contrib(request,collection):
@@ -169,6 +172,10 @@ def view_image(request, pk, collection_cid=None):
     user_owns_image = True if owner_or_contrib(request,image.collection) else False
     api_cid = pk
 
+    num_comparisons = Comparison.objects.filter(Q(image1=image) | Q(image2=image)).count()
+    #comparison_is_possible = True if num_comparisons >= 1 and not image.collection.private else False
+    comparison_is_possible = False
+
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
     context = {
@@ -176,6 +183,7 @@ def view_image(request, pk, collection_cid=None):
         'user': image.collection.owner,
         'user_owns_image': user_owns_image,
         'api_cid':api_cid,
+        'comparison_is_possible':comparison_is_possible
     }
 
     if isinstance(image, NIDMResultStatisticMap):
@@ -454,12 +462,7 @@ def upload_folder(request, collection_cid):
                 error = traceback.format_exc().splitlines()[-1]
                 msg = "An error occurred with this upload: {}".format(error)
                 messages.warning(request, msg)
-
-                # redirect error messages for .zip requests
-                if "file" in request.FILES:
-                    return HttpResponseRedirect(collection.get_absolute_url())
-                else:
-                    return
+                return HttpResponseRedirect(collection.get_absolute_url())
 
             finally:
                 shutil.rmtree(tmp_directory)
@@ -653,12 +656,13 @@ def atlas_query_region(request):
 
         return JSONResponse(data)
 
+
 @csrf_exempt
 def atlas_query_voxel(request):
     X = request.GET.get('x','')
     Y = request.GET.get('y','')
     Z = request.GET.get('z','')
-    collection = name=request.GET.get('collection','')
+    collection = name = request.GET.get('collection','')
     atlas = request.GET.get('atlas','').replace('\'', '')
     try:
         collection_object = Collection.objects.filter(name=collection)[0]
@@ -675,6 +679,87 @@ def atlas_query_voxel(request):
     except IndexError:
         return JSONResponse('error: one or more coordinates are out of range', status=400)
     return JSONResponse(data)
+
+
+# Compare Two Images
+def compare_images(request,pk1,pk2):
+    image1 = get_image(pk1,None,request)
+    image2 = get_image(pk2,None,request)
+
+    # Name the data file based on the new volumes
+    path, name1, ext = split_filename(image1.file.url)
+    path, name2, ext = split_filename(image2.file.url)
+
+    # For now, manually choose an atlas - this can be user choice
+    atlas_file = os.path.join(settings.STATIC_ROOT,'atlas','MNI-maxprob-thr25-2mm.nii')
+    atlas_xml = os.path.join(settings.STATIC_ROOT,'atlas','MNI.xml')
+    # Default slices are "coronal","axial","sagittal"
+    atlas = pybrainatlas.atlas(atlas_xml,atlas_file)
+
+    # Create custom image names and links for the visualization
+    custom = {
+            "IMAGE_1":"%s : %s [%s]" % (image1.name,image1.collection.name,image1.map_type),
+            "IMAGE_2": "%s : %s [%s]" % (image2.name,image2.collection.name,image2.map_type),
+            "IMAGE_1_LINK":"/images/%s" % (image1.pk),"IMAGE_2_LINK":"/images/%s" % (image2.pk)
+    }
+
+    html_snippet,data_table = compare.scatterplot_compare(image1=image1.file.path,
+                                                          image2=image2.file.path,
+                                                          software="FREESURFER",
+                                                          voxdim=[8,8,8],
+                                                          atlas=atlas,custom=custom,corr="pearson")
+
+    html = [h.strip("\n") for h in html_snippet]
+    context = {'html': html}
+    return render(request, 'statmaps/compare_images.html', context)
+
+
+# Return search interface for one image vs rest
+def find_similar(request,pk):
+    image1 = get_image(pk,None,request)
+    pk = int(pk)
+
+    # Get all similarity calculations for this image, and ids of other images
+    comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1),
+                  image1__collection__private=False, image2__collection__private=False)
+    
+    images = [image1]
+    scores = [1] # pearsonr
+    for comp in comparisons:
+      #pick the image we are comparing with
+      image = [image for image in [comp.image1,
+                         comp.image2] if image.id != pk][0]
+      if hasattr(image, "map_type"):
+        images.append(image)
+        scores.append(comp.similarity_score)
+    
+    # We will need lists of image ids, png paths, query id, query path, tags, names, scores
+    image_ids = [image.pk for image in images]
+    image_paths = [image.file.url for image in images]
+    png_img_names = ["glass_brain_%s.png" % image.pk for image in images]
+    png_img_paths = [os.path.join(os.path.split(image_paths[i])[0],
+                                  png_img_names[i]) for i in range(0,len(image_paths))]
+    tags = [[str(image.map_type)] for image in images]
+    image_names = ["%s:%s ,%s" % (image.name,image.collection.name,
+                                  image.map_type) for image in images]
+    compare_url = "/images/compare"  # format will be prefix/[query_id]/[other_id]
+    image_url = "/images"  # format will be prefix/[other_id]
+
+    # Here is the query image
+    query_png = os.path.join(os.path.split(image1.file.url)[0],"glass_brain_%s.png" % (image1.pk))
+
+    # Do similarity search and return html to put in page, specify 100 max results, take absolute value of scores
+    html_snippet = compare.similarity_search(image_scores=scores,tags=tags,png_paths=png_img_paths,
+                                button_url=compare_url,image_url=image_url,query_png=query_png,
+                                query_id=pk,image_names=image_names,image_ids=image_ids,
+                                max_results=100,absolute_value=True)
+
+    html = [h.strip("\n") for h in html_snippet]
+    
+    images_processing = StatisticMap.objects.filter(collection__private=False).count() - len(image_ids)
+    context = {'html': html,'images_processing':images_processing}
+    return render(request, 'statmaps/compare_search.html', context)
+
 
 class JSONResponse(HttpResponse):
     """

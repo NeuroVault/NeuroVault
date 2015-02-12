@@ -1,10 +1,9 @@
- # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db import models
 from neurovault.apps.statmaps.storage import NiftiGzStorage, NIDMStorage
-#asdf
 
 from taggit.managers import TaggableManager
 from taggit.models import GenericTaggedItemBase, TagBase
@@ -22,9 +21,8 @@ from django.db.models import Q
 from django.db.models.signals import post_delete
 from django.dispatch.dispatcher import receiver
 import shutil
+from neurovault.apps.statmaps.tasks import generate_glassbrain_image, save_voxelwise_pearson_similarity
 
-# from django.db.models.signals import post_save
-# from django.dispatch import receiver
 
 class Collection(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of collection")
@@ -221,7 +219,6 @@ class BaseCollectionItem(models.Model):
 class Image(PolymorphicModel, BaseCollectionItem):
     file = models.FileField(upload_to=upload_img_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='File with the unthresholded map (.img, .nii, .nii.gz)')
     figure = models.CharField(help_text="Which figure in the corresponding paper was this map displayed in?", verbose_name="Corresponding figure", max_length=200, null=True, blank=True)
-    
 
     def get_absolute_url(self):
         return_args = [str(self.id)]
@@ -251,7 +248,7 @@ class Image(PolymorphicModel, BaseCollectionItem):
 
         image.map_type = my_map_type
 
-        #create JSON file for neurosynth viewer
+        # create JSON file for neurosynth viewer
         if os.path.exists(image.file.path):
             nifti_gz_file = ".".join(image.file.path.split(".")[:-1]) + '.nii.gz'
             nii = nb.load(image.file.path)
@@ -262,6 +259,26 @@ class Image(PolymorphicModel, BaseCollectionItem):
         image.save()
 
         return image
+
+    # Celery task to (re)generate glass brain image and image comparisons
+    def save(self):
+        file_changed = False
+        if self.pk is not None:
+            existing = Image.objects.get(pk=self.pk)
+            if existing.file != self.file:
+                file_changed = True
+        do_update = True if file_changed or self.pk is None else False
+
+        super(Image, self).save()
+        if do_update and self.collection and self.collection.private == False:
+            generate_glassbrain_image.apply_async([self.pk])
+
+            imgs = Image.objects.filter(collection__private=False).exclude(pk=self.pk)
+            comp_qs = imgs.exclude(polymorphic_ctype__model__in=['image','atlas']).order_by('id')
+            for comp_img in comp_qs:
+                iargs = sorted([comp_img.pk,self.pk])
+                print "Calculating pearson similarity for images %s and %s" % (iargs[0],iargs[1])
+                save_voxelwise_pearson_similarity.apply_async(iargs)
 
 
 class BaseStatisticMap(Image):
@@ -347,3 +364,33 @@ class Atlas(Image):
 
     class Meta:
         verbose_name_plural = "Atlases"
+
+
+class Similarity(models.Model):
+    similarity_metric = models.CharField(max_length=200, null=False, blank=False, db_index=True,help_text="the name of the similarity metric to describe a relationship between two or more images.",verbose_name="similarity metric name")
+    transformation = models.CharField(max_length=200, blank=True, db_index=True,help_text="the name of the transformation of the data relevant to the metric",verbose_name="transformation of images name")
+    metric_ontology_iri = models.URLField(max_length=200, blank=True, db_index=True,help_text="If defined, a url of an ontology IRI to describe the similarity metric",verbose_name="similarity metric ontology IRI")
+    transformation_ontology_iri = models.URLField(max_length=200, blank=True, db_index=True,help_text="If defined, a url of an ontology IRI to describe the transformation metric",verbose_name="image transformation ontology IRI")
+
+    class Meta:
+        verbose_name = "similarity metric"    
+        verbose_name_plural = "similarity metrics"
+        unique_together = ("similarity_metric","transformation")    
+
+    def __unicode__(self):
+      return "<metric:%s><transformation:%s>" %(self.similarity_metric,self.transformation)
+
+
+class Comparison(models.Model):
+    image1 = models.ForeignKey(Image,related_name="image1",db_index=True)
+    image2 = models.ForeignKey(Image,related_name="image2",db_index=True)
+    similarity_metric = models.ForeignKey(Similarity)
+    similarity_score = models.FloatField(help_text="the comparison score between two or more statistical maps", verbose_name="the comparison score between two or more statistical maps")
+
+    def __unicode__(self):
+      return "<%s><%s><score:%s>" %(self.image1,self.image2,self.similarity_score)
+
+    class Meta:
+        unique_together = ("image1","image2")
+        verbose_name = "pairwise image comparison"
+        verbose_name_plural = "pairwise image comparisons"

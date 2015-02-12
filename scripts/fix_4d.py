@@ -3,9 +3,20 @@ Created on 1 Sep 2014
 
 @author: gorgolewski
 '''
+
+import os
+import django
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.settings")
+django.setup()
+
+from neurovault.apps.statmaps.models import Image,ValueTaggedItem
+from neurovault.apps.statmaps.utils import detect_afni4D, split_afni4D_to_3D,memory_uploadfile
+
+
 from neurovault.apps.statmaps.models import Image
 import nibabel as nb
 import numpy as np
+
 
 
 for image in Image.objects.all():

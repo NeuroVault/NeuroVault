@@ -1,6 +1,8 @@
 # Django settings for neurovault project.
 import os
-
+from datetime import timedelta
+import matplotlib
+matplotlib.use('Agg')
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -145,7 +147,8 @@ INSTALLED_APPS = (
     #'south',
     'corsheaders',
     'dbbackup',
-    'polymorphic'
+    'polymorphic',
+    'djcelery',
 )
 
 # A sample logging configuration. The only tangible logging
@@ -154,6 +157,7 @@ INSTALLED_APPS = (
 # See http://docs.djangoproject.com/en/dev/topics/logging for
 # more details on how to customize your logging configuration.
 # LOGGING = {
+
 #     'version': 1,
 #     'disable_existing_loggers': False,
 #     'filters': {
@@ -272,3 +276,18 @@ os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
 # provToolbox path
 os.environ["PATH"] += os.pathsep + '/path/to/lib/provToolbox/bin'
 
+# Celery config
+BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
+#CELERYBEAT_SCHEDULE = {
+#    'run_make_correlation_df': {
+#        'task': 'neurovault.apps.statmaps.tasks...',
+#        'schedule': timedelta(minutes=30),
+#    },
+#}
+# or manage periodic schedule in django admin
+#CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'

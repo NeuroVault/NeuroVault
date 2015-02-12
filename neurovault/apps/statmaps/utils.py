@@ -5,7 +5,7 @@ import shutil
 import numpy as np
 import string
 import random
-from .models import Collection, NIDMResults
+from neurovault.apps.statmaps.models import Collection, NIDMResults
 from neurovault import settings
 import urllib2
 from lxml import etree
@@ -22,7 +22,6 @@ from ast import literal_eval
 from subprocess import CalledProcessError
 from django.core.exceptions import ValidationError
 import zipfile
-
 
 # see CollectionRedirectMiddleware
 class HttpRedirectException(Exception):
@@ -147,7 +146,6 @@ def generate_url_token(length=8):
         return generate_url_token()
     else:
         return token
-
 
 def get_paper_properties(doi):
     xmlurl = 'http://doi.crossref.org/servlet/query'
