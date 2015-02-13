@@ -697,9 +697,13 @@ def compare_images(request,pk1,pk2):
     atlas = pybrainatlas.atlas(atlas_xml,atlas_file)
 
     # Create custom image names and links for the visualization
+    image1_custom = "%s : %s" %(image1.name,image1.collection.name)
+    image2_custom = "%s : %s" %(image2.name,image2.collection.name)
+    if len(image1_custom) > 125: image1_custom = "%s..." %image1_custom[0:125] 
+    if len(image2_custom) > 125: image2_custom = "%s..." %image2_custom[0:125] 
     custom = {
-            "IMAGE_1":"%s : %s [%s]" % (image1.name,image1.collection.name,image1.map_type),
-            "IMAGE_2": "%s : %s [%s]" % (image2.name,image2.collection.name,image2.map_type),
+            "IMAGE_1":"%s [%s]" % (image1_custom,image1.map_type),
+            "IMAGE_2": "%s [%s]" % (image2_custom,image2.map_type),
             "IMAGE_1_LINK":"/images/%s" % (image1.pk),"IMAGE_2_LINK":"/images/%s" % (image2.pk)
     }
 
