@@ -11,7 +11,7 @@ from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_vol
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
     get_file_ctime, detect_afni4D, split_afni4D_to_3D, splitext_nii_gz, mkdir_p, \
     send_email_notification, populate_nidm_results, get_server_url, populate_feat_directory, \
-    detect_feat_directory
+    detect_feat_directory, format_image_collection_names
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponse
 from django.db.models import Q
@@ -696,14 +696,18 @@ def compare_images(request,pk1,pk2):
     # Default slices are "coronal","axial","sagittal"
     atlas = pybrainatlas.atlas(atlas_xml,atlas_file)
 
+    # Get image: collection: [map_type] names no longer than ~125 characters
+    image1_custom_name = format_image_collection_names(image_name=image1.name,
+                                                       collection_name=image1.collection.name,
+                                                       map_type=image1.map_type,total_length=125)
+    image2_custom_name = format_image_collection_names(image_name=image2.name,
+                                                       collection_name=image2.collection.name,
+                                                       map_type=image2.map_type,total_length=125)
+
     # Create custom image names and links for the visualization
-    image1_custom = "%s : %s" %(image1.name,image1.collection.name)
-    image2_custom = "%s : %s" %(image2.name,image2.collection.name)
-    if len(image1_custom) > 125: image1_custom = "%s..." %image1_custom[0:125] 
-    if len(image2_custom) > 125: image2_custom = "%s..." %image2_custom[0:125] 
     custom = {
-            "IMAGE_1":"%s [%s]" % (image1_custom,image1.map_type),
-            "IMAGE_2": "%s [%s]" % (image2_custom,image2.map_type),
+            "IMAGE_1":image1_custom_name,
+            "IMAGE_2":image2_custom_name,
             "IMAGE_1_LINK":"/images/%s" % (image1.pk),"IMAGE_2_LINK":"/images/%s" % (image2.pk)
     }
 

@@ -375,3 +375,14 @@ def get_server_url(request):
         return request.META['HTTP_ORIGIN']
     urlpref = 'https://' if request.is_secure() else 'http://'
     return '{0}{1}'.format(urlpref,request.META['HTTP_HOST'])
+
+
+# Returns string in format image: collection [map_type] to be within total_length
+def format_image_collection_names(image_name,collection_name,total_length,map_type=None):
+   # 3/5 total length should be collection, 2/5 image
+   collection_length = int(np.floor(.60*total_length))
+   image_length = int(np.floor(total_length - collection_length)) 
+   if len(image_name) > image_length: image_name = "%s..." % image_name[0:image_length] 
+   if len(collection_name) > collection_length: collection_name = "%s..." % collection_name[0:collection_length] 
+   if map_type == None: return "%s : %s" %(image_name,collection_name)
+   else: return "%s : %s [%s]" %(image_name,collection_name,map_type)
