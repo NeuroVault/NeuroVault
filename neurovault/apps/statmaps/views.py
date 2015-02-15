@@ -173,7 +173,8 @@ def view_image(request, pk, collection_cid=None):
     api_cid = pk
 
     num_comparisons = Comparison.objects.filter(Q(image1=image) | Q(image2=image)).count()
-    comparison_is_possible = True if num_comparisons >= 1 else False
+    #comparison_is_possible = True if num_comparisons >= 1 and not image.collection.private else False
+    comparison_is_possible = False
 
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
@@ -720,32 +721,29 @@ def find_similar(request,pk):
     pk = int(pk)
 
     # Get all similarity calculations for this image, and ids of other images
-    comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1))
-    scores = [comp.similarity_score for comp in comparisons]
-    image_ids = [pk]
+    comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1), image1__collection__private=False, image2__collection__private=False)
+    
+    images = [image1]
+    scores = [pk]
     for comp in comparisons:
-        image_ids.append([image_id for image_id in [comp.image1_id,
-                         comp.image2_id] if image_id != pk][0])
-    images_processing = len(Image.objects.all()) - len(image_ids)
-    scores.insert(0,pk)
+        #pick the image we are comparing with
+        image = [image for image in [comp.image1,
+                         comp.image2] if image.id != pk][0]
+        if hasattr(image, "map_type"):
+            images.append(image)
+            scores.append(comp.similarity_score)
+    
+    image_ids = [image.pk for image in images]
     data = pandas.Series(scores,index=image_ids, name=pk)
-
-    # Get all public images, filter data to public, and create png paths
-    public_images = Image.objects.filter(collection__private=False,id__in=image_ids).exclude(
-                        Q(polymorphic_ctype__model='image') | Q(polymorphic_ctype__model='atlas'))
-    public_keys = [image.pk for image in public_images]
-
-    # Data should be pandas series, with row names corresponding to image ids, and column name the query id
-    data = data.loc[public_keys]  # need to get intersection public images and comparisons
-    public_images = public_images.filter(id__in=data.index)
-    image_paths = [image.file.url for image in public_images]
-    png_img_names = ["glass_brain_%s.png" % image.pk for image in public_images]
+    
+    image_paths = [image.file.url for image in images]
+    png_img_names = ["glass_brain_%s.png" % image.pk for image in images]
     png_img_paths = [os.path.join(os.path.split(image_paths[i])[0],
                                   png_img_names[i]) for i in range(0,len(image_paths))]
-    tags = [[str(image.map_type)] for image in public_images]
+    tags = [[str(image.map_type)] for image in images]
     image_names = ["%s:%s ,%s" % (image.name,image.collection.name,
-                                  image.map_type) for image in public_images]
-    compare_url = "/compare"  # format will be prefix/[query_id]/[other_id]
+                                  image.map_type) for image in images]
+    compare_url = "/images/compare"  # format will be prefix/[query_id]/[other_id]
     image_url = "/images"  # format will be prefix/[other_id]
 
     # Here is the query image
@@ -757,6 +755,8 @@ def find_similar(request,pk):
                                              image_url=image_url,query=query,absolute_value=True,
                                              max_results=100,image_names=image_names)
     html = [h.strip("\n") for h in html_snippet]
+    
+    images_processing = StatisticMap.objects.filter(collection__private=False).count() - len(image_ids)
     context = {'html': html,'images_processing':images_processing}
     return render(request, 'statmaps/compare_search.html', context)
 
