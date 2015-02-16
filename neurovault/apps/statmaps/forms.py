@@ -39,6 +39,7 @@ collection_fieldsets = [
     ('Essentials', {'fields': ['name',
                                'DOI',
                                'description',
+                               'full_dataset_url',
                                'contributors',
                                'private',],
                     'legend': 'Essentials'}),
