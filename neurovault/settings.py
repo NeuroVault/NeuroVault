@@ -149,6 +149,7 @@ INSTALLED_APPS = (
     'dbbackup',
     'polymorphic',
     'djcelery',
+    'parsley'
 )
 
 # A sample logging configuration. The only tangible logging

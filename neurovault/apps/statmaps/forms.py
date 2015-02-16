@@ -32,6 +32,7 @@ from django.core.files.base import ContentFile
 from django.forms.widgets import HiddenInput
 from neurovault import settings
 from django.core.files import File
+from parsley.decorators import parsleyfy
 
 
 # Create the form class.
@@ -267,7 +268,7 @@ class ContributorCommaField(ModelMultipleChoiceField):
 
         return self.queryset.filter(username__in=split_vals)
 
-
+@parsleyfy
 class CollectionForm(ModelForm):
 
     class Meta:
