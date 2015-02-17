@@ -307,7 +307,35 @@ class BaseStatisticMap(Image):
 
 
 class StatisticMap(BaseStatisticMap):
-    statistic_parameters = models.FloatField(help_text="Parameters of the null distribution of the test statisic, typically degrees of freedom (should be clear from the test statistic what these are).", null=True, verbose_name="Statistic parameters", blank=True)
+    UNKNOWN = 'Unknown'
+    fMRI_BOLD = 'fMRI-BOLD'
+    fMRI_CBF = 'fMRI-CBF'
+    fMRI_CBV = 'fMRI-CBV'
+    Diffusion_MRI = 'Diffusion MRI'
+    Structural_MRI = 'Structural MRI'
+    PET_FDG = 'PET FDG'
+    PET_15O = 'PET [15O]-water'
+    PET_OTHER = 'PET other'
+    MEG = 'MEG'
+    EEG = 'EEG'
+    OTHER = 'Other'
+    MODALITY_CHOICES = (
+        (UNKNOWN, 'Unknown'),
+        (fMRI_BOLD, 'fMRI-BOLD'),
+        (fMRI_CBF, 'fMRI-CBF'),
+        (fMRI_CBV, 'fMRI-CBV'),
+        (Diffusion_MRI, 'Diffusion MRI'),
+        (Structural_MRI, 'Structural MRI'),
+        (PET_FDG, 'PET FDG'),
+        (PET_15O, 'PET [15O]-water'),
+        (PET_OTHER, 'PET other'),
+        (MEG, 'MEG'),
+        (EEG, 'EEG'),
+        (OTHER, 'Other')
+    )
+    modality = models.CharField(verbose_name="Modality & Acquisition Type", help_text="Brain imaging procedure that was used to obtained to acquire the data.",
+                                max_length=200, null=False, blank=False, choices=MODALITY_CHOICES)
+    statistic_parameters = models.FloatField(help_text="Parameters of the null distribution of the test statistic, typically degrees of freedom (should be clear from the test statistic what these are).", null=True, verbose_name="Statistic parameters", blank=True)
     smoothness_fwhm = models.FloatField(help_text="Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.", verbose_name="Smoothness FWHM", null=True, blank=True)
     contrast_definition = models.CharField(help_text="Exactly what terms are subtracted from what? Define these in terms of task or stimulus conditions (e.g., 'one-back task with objects versus zero-back task with objects') instead of underlying psychological concepts (e.g., 'working memory').", verbose_name="Contrast definition", max_length=200, null=True, blank=True)
     contrast_definition_cogatlas = models.CharField(help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast", verbose_name="Cognitive Atlas definition", max_length=200, null=True, blank=True)

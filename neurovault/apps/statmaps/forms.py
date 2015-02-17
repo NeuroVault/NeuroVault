@@ -441,7 +441,7 @@ class ImageForm(ModelForm):
 class StatisticMapForm(ImageForm):
     class Meta(ImageForm.Meta):
         model = StatisticMap
-        fields = ('name', 'collection', 'description', 'map_type', 'figure',
+        fields = ('name', 'collection', 'description', 'map_type', 'modality', 'figure',
                   'file', 'hdr_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'contrast_definition', 'contrast_definition_cogatlas')
 
