@@ -613,6 +613,7 @@ def papaya_js_embed(request, pk, iframe=None):
     return render_to_response('statmaps/%s' % tpl,
                               context, content_type=mimetype)
 
+
 @csrf_exempt
 def atlas_query_region(request):
     # this query is significantly faster (from 2-4 seconds to <1 second) if the synonyms don't need to be queried

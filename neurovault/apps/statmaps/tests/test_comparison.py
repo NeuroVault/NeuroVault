@@ -30,12 +30,12 @@ class ComparisonTestCase(TestCase):
         self.pk1 = image1.id
         
         image2 = Image(name='image2', description='',collection=comparisonCollection)
-        image2.file = SimpleUploadedFile('VentralFrontal_thr75_summaryimage_2mm.nii.gz', file(os.path.join(app_path,'test_data/VentralFrontal_thr75_summaryimage_2mm.nii.gz')).read())
+        image2.file = SimpleUploadedFile('VentralFrontal_thr75_summaryimage_2mm.nii.gz', file(os.path.join(app_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz')).read())
         image2.save()
         self.pk2 = image2.id
         
         image2 = Image(name='image2_copy', description='',collection=comparisonCollection)
-        image2.file = SimpleUploadedFile('VentralFrontal_thr75_summaryimage_2mm.nii.gz', file(os.path.join(app_path,'test_data/VentralFrontal_thr75_summaryimage_2mm.nii.gz')).read())
+        image2.file = SimpleUploadedFile('VentralFrontal_thr75_summaryimage_2mm.nii.gz', file(os.path.join(app_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz')).read())
         image2.save()
         self.pk2_copy = image2.id
         
