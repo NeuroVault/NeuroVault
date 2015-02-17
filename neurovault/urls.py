@@ -13,7 +13,6 @@ from rest_framework import viewsets, routers, serializers, mixins, generics
 from rest_framework.decorators import detail_route, list_route
 from rest_framework.response import Response
 from rest_framework.views import APIView
-import rest_framework_swagger
 from taggit.models import Tag
 from django.http import Http404, HttpResponse
 from rest_framework.renderers import JSONRenderer
@@ -376,8 +375,7 @@ urlpatterns = patterns('',
                        url(r'^admin/', include(admin.site.urls)),
                        url(r'^api/', include(router.urls)),
                        url(r'^api-auth/', include(
-                           'rest_framework.urls', namespace='rest_framework')),
-                       url(r'^api-docs/', include('rest_framework_swagger.urls'))
+                           'rest_framework.urls', namespace='rest_framework'))
                        )
 
 if settings.DEBUG:
