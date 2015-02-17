@@ -38,3 +38,4 @@ django-celery
 scikit-learn
 -e git://github.com/nilearn/nilearn.git@master#egg=nilearn
 -e git://github.com/vsoch/pybraincompare.git@f5983f51825f01366d5ccc4ccdb5c5ba9381f981#egg=pybraincompare
+django-parsley

@@ -89,6 +89,11 @@
         - if collection.DOI
             .lead
                 %a{href:"{{ collection.url }}" } Link to the paper
+        - if collection.full_dataset_url
+            .lead
+                Full dataset available at: 
+                %a{href:"{{ collection.full_dataset_url }}" } 
+                  {{ collection.full_dataset_url }}
 
 
         .management-options
