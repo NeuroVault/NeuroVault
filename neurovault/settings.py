@@ -148,7 +148,6 @@ INSTALLED_APPS = (
     'corsheaders',
     'dbbackup',
     'polymorphic',
-    'rest_framework_swagger',
     'djcelery',
     'parsley',
     'django_cleanup'
