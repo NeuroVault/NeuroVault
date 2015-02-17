@@ -230,7 +230,7 @@ def delete_collection(request, cid):
     for image in collection.image_set.all():
         image.delete()
     collection.delete()
-    return render(request, "statmaps/deleted_collection.html")
+    return redirect('my_collections')
 
 
 @login_required
@@ -477,10 +477,11 @@ def upload_folder(request, collection_cid):
 @login_required
 def delete_image(request, pk):
     image = get_object_or_404(Image,pk=pk)
+    cid = image.collection.pk
     if not owner_or_contrib(request,image.collection):
         return HttpResponseForbidden()
     image.delete()
-    return render(request, "statmaps/deleted_image.html")
+    return redirect('collection_details', cid=cid)
 
 
 @login_required
