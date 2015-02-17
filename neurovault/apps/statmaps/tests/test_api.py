@@ -1,16 +1,12 @@
 from django.test import TestCase, Client
 import xml.etree.ElementTree as ET
 from neurovault.apps.statmaps.models import Atlas, Collection, Image
-from django.db import models
 import os.path
 from django.contrib.auth.models import User
-import neurovault
 from operator import itemgetter
 from django.core.files.uploadedfile import SimpleUploadedFile
 from neurovault.apps.statmaps.forms import NIDMResultsForm
 import json
-import urllib
-from nipype.interfaces.utility import AssertEqual
 
 class Test_Atlas_APIs(TestCase):
     def setUp(self):
