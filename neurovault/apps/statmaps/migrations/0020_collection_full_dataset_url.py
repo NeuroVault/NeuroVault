@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='collection',
             name='full_dataset_url',
-            field=models.URLField(help_text=b'Link to the full (raw) dataset the maps in this collection have been generated from (for example: "https://openfmri.org/dataset/ds000001")', null=True, verbose_name=b'Full dataset URL', blank=True),
+            field=models.URLField(help_text=b'Link to an external dataset the maps in this collection have been generated from (for example: \"https://openfmri.org/dataset/ds000001\" or \"http://dx.doi.org/10.15387/fcp_indi.corr.mpg1\")', null=True, verbose_name=b'Full dataset URL', blank=True),
             preserve_default=True,
         ),
     ]
