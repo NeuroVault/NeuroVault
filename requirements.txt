@@ -1,6 +1,6 @@
 Django>=1.5
 python-social-auth>=0.1.23
-djangorestframework==2.3.13
+djangorestframework
 markdown
 django-filter
 django-taggit
@@ -37,6 +37,6 @@ celery[redis]
 django-celery
 scikit-learn
 nilearn
--e git://github.com/vsoch/pybraincompare.git@f5983f51825f01366d5ccc4ccdb5c5ba9381f981#egg=pybraincompare
+-e git://github.com/vsoch/pybraincompare.git@e8951253df11446077150cb0dbc1be24c166599f#egg=pybraincompare
 django-parsley
 django-cleanup
