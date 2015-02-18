@@ -489,7 +489,7 @@ class EditAtlasForm(AtlasForm):
 class SimplifiedStatisticMapForm(EditStatisticMapForm):
 
     class Meta(EditStatisticMapForm.Meta):
-        fields = ('name', 'collection', 'description', 'map_type',
+        fields = ('name', 'collection', 'description', 'map_type', 'modality',
                   'file', 'hdr_file', 'tags')
 
 
