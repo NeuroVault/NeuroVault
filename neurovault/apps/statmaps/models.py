@@ -307,7 +307,6 @@ class BaseStatisticMap(Image):
 
 
 class StatisticMap(BaseStatisticMap):
-    UNKNOWN = 'Unknown'
     fMRI_BOLD = 'fMRI-BOLD'
     fMRI_CBF = 'fMRI-CBF'
     fMRI_CBV = 'fMRI-CBV'
@@ -320,7 +319,6 @@ class StatisticMap(BaseStatisticMap):
     EEG = 'EEG'
     OTHER = 'Other'
     MODALITY_CHOICES = (
-        (UNKNOWN, 'Unknown'),
         (fMRI_BOLD, 'fMRI-BOLD'),
         (fMRI_CBF, 'fMRI-CBF'),
         (fMRI_CBV, 'fMRI-CBV'),
