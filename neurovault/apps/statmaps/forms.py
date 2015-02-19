@@ -437,7 +437,7 @@ class ImageForm(ModelForm):
             raise ValidationError("Couldn't read uploaded file")
         return cleaned_data
 
-
+@parsleyfy
 class StatisticMapForm(ImageForm):
     class Meta(ImageForm.Meta):
         model = StatisticMap
@@ -470,7 +470,7 @@ class EditStatisticMapForm(StatisticMapForm):
 
     def __init__(self, user, *args, **kwargs):
         super(EditStatisticMapForm, self).__init__(*args, **kwargs)
-        self.helper.form_tag = True
+        self.helper.form_tag = False
         self.helper.add_input(Submit('submit', 'Submit'))
 
 
@@ -485,7 +485,7 @@ class EditAtlasForm(AtlasForm):
     class Meta(AtlasForm.Meta):
         exclude = ()
 
-
+@parsleyfy
 class SimplifiedStatisticMapForm(EditStatisticMapForm):
 
     class Meta(EditStatisticMapForm.Meta):

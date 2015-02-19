@@ -27,5 +27,7 @@
  
     .span11
         %hr
-        {% crispy form %}
+        <form  class="form-horizontal" method="post"  enctype="multipart/form-data" data-parsley-validate>
+    		{% crispy form %}
+		</form>
 {% endblock %}

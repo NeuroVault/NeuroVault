@@ -13,5 +13,7 @@
             <button type="button" class="close" data-dismiss="alert">&times;</button>
             This statistic map is embedded in <strong><a href="{{form.instance.nidm_results.get_absolute_url}}">{{form.instance.nidm_results.name}}.zip</a></strong>.  Edit the NIDM zip file to modify this image's properties.
             </div>
-        {% crispy form %}
+        <form  class="form-horizontal" method="post" enctype="multipart/form-data" data-parsley-validate>
+    		{% crispy form %}
+		</form>
 {% endblock %}

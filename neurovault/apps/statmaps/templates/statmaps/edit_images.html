@@ -85,7 +85,7 @@
 			<button type="button" class="close" data-dismiss="alert">&times;</button>
 			<i class="icon-arrow-left"></i>&nbsp; Click 'Add a new image' to add content to this collection.
 		</div>
-		<form id="formset" class="form-horizontal" enctype="multipart/form-data" method="post" action="">{% csrf_token %}
+		<form id="formset" class="form-horizontal" enctype="multipart/form-data" method="post" action="" data-parsley-validate>{% csrf_token %}
 			{{ formset.management_form }}
 			{% for form in formset %}
 			<div id='image-{{forloop.counter0}}' class='image-form'>
