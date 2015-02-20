@@ -2,7 +2,8 @@
 {% load crispy_forms_tags %}
 {% load coffeescript %}
 {% block head %}
-
+<script src="{% static "scripts/select2.min.js"%}" type="text/javascript"></script>
+<link rel="stylesheet" href="{% static "css/select2.min.css" %}" />
 <script src="{% static "scripts/clone-form.js"%}" type="text/javascript"></script>
 
 <script type="text/javascript">
@@ -99,6 +100,10 @@
 				{% endif %}
 
 				{{form | crispy }}
+				<script type="text/javascript">
+					$('#id_image_set-{{forloop.counter0}}-cognitive_paradigm_cogatlas').css("width", "400px");
+  					$('#id_image_set-{{forloop.counter0}}-cognitive_paradigm_cogatlas').select2();
+				</script>
 			</div>
 			{% endfor %}
 		</form>
