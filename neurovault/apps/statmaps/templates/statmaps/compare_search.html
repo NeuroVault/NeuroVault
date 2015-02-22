@@ -20,6 +20,7 @@ var addthis_config = {
 var portfolio_filter = document.getElementsByClassName("portfolio-filter")
 var li = document.createElement("li");
 var a = document.createElement("a");
+var image_a = document.createElement("a");
 
 function setAttributes(el, attrs) {
   for(var key in attrs) {
@@ -28,8 +29,13 @@ function setAttributes(el, attrs) {
 }
 
 setAttributes(a, {"class": "btn btn-warning", "disabled": "true"});
+setAttributes(image_a,{"style": "float:right; margin-right:40px; font-weight:800; color:LightSeaGreen;", "href": "{{ image_url }}"});
+
 a.appendChild(document.createTextNode(["{{ images_processing }} images still processing"]));
-portfolio_filter[0].appendChild(li.appendChild(a))
+image_a.appendChild(document.createTextNode(["{{ image_title }}"]));
+li.appendChild(a)
+portfolio_filter[0].appendChild(li.appendChild(image_a));
+
 
 $(document).ready(function() {
 

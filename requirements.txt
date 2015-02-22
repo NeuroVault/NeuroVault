@@ -37,7 +37,7 @@ celery[redis]
 django-celery
 scikit-learn
 nilearn
--e git://github.com/vsoch/pybraincompare.git@e8951253df11446077150cb0dbc1be24c166599f#egg=pybraincompare
+-e git://github.com/vsoch/pybraincompare.git@bd9ffd491ef346e72eae918ed43217a6cf0a69cc#egg=pybraincompare
 django-parsley
 django-cleanup
 django-chosen
