@@ -444,7 +444,7 @@ class ImageForm(ModelForm):
 class StatisticMapForm(ImageForm):
     #collection = select2.fields.ForeignKey(Collection,
     #                                       overlay="Choose ancollection...")
-    cognitive_paradigm_cogatlas = forms.ModelChoiceField(queryset=CognitiveAtlasTask.objects.all(),
+    cognitive_paradigm_cogatlas = forms.ModelChoiceField(queryset=CognitiveAtlasTask.objects.all().order_by('name'),
                                                          to_field_name="cog_atlas_id", 
                                                          help_text="Task (or lack of it) performed by the subjects in the scanner described using <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> terms", 
                                                          label="Cognitive Paradigm")
