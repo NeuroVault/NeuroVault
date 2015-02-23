@@ -29,13 +29,18 @@ function setAttributes(el, attrs) {
 }
 
 setAttributes(a, {"class": "btn btn-warning", "disabled": "true"});
-setAttributes(image_a,{"style": "float:right; margin-right:40px; font-weight:800; color:LightSeaGreen;", "href": "{{ image_url }}"});
+setAttributes(image_a,{"style": "float:right; margin-right:40px; font-weight:800;", "href": "{{ image_url }}"});
 
 a.appendChild(document.createTextNode(["{{ images_processing }} images still processing"]));
 image_a.appendChild(document.createTextNode(["{{ image_title }}"]));
 li.appendChild(a)
 portfolio_filter[0].appendChild(li.appendChild(image_a));
 
+// change oranges to NeuroVault blue
+var text = document.getElementsByTagName("span")
+for (i = 0; i < text.length; i++) { 
+  setAttributes(text[i],{"style":"color:#0088cc;"});
+}
 </script>
 
 {% endblock %}
