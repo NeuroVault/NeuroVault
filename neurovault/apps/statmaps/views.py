@@ -750,24 +750,30 @@ def find_similar(request,pk):
     png_img_paths = [os.path.join(os.path.split(image_paths[i])[0],
                                   png_img_names[i]) for i in range(0,len(image_paths))]
     tags = [[str(image.map_type)] for image in images]
-    image_names = ["%s:%s ,%s" % (image.name,image.collection.name,
-                                  image.map_type) for image in images]
+    
+    # The top text will be the collection name, the bottom text the image name
+    bottom_text = ["%s" % (image.name) for image in images]
+    top_text = ["%s" % (image.collection.name) for image in images]
     compare_url = "/images/compare"  # format will be prefix/[query_id]/[other_id]
     image_url = "/images"  # format will be prefix/[other_id]
-
+    image_title = format_image_collection_names(image_name=image1.name,
+                                                       collection_name=image1.collection.name,
+                                                       map_type=image1.map_type,total_length=125)
+    
     # Here is the query image
     query_png = os.path.join(os.path.split(image1.file.url)[0],"glass_brain_%s.png" % (image1.pk))
 
     # Do similarity search and return html to put in page, specify 100 max results, take absolute value of scores
     html_snippet = compare.similarity_search(image_scores=scores,tags=tags,png_paths=png_img_paths,
                                 button_url=compare_url,image_url=image_url,query_png=query_png,
-                                query_id=pk,image_names=image_names,image_ids=image_ids,
-                                max_results=100,absolute_value=True)
+                                query_id=pk,top_text=top_text,image_ids=image_ids,
+                                bottom_text=bottom_text,max_results=100,absolute_value=True)
 
     html = [h.strip("\n") for h in html_snippet]
     
     images_processing = StatisticMap.objects.filter(collection__private=False).count() - len(image_ids)
-    context = {'html': html,'images_processing':images_processing}
+    context = {'html': html,'images_processing':images_processing,
+               'image_title':image_title, 'image_url': '/images/%s' % (image1.pk) }
     return render(request, 'statmaps/compare_search.html', context)
 
 
