@@ -411,6 +411,7 @@ class ImageForm(ModelForm):
                     is_thr, perc_bad = is_thresholded(nii)
                     if is_thr and not cleaned_data.get("ignore_warning_checkbox"):
                         self._errors["file"] = self.error_class(["This file seems to be thresholded (%d%% of voxels are zeroes).\n Please use an unthresholded version of the map if possible."%(perc_bad*100)])
+                        self.fields["ignore_warning_checkbox"].widget = forms.CheckboxInput()
                         return cleaned_data
                         
     

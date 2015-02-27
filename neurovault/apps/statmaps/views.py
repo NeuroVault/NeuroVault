@@ -306,8 +306,6 @@ def add_image_for_neurosynth(request):
             image = form.save()
             return HttpResponseRedirect("http://neurosynth.org/decode/?neurovault=%s-%s" % (
                 temp_collection.private_token,image.id))
-        elif "file" in form.errors.keys() and "thresholded" in str(form.errors["file"]):
-            form.fields["ignore_warning_checkbox"].widget = widgets.CheckboxInput()
     else:
         form = SimplifiedStatisticMapForm(request.user, instance=image)
 
