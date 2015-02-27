@@ -334,7 +334,7 @@ class OwnerCollectionForm(CollectionForm):
 
 class ImageForm(ModelForm):
     hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
-    ignore_warning_checkbox = forms.BooleanField(label='Ignore warning', widget=forms.HiddenInput(), required=False, initial=True)
+    ignore_warning_checkbox = forms.BooleanField(label='Ignore warning', widget=forms.HiddenInput(), required=False, initial=False)
 
     def __init__(self, *args, **kwargs):
         super(ImageForm, self).__init__(*args, **kwargs)
@@ -409,9 +409,8 @@ class ImageForm(ModelForm):
                         return cleaned_data
                     
                     is_thr, perc_bad = is_thresholded(nii)
-                    if is_thr:
+                    if is_thr and not cleaned_data.get("ignore_warning_checkbox"):
                         self._errors["file"] = self.error_class(["This file seems to be thresholded (%d%% of voxels are zeroes).\n Please use an unthresholded version of the map if possible."%(perc_bad*100)])
-                        del cleaned_data["file"]
                         return cleaned_data
                         
     
@@ -504,7 +503,7 @@ class SimplifiedStatisticMapForm(EditStatisticMapForm):
 
     class Meta(EditStatisticMapForm.Meta):
         fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
-                  'file', 'hdr_file', 'tags')
+                  'file', 'ignore_warning_checkbox', 'hdr_file', 'tags')
 
 
 class CollectionInlineFormset(BaseInlineFormSet):
