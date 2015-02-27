@@ -386,3 +386,15 @@ def format_image_collection_names(image_name,collection_name,total_length,map_ty
    if len(collection_name) > collection_length: collection_name = "%s..." % collection_name[0:collection_length] 
    if map_type == None: return "%s : %s" %(image_name,collection_name)
    else: return "%s : %s [%s]" %(image_name,collection_name,map_type)
+
+#checks if map is thresholded
+def is_thresholded(nii_obj, thr=0.85):
+    data = nii_obj.get_data()
+    zero_mask = (data == 0)
+    nan_mask = (np.isnan(data))
+    missing_mask = zero_mask | nan_mask
+    ratio_bad = float(missing_mask.sum())/float(missing_mask.size)
+    if ratio_bad > thr:
+        return (True, ratio_bad)
+    else:
+        return (False, ratio_bad)
