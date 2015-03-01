@@ -141,6 +141,34 @@ class Collection(models.Model):
 
     class Meta:
         app_label = 'statmaps'
+        
+        
+class CognitiveAtlasTask(models.Model):
+    name = models.CharField(max_length=200, null=False, blank=False)
+    cog_atlas_id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
+    
+    def __str__(self):
+        return self.name
+    
+    def __unicode__(self):
+        return self.name
+    
+    class Meta:
+        ordering = ['name']
+
+class CognitiveAtlasContrast(models.Model):
+    name = models.CharField(max_length=200, null=False, blank=False)
+    cog_atlas_id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
+    task = models.ForeignKey(CognitiveAtlasTask)
+    
+    def __str__(self):
+        return self.name
+    
+    def __unicode__(self):
+        return self.name
+    
+    class Meta:
+        ordering = ['name']
 
 
 def upload_nidm_to(instance, filename):
@@ -337,7 +365,7 @@ class StatisticMap(BaseStatisticMap):
     smoothness_fwhm = models.FloatField(help_text="Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.", verbose_name="Smoothness FWHM", null=True, blank=True)
     contrast_definition = models.CharField(help_text="Exactly what terms are subtracted from what? Define these in terms of task or stimulus conditions (e.g., 'one-back task with objects versus zero-back task with objects') instead of underlying psychological concepts (e.g., 'working memory').", verbose_name="Contrast definition", max_length=200, null=True, blank=True)
     contrast_definition_cogatlas = models.CharField(help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast", verbose_name="Cognitive Atlas definition", max_length=200, null=True, blank=True)
-    cognitive_paradigm_cogatlas = models.CharField(help_text="Task (or lack of it) performed by the subjects in the scanner described using <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> terms", verbose_name="Cognitive Paradigm", max_length=200, null=True, blank=False)
+    cognitive_paradigm_cogatlas = models.ForeignKey(CognitiveAtlasTask, help_text="Task (or lack of it) performed by the subjects in the scanner described using <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> terms", verbose_name="Cognitive Paradigm", null=True, blank=False)
 
 
 class NIDMResults(BaseCollectionItem):
@@ -422,25 +450,4 @@ class Comparison(models.Model):
         unique_together = ("image1","image2")
         verbose_name = "pairwise image comparison"
         verbose_name_plural = "pairwise image comparisons"
-        
-class CognitiveAtlasTask(models.Model):
-    name = models.CharField(max_length=200, null=False, blank=False)
-    cog_atlas_id = models.CharField(max_length=200, null=False, blank=False)
-    
-    def __str__(self):
-        return self.name
-    
-    def __unicode__(self):
-        return self.name
-
-class CognitiveAtlasContrast(models.Model):
-    name = models.CharField(max_length=200, null=False, blank=False)
-    cog_atlas_id = models.CharField(max_length=200, null=False, blank=False)
-    task = models.ForeignKey(CognitiveAtlasTask)
-    
-    def __str__(self):
-        return self.name
-    
-    def __unicode__(self):
-        return self.name
     
