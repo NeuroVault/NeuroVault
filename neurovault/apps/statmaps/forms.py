@@ -334,7 +334,10 @@ class OwnerCollectionForm(CollectionForm):
 
 class ImageForm(ModelForm):
     hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
-    ignore_warning_checkbox = forms.BooleanField(label='Ignore warning', widget=forms.HiddenInput(), required=False, initial=False)
+    ignore_warning_checkbox = forms.BooleanField(label='Ignore the warning about thresholding', 
+                                                 widget=forms.HiddenInput(), required=False, 
+                                                 initial=False,
+                                                 help_text="Use when the map is sparse by nature, an ROI mask, or was acquired with limited field of view.")
 
     def __init__(self, *args, **kwargs):
         super(ImageForm, self).__init__(*args, **kwargs)
@@ -410,7 +413,7 @@ class ImageForm(ModelForm):
                     
                     is_thr, perc_bad = is_thresholded(nii)
                     if is_thr and not cleaned_data.get("ignore_warning_checkbox"):
-                        self._errors["file"] = self.error_class(["This file seems to be thresholded (%d%% of voxels are zeroes).\n Please use an unthresholded version of the map if possible."%(perc_bad*100)])
+                        self._errors["file"] = self.error_class(["This map seems to be thresholded (%d%% of voxels are zeroes).\n Please use an unthresholded version of the map if possible."%(perc_bad*100)])
                         self.fields["ignore_warning_checkbox"].widget = forms.CheckboxInput()
                         return cleaned_data
                         
