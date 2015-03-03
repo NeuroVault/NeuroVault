@@ -6,7 +6,8 @@ import nibabel as nb
 import numpy as np
 
 from django.forms import ModelForm
-from django.forms.models import inlineformset_factory, ModelMultipleChoiceField, BaseInlineFormSet
+from django.forms.models import inlineformset_factory, ModelMultipleChoiceField, BaseInlineFormSet,\
+    ModelChoiceField
 from django.core.exceptions import ValidationError
 # from form_utils.forms import BetterModelForm
 
@@ -33,6 +34,8 @@ from django.forms.widgets import HiddenInput
 from neurovault import settings
 from django.core.files import File
 from parsley.decorators import parsleyfy
+from neurovault.apps.statmaps.models import CognitiveAtlasTask
+from chosen import forms as chosenforms
 
 
 # Create the form class.
@@ -437,13 +440,15 @@ class ImageForm(ModelForm):
             raise ValidationError("Couldn't read uploaded file")
         return cleaned_data
 
-
+@parsleyfy
 class StatisticMapForm(ImageForm):
+    #collection = select2.fields.ForeignKey(Collection,
+    #                                       overlay="Choose ancollection...")
     class Meta(ImageForm.Meta):
         model = StatisticMap
-        fields = ('name', 'collection', 'description', 'map_type', 'figure',
+        fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas', 'contrast_definition', 'figure',
                   'file', 'hdr_file', 'tags', 'statistic_parameters',
-                  'smoothness_fwhm', 'contrast_definition', 'contrast_definition_cogatlas')
+                  'smoothness_fwhm')
 
 
 class AtlasForm(ImageForm):
@@ -470,7 +475,7 @@ class EditStatisticMapForm(StatisticMapForm):
 
     def __init__(self, user, *args, **kwargs):
         super(EditStatisticMapForm, self).__init__(*args, **kwargs)
-        self.helper.form_tag = True
+        self.helper.form_tag = False
         self.helper.add_input(Submit('submit', 'Submit'))
 
 
@@ -485,11 +490,11 @@ class EditAtlasForm(AtlasForm):
     class Meta(AtlasForm.Meta):
         exclude = ()
 
-
+@parsleyfy
 class SimplifiedStatisticMapForm(EditStatisticMapForm):
 
     class Meta(EditStatisticMapForm.Meta):
-        fields = ('name', 'collection', 'description', 'map_type',
+        fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
                   'file', 'hdr_file', 'tags')
 
 

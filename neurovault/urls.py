@@ -7,6 +7,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf.urls.static import static
 from rest_framework.filters import DjangoFilterBackend
 from lxml.etree import xmlfile
+from rest_framework.relations import StringRelatedField
 admin.autodiscover()
 from django.contrib.auth.models import User, Group
 from rest_framework import viewsets, routers, serializers, mixins, generics
@@ -133,6 +134,7 @@ class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
     file = HyperlinkedFileField()
     collection = HyperlinkedRelatedURL(read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
+    cognitive_paradigm_cogatlas = StringRelatedField(read_only=True)
 
     class Meta:
         model = StatisticMap
@@ -333,7 +335,7 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
         data = CollectionSerializer(collection, context={'request': request}).data
         if data and 'description' in data and data['description']:
             data['description'] = data['description'].replace('\n', '<br />')
-        return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date'])
+        return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date', 'images'])
 
     def retrieve(self, request, pk=None):
         collection = get_collection(pk,request,mode='api')
@@ -375,7 +377,7 @@ urlpatterns = patterns('',
                        url(r'^admin/', include(admin.site.urls)),
                        url(r'^api/', include(router.urls)),
                        url(r'^api-auth/', include(
-                           'rest_framework.urls', namespace='rest_framework'))
+                           'rest_framework.urls', namespace='rest_framework')),
                        )
 
 if settings.DEBUG:

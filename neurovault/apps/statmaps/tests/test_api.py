@@ -115,8 +115,12 @@ class Test_Atlas_APIs(TestCase):
     def test_collections_datatable(self):
         url = '/api/collections/%d/datatable/' % self.Collection1.pk
         response = json.loads(self.client.get(url, follow=True).content)
-        self.assertEqual(response['aaData'][3][1], u'Collection1' )
-        self.assertEqual(response['aaData'][0][0], u'images' )
+        collection_name = "not found"
+        for prop in response['aaData']:
+            if prop[0] == 'name':
+                collection_name = prop[1]
+                break
+        self.assertEqual(collection_name, u'Collection1' )
     def test_images(self):
         url = '/api/images/'
         response = json.loads(self.client.get(url, follow=True).content)

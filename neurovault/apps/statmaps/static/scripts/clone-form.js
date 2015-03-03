@@ -16,6 +16,8 @@ showForm = function(id) {
   if($('#empty_collection_msg').is(":visible")) {
     $('#empty_collection_msg').hide();
   }
+  $('#id_image_set-' + active_form + '-cognitive_paradigm_cogatlas').css("width", "400px");
+  $('#id_image_set-' + active_form + '-cognitive_paradigm_cogatlas').select2({ dropdownAutoWidth : true});
 
   return $("input#id_image_set-" + active_form + "-name").keyup(function(e) {
     var val;
@@ -71,7 +73,7 @@ cloneMore = function (selector, type, imgtype) {
       });
     });
   });
-
+  
   total++;
   $('#id_' + type + '_set-TOTAL_FORMS').val(total);
 
