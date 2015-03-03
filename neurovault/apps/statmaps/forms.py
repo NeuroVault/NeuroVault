@@ -351,7 +351,7 @@ class ImageForm(ModelForm):
         model = Image
         exclude = []
 
-    def clean(self, **kwargs):
+    def clean(self, check_thresholding=False, **kwargs):
         cleaned_data = super(ImageForm, self).clean()
         file = cleaned_data.get("file")
 
@@ -410,12 +410,13 @@ class ImageForm(ModelForm):
                         self._errors["file"] = self.error_class(["4D files are not supported.\n If it's multiple maps in one file please split them and upload separately"])
                         del cleaned_data["file"]
                         return cleaned_data
-                    
-                    is_thr, perc_bad = is_thresholded(nii)
-                    if is_thr and not cleaned_data.get("ignore_warning_checkbox"):
-                        self._errors["file"] = self.error_class(["This map seems to be thresholded (%d%% of voxels are zeroes).\n Please use an unthresholded version of the map if possible."%(perc_bad*100)])
-                        self.fields["ignore_warning_checkbox"].widget = forms.CheckboxInput()
-                        return cleaned_data
+
+                    if check_thresholding:
+                        is_thr, perc_bad = is_thresholded(nii)
+                        if is_thr and not cleaned_data.get("ignore_warning_checkbox"):
+                            self._errors["file"] = self.error_class(["This map seems to be thresholded (%d%% of voxels are zeroes).\n Please use an unthresholded version of the map if possible."%(perc_bad*100)])
+                            self.fields["ignore_warning_checkbox"].widget = forms.CheckboxInput()
+                            return cleaned_data
                         
     
                     # convert to nii.gz if needed
@@ -454,6 +455,9 @@ class ImageForm(ModelForm):
 class StatisticMapForm(ImageForm):
     #collection = select2.fields.ForeignKey(Collection,
     #                                       overlay="Choose ancollection...")
+            
+    def clean(self, check_thresholding=True, **kwargs):
+        return ImageForm.clean(self, check_thresholding=check_thresholding, **kwargs)
             
     class Meta(ImageForm.Meta):
         model = StatisticMap
