@@ -40,3 +40,5 @@ nilearn
 -e git://github.com/vsoch/pybraincompare.git@e8951253df11446077150cb0dbc1be24c166599f#egg=pybraincompare
 django-parsley
 django-cleanup
+django-fixture-media
+svn

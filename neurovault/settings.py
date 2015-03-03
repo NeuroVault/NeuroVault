@@ -150,7 +150,8 @@ INSTALLED_APPS = (
     'polymorphic',
     'djcelery',
     'parsley',
-    'django_cleanup'
+    'django_cleanup',
+    'fixture_media'
 )
 
 # A sample logging configuration. The only tangible logging
@@ -258,17 +259,6 @@ STATICFILES_DIRS = (
 )
 
 
-# Bogus secret key.
-try:
-    from secrets import *
-except ImportError:
-    from bogus_secrets import *
-
-try:
-    from local_settings import *
-except ImportError:
-    pass
-
 # freesurfer/pycortex environment
 os.environ["XDG_CONFIG_HOME"] = PYCORTEX_DATASTORE
 os.environ["FREESURFER_HOME"] = "/opt/freesurfer"
@@ -293,3 +283,21 @@ CELERY_RESULT_SERIALIZER = 'json'
 #}
 # or manage periodic schedule in django admin
 #CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
+
+
+FIXTURE_DIRS = (
+   'apps/statmaps/fixtures/',
+)
+
+# Bogus secret key.
+try:
+    from secrets import *
+except ImportError:
+    from bogus_secrets import *
+
+try:
+    from local_settings import *
+except ImportError:
+    pass
+
+MEDIA_ROOT = PRIVATE_MEDIA_ROOT
