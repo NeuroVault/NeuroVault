@@ -97,7 +97,8 @@ formIsClean = function(sele) {
   }
   if($(sele).find('div.errors').length === 0 && 
         $(sele).find('div.error').length === 0 &&
-        $(sele).find('div.alert-error').length === 0) {
+        $(sele).find('div.alert-error').length === 0 &&
+        $(sele).find('li.parsley-required').length === 0) {
     return true;
   } else {
     return false;
@@ -113,7 +114,14 @@ $(document).ready(function() {
 
   $('#submit-form').click(function(e) {
     e.preventDefault();
-    return $('#formset').submit();
+    ret = $('#formset').submit();
+    
+    $('.image-form').each(function(ele) {
+	    if(!formIsClean('.image-form#' + $(this).attr('id'))) {
+	    	$($('#showform-' + $(this).attr('id')).children()[0]).css('color', '#b94a48')
+	    }
+    });
+    return ret;
   });
 
   $('#add-image-form').click(function(e) {
