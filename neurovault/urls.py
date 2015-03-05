@@ -109,7 +109,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Image
-        exclude = ['polymorphic_ctype']
+        exclude = ['polymorphic_ctype', 'ignore_file_warning']
 
     def to_representation(self, obj):
         """

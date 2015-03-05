@@ -441,9 +441,8 @@ class ImageForm(ModelForm):
 
 @parsleyfy
 class StatisticMapForm(ImageForm):
-    ignore_warning_checkbox = forms.BooleanField(label='Ignore the warning about thresholding', 
-                                                 widget=forms.HiddenInput(), required=False, 
-                                                 initial=False,
+    ignore_file_warning = forms.BooleanField(label='Ignore the warning about thresholding', 
+                                                 widget=forms.HiddenInput(), required=False,
                                                  help_text="Use when the map is sparse by nature, an ROI mask, or was acquired with limited field of view.")
 
             
@@ -451,22 +450,22 @@ class StatisticMapForm(ImageForm):
         cleaned_data = super(StatisticMapForm, self).clean()
         django_file = cleaned_data.get("file")
 
-        if django_file and not cleaned_data.get("ignore_warning_checkbox") and not self.instance.pk:
+        if django_file and not cleaned_data.get("ignore_file_warning") and not self.instance.pk:
             django_file.open()
             gzfileobj = GzipFile(filename=django_file.name, mode='rb', fileobj=django_file.file)
             nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(django_file.name, gzfileobj)})
             is_thr, perc_bad = is_thresholded(nii)
-            if is_thr and not cleaned_data.get("ignore_warning_checkbox"):
+            if is_thr and not cleaned_data.get("ignore_file_warning"):
                 self._errors["file"] = self.error_class(["This map seems to be thresholded (%d%% of voxels are zeroes).\n Please use an unthresholded version of the map if possible."%(perc_bad*100)])
                 del cleaned_data["file"]
-                self.fields["ignore_warning_checkbox"].widget = forms.CheckboxInput()
+                self.fields["ignore_file_warning"].widget = forms.CheckboxInput()
                 return cleaned_data
             
             
     class Meta(ImageForm.Meta):
         model = StatisticMap
         fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas', 'contrast_definition', 'figure',
-                  'file', 'ignore_warning_checkbox', 'hdr_file', 'tags', 'statistic_parameters',
+                  'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm')
     
 
@@ -529,7 +528,7 @@ class SimplifiedStatisticMapForm(EditStatisticMapForm):
 
     class Meta(EditStatisticMapForm.Meta):
         fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
-                  'file', 'ignore_warning_checkbox', 'hdr_file', 'tags')
+                  'file', 'ignore_file_warning', 'hdr_file', 'tags')
 
 
 class CollectionInlineFormset(BaseInlineFormSet):
