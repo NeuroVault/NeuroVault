@@ -109,7 +109,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Image
-        exclude = ['polymorphic_ctype', 'ignore_file_warning']
+        exclude = ['polymorphic_ctype']
 
     def to_representation(self, obj):
         """
@@ -138,7 +138,7 @@ class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = StatisticMap
-        exclude = ['polymorphic_ctype']
+        exclude = ['polymorphic_ctype', 'ignore_file_warning']
 
 
 class NIDMResultStatisticMapSerializer(serializers.HyperlinkedModelSerializer):
