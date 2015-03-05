@@ -195,6 +195,10 @@ def view_image(request, pk, collection_cid=None):
     if isinstance(image, Atlas):
         template = 'statmaps/atlas_details.html.haml'
     else:
+        if image.is_thresholded:
+            context['warning'] = "Warning: This map seems to be thresholded, sparse or acquired with limited field of view (%.4g%% of voxels are zeros). "%image.perc_bad_voxels
+            context['warning'] += "Some of the NeuroVault functions such as decoding might not work properly. "
+            context['warning'] += "Please use unthresholded maps whenever possible."
         template = 'statmaps/statisticmap_details.html.haml'
     return render(request, template, context)
 

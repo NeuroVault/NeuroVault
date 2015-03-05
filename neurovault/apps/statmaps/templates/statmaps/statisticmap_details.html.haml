@@ -54,6 +54,7 @@
                     - for tag in image.tags.all
                         %a{ href: "/images/tags/{{tag.name}}" }= tag.name
                         - if not forloop.last
+	                
             %a.btn.btn-primary.btn-large{href: "pycortex" } 3D View
             - if image.nidm_results
                 .btn-group
@@ -87,6 +88,10 @@
                 .float-right-wrapper
                     - if not image.nidm_results
                         %a.btn.btn-danger.btn-large{href: "{% url 'delete_image' image.id %}", id: 'delete_image' } Delete
+                        
+        - if warning
+            .alert.alert-danger
+                {{ warning }}
 
         %ul#collection-tabs.nav.nav-tabs
             %li
