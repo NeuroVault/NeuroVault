@@ -37,6 +37,7 @@ from django.core.files import File
 from parsley.decorators import parsleyfy
 from neurovault.apps.statmaps.models import CognitiveAtlasTask
 from chosen import forms as chosenforms
+from gzip import GzipFile
 
 
 # Create the form class.
@@ -334,11 +335,7 @@ class OwnerCollectionForm(CollectionForm):
 
 class ImageForm(ModelForm):
     hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
-    ignore_warning_checkbox = forms.BooleanField(label='Ignore the warning about thresholding', 
-                                                 widget=forms.HiddenInput(), required=False, 
-                                                 initial=False,
-                                                 help_text="Use when the map is sparse by nature, an ROI mask, or was acquired with limited field of view.")
-
+    
     def __init__(self, *args, **kwargs):
         super(ImageForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
@@ -351,7 +348,7 @@ class ImageForm(ModelForm):
         model = Image
         exclude = []
 
-    def clean(self, check_thresholding=False, **kwargs):
+    def clean(self, **kwargs):
         cleaned_data = super(ImageForm, self).clean()
         file = cleaned_data.get("file")
 
@@ -410,13 +407,6 @@ class ImageForm(ModelForm):
                         self._errors["file"] = self.error_class(["4D files are not supported.\n If it's multiple maps in one file please split them and upload separately"])
                         del cleaned_data["file"]
                         return cleaned_data
-
-                    if check_thresholding:
-                        is_thr, perc_bad = is_thresholded(nii)
-                        if is_thr and not cleaned_data.get("ignore_warning_checkbox"):
-                            self._errors["file"] = self.error_class(["This map seems to be thresholded (%d%% of voxels are zeroes).\n Please use an unthresholded version of the map if possible."%(perc_bad*100)])
-                            self.fields["ignore_warning_checkbox"].widget = forms.CheckboxInput()
-                            return cleaned_data
                         
     
                     # convert to nii.gz if needed
@@ -453,11 +443,27 @@ class ImageForm(ModelForm):
 
 @parsleyfy
 class StatisticMapForm(ImageForm):
-    #collection = select2.fields.ForeignKey(Collection,
-    #                                       overlay="Choose ancollection...")
+    ignore_warning_checkbox = forms.BooleanField(label='Ignore the warning about thresholding', 
+                                                 widget=forms.HiddenInput(), required=False, 
+                                                 initial=False,
+                                                 help_text="Use when the map is sparse by nature, an ROI mask, or was acquired with limited field of view.")
+
             
-    def clean(self, check_thresholding=True, **kwargs):
-        return ImageForm.clean(self, check_thresholding=check_thresholding, **kwargs)
+    def clean(self, **kwargs):
+        cleaned_data = super(StatisticMapForm, self).clean()
+        django_file = cleaned_data.get("file")
+
+        if django_file and not cleaned_data.get("ignore_warning_checkbox") and not self.instance.pk:
+            django_file.open()
+            gzfileobj = GzipFile(filename=django_file.name, mode='rb', fileobj=django_file.file)
+            nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(django_file.name, gzfileobj)})
+            is_thr, perc_bad = is_thresholded(nii)
+            if is_thr and not cleaned_data.get("ignore_warning_checkbox"):
+                self._errors["file"] = self.error_class(["This map seems to be thresholded (%d%% of voxels are zeroes).\n Please use an unthresholded version of the map if possible."%(perc_bad*100)])
+                del cleaned_data["file"]
+                self.fields["ignore_warning_checkbox"].widget = forms.CheckboxInput()
+                return cleaned_data
+            
             
     class Meta(ImageForm.Meta):
         model = StatisticMap
@@ -485,6 +491,20 @@ class PolymorphicImageForm(ImageForm):
                                                          instance=self.instance).fields
             else:
                 self.fields = StatisticMapForm.base_fields
+    
+    def clean(self, **kwargs):
+        if "label_description_file" in self.fields.keys():
+            use_form = AtlasForm
+        elif "map_type" in self.fields.keys():
+            use_form = StatisticMapForm
+        else:
+            use_form = ImageForm
+            
+        new_instance = use_form(self) 
+        new_instance.cleaned_data = self.cleaned_data
+        new_instance._errors = self._errors
+        self.fields = new_instance.fields
+        return new_instance.clean()
 
 
 class EditStatisticMapForm(StatisticMapForm):

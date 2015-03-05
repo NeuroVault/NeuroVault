@@ -149,6 +149,13 @@ $(document).ready(function() {
   if(num_forms === 1 && formIsClean()) {
     $("#id_image_set-" + (num_forms - 1) + "-id").val('');
   }
+  
+  //paint invalid forms red
+  $('.image-form').each(function(ele) {
+	    if(!formIsClean('.image-form#' + $(this).attr('id'))) {
+	    	$($('#showform-' + $(this).attr('id')).children()[0]).css('color', '#b94a48')
+	    }
+  });
 
   // focus first error on any form
   $('.image-form').each(function(ele) {
@@ -156,7 +163,7 @@ $(document).ready(function() {
       return mapNavLink($('#showform-' + $(this).attr('id')));
     }
   });
-
+  
   showForm(active_form);
 
   // populate 'no images' view for completely empty collection
