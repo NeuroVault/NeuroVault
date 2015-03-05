@@ -337,7 +337,7 @@ class BaseStatisticMap(Image):
     perc_bad_voxels = models.FloatField(null=True, blank=True)
     
     def save(self):
-        if self.perc_bad_voxels == None:
+        if self.perc_bad_voxels == None and self.file:
             import neurovault.apps.statmaps.utils as nvutils
             self.file.open()
             gzfileobj = GzipFile(filename=self.file.name, mode='rb', fileobj=self.file.file)

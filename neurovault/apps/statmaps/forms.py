@@ -746,8 +746,8 @@ class NIDMResultsForm(forms.ModelForm):
         if self.nidm and 'zip_file' in self.changed_data:
             for s in self.nidm.statmaps:
                 s['statmap'].nidm_results = self.instance
+                s['statmap'].file = ContentFile(open(s['file']).read(), name=os.path.split(s['file'])[-1])
                 s['statmap'].save()
-                s['statmap'].file.save(os.path.split(s['file'])[-1], File(open(s['file'])))
 
             dest = os.path.dirname(self.instance.zip_file.path)
             self.nidm.copy_to_dest(dest)
