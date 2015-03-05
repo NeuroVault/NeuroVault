@@ -38,6 +38,7 @@ from xml.dom import minidom
 from django.db.models.aggregates import Count
 from django.contrib import messages
 import traceback
+from django.forms import widgets
 
 
 
@@ -194,6 +195,10 @@ def view_image(request, pk, collection_cid=None):
     if isinstance(image, Atlas):
         template = 'statmaps/atlas_details.html.haml'
     else:
+        if image.is_thresholded:
+            context['warning'] = "Warning: This map seems to be thresholded, sparse or acquired with limited field of view (%.4g%% of voxels are zeros). "%image.perc_bad_voxels
+            context['warning'] += "Some of the NeuroVault functions such as decoding might not work properly. "
+            context['warning'] += "Please use unthresholded maps whenever possible."
         template = 'statmaps/statisticmap_details.html.haml'
     return render(request, template, context)
 
@@ -346,6 +351,7 @@ def upload_folder(request, collection_cid):
                     archive_name = request.FILES['file'].name
                     if fnmatch(archive_name,'*.nidm.zip'):
                         populate_nidm_results(request,collection)
+                        return HttpResponseRedirect(collection.get_absolute_url())
 
                     _, archive_ext = os.path.splitext(archive_name)
                     if archive_ext == '.zip':
@@ -388,6 +394,7 @@ def upload_folder(request, collection_cid):
                     for fname in filenames:
                         name, ext = splitext_nii_gz(fname)
                         nii_path = os.path.join(root, fname)
+                        
                         if ext == '.xml':
                             print "found xml"
                             dom = minidom.parse(os.path.join(root, fname))
@@ -397,12 +404,12 @@ def upload_folder(request, collection_cid):
                                 nifti_name = os.path.join(path, base)
                                 atlases[str(os.path.join(root,
                                             nifti_name[1:]))] = os.path.join(root, fname)
-                        elif ext not in allowed_extensions:
-                            continue
-                        elif detect_afni4D(nii_path):
-                            niftiFiles.extend(split_afni4D_to_3D(nii_path))
-                        else:
-                            niftiFiles.append((fname,nii_path))
+                        if ext in allowed_extensions:
+                            nii = nib.load(nii_path)
+                            if detect_afni4D(nii):
+                                niftiFiles.extend(split_afni4D_to_3D(nii))
+                            else:
+                                niftiFiles.append((fname,nii_path))
 
                 for label,fpath in niftiFiles:
                     # Read nifti file information
@@ -459,6 +466,7 @@ def upload_folder(request, collection_cid):
                     new_image.file = f
                     new_image.save()
             except:
+                raise
                 error = traceback.format_exc().splitlines()[-1]
                 msg = "An error occurred with this upload: {}".format(error)
                 messages.warning(request, msg)

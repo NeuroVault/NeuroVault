@@ -150,7 +150,8 @@ INSTALLED_APPS = (
     'polymorphic',
     'djcelery',
     'parsley',
-    'django_cleanup'
+    'django_cleanup',
+    'file_resubmit'
 )
 
 # A sample logging configuration. The only tangible logging
@@ -256,6 +257,16 @@ STATICFILES_DIRS = (
     ('pycortex-resources', '/path/to/pycortex/cortex/webgl/resources'),
     ('pycortex-ctmcache', os.path.join(PYCORTEX_DATASTORE,'db/fsaverage/cache')),
 )
+
+CACHES = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            },
+            "file_resubmit": {
+                'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+                "LOCATION": '/tmp/file_resubmit/'
+            }
+          }
 
 
 # Bogus secret key.

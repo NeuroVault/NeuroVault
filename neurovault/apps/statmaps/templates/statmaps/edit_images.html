@@ -103,6 +103,10 @@
 				<script type="text/javascript">
 					$('#id_image_set-{{forloop.counter0}}-cognitive_paradigm_cogatlas').css("width", "400px");
   					$('#id_image_set-{{forloop.counter0}}-cognitive_paradigm_cogatlas').select2();
+  					
+  					$('div:contains("Change:") input[data-parsley-required="true"]').each(function() {
+  						$( this ).attr("data-parsley-required", "false");
+					});
 				</script>
 			</div>
 			{% endfor %}

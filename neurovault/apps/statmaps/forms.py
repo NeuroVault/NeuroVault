@@ -22,7 +22,8 @@ from django.forms.forms import Form
 from django.forms.fields import FileField
 import tempfile
 from neurovault.apps.statmaps.utils import split_filename, get_paper_properties, \
-                                        detect_afni4D, split_afni4D_to_3D, memory_uploadfile
+                                        detect_afni4D, split_afni4D_to_3D, memory_uploadfile,\
+    is_thresholded
 from neurovault.apps.statmaps.nidm_results import NIDMUpload
 from django import forms
 from django.utils.encoding import smart_str
@@ -36,6 +37,8 @@ from django.core.files import File
 from parsley.decorators import parsleyfy
 from neurovault.apps.statmaps.models import CognitiveAtlasTask
 from chosen import forms as chosenforms
+from gzip import GzipFile
+from file_resubmit.admin import AdminResubmitFileWidget
 
 
 # Create the form class.
@@ -333,7 +336,7 @@ class OwnerCollectionForm(CollectionForm):
 
 class ImageForm(ModelForm):
     hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
-
+    
     def __init__(self, *args, **kwargs):
         super(ImageForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
@@ -347,7 +350,6 @@ class ImageForm(ModelForm):
         exclude = []
 
     def clean(self, **kwargs):
-
         cleaned_data = super(ImageForm, self).clean()
         file = cleaned_data.get("file")
 
@@ -382,31 +384,29 @@ class ImageForm(ModelForm):
                         del cleaned_data["hdr_file"]
                         return cleaned_data
 
-                # write the data file to a temporary directory
-                nii_tmp = os.path.join(tmp_dir, fname + ext)
-                f = open(nii_tmp, "wb")
-                f.write(file.file.read())
-                f.close()
+                # prepare file to loading into memory
+                file.open()
+                gzfileobj = GzipFile(filename=file.name, mode='rb', fileobj=file.file)
 
                 # check if it is really nifti
                 try:
-                    nii = nb.load(nii_tmp)
+                    nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(file.name, gzfileobj)})
                 except Exception as e:
                     self._errors["file"] = self.error_class([str(e)])
                     del cleaned_data["file"]
                     return cleaned_data
                 
                 # detect AFNI 4D files and prepare 3D slices
-                if nii_tmp is not None and detect_afni4D(nii_tmp):
-                    self.afni_subbricks = split_afni4D_to_3D(nii_tmp)
+                if nii is not None and detect_afni4D(nii):
+                    self.afni_subbricks = split_afni4D_to_3D(nii)
                 else:
-                
                     squeezable_dimensions = len(filter(lambda a: a not in [0,1], nii.shape))
                     
                     if squeezable_dimensions != 3:
                         self._errors["file"] = self.error_class(["4D files are not supported.\n If it's multiple maps in one file please split them and upload separately"])
                         del cleaned_data["file"]
                         return cleaned_data
+                        
     
                     # convert to nii.gz if needed
                     if ext.lower() != ".nii.gz" or squeezable_dimensions < len(nii.shape):
@@ -442,13 +442,42 @@ class ImageForm(ModelForm):
 
 @parsleyfy
 class StatisticMapForm(ImageForm):
-    #collection = select2.fields.ForeignKey(Collection,
-    #                                       overlay="Choose ancollection...")
+    ignore_file_warning = forms.BooleanField(label='Ignore the warning about thresholding', 
+                                                 widget=forms.HiddenInput(), required=False,
+                                                 help_text="Use when the map is sparse by nature, an ROI mask, or was acquired with limited field of view.")
+    is_thresholded = forms.NullBooleanField(widget=forms.HiddenInput(), required=False)
+    perc_bad_voxels = forms.FloatField(widget=forms.HiddenInput(), required=False)
+            
+    def clean(self, **kwargs):
+        cleaned_data = super(StatisticMapForm, self).clean()
+        django_file = cleaned_data.get("file")
+
+        if django_file:
+            django_file.open()
+            gzfileobj = GzipFile(filename=django_file.name, mode='rb', fileobj=django_file.file)
+            nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(django_file.name, gzfileobj)})
+            cleaned_data["is_thresholded"], ratio_bad = is_thresholded(nii)
+            cleaned_data["perc_bad_voxels"] = ratio_bad*100.0
+            
+            if cleaned_data["is_thresholded"] and not cleaned_data.get("ignore_file_warning"):
+                self._errors["file"] = self.error_class(["This map seems to be thresholded (%.4g%% of voxels are zeros). Please use an unthresholded version of the map if possible."%(cleaned_data["perc_bad_voxels"])])
+                self.fields["ignore_file_warning"].widget = forms.CheckboxInput()
+
+        return cleaned_data
+            
+            
     class Meta(ImageForm.Meta):
         model = StatisticMap
         fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas', 'contrast_definition', 'figure',
-                  'file', 'hdr_file', 'tags', 'statistic_parameters',
-                  'smoothness_fwhm')
+                  'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
+                  'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels')
+        widgets = {
+            'file': AdminResubmitFileWidget,
+            'hdr_file': AdminResubmitFileWidget,
+            'is_thresholded': HiddenInput,
+            'ignore_file_warning': HiddenInput,
+            'perc_bad_voxels': HiddenInput
+        }
 
 
 class AtlasForm(ImageForm):
@@ -469,6 +498,20 @@ class PolymorphicImageForm(ImageForm):
                                                          instance=self.instance).fields
             else:
                 self.fields = StatisticMapForm.base_fields
+    
+    def clean(self, **kwargs):
+        if "label_description_file" in self.fields.keys():
+            use_form = AtlasForm
+        elif "map_type" in self.fields.keys():
+            use_form = StatisticMapForm
+        else:
+            use_form = ImageForm
+            
+        new_instance = use_form(self) 
+        new_instance.cleaned_data = self.cleaned_data
+        new_instance._errors = self._errors
+        self.fields = new_instance.fields
+        return new_instance.clean()
 
 
 class EditStatisticMapForm(StatisticMapForm):
@@ -495,7 +538,7 @@ class SimplifiedStatisticMapForm(EditStatisticMapForm):
 
     class Meta(EditStatisticMapForm.Meta):
         fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
-                  'file', 'hdr_file', 'tags')
+                  'file', 'ignore_file_warning', 'hdr_file', 'tags', 'is_thresholded', 'perc_bad_voxels')
 
 
 class CollectionInlineFormset(BaseInlineFormSet):
@@ -709,8 +752,8 @@ class NIDMResultsForm(forms.ModelForm):
         if self.nidm and 'zip_file' in self.changed_data:
             for s in self.nidm.statmaps:
                 s['statmap'].nidm_results = self.instance
+                s['statmap'].file = ContentFile(open(s['file']).read(), name=os.path.split(s['file'])[-1])
                 s['statmap'].save()
-                s['statmap'].file.save(os.path.split(s['file'])[-1], File(open(s['file'])))
 
             dest = os.path.dirname(self.instance.zip_file.path)
             self.nidm.copy_to_dest(dest)

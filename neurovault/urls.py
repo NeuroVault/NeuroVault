@@ -138,7 +138,7 @@ class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = StatisticMap
-        exclude = ['polymorphic_ctype']
+        exclude = ['polymorphic_ctype', 'ignore_file_warning']
 
 
 class NIDMResultStatisticMapSerializer(serializers.HyperlinkedModelSerializer):

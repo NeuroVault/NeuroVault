@@ -9,6 +9,7 @@ import os
 import tempfile
 import shutil
 from neurovault.apps.statmaps.utils import split_afni4D_to_3D
+import nibabel
 
 class ComparisonTestCase(TestCase):
     pk1 = None
@@ -39,7 +40,7 @@ class ComparisonTestCase(TestCase):
         image2.save()
         self.pk2_copy = image2.id
         
-        bricks = split_afni4D_to_3D(os.path.join(app_path,'test_data/TTatlas.nii.gz'),tmp_dir=self.tmpdir)
+        bricks = split_afni4D_to_3D(nibabel.load(os.path.join(app_path,'test_data/TTatlas.nii.gz')),tmp_dir=self.tmpdir)
         
         image3 = Image(name='image3', description='',collection=comparisonCollection)
         image3.file = SimpleUploadedFile('brik1.nii.gz', file(bricks[0][1]).read())
