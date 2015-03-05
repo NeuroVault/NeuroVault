@@ -389,6 +389,7 @@ def upload_folder(request, collection_cid):
                     for fname in filenames:
                         name, ext = splitext_nii_gz(fname)
                         nii_path = os.path.join(root, fname)
+                        nii = nib.load(nii_path)
                         if ext == '.xml':
                             print "found xml"
                             dom = minidom.parse(os.path.join(root, fname))
@@ -400,8 +401,8 @@ def upload_folder(request, collection_cid):
                                             nifti_name[1:]))] = os.path.join(root, fname)
                         elif ext not in allowed_extensions:
                             continue
-                        elif detect_afni4D(nii_path):
-                            niftiFiles.extend(split_afni4D_to_3D(nii_path))
+                        elif detect_afni4D(nii):
+                            niftiFiles.extend(split_afni4D_to_3D(nii))
                         else:
                             niftiFiles.append((fname,nii_path))
 

@@ -22,6 +22,9 @@ from django.db.models.signals import post_delete
 from django.dispatch.dispatcher import receiver
 import shutil
 from neurovault.apps.statmaps.tasks import generate_glassbrain_image, save_voxelwise_pearson_similarity
+from django import forms
+from gzip import GzipFile
+
 
 
 class Collection(models.Model):
@@ -330,6 +333,19 @@ class BaseStatisticMap(Image):
                     help_text=("Type of statistic that is the basis of the inference"),
                     verbose_name="Map type",
                     max_length=200, null=False, blank=False, choices=MAP_TYPE_CHOICES)
+    is_thresholded = models.NullBooleanField(null=True, blank=True)
+    perc_bad_voxels = models.FloatField(null=True, blank=True)
+    
+    def save(self):
+        if self.perc_bad_voxels == None:
+            import neurovault.apps.statmaps.utils as nvutils
+            self.file.open()
+            gzfileobj = GzipFile(filename=self.file.name, mode='rb', fileobj=self.file.file)
+            nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(self.file.name, gzfileobj)})
+            self.is_thresholded, ratio_bad = nvutils.is_thresholded(nii)
+            self.perc_bad_voxels = ratio_bad*100.0
+
+        super(BaseStatisticMap, self).save()
 
     class Meta:
         abstract = True
