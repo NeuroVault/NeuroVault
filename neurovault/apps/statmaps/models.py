@@ -376,7 +376,8 @@ class StatisticMap(BaseStatisticMap):
         (EEG, 'EEG'),
         (Other, 'Other')
     )
-    ignore_file_warning = models.BooleanField(blank=False, default=False)
+    ignore_file_warning = models.BooleanField(blank=False, default=False, verbose_name='Ignore the warning about thresholding', 
+                                              help_text="Ignore the warning when the map is sparse by nature, an ROI mask, or was acquired with limited field of view.")
     modality = models.CharField(verbose_name="Modality & Acquisition Type", help_text="Brain imaging procedure that was used to acquire the data.",
                                 max_length=200, null=False, blank=False, choices=MODALITY_CHOICES)
     statistic_parameters = models.FloatField(help_text="Parameters of the null distribution of the test statistic, typically degrees of freedom (should be clear from the test statistic what these are).", null=True, verbose_name="Statistic parameters", blank=True)

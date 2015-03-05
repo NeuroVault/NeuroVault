@@ -460,7 +460,7 @@ class StatisticMapForm(ImageForm):
             cleaned_data["perc_bad_voxels"] = ratio_bad*100.0
             
             if cleaned_data["is_thresholded"] and not cleaned_data.get("ignore_file_warning"):
-                self._errors["file"] = self.error_class(["This map seems to be thresholded (%.4g%% of voxels are zeroes).<br \> Please use an unthresholded version of the map if possible."%(cleaned_data["perc_bad_voxels"])])
+                self._errors["file"] = self.error_class(["This map seems to be thresholded (%.4g%% of voxels are zeros). Please use an unthresholded version of the map if possible."%(cleaned_data["perc_bad_voxels"])])
                 self.fields["ignore_file_warning"].widget = forms.CheckboxInput()
 
         return cleaned_data
@@ -473,7 +473,10 @@ class StatisticMapForm(ImageForm):
                   'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels')
         widgets = {
             'file': AdminResubmitFileWidget,
-            'hdr_file': AdminResubmitFileWidget, 
+            'hdr_file': AdminResubmitFileWidget,
+            'is_thresholded': HiddenInput,
+            'ignore_file_warning': HiddenInput,
+            'perc_bad_voxels': HiddenInput
         }
 
 
