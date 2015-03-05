@@ -38,6 +38,7 @@ from parsley.decorators import parsleyfy
 from neurovault.apps.statmaps.models import CognitiveAtlasTask
 from chosen import forms as chosenforms
 from gzip import GzipFile
+from file_resubmit.admin import AdminResubmitFileWidget
 
 
 # Create the form class.
@@ -460,7 +461,6 @@ class StatisticMapForm(ImageForm):
             
             if cleaned_data["is_thresholded"] and not cleaned_data.get("ignore_file_warning"):
                 self._errors["file"] = self.error_class(["This map seems to be thresholded (%.4g%% of voxels are zeroes).<br \> Please use an unthresholded version of the map if possible."%(cleaned_data["perc_bad_voxels"])])
-                del cleaned_data["file"]
                 self.fields["ignore_file_warning"].widget = forms.CheckboxInput()
 
         return cleaned_data
@@ -471,7 +471,10 @@ class StatisticMapForm(ImageForm):
         fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas', 'contrast_definition', 'figure',
                   'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels')
-    
+        widgets = {
+            'file': AdminResubmitFileWidget,
+            'hdr_file': AdminResubmitFileWidget, 
+        }
 
 
 class AtlasForm(ImageForm):
