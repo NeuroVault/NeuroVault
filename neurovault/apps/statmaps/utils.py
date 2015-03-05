@@ -217,19 +217,19 @@ def send_email_notification(notif_type, subject, users, tpl_context=None):
         msg.send()
 
 
-def detect_afni4D(nii_file):
-    shape = nib.load(nii_file).shape
+def detect_afni4D(nii):
+    shape = nii.shape
     if not (len(shape) == 5 and shape[3] == 1):
         return False 
     # don't split afni files with no subbricks
-    return bool(len(get_afni_subbrick_labels(nii_file)) > 1)
+    return bool(len(get_afni_subbrick_labels(nii)) > 1)
 
 
-def get_afni_subbrick_labels(nii_file):
+def get_afni_subbrick_labels(nii):
     # AFNI header is nifti1 header extension 4
     # http://nifti.nimh.nih.gov/nifti-1/AFNIextension1
 
-    extensions = getattr(nib.load(nii_file).get_header(), 'extensions', [])
+    extensions = getattr(nii.get_header(), 'extensions', [])
     header = [ext for ext in extensions if ext.get_code() == 4]
     if not header:
         return []
@@ -252,16 +252,15 @@ def get_afni_subbrick_labels(nii_file):
     return retval
 
 
-def split_afni4D_to_3D(nii_file,with_labels=True,tmp_dir=None):
+def split_afni4D_to_3D(nii,with_labels=True,tmp_dir=None):
     outpaths = []
     ext = ".nii.gz"
-    base_dir, name = os.path.split(nii_file)
+    base_dir, name = os.path.split(nii.get_filename())
     out_dir = tmp_dir or base_dir
     fname = name.replace(ext,'')
 
-    nii = nib.load(nii_file)
     slices = np.split(nii.get_data(), nii.get_shape()[-1], len(nii.get_shape())-1)
-    labels = get_afni_subbrick_labels(nii_file)
+    labels = get_afni_subbrick_labels(nii)
     for n,slice in enumerate(slices):
         nifti = nib.Nifti1Image(np.squeeze(slice),nii.get_header().get_best_affine())
         layer_nm = labels[n] if n < len(labels) else 'slice_%s' % n

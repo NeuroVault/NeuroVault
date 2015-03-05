@@ -383,23 +383,21 @@ class ImageForm(ModelForm):
                         del cleaned_data["hdr_file"]
                         return cleaned_data
 
-                # write the data file to a temporary directory
-                nii_tmp = os.path.join(tmp_dir, fname + ext)
-                f = open(nii_tmp, "wb")
-                f.write(file.file.read())
-                f.close()
+                # prepare file to loading into memory
+                file.open()
+                gzfileobj = GzipFile(filename=file.name, mode='rb', fileobj=file.file)
 
                 # check if it is really nifti
                 try:
-                    nii = nb.load(nii_tmp)
+                    nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(file.name, gzfileobj)})
                 except Exception as e:
                     self._errors["file"] = self.error_class([str(e)])
                     del cleaned_data["file"]
                     return cleaned_data
                 
                 # detect AFNI 4D files and prepare 3D slices
-                if nii_tmp is not None and detect_afni4D(nii_tmp):
-                    self.afni_subbricks = split_afni4D_to_3D(nii_tmp)
+                if nii is not None and detect_afni4D(nii):
+                    self.afni_subbricks = split_afni4D_to_3D(nii)
                 else:
                     squeezable_dimensions = len(filter(lambda a: a not in [0,1], nii.shape))
                     

@@ -6,6 +6,7 @@ import tempfile
 import os
 import shutil
 from neurovault.apps.statmaps.utils import detect_afni4D, split_afni4D_to_3D
+import nibabel
 
 
 class CollectionSharingTest(TestCase):
@@ -81,10 +82,10 @@ class Afni4DTest(TestCase):
     """
 
     def testAfni4DSlicing(self):
-        test_afni = detect_afni4D(self.afni_file)
-        test_non_afni = detect_afni4D(self.nii_file)
+        test_afni = detect_afni4D(nibabel.load(self.afni_file))
+        test_non_afni = detect_afni4D(nibabel.load(self.nii_file))
 
-        bricks = split_afni4D_to_3D(self.afni_file,tmp_dir=self.tmpdir)
+        bricks = split_afni4D_to_3D(nibabel.load(self.afni_file),tmp_dir=self.tmpdir)
 
         # check detection of 4D is correct
         self.assertTrue(test_afni)
