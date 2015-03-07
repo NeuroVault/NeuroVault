@@ -23,7 +23,7 @@ from django.forms.fields import FileField
 import tempfile
 from neurovault.apps.statmaps.utils import split_filename, get_paper_properties, \
                                         detect_afni4D, split_afni4D_to_3D, memory_uploadfile,\
-    is_thresholded
+    is_thresholded, not_in_mni
 from neurovault.apps.statmaps.nidm_results import NIDMUpload
 from django import forms
 from django.utils.encoding import smart_str
@@ -442,11 +442,6 @@ class ImageForm(ModelForm):
 
 @parsleyfy
 class StatisticMapForm(ImageForm):
-    ignore_file_warning = forms.BooleanField(label='Ignore the warning about thresholding', 
-                                                 widget=forms.HiddenInput(), required=False,
-                                                 help_text="Use when the map is sparse by nature, an ROI mask, or was acquired with limited field of view.")
-    is_thresholded = forms.NullBooleanField(widget=forms.HiddenInput(), required=False)
-    perc_bad_voxels = forms.FloatField(widget=forms.HiddenInput(), required=False)
             
     def clean(self, **kwargs):
         cleaned_data = super(StatisticMapForm, self).clean()
@@ -462,6 +457,11 @@ class StatisticMapForm(ImageForm):
             if cleaned_data["is_thresholded"] and not cleaned_data.get("ignore_file_warning"):
                 self._errors["file"] = self.error_class(["This map seems to be thresholded (%.4g%% of voxels are zeros). Please use an unthresholded version of the map if possible."%(cleaned_data["perc_bad_voxels"])])
                 self.fields["ignore_file_warning"].widget = forms.CheckboxInput()
+            else:
+                cleaned_data["not_mni"], cleaned_data["brain_coverage"], cleaned_data["perc_voxels_outside"] = not_in_mni(nii)
+                if cleaned_data["not_mni"] and not cleaned_data.get("ignore_file_warning"):
+                    self._errors["file"] = self.error_class(["This map seems not to be in the MNI space (%.4g%% of meaningful voxels are outside of the brain). Please use transform your dat to MNI space."%(cleaned_data["perc_voxels_outside"])])
+                    self.fields["ignore_file_warning"].widget = forms.CheckboxInput()
 
         return cleaned_data
             
@@ -476,7 +476,10 @@ class StatisticMapForm(ImageForm):
             'hdr_file': AdminResubmitFileWidget,
             'is_thresholded': HiddenInput,
             'ignore_file_warning': HiddenInput,
-            'perc_bad_voxels': HiddenInput
+            'perc_bad_voxels': HiddenInput,
+            'not_mni': HiddenInput,
+            'brain_coverage': HiddenInput,
+            'perc_voxels_outside': HiddenInput
         }
 
 
