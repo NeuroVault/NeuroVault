@@ -1,4 +1,5 @@
-from neurovault.apps.statmaps.models import Collection, StatisticMap
+from neurovault.apps.statmaps.models import Collection, StatisticMap,\
+    BaseStatisticMap
 from django.db.models import Q
 total_collection = Collection.objects.all().count()
 
@@ -15,7 +16,7 @@ for field in Collection._meta.fields:
     
 total_collection = StatisticMap.objects.all().count()
 
-for field in StatisticMap._meta.fields:
+for field in set(StatisticMap._meta.fields).union(BaseStatisticMap._meta.fields):
     null_kwargs = {field.name + "__isnull":True}
     empty_string_kwargs = {field.name + "__exact":''}
     if field.empty_strings_allowed:
