@@ -397,3 +397,44 @@ def is_thresholded(nii_obj, thr=0.85):
         return (True, ratio_bad)
     else:
         return (False, ratio_bad)
+    
+    
+import nibabel as nb
+from nilearn.image import resample_img
+def not_in_mni(nii, plot=False):
+    mask_nii = nb.load(os.path.join(settings.STATIC_ROOT,'anatomical','MNI152_T1_2mm_brain_mask.nii.gz'))
+    
+    #resample to the smaller one
+    if np.prod(nii.shape) > np.prod(mask_nii.shape):
+        nan_mask = np.isnan(nii.get_data())
+        if nan_mask.sum() > 0:
+            nii.get_data()[nan_mask] = 0
+        nii = resample_img(nii, target_affine=mask_nii.get_affine(), target_shape=mask_nii.get_shape(),interpolation='nearest')
+    else:
+        mask_nii = resample_img(mask_nii, target_affine=nii.get_affine(), target_shape=nii.get_shape(),interpolation='nearest')
+    
+    brain_mask = mask_nii.get_data() > 0
+    excursion_set = np.logical_not(np.logical_or(nii.get_data() == 0, np.isnan(nii.get_data())))    
+    
+    in_brain_voxels = np.logical_and(excursion_set, brain_mask).sum()
+    out_of_brain_voxels = np.logical_and(excursion_set, np.logical_not(brain_mask)).sum()
+    
+    
+    perc_mask_covered = in_brain_voxels/float(brain_mask.sum())*100.0
+    if np.isnan(perc_mask_covered):
+        perc_mask_covered = 0
+    perc_voxels_outside_of_mask = out_of_brain_voxels/float(excursion_set.sum())*100.0
+    
+    if perc_mask_covered > 50:
+        if perc_mask_covered < 90 and perc_voxels_outside_of_mask > 20:
+            ret = True
+        else:
+            ret = False
+    elif perc_mask_covered == 0:
+        ret = True
+    elif perc_voxels_outside_of_mask > 50:
+        ret = True
+    else:
+        ret = False
+    
+    return ret, perc_mask_covered, perc_voxels_outside_of_mask
