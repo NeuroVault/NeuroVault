@@ -360,8 +360,10 @@ def upload_folder(request, collection_cid):
                     _, archive_ext = os.path.splitext(archive_name)
                     if archive_ext == '.zip':
                         compressed = zipfile.ZipFile(request.FILES['file'])
-                    else:
+                    elif archive_ext == '.gz':
                         compressed = tarfile.TarFile(fileobj=gzip.open(request.FILES['file']))
+                    else:
+                        raise Exception("Unsupported archive type %s."%archive_name)
                     compressed.extractall(path=tmp_directory)
 
                 elif "file_input[]" in request.FILES:
