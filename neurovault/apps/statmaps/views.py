@@ -397,7 +397,7 @@ def upload_folder(request, collection_cid):
                         filenames = []
 
                     filenames = [f for f in filenames if not f[0] == '.']
-                    for fname in filenames:
+                    for fname in sorted(filenames):
                         name, ext = splitext_nii_gz(fname)
                         nii_path = os.path.join(root, fname)
                         
