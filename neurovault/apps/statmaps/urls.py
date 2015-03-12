@@ -29,7 +29,7 @@ urlpatterns = patterns('',
         name='my_collections'),
     url(r'^collections/$',
         ListView.as_view(
-            queryset=Collection.objects.filter(private=False).annotate(n_images=Count('image')),
+            queryset=Collection.objects.filter(private=False, ~Q(name__contains = "temporary collection")).annotate(n_images=Count('image')),
             context_object_name='collections',
             template_name='statmaps/collections_index.html.haml'),
         name='collections_list'),
