@@ -1,4 +1,4 @@
-Django>=1.5
+Django>=1.7.1
 python-social-auth>=0.1.23
 djangorestframework
 markdown
