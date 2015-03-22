@@ -20,7 +20,7 @@ from sendfile import sendfile
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.renderers import JSONRenderer
 from voxel_query_functions import *
-from compare import compare, atlas as pybrainatlas
+from pybraincompare.compare import compare
 from glob import glob
 import pandas
 import zipfile
@@ -706,12 +706,6 @@ def compare_images(request,pk1,pk2):
     path, name1, ext = split_filename(image1.file.url)
     path, name2, ext = split_filename(image2.file.url)
 
-    # For now, manually choose an atlas - this can be user choice
-    atlas_file = os.path.join(settings.STATIC_ROOT,'atlas','MNI-maxprob-thr25-2mm.nii')
-    atlas_xml = os.path.join(settings.STATIC_ROOT,'atlas','MNI.xml')
-    # Default slices are "coronal","axial","sagittal"
-    atlas = pybrainatlas.atlas(atlas_xml,atlas_file)
-
     # Get image: collection: [map_type] names no longer than ~125 characters
     image1_custom_name = format_image_collection_names(image_name=image1.name,
                                                        collection_name=image1.collection.name,
@@ -720,18 +714,27 @@ def compare_images(request,pk1,pk2):
                                                        collection_name=image2.collection.name,
                                                        map_type=image2.map_type,total_length=125)
 
-    # Create custom image names and links for the visualization
+    image_names = [image1_custom_name,image2_custom_name]
+
+    # Create custom links for the visualization
     custom = {
-            "IMAGE_1":image1_custom_name,
-            "IMAGE_2":image2_custom_name,
-            "IMAGE_1_LINK":"/images/%s" % (image1.pk),"IMAGE_2_LINK":"/images/%s" % (image2.pk)
+            "IMAGE_1_LINK":"/images/%s" % (image1.pk),
+            "IMAGE_2_LINK":"/images/%s" % (image2.pk)
     }
 
-    html_snippet,data_table = compare.scatterplot_compare(image1=image1.file.path,
-                                                          image2=image2.file.path,
-                                                          software="FREESURFER",
-                                                          voxdim=[8,8,8],
-                                                          atlas=atlas,custom=custom,corr="pearson")
+    # Standard image to resample to
+    reference = os.path.join(os.environ['FREESURFER_HOME'],'subjects','fsaverage','mri', 'brain.nii.gz')
+    
+    # Default scatterplot compare will use 8mm MNI atlas, and render 2mm, pearson
+    html_snippet,data_table = compare.scatterplot_compare(images=[image1.file.path,image2.file.path],
+                                                          image_names=image_names,
+                                                          reference=reference,
+                                                          custom=custom)
+    #html_snippet,data_table = compare.scatterplot_compare(image1=image1.file.path,
+    #                                                      image2=image2.file.path,
+    #                                                      software="FREESURFER",
+    #                                                      voxdim=[8,8,8],
+    #                                                    atlas=atlas,custom=custom,corr="pearson")
 
     html = [h.strip("\n") for h in html_snippet]
     context = {'html': html}
