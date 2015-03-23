@@ -730,11 +730,6 @@ def compare_images(request,pk1,pk2):
                                                           image_names=image_names,
                                                           reference=reference,
                                                           custom=custom)
-    #html_snippet,data_table = compare.scatterplot_compare(image1=image1.file.path,
-    #                                                      image2=image2.file.path,
-    #                                                      software="FREESURFER",
-    #                                                      voxdim=[8,8,8],
-    #                                                    atlas=atlas,custom=custom,corr="pearson")
 
     html = [h.strip("\n") for h in html_snippet]
     context = {'html': html}
