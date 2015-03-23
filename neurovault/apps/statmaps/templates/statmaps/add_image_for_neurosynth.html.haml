@@ -29,7 +29,7 @@
  
     .span11
         %hr
-        <form  class="form-horizontal" method="post"  enctype="multipart/form-data" data-parsley-validate>
+        <form  class="form-horizontal" method="post"  enctype="multipart/form-data">
     		{% crispy form %}
 		</form>
 		
@@ -37,8 +37,6 @@
 		$('#id_cognitive_paradigm_cogatlas').css("width", "600px");
   		$('#id_cognitive_paradigm_cogatlas').select2();
   		
-	  	$('div:contains("Change:") input[data-parsley-required="true"]').each(function() {
-	  		$( this ).attr("data-parsley-required", "false");
 		});
 	</script>
 {% endblock %}

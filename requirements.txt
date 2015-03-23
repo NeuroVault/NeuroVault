@@ -1,4 +1,4 @@
-Django>=1.5
+Django>=1.7.1
 python-social-auth>=0.1.23
 djangorestframework
 markdown
@@ -37,8 +37,7 @@ celery[redis]
 django-celery
 scikit-learn
 nilearn
--e git://github.com/vsoch/pybraincompare.git@7d90af2f3c81a5c59f3af701fdb57c0a99525882#egg=pybraincompare
-django-parsley
+git+git://github.com/vsoch/pybraincompare.git@7d90af2f3c81a5c59f3af701fdb57c0a99525882#egg=pybraincompare
 django-cleanup
 django-chosen
--e git+https://github.com/sinnwerkstatt/django-file-resubmit.git#egg=file_resubmit
+git+https://github.com/sinnwerkstatt/django-file-resubmit.git#egg=file_resubmit

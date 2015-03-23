@@ -149,7 +149,6 @@ INSTALLED_APPS = (
     'dbbackup',
     'polymorphic',
     'djcelery',
-    'parsley',
     'django_cleanup',
     'file_resubmit'
 )
