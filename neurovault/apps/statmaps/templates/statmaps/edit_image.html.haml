@@ -15,15 +15,12 @@
             <button type="button" class="close" data-dismiss="alert">&times;</button>
             This statistic map is embedded in <strong><a href="{{form.instance.nidm_results.get_absolute_url}}">{{form.instance.nidm_results.name}}.zip</a></strong>.  Edit the NIDM zip file to modify this image's properties.
             </div>
-        <form  class="form-horizontal" method="post" enctype="multipart/form-data" data-parsley-validate>
+        <form  class="form-horizontal" method="post" enctype="multipart/form-data">
     		{% crispy form %}
 		</form>
 <script type="text/javascript">
 	$('#id_cognitive_paradigm_cogatlas').css("width", "600px");
   	$('#id_cognitive_paradigm_cogatlas').select2();
-  	
-  	$('div:contains("Change:") input[data-parsley-required="true"]').each(function() {
-  		$( this ).attr("data-parsley-required", "false");
 	});
 </script>
 {% endblock %}

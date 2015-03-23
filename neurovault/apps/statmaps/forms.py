@@ -34,7 +34,6 @@ from django.core.files.base import ContentFile
 from django.forms.widgets import HiddenInput
 from neurovault import settings
 from django.core.files import File
-from parsley.decorators import parsleyfy
 from neurovault.apps.statmaps.models import CognitiveAtlasTask
 from chosen import forms as chosenforms
 from gzip import GzipFile
@@ -274,7 +273,6 @@ class ContributorCommaField(ModelMultipleChoiceField):
 
         return self.queryset.filter(username__in=split_vals)
 
-@parsleyfy
 class CollectionForm(ModelForm):
 
     class Meta:
@@ -440,7 +438,6 @@ class ImageForm(ModelForm):
             raise ValidationError("Couldn't read uploaded file")
         return cleaned_data
 
-@parsleyfy
 class StatisticMapForm(ImageForm):
             
     def clean(self, **kwargs):
@@ -536,7 +533,6 @@ class EditAtlasForm(AtlasForm):
     class Meta(AtlasForm.Meta):
         exclude = ()
 
-@parsleyfy
 class SimplifiedStatisticMapForm(EditStatisticMapForm):
 
     class Meta(EditStatisticMapForm.Meta):
