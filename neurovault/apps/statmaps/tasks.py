@@ -1,10 +1,10 @@
+from __future__ import absolute_import
 import os
 import numpy
 import pylab as plt
 import nibabel as nib
 from celery import shared_task
 from scipy.stats.stats import pearsonr
-from __future__ import absolute_import
 from nilearn.image import resample_img
 from nilearn.plotting import plot_glass_brain
 from django.shortcuts import get_object_or_404
@@ -50,7 +50,7 @@ def save_voxelwise_pearson_similarity(pk1, pk2, resample_dim=[4, 4, 4]):
                                                               resample_dim=resample_dim)
         # resample_images_ref will "squeeze" images, but we should keep error here for now
         for image_nii, image_obj in zip(images_resamp, [image1, image2]):
-        if len(numpy.squeeze(image_nii.get_data()).shape) != 3:
+          if len(numpy.squeeze(image_nii.get_data()).shape) != 3:
             raise Exception("Image %s (id=%d) has incorrect number of dimensions %s"%(image_obj.name, 
                              image_obj.id, str(image_nii.get_data().shape)))
 
