@@ -24,6 +24,7 @@ import shutil
 from neurovault.apps.statmaps.tasks import generate_glassbrain_image, save_voxelwise_pearson_similarity
 from django import forms
 from gzip import GzipFile
+from neurovault.settings import PRIVATE_MEDIA_ROOT
 
 
 
@@ -144,7 +145,11 @@ class Collection(models.Model):
 
     class Meta:
         app_label = 'statmaps'
-        
+
+@receiver(post_delete, sender=Collection)
+def delete_collection_dir(sender, instance, **kwargs):
+        collDir = os.path.join(PRIVATE_MEDIA_ROOT, 'images',str(instance.id))
+        os.rmdir(collDir)
         
 class CognitiveAtlasTask(models.Model):
     name = models.CharField(max_length=200, null=False, blank=False)
