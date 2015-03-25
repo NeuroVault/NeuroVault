@@ -150,7 +150,7 @@ class Collection(models.Model):
 def delete_collection_dir(sender, instance, **kwargs):
         collDir = os.path.join(PRIVATE_MEDIA_ROOT, 'images',str(instance.id))
         os.rmdir(collDir)
-        
+         
 class CognitiveAtlasTask(models.Model):
     name = models.CharField(max_length=200, null=False, blank=False)
     cog_atlas_id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
