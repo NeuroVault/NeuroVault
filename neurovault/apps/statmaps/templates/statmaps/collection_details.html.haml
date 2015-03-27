@@ -89,8 +89,8 @@
                 %a{href:"{{ collection.url }}" } Link to the paper
         - if collection.full_dataset_url
             .lead
-                Full dataset available at: 
-                %a{href:"{{ collection.full_dataset_url }}" } 
+                Full dataset available at:
+                %a{href:"{{ collection.full_dataset_url }}" }
                   {{ collection.full_dataset_url }}
 
 
@@ -122,6 +122,8 @@
                             <em>Private Collection</em>: To share the link to this collection, please use the private url:
                                     %a{href: "{{ request.path }}" }
                                         {{ request.path }}
+                 - if edit_permission
+                  %a.btn{href: "{% url 'import_metadata' cid %}" , style: "margin-top: 8px;"} Import meta-data
 
         {% if messages %}
         %ul.messages
@@ -167,7 +169,7 @@
 	                                    - for tag in image.tags.all
 	                                        %a{ href: "/images/tags/{{tag.name}}" }= tag.name
 	                                        - if not forloop.last
-	
+
 	                                %td= image.polymorphic_ctype.name
 	                                %td
 	                                    - if image.zip_name
