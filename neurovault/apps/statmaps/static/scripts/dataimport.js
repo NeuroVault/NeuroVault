@@ -619,17 +619,32 @@
 
   function checkDuplicates(data) {
     var duplicates = findDuplicateItems(data[0]),
-      msg,
       items = [],
+      obj = {},
+      value,
+      msg,
+      len,
       i;
 
     if (duplicates.length) {
+      for (i = 0, len = duplicates.length; i < len; i += 1) {
+        obj[duplicates[i].value] = true;
+      }
+
+      duplicates = [];
+
+      for (value in obj) {
+        if (obj.hasOwnProperty(value)) {
+          duplicates.push(value);
+        }
+      }
+
       msg = pluralizeEn(duplicates.length, 'Duplicate field',
         'Duplicate fields');
 
       items = [];
-      for (i = 0; i < duplicates.length; i += 1) {
-        items.push('"' + duplicates[i][0] + '"');
+      for (i = 0, len = duplicates.length; i < len; i += 1) {
+        items.push('"' + duplicates[i] + '"');
       }
 
       msg += ' ' + items.join(', ');
