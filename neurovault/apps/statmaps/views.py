@@ -174,6 +174,18 @@ def edit_collection(request, cid=None):
     return render(request, "statmaps/edit_collection.html.haml", context)
 
 
+@login_required
+def import_metadata(request, collection_cid):
+    collection = get_collection(collection_cid, request)
+
+    if not owner_or_contrib(request, collection):
+        return HttpResponseForbidden()
+
+    return render(request, "statmaps/import_metadata.html", {
+        'collection': collection
+        })
+
+
 def view_image(request, pk, collection_cid=None):
     image = get_image(pk,collection_cid,request)
     user_owns_image = owner_or_contrib(request,image.collection)
@@ -842,6 +854,7 @@ def find_similar(request,pk):
         error_message = "Image comparison is not enabled for thresholded images."
         context = {'error_message': error_message}
         return render(request, 'statmaps/error_message.html', context)
+
 
 class JSONResponse(HttpResponse):
     """
