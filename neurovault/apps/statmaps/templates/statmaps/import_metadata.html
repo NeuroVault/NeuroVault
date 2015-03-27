@@ -5,7 +5,7 @@
 <style>
     .uploader {
         text-align: center;
-        margin: 40px 40px 80px;
+        margin: 80px 40px 280px;
     }
     .uploader .btn {
         padding: 19px 24px;
@@ -41,15 +41,12 @@
         margin-bottom: 20px;
     }
 
-    .step1 {
-        height: 500px;
-    }
 </style>
 {% endblock %}
 {% block content %}
 <div class="row">
 	<div class="span9">
-		<h2><a href="{{collection.get_absolute_url}}">{{collection.name}}</a> / Import Meta-data</h2>
+		<h2><a href="{{collection.get_absolute_url}}">{{ collection.name }}</a> / Import Meta-data</h2>
         <div class="lead">Upload a .CSV file with image meta-data. This file should contain a) column with filenames of images in this collection; b) column with subject id; c) image type.</div>
 
 	</div>
@@ -59,7 +56,8 @@
 <div class="step-content">
     <div class="step-pane step1 active">
         <div class="row">
-            <div class="alert alert-error errors span4">
+            <div class="span11">
+                <div class="alert alert-error errors"></div>
             </div>
         </div>
 
@@ -74,7 +72,12 @@
         <div class="row">
             <div class="span11 step-controls">
                 <a class="btn btn-default btn-step-pane-back"><i class="fa fa-chevron-left"></i> Back to a file upload</a>
-                <a class="btn btn-primary pull-right">Complete Import</a>
+                <a class="btn btn-primary pull-right btn-complete-import">Complete Import</a>
+            </div>
+        </div>
+        <div class="row">
+            <div class="span11">
+                <div class="alert alert-error errors"></div>
             </div>
         </div>
         <div class="row">
