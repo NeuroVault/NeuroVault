@@ -120,6 +120,11 @@
     $el.show();
   }
 
+  function removeErrors($el) {
+    $el.empty();
+    $el.hide();
+  }
+
   function showDataSheetStep() {
     $('.step-content .step1').removeClass('active');
     $('.step-content .step2').addClass('active');
@@ -148,6 +153,8 @@
   }
 
   function parseCSV(file) {
+    removeErrors($('.step1 .errors'));
+
     Papa.parse(file, {
       complete: openDataImport
     });
@@ -171,6 +178,7 @@
     $('.btn-complete-import').click(function () {
       dataimport.validate({
         complete: function (result) {
+          removeErrors($('.step2 .errors'));
           submitResult(result);
         },
         fail: function (errors) {

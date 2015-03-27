@@ -47,7 +47,7 @@
 <div class="row">
 	<div class="span9">
 		<h2><a href="{{collection.get_absolute_url}}">{{ collection.name }}</a> / Import Meta-data</h2>
-        <div class="lead">Upload a .CSV file with image meta-data. This file should contain a) column with filenames of images in this collection; b) column with subject id; c) image type.</div>
+        <div class="lead">Upload a .CSV file with image meta-data. This file should contain a) column with filenames of images in this collection; b) column with subject ids; c) column with image types.</div>
 
 	</div>
 	<div class="span11"><hr/></div>
@@ -77,6 +77,9 @@
         </div>
         <div class="row">
             <div class="span11">
+                <div class="alert alert-info">
+                    We've fuzzy matched some columns in your data with  predefined commonly used terms. Please check if the matching is correct.
+                </div>
                 <div class="alert alert-error errors"></div>
             </div>
         </div>
