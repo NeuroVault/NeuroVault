@@ -1,4 +1,4 @@
-/*global document, jQuery, Papa, DataImport */
+/*global window, document, jQuery, Papa, DataImport */
 (function ($) {
   'use strict';
 
@@ -35,7 +35,8 @@
         msg;
 
       if (!isAllowedExtension(file.name)) {
-        msg = 'Invalid file type. Select a ';
+        msg = '<strong>' + file.name +
+              '</strong> has unsupported file type. Select a ';
         msg += listExtensions(options.allowedExtensions) + ' file.';
 
         errors.push({
@@ -45,9 +46,9 @@
 
       if (errors.length) {
         opts.fail(errors);
+      } else {
+        opts.complete(file);
       }
-
-      opts.complete(file);
     }
 
     $('.btn-upload', this).click(function () {
@@ -103,19 +104,20 @@
       id: 'Age',
       name: 'Age',
       required: false,
-    }];
+    }],
+    dataimport;
 
 
-  function displayErrors(errors) {
-    var $errors = $('.errors'),
-      len = errors.length,
+  function displayErrors($el, errors) {
+    var  len = errors.length,
       i;
-    $errors.empty();
+
+    $el.empty();
 
     for (i = 0; i < len; i += 1) {
-      $errors.append('<div>' + errors[i].msg + '</div>');
+      $el.append('<div>' + errors[i].msg + '</div>');
     }
-    $errors.show();
+    $el.show();
   }
 
   function showDataSheetStep() {
@@ -132,12 +134,13 @@
     var $hot = $('#hot');
 
     if (results.errors.length) {
-      displayErrors(results.errors);
+      displayErrors($('.step1 .errors'), results.errors);
     }
 
     showDataSheetStep();
+    // window.sheetModified = true;
 
-    var dataimport = new DataImport($hot[0], {
+    dataimport = new DataImport($hot[0], {
       fields: fields,
       data: results.data,
       sheetHeight: 400
@@ -150,16 +153,38 @@
     });
   }
 
+  function submitResult(result) {
+    console.log(result);
+  }
+
   $(document).ready(function () {
     $('.uploader').loadFile({
       allowedExtensions: ['csv'],
       onload: parseCSV,
-      onfail: displayErrors
+      onfail: displayErrors.bind(null, $('.step1 .errors'))
     });
 
     $('.step-content .btn-step-pane-back').click(function () {
       showUploadStep();
     });
+
+    $('.btn-complete-import').click(function () {
+      dataimport.validate({
+        complete: function (result) {
+          submitResult(result);
+        },
+        fail: function (errors) {
+          displayErrors($('.step2 .errors'), errors);
+        }
+      });
+    });
+
+    window.onbeforeunload = function () {
+      if (window.sheetModified) {
+        return 'You have pending unsaved changes. ' +
+          'Do you really want to discard them ?';
+      }
+    };
 
   });
 
