@@ -36,7 +36,7 @@
 
       if (!isAllowedExtension(file.name)) {
         msg = '<strong>' + file.name +
-              '</strong> has unsupported file type. Select a ';
+          '</strong> has unsupported file type. Select a ';
         msg += listExtensions(options.allowedExtensions) + ' file.';
 
         errors.push({
@@ -109,7 +109,7 @@
 
 
   function displayErrors($el, errors) {
-    var  len = errors.length,
+    var len = errors.length,
       i;
 
     $el.empty();
@@ -142,7 +142,9 @@
       displayErrors($('.step1 .errors'), results.errors);
     }
 
+    removeErrors($('.step2 .errors'));
     showDataSheetStep();
+
     // window.sheetModified = true;
 
     dataimport = new DataImport($hot[0], {
@@ -155,13 +157,27 @@
   function parseCSV(file) {
     removeErrors($('.step1 .errors'));
 
+    if (dataimport) {
+      dataimport.destroy();
+    }
+
     Papa.parse(file, {
       complete: openDataImport
     });
   }
 
   function submitResult(result) {
-    console.log(result);
+    $.ajax({
+      type: 'POST',
+      data: JSON.stringify(result)
+    })
+      .done(function () {
+        alert("Success");
+      })
+      .fail(function (jqXHR, textStatus, errorThrown) {
+        displayErrors($('.step2 .errors'),
+          [{msg: 'Error while submitting data to server: ' + errorThrown}]);
+      });
   }
 
   $(document).ready(function () {
