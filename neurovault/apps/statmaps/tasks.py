@@ -5,7 +5,6 @@ import pylab as plt
 import nibabel as nib
 from celery import shared_task
 from scipy.stats.stats import pearsonr
-from nilearn.image import resample_img
 from nilearn.plotting import plot_glass_brain
 from django.shortcuts import get_object_or_404
 from neurovault.celery import nvcelery as celery_app
@@ -28,6 +27,42 @@ def generate_glassbrain_image(image_pk):
 
 
 @shared_task
+def save_resampled_image(pk1, resample_dim=[4, 4, 4]):
+    from neurovault.apps.statmaps.models import Image
+    from nilearn.image import resample_img
+    import neurovault
+    img = get_object_or_404(Image, pk=pk1)
+    nii_obj = nib.load(img.file.path)
+    
+    # If a standard already exists with the voxel dimension, we use that to save time
+    standard = os.path.abspath(os.path.join(neurovault.settings.BASE_DIR,
+                                                  "static","anatomical",
+                                                  "MNI152_%smm.nii.gz" % resample_dim[0]))
+    if not os.path.exists(standard):
+      standard = os.path.abspath(os.path.join(neurovault.settings.BASE_DIR,"static","anatomical","MNI152.nii.gz"))
+    standard_brain = nib.load(standard)
+    
+    # Resample both image and mask - resampling will be skipped if affines already equivalent
+    img_resamp, ref_resamp = resample_images_ref(images=[nii_obj], 
+                                                 reference=standard_brain, 
+                                                 interpolation="continuous",
+                                                 resample_dim=resample_dim)
+
+    # Mask the image, and save to image folder
+    empty_nii = numpy.zeros(img_resamp[0].shape)
+    empty_nii[ref_resamp.get_data()!=0] = img_resamp[0].get_data()[ref_resamp.get_data()!=0]
+    masked_nii = nib.nifti1.Nifti1Image(empty_nii,affine=img_resamp[0].get_affine(),header=img_resamp[0].get_header())
+
+    nii_resamp_name = "resample_%smm_%s.nii" %(resample_dim[0],img.pk)
+    nii_img_path = os.path.join(os.path.split(img.file.path)[0], nii_resamp_name)
+    if os.path.exists(nii_img_path):
+        os.unlink(nii_img_path)
+
+    nib.save(masked_nii,nii_img_path)
+    return nii_img_path
+
+
+@shared_task
 def save_voxelwise_pearson_similarity(pk1, pk2, resample_dim=[4, 4, 4]):
     from neurovault.apps.statmaps.models import Similarity, Comparison
 
@@ -47,6 +82,7 @@ def save_voxelwise_pearson_similarity(pk1, pk2, resample_dim=[4, 4, 4]):
         image_paths = [image.file.path for image in [image1, image2]]
         images_resamp, reference_resamp = resample_images_ref(images=image_paths, 
                                                               reference=reference, 
+                                                              interpolation="continuous",
                                                               resample_dim=resample_dim)
         # resample_images_ref will "squeeze" images, but we should keep error here for now
         for image_nii, image_obj in zip(images_resamp, [image1, image2]):
@@ -59,7 +95,7 @@ def save_voxelwise_pearson_similarity(pk1, pk2, resample_dim=[4, 4, 4]):
         image1_res = images_resamp[0]
         image2_res = images_resamp[1]
         binary_mask = make_binary_deletion_mask(images_resamp)
-        binary_mask = nibabel.Nifti1Image(binary_mask,header=image1_res.get_header(),affine=image1_res.get_affine())
+        binary_mask = nib.Nifti1Image(binary_mask,header=image1_res.get_header(),affine=image1_res.get_affine())
         # Will return nan if comparison is not possible
         pearson_score = calculate_correlation([image1_res,image2_res],mask=binary_mask,corr_type="pearson")
       
@@ -73,7 +109,7 @@ def save_voxelwise_pearson_similarity(pk1, pk2, resample_dim=[4, 4, 4]):
         compare.save()
         return image1.pk,image2.pk,pearson_score
     else:
-        raise Exception("You are trying to compare image with itself!")
+        raise Exception("You are trying to compare an image with itself!")
 
 
 # Helper functions

@@ -21,7 +21,7 @@ from django.db.models import Q
 from django.db.models.signals import post_delete
 from django.dispatch.dispatcher import receiver
 import shutil
-from neurovault.apps.statmaps.tasks import generate_glassbrain_image, save_voxelwise_pearson_similarity
+from neurovault.apps.statmaps.tasks import generate_glassbrain_image, save_voxelwise_pearson_similarity, save_resampled_image
 from django import forms
 from gzip import GzipFile
 
@@ -304,6 +304,7 @@ class Image(PolymorphicModel, BaseCollectionItem):
         super(Image, self).save()
         if do_update and self.collection and self.collection.private == False:
             generate_glassbrain_image.apply_async([self.pk])
+            save_resampled_image.apply_async([self.pk]) # default resample_dim is [4,4,4]
 
             imgs = Image.objects.filter(collection__private=False).exclude(pk=self.pk)
             comp_qs = imgs.exclude(polymorphic_ctype__model__in=['image','atlas']).order_by('id')
