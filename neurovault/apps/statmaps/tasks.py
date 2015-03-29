@@ -10,7 +10,7 @@ from scipy.stats.stats import pearsonr
 from nilearn.plotting import plot_glass_brain
 from django.shortcuts import get_object_or_404
 from neurovault.celery import nvcelery as celery_app
-from pybraincompare.compare.mrutils import resample_images_ref, make_binary_deletion_mask
+from pybraincompare.compare.mrutils import resample_images_ref, make_binary_deletion_mask, make_binary_deletion_vector
 from pybraincompare.compare.maths import calculate_correlation, calculate_pairwise_correlation
 from pybraincompare.mr.datasets import get_data_directory
 
@@ -134,9 +134,7 @@ def save_voxelwise_pearson_similarity_transformation(pk1, pk2):
         image_vector2 = pickle.load(open(image2.transform,"rb"))
 
         # Calculate binary deletion vector mask (find 0s and nans)
-        mask = numpy.ones(image_vector1.shape)
-        mask *= (image_vector1 != 0) & ~numpy.isnan(image_vector1)
-        mask *= (image_vector2 != 0) & ~numpy.isnan(image_vector2)
+        mask = make_binary_deletion_vector([image_vector1,image_vector2])
 
         # Calculate pearson
         pearson_score = calculate_pairwise_correlation(image_vector1[mask==1],
