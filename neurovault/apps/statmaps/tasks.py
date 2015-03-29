@@ -4,7 +4,8 @@ import numpy
 import pickle
 import pylab as plt
 import nibabel as nib
-from celery import shared_task
+from celery import shared_task 
+from celery_tasktree import task_with_callbacks, TaskTree
 from scipy.stats.stats import pearsonr
 from nilearn.plotting import plot_glass_brain
 from django.shortcuts import get_object_or_404
@@ -12,6 +13,8 @@ from neurovault.celery import nvcelery as celery_app
 from pybraincompare.compare.mrutils import resample_images_ref, make_binary_deletion_mask
 from pybraincompare.compare.maths import calculate_correlation, calculate_pairwise_correlation
 from pybraincompare.mr.datasets import get_data_directory
+
+# THUMBNAIL IMAGE GENERATION ###########################################################################
 
 @shared_task
 def generate_glassbrain_image(image_pk):
@@ -24,14 +27,34 @@ def generate_glassbrain_image(image_pk):
     glass_brain = plot_glass_brain(img.file.path)
     glass_brain.savefig(png_img_path)
     plt.close('all')
-    # Update the image "thumbnail" field with the png_img_path
-    #img.thumbnail = png_img_path
-    #img.save()
     return png_img_path
+
+# IMAGE TRANSFORMATION ################################################################################
+
+# Complete multiple transformations at once
+@task_with_callbacks
+def save_resampled_transformation_multiple(pks, resample_dim=[4, 4, 4]):
+    transform_pkls = []
+    for pk in pks:
+      # This task must NOT be called async, otherwise it will return before transforms are done
+      transform_pkl = save_resampled_transformation_single(pk)
+      transform_pkls.append(transform_pkl)
+    return transform_pkls
+
+# Use TaskTree to submit dependency tasks (calculating pearson correlations must happen after transformations) 
+@shared_task
+def run_transformation_tasks(pks):
+    if not isinstance(pks,list): pks = [pks]
+    tree = TaskTree()
+    transform_task = tree.add_task(save_resampled_transformation_multiple,args=[pks])
+    for pk in pks:
+        transform_task.add_task(run_voxelwise_pearson_similarity,args=[pk])
+    async_result = tree.apply_async()
+    return async_result
 
 # Save 4mm, brain masked image vector in pkl file in image folder
 @shared_task
-def save_resampled_transformation(pk1, resample_dim=[4, 4, 4]):
+def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
     from neurovault.apps.statmaps.models import Image
     from nilearn.image import resample_img
     import neurovault
@@ -67,6 +90,22 @@ def save_resampled_transformation(pk1, resample_dim=[4, 4, 4]):
     img.save()
 
     return pkl_img_path
+
+
+# SIMILARITY CALCULATION ##############################################################################
+
+@task_with_callbacks
+def run_voxelwise_pearson_similarity(pk1):
+    from neurovault.apps.statmaps.models import Image
+    imgs = Image.objects.filter(collection__private=False).exclude(pk=pk1)
+    comp_qs = imgs.exclude(polymorphic_ctype__model__in=['image','atlas']).order_by('id')
+    for comp_img in comp_qs:
+        # Don't calculate comparisons for images still processing
+        if comp_img.transform is not None:
+            iargs = sorted([comp_img.pk,pk1]) 
+            print "Calculating pearson similarity for images %s and %s" % (iargs[0],iargs[1])
+            save_voxelwise_pearson_similarity.apply_async(iargs)  # Default uses transformation, transformation = True
+            # TODO: here we should add the comparisons that aren't possible to some list to run a task later            
 
 
 @shared_task
@@ -166,7 +205,8 @@ def save_voxelwise_pearson_similarity_resample(pk1, pk2,resample_dim=[4,4,4]):
         raise Exception("You are trying to compare an image with itself!")
 
 
-# Helper functions
+
+# HELPER FUNCTIONS ####################################################################################
 
 '''Return list of Images sorted by the primary key'''
 def get_images_by_ordered_id(pk1, pk2):

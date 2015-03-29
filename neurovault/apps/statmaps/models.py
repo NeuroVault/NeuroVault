@@ -4,7 +4,6 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db import models
 from neurovault.apps.statmaps.storage import NiftiGzStorage, NIDMStorage
-
 from taggit.managers import TaggableManager
 from taggit.models import GenericTaggedItemBase, TagBase
 from xml import etree
@@ -21,10 +20,9 @@ from django.db.models import Q
 from django.db.models.signals import post_delete, pre_delete
 from django.dispatch.dispatcher import receiver
 import shutil
-from neurovault.apps.statmaps.tasks import generate_glassbrain_image, save_voxelwise_pearson_similarity, save_resampled_transformation
+from neurovault.apps.statmaps.tasks import run_transformation_tasks, generate_glassbrain_image
 from django import forms
 from gzip import GzipFile
-
 
 
 class Collection(models.Model):
@@ -192,7 +190,6 @@ def upload_img_to(instance, filename):
         return upload_nidm_to(instance.nidm_results,filename)
     return os.path.join('images',str(instance.collection.id), filename)
 
-
 upload_to = upload_img_to  # for migration backwards compat.
 
 
@@ -292,28 +289,29 @@ class Image(PolymorphicModel, BaseCollectionItem):
 
         return image
 
-    # Celery task to (re)generate glass brain image and image comparisons
+    # Celery task to generate glass brain image on new/update, transform/pearson on update only
     def save(self):
         file_changed = False
         if self.pk is not None:
             existing = Image.objects.get(pk=self.pk)
             if existing.file != self.file:
                 file_changed = True
-        do_update = True if file_changed or self.pk is None else False
+        do_update = True if file_changed else False
+        new_image = True if self.pk is None else False
 
         super(Image, self).save()
-        if do_update and self.collection and self.collection.private == False:
-            generate_glassbrain_image.apply_async([self.pk])
-            print "Calculating transformation for image %s" % (self.pk)
-            transform_pkl = save_resampled_transformation.apply_async([self.pk]) # default resample_dim is [4,4,4]
 
-            imgs = Image.objects.filter(collection__private=False).exclude(pk=self.pk)
-            comp_qs = imgs.exclude(polymorphic_ctype__model__in=['image','atlas']).order_by('id')
-            for comp_img in comp_qs:
-                iargs = sorted([comp_img.pk,self.pk])  # Default uses transformation, transformation = True
-                print "Calculating pearson similarity for images %s and %s" % (iargs[0],iargs[1])
-                save_voxelwise_pearson_similarity.apply_async(iargs)
+        if self.collection and self.collection.private == False:
+            
+            # Always generate glass brain image, no dependency needed
+            if new_image:
+                generate_glassbrain_image.apply_async([self.pk])
 
+            # Only regenerate transform/comparisons (with dependency for one pk) if we have an update
+            if do_update:
+                print "Calculating transformation for image %s" % (self.pk)
+                # Run transform followed by pearsons, default resample_dim is 4mm
+                run_transformation_tasks.apply_async([self.pk]) 
 
 class BaseStatisticMap(Image):
     Z = 'Z'
@@ -338,6 +336,9 @@ class BaseStatisticMap(Image):
                     help_text=("The path to the pickle file with a brain masked vector of resampled image data"),
                     verbose_name="Image transformation pickle path",
                     max_length=200, null=True, blank=True)
+    thumbnail = models.CharField(help_text="The orthogonal view thumbnail path of the nifti image",
+                    null=True, blank=True,max_length=200,
+                    verbose_name='Image orthogonal view thumbnail (.png)')
     is_thresholded = models.NullBooleanField(null=True, blank=True)
     perc_bad_voxels = models.FloatField(null=True, blank=True)
     not_mni = models.NullBooleanField(null=True, blank=True)
@@ -359,6 +360,9 @@ class BaseStatisticMap(Image):
             gzfileobj = GzipFile(filename=self.file.name, mode='rb', fileobj=self.file.file)
             nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(self.file.name, gzfileobj)})
             self.not_mni, self.brain_coverage, self.perc_voxels_outside = nvutils.not_in_mni(nii)
+
+        # Set the thumbnail path, if we save in the thumbnail generation task it will break dependency
+        self.thumbnail = os.path.abspath(os.path.join(os.path.split(self.file.path)[0],"glass_brain_%s.png" %(self.pk)))
 
         super(BaseStatisticMap, self).save()
 

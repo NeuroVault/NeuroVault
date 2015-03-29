@@ -22,6 +22,7 @@ from rest_framework.renderers import JSONRenderer
 from voxel_query_functions import *
 from pybraincompare.compare import scatterplot, search
 from pybraincompare.mr.datasets import get_mni_atlas
+from neurovault.apps.statmaps.tasks import run_transformation_tasks
 from glob import glob
 import pandas
 import zipfile
@@ -173,7 +174,7 @@ def view_image(request, pk, collection_cid=None):
     image = get_image(pk,collection_cid,request)
     user_owns_image = True if owner_or_contrib(request,image.collection) else False
     api_cid = pk
-
+    
     num_comparisons = Comparison.objects.filter(Q(image1=image) | Q(image2=image)).count()
     #comparison_is_possible = True if num_comparisons >= 1 and not image.collection.private else False
     comparison_is_possible = False
@@ -418,6 +419,10 @@ def upload_folder(request, collection_cid):
                             else:
                                 niftiFiles.append((fname,nii_path))
 
+                # We will keep track of new image objects to submit celery tasks after 
+                # to generate image transformations BEFORE pearson comparisons
+                pks_for_celery = []
+                
                 for label,fpath in niftiFiles:
                     # Read nifti file information
                     nii = nib.load(fpath)
@@ -472,6 +477,12 @@ def upload_folder(request, collection_cid):
 
                     new_image.file = f
                     new_image.save()
+                    pks_for_celery.append(new_image.pk)
+
+                # Generate transformations and pearson calculations
+                if len(pks_for_celery) > 0 and collection.private == False:
+                    run_transformation_tasks.apply_async([pks_for_celery])
+
             except:
                 raise
                 error = traceback.format_exc().splitlines()[-1]
@@ -495,6 +506,11 @@ def delete_image(request, pk):
     cid = image.collection.pk
     if not owner_or_contrib(request,image.collection):
         return HttpResponseForbidden()
+    # Delete transformation and thumbnail
+    if os.path.exists(image.thumbnail):
+      os.remove(image.thumbnail)
+    if os.path.exists(image.transform):
+      os.remove(image.transform)
     image.delete()
     return redirect('collection_details', cid=cid)
 
