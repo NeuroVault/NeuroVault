@@ -21,7 +21,7 @@ from django.db.models import Q
 from django.db.models.signals import post_delete
 from django.dispatch.dispatcher import receiver
 import shutil
-from neurovault.apps.statmaps.tasks import generate_glassbrain_image, save_voxelwise_pearson_similarity, save_resampled_image
+from neurovault.apps.statmaps.tasks import generate_glassbrain_image, save_voxelwise_pearson_similarity, save_resampled_transformation
 from django import forms
 from gzip import GzipFile
 
@@ -304,12 +304,13 @@ class Image(PolymorphicModel, BaseCollectionItem):
         super(Image, self).save()
         if do_update and self.collection and self.collection.private == False:
             generate_glassbrain_image.apply_async([self.pk])
-            save_resampled_image.apply_async([self.pk]) # default resample_dim is [4,4,4]
+            print "Calculating transformation for image %s" % (self.pk)
+            transform_pkl = save_resampled_transformation.apply_async([self.pk]) # default resample_dim is [4,4,4]
 
             imgs = Image.objects.filter(collection__private=False).exclude(pk=self.pk)
             comp_qs = imgs.exclude(polymorphic_ctype__model__in=['image','atlas']).order_by('id')
             for comp_img in comp_qs:
-                iargs = sorted([comp_img.pk,self.pk])
+                iargs = sorted([comp_img.pk,self.pk])  # Default uses transformation, transformation = True
                 print "Calculating pearson similarity for images %s and %s" % (iargs[0],iargs[1])
                 save_voxelwise_pearson_similarity.apply_async(iargs)
 
@@ -333,6 +334,10 @@ class BaseStatisticMap(Image):
                     help_text=("Type of statistic that is the basis of the inference"),
                     verbose_name="Map type",
                     max_length=200, null=False, blank=False, choices=MAP_TYPE_CHOICES)
+    transform = models.CharField(
+                    help_text=("The path to the pickle file with a brain masked vector of resampled image data"),
+                    verbose_name="Image transformation pickle path",
+                    max_length=200, null=True, blank=True)
     is_thresholded = models.NullBooleanField(null=True, blank=True)
     perc_bad_voxels = models.FloatField(null=True, blank=True)
     not_mni = models.NullBooleanField(null=True, blank=True)

@@ -20,7 +20,8 @@ from sendfile import sendfile
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.renderers import JSONRenderer
 from voxel_query_functions import *
-from pybraincompare.compare import compare
+from pybraincompare.compare import scatterplot, search
+from pybraincompare.mr.datasets import get_mni_atlas
 from glob import glob
 import pandas
 import zipfile
@@ -722,14 +723,28 @@ def compare_images(request,pk1,pk2):
             "IMAGE_2_LINK":"/images/%s" % (image2.pk)
     }
 
-    # Standard image to resample to
-    reference = os.path.join(os.environ['FREESURFER_HOME'],'subjects','fsaverage','mri', 'brain.nii.gz')
-    
-    # Default scatterplot compare will use 8mm MNI atlas, and render 2mm, pearson
-    html_snippet,data_table = compare.scatterplot_compare(images=[image1.file.path,image2.file.path],
-                                                          image_names=image_names,
-                                                          reference=reference,
-                                                          custom=custom)
+    # Load image vectors from pickle files
+    image_vector1 = pickle.load(open(image1.transform,"rb"))
+    image_vector2 = pickle.load(open(image2.transform,"rb"))
+
+    # Load atlas pickle, containing vectors of atlas labels, colors, and values for same voxel dimension (4mm)
+    neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))        
+    atlas_pkl_path = os.path.join(neurovault_root, 'neurovault/static/atlas/atlas_mni_4mm.pkl')
+    atlas = pickle.load(open(atlas_pkl_path,"rb"))
+
+    # Get 2mm atlas for rendering
+    atlas2mm = get_mni_atlas("2")["2"]
+
+    # Generate html for similarity search    
+    html_snippet,data_table = scatterplot.scatterplot_compare_vector(image_vector1=image_vector1,
+                                                                 image_vector2=image_vector2,
+                                                                 image_names=image_names,
+                                                                 atlas=atlas2mm,
+                                                                 atlas_vector=atlas["atlas_vector"],
+                                                                 atlas_labels=atlas["atlas_labels"],
+                                                                 atlas_colors=atlas["atlas_colors"],
+                                                                 corr_type="pearson",
+                                                                 custom=custom) 
 
     html = [h.strip("\n") for h in html_snippet]
     context = {'html': html}
@@ -776,7 +791,7 @@ def find_similar(request,pk):
     query_png = os.path.join(os.path.split(image1.file.url)[0],"glass_brain_%s.png" % (image1.pk))
 
     # Do similarity search and return html to put in page, specify 100 max results, take absolute value of scores
-    html_snippet = compare.similarity_search(image_scores=scores,tags=tags,png_paths=png_img_paths,
+    html_snippet = search.similarity_search(image_scores=scores,tags=tags,png_paths=png_img_paths,
                                 button_url=compare_url,image_url=image_url,query_png=query_png,
                                 query_id=pk,top_text=top_text,image_ids=image_ids,
                                 bottom_text=bottom_text,max_results=100,absolute_value=True)

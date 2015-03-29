@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 import os
 import numpy
+import pickle
 import pylab as plt
 import nibabel as nib
 from celery import shared_task
@@ -9,7 +10,7 @@ from nilearn.plotting import plot_glass_brain
 from django.shortcuts import get_object_or_404
 from neurovault.celery import nvcelery as celery_app
 from pybraincompare.compare.mrutils import resample_images_ref, make_binary_deletion_mask
-from pybraincompare.compare.maths import calculate_correlation
+from pybraincompare.compare.maths import calculate_correlation, calculate_pairwise_correlation
 from pybraincompare.mr.datasets import get_data_directory
 
 @shared_task
@@ -25,9 +26,9 @@ def generate_glassbrain_image(image_pk):
     plt.close('all')
     return png_img_path
 
-
+# Save 4mm, brain masked image vector in pkl file in image folder
 @shared_task
-def save_resampled_image(pk1, resample_dim=[4, 4, 4]):
+def save_resampled_transformation(pk1, resample_dim=[4, 4, 4]):
     from neurovault.apps.statmaps.models import Image
     from nilearn.image import resample_img
     import neurovault
@@ -48,22 +49,33 @@ def save_resampled_image(pk1, resample_dim=[4, 4, 4]):
                                                  interpolation="continuous",
                                                  resample_dim=resample_dim)
 
-    # Mask the image, and save to image folder
-    empty_nii = numpy.zeros(img_resamp[0].shape)
-    empty_nii[ref_resamp.get_data()!=0] = img_resamp[0].get_data()[ref_resamp.get_data()!=0]
-    masked_nii = nib.nifti1.Nifti1Image(empty_nii,affine=img_resamp[0].get_affine(),header=img_resamp[0].get_header())
+    # Mask the image, and save pickle image folder 
+    # (this is the same procedure used to produce the atlas vector that will be used for scatterplot)
+    image_vector = img_resamp[0].get_data()[ref_resamp.get_data()!=0]
 
-    nii_resamp_name = "resample_%smm_%s.nii" %(resample_dim[0],img.pk)
-    nii_img_path = os.path.join(os.path.split(img.file.path)[0], nii_resamp_name)
-    if os.path.exists(nii_img_path):
-        os.unlink(nii_img_path)
+    pkl_resamp_name = "transform_%smm_%s.pkl" %(resample_dim[0],img.pk)
+    pkl_img_path = os.path.join(os.path.split(img.file.path)[0], pkl_resamp_name)
+    if os.path.exists(pkl_img_path):
+        os.unlink(pkl_img_path)
+    pickle.dump(image_vector,open(pkl_img_path,"wb"))
 
-    nib.save(masked_nii,nii_img_path)
-    return nii_img_path
+    # Update the image "transform" field with the pkl_img_path
+    img.transform = pkl_img_path
+    img.save()
+
+    return pkl_img_path
 
 
 @shared_task
-def save_voxelwise_pearson_similarity(pk1, pk2, resample_dim=[4, 4, 4]):
+def save_voxelwise_pearson_similarity(pk1,pk2,resample_dim=[4,4,4],transformation=True):
+    if transformation == False:
+      save_voxelwise_pearson_similarity_resample(pk1,pk2,resample_dim)
+    else:
+      save_voxelwise_pearson_similarity_transformation(pk1,pk2)
+
+
+# Calculate pearson correlation from pickle files with brain masked vectors of image values
+def save_voxelwise_pearson_similarity_transformation(pk1, pk2):
     from neurovault.apps.statmaps.models import Similarity, Comparison
 
     # We will always calculate Comparison 1 vs 2, never 2 vs 1
@@ -74,7 +86,46 @@ def save_voxelwise_pearson_similarity(pk1, pk2, resample_dim=[4, 4, 4]):
         pearson_metric = Similarity.objects.get(
                             similarity_metric="pearson product-moment correlation coefficient",
                             transformation="voxelwise")
+    
+        # Load image pickles
+        image_vector1 = pickle.load(open(image1.transform,"rb"))
+        image_vector2 = pickle.load(open(image2.transform,"rb"))
 
+        # Calculate binary deletion vector mask (find 0s and nans)
+        mask = numpy.ones(image_vector1.shape)
+        mask *= (image_vector1 != 0) & ~numpy.isnan(image_vector1)
+        mask *= (image_vector2 != 0) & ~numpy.isnan(image_vector2)
+
+        # Calculate pearson
+        pearson_score = calculate_pairwise_correlation(image_vector1[mask==1],
+                                                      image_vector2[mask==1],
+                                                      corr_type="pearson")   
+
+        try:
+            compare = Comparison.objects.get(image1=image1, image2=image2,
+                                         similarity_metric=pearson_metric)
+        except Comparison.DoesNotExist:
+            compare = Comparison(image1=image1, image2=image2, similarity_metric=pearson_metric)
+
+        compare.similarity_score = pearson_score
+        compare.save()
+
+        return image1.pk,image2.pk,pearson_score
+    else:
+        raise Exception("You are trying to compare an image with itself!")
+
+
+def save_voxelwise_pearson_similarity_resample(pk1, pk2,resample_dim=[4,4,4]):
+    from neurovault.apps.statmaps.models import Similarity, Comparison
+
+    # We will always calculate Comparison 1 vs 2, never 2 vs 1
+    if pk1 != pk2:
+        sorted_images = get_images_by_ordered_id(pk1, pk2)
+        image1 = sorted_images[0]
+        image2 = sorted_images[1]
+        pearson_metric = Similarity.objects.get(
+                           similarity_metric="pearson product-moment correlation coefficient",
+                           transformation="voxelwise")
 
         # Get standard space brain
         mr_directory = get_data_directory()
@@ -90,7 +141,6 @@ def save_voxelwise_pearson_similarity(pk1, pk2, resample_dim=[4, 4, 4]):
             raise Exception("Image %s (id=%d) has incorrect number of dimensions %s"%(image_obj.name, 
                              image_obj.id, str(image_nii.get_data().shape)))
 
-
         # Calculate correlation only on voxels that are in both maps (not zero, and not nan)
         image1_res = images_resamp[0]
         image2_res = images_resamp[1]
@@ -101,18 +151,20 @@ def save_voxelwise_pearson_similarity(pk1, pk2, resample_dim=[4, 4, 4]):
       
         try:
             compare = Comparison.objects.get(image1=image1, image2=image2,
-                                             similarity_metric=pearson_metric)
+                                         similarity_metric=pearson_metric)
         except Comparison.DoesNotExist:
             compare = Comparison(image1=image1, image2=image2, similarity_metric=pearson_metric)
 
         compare.similarity_score = pearson_score
         compare.save()
+
         return image1.pk,image2.pk,pearson_score
     else:
         raise Exception("You are trying to compare an image with itself!")
 
 
 # Helper functions
+
 '''Return list of Images sorted by the primary key'''
 def get_images_by_ordered_id(pk1, pk2):
     from neurovault.apps.statmaps.models import Image
