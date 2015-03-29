@@ -18,7 +18,7 @@ from django.core.exceptions import ValidationError
 from neurovault import settings
 from polymorphic.polymorphic_model import PolymorphicModel
 from django.db.models import Q
-from django.db.models.signals import post_delete
+from django.db.models.signals import post_delete, pre_delete
 from django.dispatch.dispatcher import receiver
 import shutil
 from neurovault.apps.statmaps.tasks import generate_glassbrain_image, save_voxelwise_pearson_similarity, save_resampled_transformation

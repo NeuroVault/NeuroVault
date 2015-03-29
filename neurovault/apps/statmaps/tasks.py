@@ -24,6 +24,9 @@ def generate_glassbrain_image(image_pk):
     glass_brain = plot_glass_brain(img.file.path)
     glass_brain.savefig(png_img_path)
     plt.close('all')
+    # Update the image "thumbnail" field with the png_img_path
+    #img.thumbnail = png_img_path
+    #img.save()
     return png_img_path
 
 # Save 4mm, brain masked image vector in pkl file in image folder

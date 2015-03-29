@@ -1,5 +1,5 @@
-from .models import Collection, Image, Atlas, Comparison, StatisticMap, NIDMResults, NIDMResultStatisticMap
-from .forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
+from neurovault.apps.statmaps.models import Collection, Image, Atlas, Comparison, StatisticMap, NIDMResults, NIDMResultStatisticMap
+from neurovault.apps.statmaps.forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
@@ -40,7 +40,7 @@ from django.db.models.aggregates import Count
 from django.contrib import messages
 import traceback
 from django.forms import widgets
-
+import pickle
 
 
 def owner_or_contrib(request,collection):
@@ -744,6 +744,7 @@ def compare_images(request,pk1,pk2):
                                                                  atlas_labels=atlas["atlas_labels"],
                                                                  atlas_colors=atlas["atlas_colors"],
                                                                  corr_type="pearson",
+                                                                 subsample_every=6, # subsample every 6th voxel
                                                                  custom=custom) 
 
     html = [h.strip("\n") for h in html_snippet]
