@@ -6,7 +6,6 @@ import pylab as plt
 import nibabel as nib
 from django.db.models import Q
 from celery import shared_task 
-from scipy.stats.stats import pearsonr
 from nilearn.plotting import plot_glass_brain
 from django.shortcuts import get_object_or_404
 from neurovault.celery import nvcelery as celery_app
