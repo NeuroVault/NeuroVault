@@ -1,7 +1,9 @@
 # Django settings for neurovault project.
 import os
+import sys
 from datetime import timedelta
 import matplotlib
+import tempfile
 matplotlib.use('Agg')
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -303,3 +305,7 @@ CELERY_RESULT_SERIALIZER = 'json'
 #}
 # or manage periodic schedule in django admin
 #CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
+
+if "test" in sys.argv:
+    test_media_root = os.path.join(BASE_DIR, 'apps/statmaps/tests/test_media_root')
+    PRIVATE_MEDIA_ROOT= tempfile.mkdtemp(dir=test_media_root)

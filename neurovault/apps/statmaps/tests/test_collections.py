@@ -1,12 +1,16 @@
-from django.test import TestCase, Client, override_settings
+from django.test import TestCase, Client, override_settings, RequestFactory
 from django.core.urlresolvers import reverse
-from neurovault.apps.statmaps.models import Collection,User
+from neurovault.apps.statmaps.models import Collection,User, Atlas
+from django.core.files.uploadedfile import SimpleUploadedFile
 from uuid import uuid4
 import tempfile
 import os
 import shutil
 from neurovault.apps.statmaps.utils import detect_afni4D, split_afni4D_to_3D
 import nibabel
+from neurovault.settings import PRIVATE_MEDIA_ROOT
+from neurovault.apps.statmaps.views import delete_collection
+
 
 
 class CollectionSharingTest(TestCase):
@@ -55,6 +59,46 @@ class CollectionSharingTest(TestCase):
         """
         self.assertTrue('contributor' in resp['owner'].content.lower())
         self.assertFalse('contributor' in resp['contrib'].content.lower())
+
+
+class DeleteCollectionsTest(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.test_path = os.path.abspath(os.path.dirname(__file__))
+        self.user = User.objects.create(username='neurovault')
+        self.client = Client()
+        self.client.login(username=self.user)
+        self.Collection1 = Collection(name='Collection1',owner=self.user)
+        self.Collection1.save()
+        self.unorderedAtlas = Atlas(name='unorderedAtlas', description='',collection=self.Collection1)
+        self.unorderedAtlas.file = SimpleUploadedFile('VentralFrontal_thr75_summaryimage_2mm.nii.gz', file(os.path.join(self.test_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz')).read())
+        self.unorderedAtlas.label_description_file = SimpleUploadedFile('test_VentralFrontal_thr75_summaryimage_2mm.xml', file(os.path.join(self.test_path,'test_data/api/unordered_VentralFrontal_thr75_summaryimage_2mm.xml')).read())
+        self.unorderedAtlas.save()
+        
+        self.Collection2 = Collection(name='Collection2',owner=self.user)
+        self.Collection2.save()
+        self.orderedAtlas = Atlas(name='orderedAtlas', collection=self.Collection2, label_description_file='VentralFrontal_thr75_summaryimage_2mm.xml')
+        self.orderedAtlas.file = SimpleUploadedFile('VentralFrontal_thr75_summaryimage_2mm.nii.gz', file(os.path.join(self.test_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz')).read())
+        self.orderedAtlas.label_description_file = SimpleUploadedFile('test_VentralFrontal_thr75_summaryimage_2mm.xml', file(os.path.join(self.test_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.xml')).read())
+        self.orderedAtlas.save()
+    
+    def tearDown(self):
+        shutil.rmtree(PRIVATE_MEDIA_ROOT)
+    
+    def testDeleteCollection(self):
+        self.client.login(username=self.user)
+        pk1 = self.Collection1.pk
+        pk2 = self.Collection2.pk
+        request = self.factory.get('/collections/%s/delete' %pk1)
+        request.user = self.user
+        delete_collection(request, str(pk1))
+        print PRIVATE_MEDIA_ROOT
+        imageDir = os.path.join(PRIVATE_MEDIA_ROOT, 'images')
+        dirList = os.listdir(imageDir)
+        print dirList
+        self.assertIn(str(self.Collection2.pk), dirList)
+        self.assertNotIn(str(self.Collection1.pk), dirList)
+    
 
 
 class Afni4DTest(TestCase):

@@ -39,6 +39,8 @@ from django.db.models.aggregates import Count
 from django.contrib import messages
 import traceback
 from django.forms import widgets
+from neurovault.settings import PRIVATE_MEDIA_ROOT
+
 
 
 
@@ -239,6 +241,10 @@ def delete_collection(request, cid):
     for image in collection.image_set.all():
         image.delete()
     collection.delete()
+    collDir = os.path.join(PRIVATE_MEDIA_ROOT, 'images',str(cid))
+    try:
+        os.rmdir(collDir)
+    except OSError: print 'Image directory for collection %s does not exist' %cid
     return redirect('my_collections')
 
 
