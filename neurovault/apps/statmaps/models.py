@@ -24,7 +24,6 @@ from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, gen
 from django import forms
 from gzip import GzipFile
 
-
 class Collection(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of collection")
     DOI = models.CharField(max_length=200, unique=True, blank=True, null=True, default=None, verbose_name="DOI of the corresponding paper")
@@ -299,10 +298,22 @@ class Image(PolymorphicModel, BaseCollectionItem):
         do_update = True if file_changed else False
         new_image = True if self.pk is None else False
 
+        # If we have an update, delete old pkl and comparisons first before saving
+        if do_update and self.collection:
+            if self.transform is not None: # not applicable for private collections 
+                os.remove(self.transform)
+                self.transform = None
+                
+                pearson_metric = Similarity.objects.get(
+                                    similarity_metric="pearson product-moment correlation coefficient",
+                                    transformation="voxelwise")
+                comparisons = Comparison.objects.filter(Q(image1=self) | Q(image2=self))
+                if comparisons: comparisons.delete()
+
         super(Image, self).save()
 
-        if self.collection and self.collection.private == False:
-            
+        if (do_update or new_image) and self.collection and self.collection.private == False:
+
             # Generate glass brain image, transform, and comparisons
             generate_glassbrain_image.apply_async([self.pk])
 
