@@ -785,7 +785,7 @@ def find_similar(request,pk):
     # Get only # max_results similarity calculations for this image, and ids of other images
     comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1),
                   image1__collection__private=False, 
-                  image2__collection__private=False).extra(select={"abs_score": "abs(similarity_score)"}).order_by("abs_score")[0:max_results]
+                  image2__collection__private=False).extra(select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[0:max_results] # "-" indicates descending
     
     images = [image1]
     scores = [1] # pearsonr
@@ -825,7 +825,10 @@ def find_similar(request,pk):
 
     html = [h.strip("\n") for h in html_snippet]
     
-    images_processing = StatisticMap.objects.filter(collection__private=False).count() - len(image_ids)
+    # Count the number of images still processing - we don't include image or atlas
+    number_stat_maps = Image.objects.filter(collection__private=False).exclude(polymorphic_ctype__model__in=['image','atlas']).count()
+    images_processing = number_stat_maps - number_comparisons - 1 # number_stat_maps includes query image
+
     context = {'html': html,'images_processing':images_processing,
                'image_title':image_title, 'image_url': '/images/%s' % (image1.pk) }
     return render(request, 'statmaps/compare_search.html', context)
