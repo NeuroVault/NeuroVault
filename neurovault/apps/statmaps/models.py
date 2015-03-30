@@ -20,7 +20,7 @@ from django.db.models import Q
 from django.db.models.signals import post_delete, pre_delete
 from django.dispatch.dispatcher import receiver
 import shutil
-from neurovault.apps.statmaps.tasks import run_transformation_tasks, generate_glassbrain_image
+from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, generate_glassbrain_image
 from django import forms
 from gzip import GzipFile
 
@@ -303,15 +303,12 @@ class Image(PolymorphicModel, BaseCollectionItem):
 
         if self.collection and self.collection.private == False:
             
-            # Always generate glass brain image, no dependency needed
-            if new_image:
-                generate_glassbrain_image.apply_async([self.pk])
+            # Generate glass brain image, transform, and comparisons
+            generate_glassbrain_image.apply_async([self.pk])
 
-            # Only regenerate transform/comparisons (with dependency for one pk) if we have an update
-            if do_update:
-                print "Calculating transformation for image %s" % (self.pk)
-                # Run transform followed by pearsons, default resample_dim is 4mm
-                run_transformation_tasks.apply_async([self.pk]) 
+            print "Calculating transformation for image %s" % (self.pk)
+            # Default resample_dim is 4mm
+            run_voxelwise_pearson_similarity.apply_async([self.pk]) 
 
 class BaseStatisticMap(Image):
     Z = 'Z'

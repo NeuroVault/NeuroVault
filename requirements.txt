@@ -41,4 +41,3 @@ git+git://github.com/vsoch/pybraincompare.git@62eb0577927dde8ff75466c6b2b5641261
 django-cleanup
 django-chosen
 git+https://github.com/sinnwerkstatt/django-file-resubmit.git#egg=file_resubmit
-celery-tasktree

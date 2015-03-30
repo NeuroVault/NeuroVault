@@ -4,8 +4,8 @@ import numpy
 import pickle
 import pylab as plt
 import nibabel as nib
+from django.db.models import Q
 from celery import shared_task 
-from celery_tasktree import task_with_callbacks, TaskTree
 from scipy.stats.stats import pearsonr
 from nilearn.plotting import plot_glass_brain
 from django.shortcuts import get_object_or_404
@@ -30,27 +30,6 @@ def generate_glassbrain_image(image_pk):
     return png_img_path
 
 # IMAGE TRANSFORMATION ################################################################################
-
-# Complete multiple transformations at once
-@task_with_callbacks
-def save_resampled_transformation_multiple(pks, resample_dim=[4, 4, 4]):
-    transform_pkls = []
-    for pk in pks:
-      # This task must NOT be called async, otherwise it will return before transforms are done
-      transform_pkl = save_resampled_transformation_single(pk)
-      transform_pkls.append(transform_pkl)
-    return transform_pkls
-
-# Use TaskTree to submit dependency tasks (calculating pearson correlations must happen after transformations) 
-@shared_task
-def run_transformation_tasks(pks):
-    if not isinstance(pks,list): pks = [pks]
-    tree = TaskTree()
-    transform_task = tree.add_task(save_resampled_transformation_multiple,args=[pks])
-    for pk in pks:
-        transform_task.add_task(run_voxelwise_pearson_similarity,args=[pk])
-    async_result = tree.apply_async()
-    return async_result
 
 # Save 4mm, brain masked image vector in pkl file in image folder
 @shared_task
@@ -94,18 +73,28 @@ def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
 
 # SIMILARITY CALCULATION ##############################################################################
 
-@task_with_callbacks
+@shared_task
 def run_voxelwise_pearson_similarity(pk1):
-    from neurovault.apps.statmaps.models import Image
+
+    # Make sure we have a transform for pk in question
+    from neurovault.apps.statmaps.models import Image, Comparison
+    image1 = get_object_or_404(Image, pk=pk1)
+    if image1.transform is None:
+        save_resampled_transformation_single(pk1) # cannot run this async
+
+    # Calculate comparisons for other images, and generate transform if needed
     imgs = Image.objects.filter(collection__private=False).exclude(pk=pk1)
     comp_qs = imgs.exclude(polymorphic_ctype__model__in=['image','atlas']).order_by('id')
     for comp_img in comp_qs:
-        # Don't calculate comparisons for images still processing
-        if comp_img.transform is not None:
-            iargs = sorted([comp_img.pk,pk1]) 
+        if comp_img.transform is None:
+            save_resampled_transformation_single(comp_img.pk) # cannot run this async
+
+        iargs = sorted([comp_img.pk,pk1]) 
+        # Check to see if another job has already claimed calculating the comparison
+        if (Comparison.objects.filter(Q(image1=image1) | Q(image2=comp_img)).count() == 0) and (Comparison.objects.filter(Q(image1=comp_img) | Q(image2=image1)).count() == 0):
+        
             print "Calculating pearson similarity for images %s and %s" % (iargs[0],iargs[1])
             save_voxelwise_pearson_similarity.apply_async(iargs)  # Default uses transformation, transformation = True
-            # TODO: here we should add the comparisons that aren't possible to some list to run a task later            
 
 
 @shared_task
