@@ -14,7 +14,7 @@ from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_vol
     detect_feat_directory, format_image_collection_names
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponse
-from django.db.models import Q
+from django.db.models import Q, Count
 from neurovault import settings
 from sendfile import sendfile
 from django.views.decorators.csrf import csrf_exempt
@@ -773,14 +773,24 @@ def find_similar(request,pk):
     image1 = get_image(pk,None,request)
     pk = int(pk)
 
-    # Get all similarity calculations for this image, and ids of other images
+    # Count the number of comparisons that we have to determine max that we can return
+    number_comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1),
+                  image1__collection__private=False, 
+                  image2__collection__private=False).values().count()
+
+    max_results = 100
+    if number_comparisons < 100:
+      max_results = number_comparisons
+
+    # Get only # max_results similarity calculations for this image, and ids of other images
     comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1),
-                  image1__collection__private=False, image2__collection__private=False)
+                  image1__collection__private=False, 
+                  image2__collection__private=False).extra(select={"abs_score": "abs(similarity_score)"}).order_by("abs_score")[0:max_results]
     
     images = [image1]
     scores = [1] # pearsonr
     for comp in comparisons:
-      #pick the image we are comparing with
+      # pick the image we are comparing with
       image = [image for image in [comp.image1,
                          comp.image2] if image.id != pk][0]
       if hasattr(image, "map_type"):
@@ -811,7 +821,7 @@ def find_similar(request,pk):
     html_snippet = search.similarity_search(image_scores=scores,tags=tags,png_paths=png_img_paths,
                                 button_url=compare_url,image_url=image_url,query_png=query_png,
                                 query_id=pk,top_text=top_text,image_ids=image_ids,
-                                bottom_text=bottom_text,max_results=100,absolute_value=True)
+                                bottom_text=bottom_text,max_results=max_results,absolute_value=True)
 
     html = [h.strip("\n") for h in html_snippet]
     
