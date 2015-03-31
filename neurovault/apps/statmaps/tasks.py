@@ -35,6 +35,7 @@ def generate_glassbrain_image(image_pk):
 def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
     from neurovault.apps.statmaps.models import Image
     from nilearn.image import resample_img
+    from neurovault.apps.statmaps.utils import save_pickle_atomically
     import neurovault
     img = get_object_or_404(Image, pk=pk1)
     nii_obj = nib.load(img.file.path)
@@ -58,10 +59,9 @@ def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
     image_vector = img_resamp[0].get_data()[ref_resamp.get_data()!=0]
 
     pkl_resamp_name = "transform_%smm_%s.pkl" %(resample_dim[0],img.pk)
-    pkl_img_path = os.path.join(os.path.split(img.file.path)[0], pkl_resamp_name)
-    if os.path.exists(pkl_img_path):
-        os.unlink(pkl_img_path)
-    pickle.dump(image_vector,open(pkl_img_path,"wb"))
+    img_directory = os.path.split(img.file.path)[0]
+    pkl_img_path = os.path.join(img_directory, pkl_resamp_name)
+    save_pickle_atomically(image_vector,filename=pkl_img_path,directory=img_directory) 
 
     # Update the image "transform" field with the pkl_img_path
     img.transform = pkl_img_path
@@ -74,20 +74,14 @@ def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
 
 @shared_task
 def run_voxelwise_pearson_similarity(pk1):
-
-    # Make sure we have a transform for pk in question
     from neurovault.apps.statmaps.models import Image, Comparison
+
     image1 = get_object_or_404(Image, pk=pk1)
-    if image1.transform is None:
-        save_resampled_transformation_single(pk1) # cannot run this async
 
     # Calculate comparisons for other images, and generate transform if needed
     imgs = Image.objects.filter(collection__private=False).exclude(pk=pk1)
     comp_qs = imgs.exclude(polymorphic_ctype__model__in=['image','atlas']).order_by('id')
     for comp_img in comp_qs:
-        if comp_img.transform is None:
-            save_resampled_transformation_single(comp_img.pk) # cannot run this async
-
         iargs = sorted([comp_img.pk,pk1]) 
         # Check to see if another job has already claimed calculating the comparison
         if (Comparison.objects.filter(Q(image1=image1) | Q(image2=comp_img)).count() == 0) and (Comparison.objects.filter(Q(image1=comp_img) | Q(image2=image1)).count() == 0):
@@ -106,7 +100,7 @@ def save_voxelwise_pearson_similarity(pk1,pk2,resample_dim=[4,4,4],transformatio
 
 # Calculate pearson correlation from pickle files with brain masked vectors of image values
 def save_voxelwise_pearson_similarity_transformation(pk1, pk2):
-    from neurovault.apps.statmaps.models import Similarity, Comparison
+    from neurovault.apps.statmaps.models import Similarity, Comparison, Image
 
     # We will always calculate Comparison 1 vs 2, never 2 vs 1
     if pk1 != pk2:
@@ -117,6 +111,15 @@ def save_voxelwise_pearson_similarity_transformation(pk1, pk2):
                             similarity_metric="pearson product-moment correlation coefficient",
                             transformation="voxelwise")
     
+        # Make sure we have a transforms for pks in question
+        if image1.transform is None:
+            save_resampled_transformation_single(pk1) # cannot run this async
+            image1 = get_object_or_404(Image, pk=image1.pk)
+
+        if image2.transform is None:
+            save_resampled_transformation_single(pk2) # cannot run this async
+            image2 = get_object_or_404(Image, pk=image2.pk)
+
         # Load image pickles
         image_vector1 = pickle.load(open(image1.transform,"rb"))
         image_vector2 = pickle.load(open(image2.transform,"rb"))
@@ -133,10 +136,13 @@ def save_voxelwise_pearson_similarity_transformation(pk1, pk2):
             compare = Comparison.objects.get(image1=image1, image2=image2,
                                          similarity_metric=pearson_metric)
         except Comparison.DoesNotExist:
-            compare = Comparison(image1=image1, image2=image2, similarity_metric=pearson_metric)
+            compare = Comparison(image1=image1, image2=image2, 
+                                 similarity_metric=pearson_metric,
+                                 similarity_score=0)
+            compare.save()
 
-        compare.similarity_score = pearson_score
-        compare.save()
+        Comparison.objects.filter(image1=image1, image2=image2).update(similarity_score=pearson_score)
+        
 
         return image1.pk,image2.pk,pearson_score
     else:

@@ -22,6 +22,7 @@ from ast import literal_eval
 from subprocess import CalledProcessError
 from django.core.exceptions import ValidationError
 import zipfile
+import pickle
 
 # see CollectionRedirectMiddleware
 class HttpRedirectException(Exception):
@@ -280,6 +281,26 @@ def memory_uploadfile(new_file, fname, old_file):
 
     return InMemoryUploadedFile(cfile, "file", fname,
                                 content_type, cfile.size, charset)
+
+
+# Atomic save for a transform pickle file - save to tmp directory and rename
+def save_pickle_atomically(pkl_data,filename,directory=None):
+
+    # Give option to save to specific (not /tmp) directory
+    if directory == None:
+        tmp_file = tempfile.mktemp()
+    else:
+        tmp_file = tempfile.mktemp(dir=directory)
+
+    filey = open(tmp_file, 'wb')
+    # We don't want pickle to close the file
+    pickle_text = pickle.dumps(pkl_data)
+    filey.writelines(pickle_text)
+    # make sure that all data is on disk
+    filey.flush()
+    os.fsync(filey.fileno()) 
+    filey.close()
+    os.rename(tmp_file, filename)
 
 
 def populate_nidm_results(request,collection):
