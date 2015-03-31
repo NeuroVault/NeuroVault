@@ -31,6 +31,7 @@ import nibabel as nib
 import re
 import tempfile
 import neurovault
+import shutil
 from fnmatch import fnmatch
 import os
 from collections import OrderedDict
@@ -243,7 +244,7 @@ def delete_collection(request, cid):
     collection.delete()
     collDir = os.path.join(PRIVATE_MEDIA_ROOT, 'images',str(cid))
     try:
-        os.rmdir(collDir)
+        shutil.rmtree(collDir)
     except OSError: print 'Image directory for collection %s does not exist' %cid
     return redirect('my_collections')
 
