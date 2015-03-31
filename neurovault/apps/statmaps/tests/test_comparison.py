@@ -10,7 +10,7 @@ import tempfile
 import shutil
 from neurovault.apps.statmaps.utils import split_afni4D_to_3D
 import nibabel
-from .methods import clearTestMediaRoot
+from .utils import clearTestMediaRoot
 
 
 class ComparisonTestCase(TestCase):

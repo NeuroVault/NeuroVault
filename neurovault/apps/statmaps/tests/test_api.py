@@ -7,7 +7,7 @@ from operator import itemgetter
 from django.core.files.uploadedfile import SimpleUploadedFile
 from neurovault.apps.statmaps.forms import NIDMResultsForm
 import json
-from .methods import clearTestMediaRoot
+from .utils import clearTestMediaRoot
 
 class Test_Atlas_APIs(TestCase):
     def setUp(self):

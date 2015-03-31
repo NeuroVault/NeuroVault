@@ -8,7 +8,7 @@ import os
 import shutil
 from neurovault.apps.statmaps.utils import detect_afni4D, split_afni4D_to_3D
 import nibabel
-from .methods import clearTestMediaRoot
+from .utils import clearTestMediaRoot
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 
 from neurovault.apps.statmaps.views import delete_collection
