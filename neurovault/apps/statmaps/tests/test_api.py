@@ -7,6 +7,7 @@ from operator import itemgetter
 from django.core.files.uploadedfile import SimpleUploadedFile
 from neurovault.apps.statmaps.forms import NIDMResultsForm
 import json
+from .utils import clearTestMediaRoot
 
 class Test_Atlas_APIs(TestCase):
     def setUp(self):
@@ -45,6 +46,10 @@ class Test_Atlas_APIs(TestCase):
         self.zip_file.close()
         self.form = NIDMResultsForm(self.post_dict, self.file_dict)
         self.nidm = self.form.save()
+        
+    def tearDown(self):
+        clearTestMediaRoot()
+
     def test_query_region_out_of_order_indices(self):
         atlas_dir = os.path.join(self.test_path, 'test_data/api')
         tree = ET.parse(os.path.join(atlas_dir,'VentralFrontal_thr75_summaryimage_2mm.xml'))

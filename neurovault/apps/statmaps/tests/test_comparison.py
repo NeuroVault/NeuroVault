@@ -10,6 +10,8 @@ import tempfile
 import shutil
 from neurovault.apps.statmaps.utils import split_afni4D_to_3D
 import nibabel
+from .utils import clearTestMediaRoot
+
 
 class ComparisonTestCase(TestCase):
     pk1 = None
@@ -59,6 +61,7 @@ class ComparisonTestCase(TestCase):
         self.pearson_metric.save()
         
     def tearDown(self):
+        clearTestMediaRoot()
         shutil.rmtree(self.tmpdir)
 
     def test_save_pearson_similarity(self):
