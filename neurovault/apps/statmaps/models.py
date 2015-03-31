@@ -304,11 +304,10 @@ class Image(PolymorphicModel, BaseCollectionItem):
                 os.remove(self.transform)
                 self.transform = None
                 
-                pearson_metric = Similarity.objects.get(
-                                    similarity_metric="pearson product-moment correlation coefficient",
-                                    transformation="voxelwise")
+                # If more than one metric is added to NeuroVault, this must also filter based on metric
                 comparisons = Comparison.objects.filter(Q(image1=self) | Q(image2=self))
-                if comparisons: comparisons.delete()
+                if comparisons: 
+                    comparisons.delete()
 
         super(Image, self).save()
 
@@ -494,6 +493,10 @@ class Comparison(models.Model):
 
     class Meta:
         unique_together = ("image1","image2")
+        index_together = [["image1", "image2", "similarity_metric"], 
+                          ["image2", "similarity_metric"],
+                          ["image1", "similarity_metric"]]
+
         verbose_name = "pairwise image comparison"
         verbose_name_plural = "pairwise image comparisons"
     
