@@ -8,7 +8,9 @@ import os
 import shutil
 from neurovault.apps.statmaps.utils import detect_afni4D, split_afni4D_to_3D
 import nibabel
+from .methods import clearTestMediaRoot
 from neurovault.settings import PRIVATE_MEDIA_ROOT
+
 from neurovault.apps.statmaps.views import delete_collection
 
 
@@ -83,8 +85,8 @@ class DeleteCollectionsTest(TestCase):
         self.orderedAtlas.save()
     
     def tearDown(self):
-        shutil.rmtree(PRIVATE_MEDIA_ROOT)
-    
+        clearTestMediaRoot()
+        
     def testDeleteCollection(self):
         self.client.login(username=self.user)
         pk1 = self.Collection1.pk
@@ -92,7 +94,6 @@ class DeleteCollectionsTest(TestCase):
         request = self.factory.get('/collections/%s/delete' %pk1)
         request.user = self.user
         delete_collection(request, str(pk1))
-        print PRIVATE_MEDIA_ROOT
         imageDir = os.path.join(PRIVATE_MEDIA_ROOT, 'images')
         dirList = os.listdir(imageDir)
         print dirList
@@ -111,6 +112,7 @@ class Afni4DTest(TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
+        clearTestMediaRoot()
 
     """
     TTatlas is the example 4D file that ships with afni, has two sub-bricks:
