@@ -768,7 +768,7 @@ def find_similar(request,pk):
     # Count the number of comparisons that we have to determine max that we can return
     number_comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1),
                   image1__collection__private=False, 
-                  image2__collection__private=False).values().count()
+                  image2__collection__private=False).count()
 
     max_results = 100
     if number_comparisons < 100:

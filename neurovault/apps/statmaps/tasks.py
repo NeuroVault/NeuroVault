@@ -81,13 +81,12 @@ def run_voxelwise_pearson_similarity(pk1):
     # Calculate comparisons for other images, and generate transform if needed
     imgs = Image.objects.filter(collection__private=False).exclude(pk=pk1)
     comp_qs = imgs.exclude(polymorphic_ctype__model__in=['image','atlas']).order_by('id')
+    print "Found %s other images to compare to!" % len(comp_qs)
     for comp_img in comp_qs:
         iargs = sorted([comp_img.pk,pk1]) 
-        # Check to see if another job has already claimed calculating the comparison
-        if (Comparison.objects.filter(Q(image1=image1) | Q(image2=comp_img)).count() == 0) and (Comparison.objects.filter(Q(image1=comp_img) | Q(image2=image1)).count() == 0):
         
-            print "Calculating pearson similarity for images %s and %s" % (iargs[0],iargs[1])
-            save_voxelwise_pearson_similarity.apply_async(iargs)  # Default uses transformation, transformation = True
+        print "Calculating pearson similarity for images %s and %s" % (iargs[0],iargs[1])
+        save_voxelwise_pearson_similarity.apply_async(iargs)  # Default uses transformation, transformation = True
 
 
 @shared_task
@@ -132,17 +131,9 @@ def save_voxelwise_pearson_similarity_transformation(pk1, pk2):
                                                       image_vector2[mask==1],
                                                       corr_type="pearson")   
 
-        try:
-            compare = Comparison.objects.get(image1=image1, image2=image2,
-                                         similarity_metric=pearson_metric)
-        except Comparison.DoesNotExist:
-            compare = Comparison(image1=image1, image2=image2, 
-                                 similarity_metric=pearson_metric,
-                                 similarity_score=0)
-            compare.save()
-
-        Comparison.objects.filter(image1=image1, image2=image2).update(similarity_score=pearson_score)
-        
+        Comparison.objects.update_or_create(image1=image1, image2=image2,
+                                            similarity_metric=pearson_metric,
+                                            similarity_score=pearson_score)
 
         return image1.pk,image2.pk,pearson_score
     else:
