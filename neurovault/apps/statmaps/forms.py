@@ -377,21 +377,22 @@ class ImageForm(ModelForm):
                             hf = open(os.path.join(tmp_dir, fname + ".hdr"), "wb")
                             hf.write(hdr_file.file.read())
                             hf.close()
-                    else:
-                        self._errors["hdr_file"] = self.error_class([".img files require .hdr"])
-                        del cleaned_data["hdr_file"]
-                        return cleaned_data
 
                 # prepare file to loading into memory
                 file.open()
                 if file.name.lower().endswith(".gz"):
-                    fileobj = GzipFile(filename=django_file.name, mode='rb', fileobj=file.file)
+                    fileobj = GzipFile(filename=file.name, mode='rb', fileobj=file.file)
                 else:
-                    fileobj=django_file.file
+                    fileobj=file.file
+                
+                file_map = {'image': nb.FileHolder(file.name, fileobj)}
+                if hdr_file:
+                    hdr_file.open()
+                    file_map["header"] = nb.FileHolder(hdr_file.name, hdr_file.file)
 
                 # check if it is really nifti
                 try:
-                    nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(file.name, fileobj)})
+                    nii = nb.Nifti1Image.from_file_map(file_map)
                 except Exception as e:
                     self._errors["file"] = self.error_class([str(e)])
                     del cleaned_data["file"]
