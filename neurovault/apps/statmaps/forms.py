@@ -449,11 +449,8 @@ class StatisticMapForm(ImageForm):
 
         if django_file:
             django_file.open()
-            if django_file.name.lower().endswith(".gz"):
-                fileobj = GzipFile(filename=django_file.name, mode='rb', fileobj=django_file.file)
-            else:
-                fileobj=django_file.file
-            nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(django_file.name, fileobj)})
+            gzfileobj = GzipFile(filename=django_file.name, mode='rb', fileobj=django_file.file)
+            nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(django_file.name, gzfileobj)})
             cleaned_data["is_thresholded"], ratio_bad = is_thresholded(nii)
             cleaned_data["perc_bad_voxels"] = ratio_bad*100.0
             
