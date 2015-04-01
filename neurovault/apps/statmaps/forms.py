@@ -384,11 +384,14 @@ class ImageForm(ModelForm):
 
                 # prepare file to loading into memory
                 file.open()
-                gzfileobj = GzipFile(filename=file.name, mode='rb', fileobj=file.file)
+                if file.name.lower().endswith(".gz"):
+                    fileobj = GzipFile(filename=django_file.name, mode='rb', fileobj=file.file)
+                else:
+                    fileobj=django_file.file
 
                 # check if it is really nifti
                 try:
-                    nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(file.name, gzfileobj)})
+                    nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(file.name, fileobj)})
                 except Exception as e:
                     self._errors["file"] = self.error_class([str(e)])
                     del cleaned_data["file"]
