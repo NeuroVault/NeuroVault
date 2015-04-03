@@ -157,6 +157,7 @@ INSTALLED_APPS = (
     'django_cleanup',
     'file_resubmit',
     'djrill'
+    'django_hstore'
 )
 
 # A sample logging configuration. The only tangible logging

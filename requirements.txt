@@ -46,3 +46,5 @@ git+https://github.com/incf-nidash/nidmresults.git@5a9c494918de8e1c05a981e40a2a6
 git+https://github.com/trungdong/prov.git#egg=prov
 opbeat
 djrill
+django-hstore==1.3.5
+mock
