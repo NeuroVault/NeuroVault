@@ -131,11 +131,13 @@ def save_voxelwise_pearson_similarity_transformation(pk1, pk2):
                                                       image_vector2[mask==1],
                                                       corr_type="pearson")   
 
-        Comparison.objects.update_or_create(image1=image1, image2=image2,
+        # Only save comparison if is not nan
+        if not numpy.isnan(pearson_score):     
+            Comparison.objects.update_or_create(image1=image1, image2=image2,
                                             similarity_metric=pearson_metric,
                                             similarity_score=pearson_score)
 
-        return image1.pk,image2.pk,pearson_score
+            return image1.pk,image2.pk,pearson_score
     else:
         raise Exception("You are trying to compare an image with itself!")
 
@@ -171,19 +173,17 @@ def save_voxelwise_pearson_similarity_resample(pk1, pk2,resample_dim=[4,4,4]):
         image2_res = images_resamp[1]
         binary_mask = make_binary_deletion_mask(images_resamp)
         binary_mask = nib.Nifti1Image(binary_mask,header=image1_res.get_header(),affine=image1_res.get_affine())
+
         # Will return nan if comparison is not possible
         pearson_score = calculate_correlation([image1_res,image2_res],mask=binary_mask,corr_type="pearson")
-      
-        try:
-            compare = Comparison.objects.get(image1=image1, image2=image2,
-                                         similarity_metric=pearson_metric)
-        except Comparison.DoesNotExist:
-            compare = Comparison(image1=image1, image2=image2, similarity_metric=pearson_metric)
 
-        compare.similarity_score = pearson_score
-        compare.save()
+        # Only save comparison if is not nan
+        if not numpy.isnan(pearson_score):     
+            Comparison.objects.update_or_create(image1=image1, image2=image2,
+                                            similarity_metric=pearson_metric,
+                                            similarity_score=pearson_score)
 
-        return image1.pk,image2.pk,pearson_score
+            return image1.pk,image2.pk,pearson_score
     else:
         raise Exception("You are trying to compare an image with itself!")
 

@@ -19,7 +19,7 @@ from neurovault import settings
 from sendfile import sendfile
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.renderers import JSONRenderer
-from voxel_query_functions import *
+from neurovault.apps.statmaps.voxel_query_functions import *
 from pybraincompare.compare import scatterplot, search
 from pybraincompare.mr.datasets import get_mni_atlas
 from glob import glob
@@ -740,22 +740,25 @@ def compare_images(request,pk1,pk2):
     atlas_pkl_path = os.path.join(neurovault_root, 'neurovault/static/atlas/atlas_mni_4mm.pkl')
     atlas = pickle.load(open(atlas_pkl_path,"rb"))
 
-    # Get 2mm atlas for rendering
-    atlas2mm = get_mni_atlas("2")["2"]
+    # Load the atlas svg, so we don't need to dynamically generate it
+    atlas_svg = os.path.join(neurovault_root,'neurovault/static/atlas/atlas_mni_2mm_svg.pkl')
+    atlas_svg = pickle.load(open(atlas_svg,"rb"))
 
-    # Generate html for similarity search    
+    # Generate html for similarity search, do not specify atlas    
     html_snippet,data_table = scatterplot.scatterplot_compare_vector(image_vector1=image_vector1,
                                                                  image_vector2=image_vector2,
                                                                  image_names=image_names,
-                                                                 atlas=atlas2mm,
                                                                  atlas_vector=atlas["atlas_vector"],
                                                                  atlas_labels=atlas["atlas_labels"],
                                                                  atlas_colors=atlas["atlas_colors"],
                                                                  corr_type="pearson",
-                                                                 subsample_every=6, # subsample every 6th voxel
-                                                                 custom=custom) 
+                                                                 subsample_every=10, # subsample every 10th voxel
+                                                                 custom=custom,
+                                                                 remove_scripts="D3_MIN_JS") 
 
-    html = [h.strip("\n") for h in html_snippet]
+    # Add atlas svg to the image, and prepare html for rendering
+    html = [h.replace("[coronal]",atlas_svg) for h in html_snippet]
+    html = [h.strip("\n").replace("[axial]","").replace("[sagittal]","") for h in html]
     context = {'html': html}
     return render(request, 'statmaps/compare_images.html', context)
 
@@ -765,66 +768,73 @@ def find_similar(request,pk):
     image1 = get_image(pk,None,request)
     pk = int(pk)
 
-    # Count the number of comparisons that we have to determine max that we can return
-    number_comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1),
+    # Search only enabled if the image is not thresholded
+    if image1.is_thresholded == False:
+
+        # Count the number of comparisons that we have to determine max that we can return
+        number_comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1),
                   image1__collection__private=False, 
                   image2__collection__private=False).count()
 
-    max_results = 100
-    if number_comparisons < 100:
-      max_results = number_comparisons
+        max_results = 100
+        if number_comparisons < 100:
+          max_results = number_comparisons
 
-    # Get only # max_results similarity calculations for this image, and ids of other images
-    comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1),
+        # Get only # max_results similarity calculations for this image, and ids of other images
+        comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1),
                   image1__collection__private=False, 
                   image2__collection__private=False).extra(select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[0:max_results] # "-" indicates descending
+
+        images = [image1]
+        scores = [1] # pearsonr
+        for comp in comparisons:
+          # pick the image we are comparing with
+          image = [image for image in [comp.image1,
+                             comp.image2] if image.id != pk][0]
+          if hasattr(image, "map_type"):
+            images.append(image)
+            scores.append(comp.similarity_score)
     
-    images = [image1]
-    scores = [1] # pearsonr
-    for comp in comparisons:
-      # pick the image we are comparing with
-      image = [image for image in [comp.image1,
-                         comp.image2] if image.id != pk][0]
-      if hasattr(image, "map_type"):
-        images.append(image)
-        scores.append(comp.similarity_score)
-    
-    # We will need lists of image ids, png paths, query id, query path, tags, names, scores
-    image_ids = [image.pk for image in images]
-    image_paths = [image.file.url for image in images]
-    png_img_names = ["glass_brain_%s.png" % image.pk for image in images]
-    png_img_paths = [os.path.join(os.path.split(image_paths[i])[0],
+        # We will need lists of image ids, png paths, query id, query path, tags, names, scores
+        image_ids = [image.pk for image in images]
+        image_paths = [image.file.url for image in images]
+        png_img_names = ["glass_brain_%s.png" % image.pk for image in images]
+        png_img_paths = [os.path.join(os.path.split(image_paths[i])[0],
                                   png_img_names[i]) for i in range(0,len(image_paths))]
-    tags = [[str(image.map_type)] for image in images]
+        tags = [[str(image.map_type)] for image in images]
     
-    # The top text will be the collection name, the bottom text the image name
-    bottom_text = ["%s" % (image.name) for image in images]
-    top_text = ["%s" % (image.collection.name) for image in images]
-    compare_url = "/images/compare"  # format will be prefix/[query_id]/[other_id]
-    image_url = "/images"  # format will be prefix/[other_id]
-    image_title = format_image_collection_names(image_name=image1.name,
+        # The top text will be the collection name, the bottom text the image name
+        bottom_text = ["%s" % (image.name) for image in images]
+        top_text = ["%s" % (image.collection.name) for image in images]
+        compare_url = "/images/compare"  # format will be prefix/[query_id]/[other_id]
+        image_url = "/images"  # format will be prefix/[other_id]
+        image_title = format_image_collection_names(image_name=image1.name,
                                                        collection_name=image1.collection.name,
                                                        map_type=image1.map_type,total_length=125)
     
-    # Here is the query image
-    query_png = os.path.join(os.path.split(image1.file.url)[0],"glass_brain_%s.png" % (image1.pk))
+        # Here is the query image
+        query_png = os.path.join(os.path.split(image1.file.url)[0],"glass_brain_%s.png" % (image1.pk))
 
-    # Do similarity search and return html to put in page, specify 100 max results, take absolute value of scores
-    html_snippet = search.similarity_search(image_scores=scores,tags=tags,png_paths=png_img_paths,
-                                button_url=compare_url,image_url=image_url,query_png=query_png,
-                                query_id=pk,top_text=top_text,image_ids=image_ids,
-                                bottom_text=bottom_text,max_results=max_results,absolute_value=True)
+        # Do similarity search and return html to put in page, specify 100 max results, take absolute value of scores
+        html_snippet = search.similarity_search(image_scores=scores,tags=tags,png_paths=png_img_paths,
+                                    button_url=compare_url,image_url=image_url,query_png=query_png,
+                                    query_id=pk,top_text=top_text,image_ids=image_ids,
+                                    bottom_text=bottom_text,max_results=max_results,absolute_value=True)
 
-    html = [h.strip("\n") for h in html_snippet]
+        html = [h.strip("\n") for h in html_snippet]
     
-    # Count the number of images still processing - we don't include image or atlas
-    number_stat_maps = Image.objects.filter(collection__private=False).exclude(polymorphic_ctype__model__in=['image','atlas']).count()
-    images_processing = number_stat_maps - number_comparisons - 1 # number_stat_maps includes query image
+        # Count the number of images still processing - we don't include image or atlas, or thresholded images
+        number_stat_maps = StatisticMap.objects.filter(collection__private=False)
+        number_stat_maps = number_stat_maps.filter(is_thresholded=False).exclude(polymorphic_ctype__model__in=['image','atlas']).count()
+        images_processing = number_stat_maps - number_comparisons - 1 # number_stat_maps includes query image
 
-    context = {'html': html,'images_processing':images_processing,
-               'image_title':image_title, 'image_url': '/images/%s' % (image1.pk) }
-    return render(request, 'statmaps/compare_search.html', context)
-
+        context = {'html': html,'images_processing':images_processing,
+                   'image_title':image_title, 'image_url': '/images/%s' % (image1.pk) }
+        return render(request, 'statmaps/compare_search.html', context)
+    else:
+        error_message = "Image comparison is not enabled for thresholded images." 
+        context = {'error_message': error_message}
+        return render(request, 'statmaps/error_message.html', context)
 
 class JSONResponse(HttpResponse):
     """

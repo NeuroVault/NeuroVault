@@ -301,7 +301,6 @@ class Image(PolymorphicModel, BaseCollectionItem):
         # If we have an update, delete old pkl and comparisons first before saving
         if do_update and self.collection:
             if self.transform is not None: # not applicable for private collections 
-                os.remove(self.transform)
                 self.transform = None
                 
                 # If more than one metric is added to NeuroVault, this must also filter based on metric

@@ -37,7 +37,7 @@ celery[redis]
 django-celery
 scikit-learn
 nilearn
-git+git://github.com/vsoch/pybraincompare.git@62eb0577927dde8ff75466c6b2b56412613b51e2#egg=pybraincompare
+pybraincompare
 django-cleanup
 django-chosen
 git+https://github.com/sinnwerkstatt/django-file-resubmit.git#egg=file_resubmit
