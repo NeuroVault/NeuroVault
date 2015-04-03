@@ -169,14 +169,23 @@
   function submitResult(result) {
     $.ajax({
       type: 'POST',
-      data: JSON.stringify(result)
+      data: JSON.stringify(result),
+      contentType: 'application/json; charset=utf-8'
     })
       .done(function () {
         alert("Success");
       })
       .fail(function (jqXHR, textStatus, errorThrown) {
-        displayErrors($('.step2 .errors'),
-          [{msg: 'Error while submitting data to server: ' + errorThrown}]);
+        var r = jqXHR.responseJSON,
+          errors;
+
+        if (r) {
+          errors = [{msg: r.message}];
+        } else {
+          errors = [{msg: 'Error while submitting data to server: ' + errorThrown}];
+        }
+
+        displayErrors($('.step2 .errors'), errors);
       });
   }
 

@@ -16,7 +16,7 @@ from django.contrib.auth.decorators import login_required
 from pybraincompare.compare import scatterplot, search
 from pybraincompare.mr.datasets import get_mni_atlas
 from django.views.decorators.csrf import csrf_exempt
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 from django.template.context import RequestContext
 from rest_framework.renderers import JSONRenderer
@@ -174,16 +174,76 @@ def edit_collection(request, cid=None):
     return render(request, "statmaps/edit_collection.html.haml", context)
 
 
+def dict_factory(header_row, row):
+    d = {}
+    for idx, field_name in enumerate(header_row):
+        d[field_name] = row[idx]
+    return d
+
+
+def convert_to_list(data):
+    return [dict_factory(data[0], row) for row in data[1:]]
+
+
+def list_to_dict(iterable, key):
+    return dict((key(item), item) for item in iterable)
+
+
+def pair_data_and_objects(metadata_dict, image_obj_dict):
+    for image_filename, metadata in metadata_dict.items():
+        image_obj = image_obj_dict.get(image_filename)
+        if not image_obj:
+            raise ValidationError('File is not found in the collection: %s' % filename,
+                                  code='file_not_found')
+        yield (metadata, image_obj)
+
+
+def error_response(exception):
+    return JSONResponse({'message': exception.message}, status=400)
+
+
+@csrf_exempt
 @login_required
 def import_metadata(request, collection_cid):
+    import json
+
     collection = get_collection(collection_cid, request)
 
     if not owner_or_contrib(request, collection):
         return HttpResponseForbidden()
 
+    if request.method == "POST":
+        def file_basename(image_obj):
+            return os.path.basename(image_obj.file.name)
+
+        metadata = json.loads(request.body)
+
+        metadata_list = convert_to_list(metadata)
+        metadata_dict = list_to_dict(metadata_list,
+                                     key=lambda x: x['File Name'])
+
+        image_obj_list = collection.image_set.all()
+        image_obj_dict = list_to_dict(image_obj_list,
+                                      key=file_basename)
+
+        try:
+            pairs = pair_data_and_objects(metadata_dict,
+                                          image_obj_dict)
+            for metadata_item, image_obj in pairs:
+                for key in metadata_item:
+                    if key != 'File Name':
+                        image_obj.data[key] = metadata_item[key]
+
+            for _, image_obj in pairs:
+                image_obj.save()
+
+        except ValidationError as e:
+            return error_response(e)
+
+        return JSONResponse(metadata_list, status=201)
+
     return render(request, "statmaps/import_metadata.html", {
-        'collection': collection
-        })
+        'collection': collection})
 
 
 def view_image(request, pk, collection_cid=None):
