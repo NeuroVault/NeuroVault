@@ -154,6 +154,7 @@ INSTALLED_APPS = (
     'django_cleanup',
     'file_resubmit',
     'djrill'
+    'django_hstore'
 )
 
 # A sample logging configuration. The only tangible logging
@@ -268,7 +269,7 @@ CACHES = {
                 "LOCATION": '/tmp/file_resubmit/'
             }
           }
-          
+
 # Mandrill config
 MANDRILL_API_KEY = "z2O_vfFUJB4L2yeF4Be9Tg" # this is a test key replace wit ha different one in production
 EMAIL_BACKEND = "djrill.mail.backends.djrill.DjrillBackend"
