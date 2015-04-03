@@ -214,7 +214,8 @@ class CollectionMetaDataTest(TestCase):
                       kwargs={'collection_cid': self.coll.pk})
 
         resp = self.client.post(url,
-            data=test_json, content_type='application/json; charset=utf-8')
+                                data=test_json,
+                                content_type='application/json; charset=utf-8')
 
         self.assertEqual(resp.status_code, 200)
 
@@ -234,19 +235,18 @@ class CollectionMetaDataTest(TestCase):
                       kwargs={'collection_cid': self.coll.pk})
 
         resp = self.client.post(url,
-            data=test_json, content_type='application/json; charset=utf-8')
+                                data=test_json,
+                                content_type='application/json; charset=utf-8')
 
         self.assertEqual(resp.status_code, 400)
 
         resp_json = json.loads(resp.content)
 
         self.assertEqual(resp_json['message'],
-            'File is not found in the collection: file3.nii.gz')
+                         'File is not found in the collection: file3.nii.gz')
 
     def test_missing_required_fields(self):
         pass
 
     def test_incorrect_values_in_column(self):
         pass
-
-
