@@ -186,11 +186,23 @@ def list_to_dict(iterable, key):
     return dict((key(item), item) for item in iterable)
 
 
+def diff_dicts(dict_a, dict_b):
+    keys = getattr(dict, 'viewkeys', dict.keys)
+    return keys(dict_a) - keys(dict_b)
+
+
+# TODO: add force flag
 def pair_data_and_objects(metadata_dict, image_obj_dict):
+    extra_files = diff_dicts(image_obj_dict, metadata_dict)
+
+    if extra_files:
+        raise ValidationError(
+            "Missing metadata for %s" % ', '.join(extra_files))
+
     for image_filename, metadata in metadata_dict.items():
         image_obj = image_obj_dict.get(image_filename)
         if not image_obj:
-            raise ValidationError('File is not found in the collection: %s' % filename,
+            raise ValidationError('File is not found in the collection: %s' % image_filename,
                                   code='file_not_found')
         yield (metadata, image_obj)
 
@@ -231,13 +243,12 @@ def import_metadata(request, collection_cid):
                     if key != 'File Name':
                         image_obj.data[key] = metadata_item[key]
 
-            for _, image_obj in pairs:
                 image_obj.save()
 
         except ValidationError as e:
             return error_response(e)
 
-        return JSONResponse(metadata_list, status=201)
+        return JSONResponse(metadata_list, status=200)
 
     return render(request, "statmaps/import_metadata.html", {
         'collection': collection})
