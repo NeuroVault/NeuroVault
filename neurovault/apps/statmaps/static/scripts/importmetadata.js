@@ -166,6 +166,14 @@
     });
   }
 
+  function getCollectionIdFromURL(url) {
+    var match = url.match(/collections\/(\d+)/);
+    if (match[1]) {
+      return match[1];
+    }
+    return '';
+  }
+
   function submitResult(result) {
     $.ajax({
       type: 'POST',
@@ -173,7 +181,8 @@
       contentType: 'application/json; charset=utf-8'
     })
       .done(function () {
-        alert("Success");
+        var collectionId = getCollectionIdFromURL(window.location.href);
+        window.location.replace('/collections/' + collectionId);
       })
       .fail(function (jqXHR, textStatus, errorThrown) {
         var r = jqXHR.responseJSON,
