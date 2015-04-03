@@ -3,6 +3,7 @@ from django.core.urlresolvers import reverse
 from neurovault.apps.statmaps.models import Collection, User, Image, Atlas
 from django.core.files.uploadedfile import SimpleUploadedFile
 import mock
+import json
 from uuid import uuid4
 import tempfile
 import os
@@ -169,7 +170,13 @@ class CollectionMetaDataTest(TestCase):
 
         self.image1 = Image(name='Image1',
                             collection=self.coll,
-                            file='file1.nii')
+                            file='file1.nii.gz')
+
+        self.image2 = Image(name='Image2',
+                            collection=self.coll,
+                            file='file2.nii.gz')
+
+        self.files = []
 
         # Avoid Celery
         from neurovault.apps.statmaps import models
@@ -180,14 +187,28 @@ class CollectionMetaDataTest(TestCase):
                     'test_data/api/DorsalFrontal_thr25_1mm.nii.gz')).read())
             self.image1.save()
 
+            self.image2.file = SimpleUploadedFile('file2.nii.gz',
+                file(os.path.join(test_path,
+                    'test_data/api/DorsalFrontal_thr25_1mm.nii.gz')).read())
+            self.image2.save()
+
+    def tearDown(self):
+        os.unlink(self.image1.file.path)
+        os.unlink(self.image2.file.path)
+
+        self.image1.delete()
+        self.image2.delete()
+
+        self.coll.delete()
+        self.user.delete()
+
     def uniqid(self):
         return str(uuid4())[:8]
 
     def test_post_metadata(self):
         test_json = ('[["File Name","Subject Id","Image Type","Sex"],'
                      '["file1.nii.gz","12","subject","1"],'
-                     '["file2.nii.gz","13","subject","2"],'
-                     '["file3.nii.gz","14","subject","2"]]')
+                     '["file2.nii.gz","13","subject","2"]]')
 
         url = reverse('import_metadata',
                       kwargs={'collection_cid': self.coll.pk})
@@ -196,6 +217,31 @@ class CollectionMetaDataTest(TestCase):
             data=test_json, content_type='application/json; charset=utf-8')
 
         self.assertEqual(resp.status_code, 200)
+
+        image1 = Image.objects.get(id=self.image1.id)
+
+        self.assertEqual(image1.data, {'Sex': '1',
+                                       'Subject Id': '12',
+                                       'Image Type': 'subject'})
+
+    def test_metadata_for_files_missing_in_the_collection(self):
+        test_json = ('[["File Name","Subject Id","Image Type","Sex"],'
+                     '["file1.nii.gz","12","subject","1"],'
+                     '["file2.nii.gz","13","subject","2"],'
+                     '["file3.nii.gz","14","subject","3"]]')
+
+        url = reverse('import_metadata',
+                      kwargs={'collection_cid': self.coll.pk})
+
+        resp = self.client.post(url,
+            data=test_json, content_type='application/json; charset=utf-8')
+
+        self.assertEqual(resp.status_code, 400)
+
+        resp_json = json.loads(resp.content)
+
+        self.assertEqual(resp_json['message'],
+            'File is not found in the collection: file3.nii.gz')
 
     def test_missing_required_fields(self):
         pass
