@@ -251,6 +251,9 @@ def import_metadata(request, collection_cid):
         except ValidationError as e:
             return error_response(e)
 
+        messages.success(request,
+                         'Image metadata have been imported.',
+                         extra_tags='alert-success')
         return JSONResponse(metadata_list, status=200)
 
     return render(request, "statmaps/import_metadata.html", {
