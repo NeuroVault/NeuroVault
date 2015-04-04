@@ -129,7 +129,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
                                 'request': self.context['request']}).to_representation(obj)
 
         return super(ImageSerializer, self).to_representation(obj)
-    
+
 
 class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
 
@@ -179,7 +179,7 @@ class NIDMResultsSerializer(serializers.ModelSerializer):
         model = NIDMResults
         exclude = ['id']
 
-    
+
 class CollectionSerializer(serializers.ModelSerializer):
     images = ImageSerializer(many=True, source='image_set')
     nidm_results = NIDMResultsSerializer(many=True, source='nidmresults_set')
@@ -213,7 +213,8 @@ class ImageViewSet(mixins.RetrieveModelMixin,
         image = self._get_api_image(request,pk)
         data = ImageSerializer(image, context={'request': request}).data
         return APIHelper.wrap_for_datatables(data, ['name', 'modify_date',
-                                                    'description', 'add_date'])
+                                                    'description', 'add_date',
+                                                    'data'])
 
     def retrieve(self, request, pk=None):
         image = self._get_api_image(request,pk)
@@ -248,10 +249,10 @@ class AtlasViewSet(ImageViewSet):
         regions = [line.text.split('(')[0].replace("'",'').rstrip(' ').lower() for line in lines]
         return Response(
             {'aaData': zip(indices, regions)})
-        
+
     @list_route()
     def atlas_query_region(self, request, pk=None):
-        ''' Returns a dictionary containing a list of voxels that match the searched term (or related searches) in the specified atlas.\n 
+        ''' Returns a dictionary containing a list of voxels that match the searched term (or related searches) in the specified atlas.\n
         Parameters: region, collection, atlas \n
         Example: '/api/atlases/atlas_query_region/?region=middle frontal gyrus&collection=Harvard-Oxford cortical and subcortical structural atlases&atlas=HarvardOxford cort maxprob thr25 1mm' '''
         search = request.GET.get('region','')
@@ -291,12 +292,12 @@ class AtlasViewSet(ImageViewSet):
                 data = {'voxels':getAtlasVoxels(searchList, atlas_image, atlas_xml)}
             except ValueError:
                 return Response('error: region not in atlas', status=400)
-    
+
             return Response(data)
-        
+
     @list_route()
     def atlas_query_voxel(self, request, pk=None):
-        ''' Returns the region name that matches specified coordinates in the specified atlas.\n 
+        ''' Returns the region name that matches specified coordinates in the specified atlas.\n
         Parameters: x, y, z, collection, atlas \n
         Example: '/api/atlases/atlas_query_voxel/?x=30&y=30&z=30&collection=Harvard-Oxford cortical and subcortical structural atlases&atlas=HarvardOxford cort maxprob thr25 1mm' '''
         X = request.GET.get('x','')
