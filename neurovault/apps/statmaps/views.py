@@ -46,6 +46,8 @@ import re
 import os
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
 from django.views.decorators.cache import never_cache
+import json
+
 
 def owner_or_contrib(request,collection):
     if collection.owner == request.user or request.user in collection.contributors.all() or request.user.is_superuser:
@@ -214,47 +216,55 @@ def error_response(exception):
     return JSONResponse({'message': exception.message}, status=400)
 
 
+def save_metadata(collection, metadata):
+    def file_basename(image_obj):
+        return os.path.basename(image_obj.file.name)
+
+    metadata_list = convert_to_list(metadata)
+    metadata_dict = list_to_dict(metadata_list,
+                                 key=lambda x: x['File Name'])
+
+    image_obj_list = collection.image_set.all()
+    image_obj_dict = list_to_dict(image_obj_list,
+                                  key=file_basename)
+
+    pairs = pair_data_and_objects(metadata_dict,
+                                  image_obj_dict)
+    for metadata_item, image_obj in pairs:
+        for key in metadata_item:
+            if key != 'File Name':
+                image_obj.data[key] = metadata_item[key]
+
+        image_obj.save()
+
+    return metadata_list
+
+
+def handle_post_metadata(request, collection, success_message):
+    metadata = json.loads(request.body)
+
+    try:
+        metadata_list = save_metadata(collection, metadata)
+    except ValidationError as e:
+        return error_response(e)
+
+    messages.success(request,
+                     success_message,
+                     extra_tags='alert-success')
+    return JSONResponse(metadata_list, status=200)
+
+
 @csrf_exempt
 @login_required
 def import_metadata(request, collection_cid):
-    import json
-
     collection = get_collection(collection_cid, request)
 
     if not owner_or_contrib(request, collection):
         return HttpResponseForbidden()
 
     if request.method == "POST":
-        def file_basename(image_obj):
-            return os.path.basename(image_obj.file.name)
-
-        metadata = json.loads(request.body)
-
-        metadata_list = convert_to_list(metadata)
-        metadata_dict = list_to_dict(metadata_list,
-                                     key=lambda x: x['File Name'])
-
-        image_obj_list = collection.image_set.all()
-        image_obj_dict = list_to_dict(image_obj_list,
-                                      key=file_basename)
-
-        try:
-            pairs = pair_data_and_objects(metadata_dict,
-                                          image_obj_dict)
-            for metadata_item, image_obj in pairs:
-                for key in metadata_item:
-                    if key != 'File Name':
-                        image_obj.data[key] = metadata_item[key]
-
-                image_obj.save()
-
-        except ValidationError as e:
-            return error_response(e)
-
-        messages.success(request,
-                         'Image metadata have been imported.',
-                         extra_tags='alert-success')
-        return JSONResponse(metadata_list, status=200)
+        return handle_post_metadata(request, collection,
+                                    'Image metadata have been imported.')
 
     return render(request, "statmaps/import_metadata.html", {
         'collection': collection})
@@ -277,14 +287,17 @@ def get_images_metadata(collection):
     return [['File Name'] + metadata_keys] + map(list_metadata, image_obj_list)
 
 
+@csrf_exempt
 @login_required
 def edit_metadata(request, collection_cid):
-    import json
-
     collection = get_collection(collection_cid, request)
 
     if not owner_or_contrib(request, collection):
         return HttpResponseForbidden()
+
+    if request.method == "POST":
+        return handle_post_metadata(request, collection,
+                                    'Image metadata have been saved.')
 
     metadata = get_images_metadata(collection)
 

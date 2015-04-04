@@ -6,12 +6,17 @@
         display: none;
     }
 
+    .btn-save-metadata {
+        margin-bottom: 20px;
+    }
+
     #hot {
         overflow: auto;
     }
 </style>
 <script type="text/javascript">
-    window.NVMetadata = {{ metadata | safe }};
+    window.NVMetadata = window.NVMetadata || {};
+    window.NVMetadata.data = {{ metadata | safe }};
 </script>
 
 {% endblock %}
@@ -23,10 +28,16 @@
 	<div class="span11"><hr/></div>
 </div>
 <div class="row">
-    <div class="span11 step-controls">
-        <a class="btn btn-primary pull-right btn-complete-import">Save</a>
+    <div class="span11">
+        <a class="btn btn-primary pull-right btn-save-metadata">Save</a>
     </div>
 </div>
+<div class="row">
+    <div class="span11 ">
+        <div class="alert alert-error errors"></div>
+    </div>
+</div>
+
 <div class="row">
     <div class="span11">
         <div id="hot" class="handsontable"></div>
@@ -34,5 +45,6 @@
 </div>
 
 <script src="{% static "scripts/handsontable.full.js"%}" type="text/javascript"></script>
-<script src="{% static "scripts/editmetadata.js"%}" type="text/javascript"></script>
+<script src="{% static "scripts/metadata-common.js"%}" type="text/javascript"></script>
+<script src="{% static "scripts/metadata-edit.js"%}" type="text/javascript"></script>
 {% endblock %}
