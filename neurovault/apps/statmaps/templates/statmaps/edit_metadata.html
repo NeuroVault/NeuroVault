@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block head %}
+<link rel="stylesheet" media="screen" href="{% static "css/handsontable.full.css"%}">
+<style>
+    .errors {
+        display: none;
+    }
+
+    #hot {
+        overflow: auto;
+    }
+</style>
+<script type="text/javascript">
+    window.NVMetadata = {{ metadata | safe }};
+</script>
+
+{% endblock %}
+{% block content %}
+<div class="row">
+	<div class="span9">
+		<h2><a href="{{collection.get_absolute_url}}">{{ collection.name }}</a> / Edit metadata</h2>
+	</div>
+	<div class="span11"><hr/></div>
+</div>
+<div class="row">
+    <div class="span11 step-controls">
+        <a class="btn btn-primary pull-right btn-complete-import">Save</a>
+    </div>
+</div>
+<div class="row">
+    <div class="span11">
+        <div id="hot" class="handsontable"></div>
+    </div>
+</div>
+
+<script src="{% static "scripts/handsontable.full.js"%}" type="text/javascript"></script>
+<script src="{% static "scripts/editmetadata.js"%}" type="text/javascript"></script>
+{% endblock %}

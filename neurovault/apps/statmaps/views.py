@@ -260,6 +260,39 @@ def import_metadata(request, collection_cid):
         'collection': collection})
 
 
+def get_all_metadata_keys(image_obj_list):
+    return set(key for image in image_obj_list for key in image.data)
+
+
+def get_images_metadata(collection):
+    image_obj_list = collection.image_set.all()
+    metadata_keys = list(get_all_metadata_keys(image_obj_list))
+
+    def list_metadata(image):
+        data = image.data
+
+        return ([os.path.basename(image.file.name)] +
+                [data.get(key, '') for key in metadata_keys])
+
+    return [['File Name'] + metadata_keys] + map(list_metadata, image_obj_list)
+
+
+@login_required
+def edit_metadata(request, collection_cid):
+    import json
+
+    collection = get_collection(collection_cid, request)
+
+    if not owner_or_contrib(request, collection):
+        return HttpResponseForbidden()
+
+    metadata = get_images_metadata(collection)
+
+    return render(request, "statmaps/edit_metadata.html", {
+        'collection': collection,
+        'metadata': json.dumps(metadata)})
+
+
 def view_image(request, pk, collection_cid=None):
     image = get_image(pk,collection_cid,request)
     user_owns_image = owner_or_contrib(request,image.collection)

@@ -124,6 +124,7 @@
                                         {{ request.path }}
                  - if edit_permission
                   %a.btn{href: "{% url 'import_metadata' cid %}" , style: "margin-top: 8px;"} Import metadata
+                  %a.btn{href: "{% url 'edit_metadata' cid %}" , style: "margin-top: 8px;"} Edit metadata
 
         {% if messages %}
         %ul.messages
