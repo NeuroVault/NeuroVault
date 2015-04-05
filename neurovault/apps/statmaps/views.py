@@ -207,7 +207,8 @@ def pair_data_and_objects(metadata_dict, image_obj_dict):
     for image_filename, metadata in metadata_dict.items():
         image_obj = image_obj_dict.get(image_filename)
         if not image_obj:
-            raise ValidationError('File is not found in the collection: %s' % image_filename,
+            raise ValidationError('File is not found in the collection: %s' %
+                                  image_filename,
                                   code='file_not_found')
         yield (metadata, image_obj)
 
@@ -233,6 +234,8 @@ def save_metadata(collection, metadata):
     for metadata_item, image_obj in pairs:
         for key in metadata_item:
             if key != 'File Name':
+                if not image_obj.data:
+                    image_obj.data = {}
                 image_obj.data[key] = metadata_item[key]
 
         image_obj.save()
@@ -254,6 +257,24 @@ def handle_post_metadata(request, collection, success_message):
     return JSONResponse(metadata_list, status=200)
 
 
+def get_all_metadata_keys(image_obj_list):
+    return set(key for image in image_obj_list if image.data
+               for key in image.data)
+
+
+def get_images_metadata(collection):
+    image_obj_list = collection.image_set.all()
+    metadata_keys = list(get_all_metadata_keys(image_obj_list))
+
+    def list_metadata(image):
+        data = image.data
+
+        return ([os.path.basename(image.file.name)] +
+                [data.get(key, '') for key in metadata_keys])
+
+    return [['File Name'] + metadata_keys] + map(list_metadata, image_obj_list)
+
+
 @csrf_exempt
 @login_required
 def import_metadata(request, collection_cid):
@@ -268,23 +289,6 @@ def import_metadata(request, collection_cid):
 
     return render(request, "statmaps/import_metadata.html", {
         'collection': collection})
-
-
-def get_all_metadata_keys(image_obj_list):
-    return set(key for image in image_obj_list for key in image.data)
-
-
-def get_images_metadata(collection):
-    image_obj_list = collection.image_set.all()
-    metadata_keys = list(get_all_metadata_keys(image_obj_list))
-
-    def list_metadata(image):
-        data = image.data
-
-        return ([os.path.basename(image.file.name)] +
-                [data.get(key, '') for key in metadata_keys])
-
-    return [['File Name'] + metadata_keys] + map(list_metadata, image_obj_list)
 
 
 @csrf_exempt
