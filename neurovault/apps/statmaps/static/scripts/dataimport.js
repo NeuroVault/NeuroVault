@@ -345,7 +345,7 @@
 
 }(window, document, Handsontable));
 
-/*global window, Sheet, Fuse*/
+/*global window, Sheet*/
 
 (function (window, Sheet) {
   'use strict';
@@ -355,24 +355,7 @@
     this.data = options.data;
     this.fields = options.fields;
     this.sheetHeight = options.sheetHeight;
-
-    function mapFields(fields, data) {
-      var fuse = new Fuse(fields, {
-          keys: ['name']
-        }),
-
-        mapping = data[0].map(function (x) {
-          var result = fuse.search(x);
-
-          if (result.length) {
-            return result[0].id;
-          }
-
-          return null;
-        });
-
-      return mapping;
-    }
+    this.matchFields = options.matchFields;
 
     this.fields.toObject = function () {
       var len = this.length,
@@ -386,7 +369,7 @@
       return obj;
     };
 
-    var mapping = mapFields(this.fields, this.data),
+    var mapping = this.matchFields(this.fields, this.data),
       _this = this;
 
     this.sheet = new Sheet(containerElement, {
@@ -493,7 +476,7 @@
 
   window.DataImport = DataImport;
 
-}(window, Sheet, Fuse));
+}(window, Sheet));
 
 /*global DataImport */
 
