@@ -116,7 +116,7 @@
 
       for (i = 0, len = fields.length; i < len; i += 1) {
         result = fuse.search(fields[i].id);
-        if (result.length) {
+        if (result.length && !obj.hasOwnProperty(result[0])) {
           obj[result[0]] = fields[i].id;
         }
       }
