@@ -1,4 +1,4 @@
-/*global window, document, jQuery, Papa, DataImport */
+/*global window, document, jQuery, Papa, Fuse, DataImport, NVMetadata */
 (function ($) {
   'use strict';
 
@@ -105,20 +105,29 @@
       name: 'Age',
       required: false,
     }],
+
+    matchFields = function (fields, data) {
+      var fuse = new Fuse(data[0]),
+        mapping = [],
+        obj = {},
+        result,
+        len,
+        i;
+
+      for (i = 0, len = fields.length; i < len; i += 1) {
+        result = fuse.search(fields[i].id);
+        if (result.length) {
+          obj[result[0]] = fields[i].id;
+        }
+      }
+
+      for (i = 0, len = data[0].length; i < len; i += 1) {
+        mapping.push(obj[i] || null);
+      }
+
+      return mapping;
+    },
     dataimport;
-
-
-  function displayErrors($el, errors) {
-    var len = errors.length,
-      i;
-
-    $el.empty();
-
-    for (i = 0; i < len; i += 1) {
-      $el.append('<div>' + errors[i].msg + '</div>');
-    }
-    $el.show();
-  }
 
   function removeErrors($el) {
     $el.empty();
@@ -139,7 +148,7 @@
     var $hot = $('#hot');
 
     if (results.errors.length) {
-      displayErrors($('.step1 .errors'), results.errors);
+      NVMetadata.displayErrors($('.step1 .errors'), results.errors);
     }
 
     removeErrors($('.step2 .errors'));
@@ -150,7 +159,8 @@
     dataimport = new DataImport($hot[0], {
       fields: fields,
       data: results.data,
-      sheetHeight: 400
+      sheetHeight: 400,
+      matchFields: matchFields
     });
   }
 
@@ -185,16 +195,8 @@
         window.location.replace('/collections/' + collectionId);
       })
       .fail(function (jqXHR, textStatus, errorThrown) {
-        var r = jqXHR.responseJSON,
-          errors;
-
-        if (r) {
-          errors = [{msg: r.message}];
-        } else {
-          errors = [{msg: 'Error while submitting data to server: ' + errorThrown}];
-        }
-
-        displayErrors($('.step2 .errors'), errors);
+        NVMetadata.displayErrors($('.step2 .errors'),
+          NVMetadata.getErrors(jqXHR, textStatus, errorThrown));
       });
   }
 
@@ -202,7 +204,7 @@
     $('.uploader').loadFile({
       allowedExtensions: ['csv'],
       onload: parseCSV,
-      onfail: displayErrors.bind(null, $('.step1 .errors'))
+      onfail: NVMetadata.displayErrors.bind(null, $('.step1 .errors'))
     });
 
     $('.step-content .btn-step-pane-back').click(function () {
@@ -216,7 +218,7 @@
           submitResult(result);
         },
         fail: function (errors) {
-          displayErrors($('.step2 .errors'), errors);
+          NVMetadata.displayErrors($('.step2 .errors'), errors);
         }
       });
     });
