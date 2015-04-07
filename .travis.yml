@@ -3,6 +3,6 @@ language: python
 python:
  - "2.7"
 install:
- - pip install -r requirements.txt
+ - cat requirements.txt | xargs -n 1 -L 1 -I{} pip install '{}'
  - pip install coverage
 script: coverage run manage.py test
