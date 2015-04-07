@@ -19,6 +19,7 @@ install:
  - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy
  - conda install --yes -c dan_blanchard python-coveralls
  - pip install --upgrade pip setuptools
+ - pip install cython
  - pip install git+https://github.com/gallantlab/pycortex.git --egg
  - cat requirements.txt | xargs -n 1 -L 1 -I{} pip install '{}'
 script: coverage run manage.py test
