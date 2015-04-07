@@ -152,7 +152,8 @@ INSTALLED_APPS = (
     'polymorphic',
     'djcelery',
     'django_cleanup',
-    'file_resubmit'
+    'file_resubmit',
+    'djrill'
 )
 
 # A sample logging configuration. The only tangible logging
@@ -305,6 +306,10 @@ CELERY_RESULT_SERIALIZER = 'json'
 #}
 # or manage periodic schedule in django admin
 #CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
+
+# Mandrill config
+MANDRILL_API_KEY = "z2O_vfFUJB4L2yeF4Be9Tg" # this is a test key replace wit ha different one in production
+EMAIL_BACKEND = "djrill.mail.backends.djrill.DjrillBackend"
 
 if "test" in sys.argv:
     test_media_root = os.path.join(BASE_DIR, 'apps/statmaps/tests/test_media_root')
