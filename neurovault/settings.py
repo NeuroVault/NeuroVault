@@ -308,4 +308,6 @@ CELERY_RESULT_SERIALIZER = 'json'
 
 if "test" in sys.argv:
     test_media_root = os.path.join(BASE_DIR, 'apps/statmaps/tests/test_media_root')
-    PRIVATE_MEDIA_ROOT= test_media_root
+    PRIVATE_MEDIA_ROOT = test_media_root
+    CELERY_ALWAYS_EAGER = True
+    CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
