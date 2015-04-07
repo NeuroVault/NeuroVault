@@ -29,5 +29,5 @@ install:
  - cat requirements.txt | xargs -n 1 -L 1 -I{} pip install '{}'
 before_script:
   - psql -c "CREATE USER neurovault WITH PASSWORD 'neurovault';" -U postgres
-  - psql -c "ALTER USER user1 CREATEDB;" -U postgres
+  - psql -c "ALTER USER neurovault CREATEDB;" -U postgres
 script: coverage run manage.py test
