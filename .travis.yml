@@ -23,11 +23,11 @@ before_install:
   - conda install --yes -n condaenv pip
   - source activate condaenv
 install:
+ - conda install --yes -c https://conda.binstar.org/ska pycairo
  - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy
  - conda install --yes -c dan_blanchard python-coveralls
  - pip install --upgrade pip setuptools
  - pip install cython
- - conda install --yes -c https://conda.binstar.org/fallen pycairo
  - pip install git+https://github.com/gallantlab/pycortex.git --egg
  - cat requirements.txt | xargs -n 1 -L 1 -I{} pip install '{}'
 before_script:
