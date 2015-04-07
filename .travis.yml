@@ -1,8 +1,9 @@
-sudo: false
+sudo: required
 language: python
 python:
  - "2.7"
 install:
+ - sudo apt-get install libhdf5-serial-dev
  - cat requirements.txt | xargs -n 1 -L 1 -I{} pip install '{}'
  - pip install coverage
 script: coverage run manage.py test
