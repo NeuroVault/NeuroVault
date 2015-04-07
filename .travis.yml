@@ -1,4 +1,4 @@
-sudo: required
+sudo: false
 language: python
 python:
   - 2.7
@@ -7,6 +7,9 @@ cache:
     - $HOME/.cache/pip
 addons:
   postgresql: "9.3"
+  apt:
+    packages:
+    - libhdf5-serial-dev
 before_install:
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh
@@ -20,7 +23,6 @@ before_install:
   - sudo rm -rf /dev/shm
   - sudo ln -s /run/shm /dev/shm
 install:
- - sudo apt-get install libhdf5-serial-dev
  - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy
  - conda install --yes -c dan_blanchard python-coveralls
  - pip install --upgrade pip setuptools
