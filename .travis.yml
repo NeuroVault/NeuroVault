@@ -16,6 +16,7 @@ before_install:
   - sudo ln -s /run/shm /dev/shm
 install:
  - sudo apt-get install libhdf5-serial-dev
- - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy python-coveralls
+ - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy
+ - conda install --yes -c dan_blanchard python-coveralls
  - cat requirements.txt | xargs -n 1 -L 1 -I{} pip install '{}'
 script: coverage run manage.py test
