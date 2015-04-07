@@ -24,7 +24,7 @@ scipy
 numexpr
 lxml
 shapely
-pycortex
+git+https://github.com/gallantlab/pycortex.git
 Pillow
 requests
 requests-oauthlib
