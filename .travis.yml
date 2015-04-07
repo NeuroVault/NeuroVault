@@ -18,6 +18,6 @@ install:
  - sudo apt-get install libhdf5-serial-dev
  - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy
  - conda install --yes -c dan_blanchard python-coveralls
- - pip install --upgrade pip
+ - pip install --upgrade pip setuptools
  - cat requirements.txt | xargs -n 1 -L 1 -I{} pip install '{}'
 script: coverage run manage.py test
