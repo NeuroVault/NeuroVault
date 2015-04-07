@@ -41,3 +41,4 @@ git+git://github.com/vsoch/pybraincompare.git@7d90af2f3c81a5c59f3af701fdb57c0a99
 django-cleanup
 django-chosen
 git+https://github.com/sinnwerkstatt/django-file-resubmit.git#egg=file_resubmit
+git+https://github.com/infocortex/nidm-results_fsl.git@nv_testdata_fixes#nidm-results_fsl
