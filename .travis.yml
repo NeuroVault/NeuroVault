@@ -33,4 +33,5 @@ install:
 before_script:
   - psql -c "CREATE USER neurovault WITH PASSWORD 'neurovault';" -U postgres
   - psql -c "ALTER USER neurovault CREATEDB;" -U postgres
+  - ./manage collectstatic
 script: coverage run manage.py test
