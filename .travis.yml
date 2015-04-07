@@ -25,7 +25,7 @@ install:
  - pip install --upgrade pip setuptools
  - pip install cython
  - pip install git+https://github.com/gallantlab/pycortex.git --egg
- - cat requirements.txt | xargs -n 1 -L 1 -I{} pip install '{}'
+ - cat requirements.txt | xargs -n 1 -L 1 -I{} pip install '{}' --download-cache $HOME/.cache/pip
 before_script:
   - psql -c "CREATE USER neurovault WITH PASSWORD 'neurovault';" -U postgres
   - psql -c "ALTER USER neurovault CREATEDB;" -U postgres
