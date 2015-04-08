@@ -254,12 +254,6 @@ PRIVATE_MEDIA_REDIRECT_HEADER = 'X-Accel-Redirect'
 
 PYCORTEX_DATASTORE = os.path.join(BASE_DIR,'pycortex_data')
 
-# Pycortex static data is deployed by collectstatic at build time.
-STATICFILES_DIRS = (
-    ('pycortex-resources', '/path/to/pycortex/cortex/webgl/resources'),
-    ('pycortex-ctmcache', os.path.join(PYCORTEX_DATASTORE,'db/fsaverage/cache')),
-)
-
 CACHES = {
             'default': {
                 'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -312,4 +306,6 @@ CELERY_RESULT_SERIALIZER = 'json'
 
 if "test" in sys.argv:
     test_media_root = os.path.join(BASE_DIR, 'apps/statmaps/tests/test_media_root')
-    PRIVATE_MEDIA_ROOT= test_media_root
+    PRIVATE_MEDIA_ROOT = test_media_root
+    CELERY_ALWAYS_EAGER = True
+    CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
