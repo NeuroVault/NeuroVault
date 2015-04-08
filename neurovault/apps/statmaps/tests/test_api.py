@@ -1,6 +1,7 @@
 from django.test import TestCase, Client
 import xml.etree.ElementTree as ET
-from neurovault.apps.statmaps.models import Atlas, Collection, Image
+from neurovault.apps.statmaps.models import Atlas, Collection, Image,\
+    StatisticMap
 import os.path
 from django.contrib.auth.models import User
 from operator import itemgetter
@@ -27,12 +28,12 @@ class Test_Atlas_APIs(TestCase):
         self.orderedAtlas.label_description_file = SimpleUploadedFile('test_VentralFrontal_thr75_summaryimage_2mm.xml', file(os.path.join(self.test_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.xml')).read())
         self.orderedAtlas.save()
         
-        self.Image1 = Image(name='Image1', collection=self.Collection1, file='DorsalFrontal_thr25_1mm.nii.gz')
-        self.Image1.file = SimpleUploadedFile('DorsalFrontal_thr25_1mm.nii.gz', file(os.path.join(self.test_path,'test_data/api/DorsalFrontal_thr25_1mm.nii.gz')).read())
+        self.Image1 = StatisticMap(name='Image1', collection=self.Collection1, file='motor_lips.nii.gz', map_type="Z")
+        self.Image1.file = SimpleUploadedFile('motor_lips.nii.gz', file(os.path.join(self.test_path,'test_data/statmaps/motor_lips.nii.gz')).read())
         self.Image1.save()
         
-        self.Image2 = Image(name='Image2', collection=self.Collection1, file='HarvardOxford-sub-prob-1mm.nii.gz')
-        self.Image2.file = SimpleUploadedFile('HarvardOxford-sub-prob-1mm.nii.gz', file(os.path.join(self.test_path,'test_data/api/HarvardOxford-sub-prob-1mm.nii.gz')).read())
+        self.Image2 = StatisticMap(name='Image2', collection=self.Collection1, file='beta_0001.nii.gz', map_type="Other")
+        self.Image2.file = SimpleUploadedFile('beta_0001.nii.gz', file(os.path.join(self.test_path,'test_data/statmaps/beta_0001.nii.gz')).read())
         self.Image2.save()
         
         
@@ -129,7 +130,7 @@ class Test_Atlas_APIs(TestCase):
     def test_images(self):
         url = '/api/images/'
         response = json.loads(self.client.get(url, follow=True).content)
-        self.assertEqual(response[0][u'name'], u'Statistic Map: Generation')
+        self.assertEqual(response[0][u'name'], u'unorderedAtlas')
         self.assertEqual(response[4][u'name'], u'orderedAtlas')
     def test_images_pk(self):
         url = '/api/images/%d/' % self.Image1.pk
@@ -140,7 +141,6 @@ class Test_Atlas_APIs(TestCase):
         url = '/api/images/%d/datatable/' % self.Image2.pk
         response = json.loads(self.client.get(url, follow=True).content)
         self.assertTrue('http' in response['aaData'][0][1])
-        self.assertTrue('.nii.gz' in response['aaData'][2][1])
     def test_nidm_results(self):
         url = '/api/nidm_results/'
         response = json.loads(self.client.get(url, follow=True).content)
