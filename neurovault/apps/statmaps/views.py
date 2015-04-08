@@ -370,7 +370,7 @@ def upload_folder(request, collection_cid):
                     elif archive_ext == '.gz':
                         django_file = request.FILES['file']
                         django_file.open()
-                        compressed = tarfile.TarFile(fileobj=gzip.open(django_file.file))
+                        compressed = tarfile.TarFile(fileobj=gzip.GzipFile(fileobj=django_file.file))
                     else:
                         raise Exception("Unsupported archive type %s."%archive_name)
                     compressed.extractall(path=tmp_directory)
