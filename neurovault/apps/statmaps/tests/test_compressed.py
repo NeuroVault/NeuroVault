@@ -1,20 +1,10 @@
-from neurovault.apps.statmaps.tasks import save_voxelwise_pearson_similarity, get_images_by_ordered_id
-from django.shortcuts import get_object_or_404
-from neurovault.apps.statmaps.models import Image, Comparison, Similarity, User, Collection
+from neurovault.apps.statmaps.models import User, Collection
 from django.test import TestCase, Client
-from django.db import IntegrityError
-import errno
-from django.core.files.uploadedfile import SimpleUploadedFile
 import os
 import tempfile
 import shutil
-from neurovault.apps.statmaps.utils import split_afni4D_to_3D
-from neurovault.apps.statmaps.views import upload_folder
-import nibabel
 from .utils import clearTestMediaRoot
 
-
-import sys
 from django.core.urlresolvers import reverse
 from zipfile import ZipFile
 import tarfile
