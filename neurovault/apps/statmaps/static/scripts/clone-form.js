@@ -97,7 +97,7 @@ formIsClean = function(sele) {
   }
   if($(sele).find('div.errors').length === 0 && 
         $(sele).find('div.error').length === 0 &&
-        $(sele).find('div.alert-error').length === 0 {
+        $(sele).find('div.alert-error').length === 0) {
     return true;
   } else {
     return false;

@@ -32,6 +32,7 @@ import nibabel as nib
 import re
 import tempfile
 import neurovault
+import shutil
 from fnmatch import fnmatch
 import os
 from collections import OrderedDict
@@ -41,7 +42,7 @@ from django.contrib import messages
 import traceback
 from django.forms import widgets
 import pickle
-
+from neurovault.settings import PRIVATE_MEDIA_ROOT
 
 def owner_or_contrib(request,collection):
     if collection.owner == request.user or request.user in collection.contributors.all() or request.user.is_superuser:
@@ -240,6 +241,10 @@ def delete_collection(request, cid):
     for image in collection.image_set.all():
         image.delete()
     collection.delete()
+    collDir = os.path.join(PRIVATE_MEDIA_ROOT, 'images',str(cid))
+    try:
+        shutil.rmtree(collDir)
+    except OSError: print 'Image directory for collection %s does not exist' %cid
     return redirect('my_collections')
 
 
@@ -362,7 +367,9 @@ def upload_folder(request, collection_cid):
                     if archive_ext == '.zip':
                         compressed = zipfile.ZipFile(request.FILES['file'])
                     elif archive_ext == '.gz':
-                        compressed = tarfile.TarFile(fileobj=gzip.open(request.FILES['file']))
+                        django_file = request.FILES['file']
+                        django_file.open()
+                        compressed = tarfile.TarFile(fileobj=gzip.GzipFile(fileobj=django_file.file, mode='r'), mode='r')
                     else:
                         raise Exception("Unsupported archive type %s."%archive_name)
                     compressed.extractall(path=tmp_directory)

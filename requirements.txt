@@ -1,4 +1,4 @@
-Django>=1.7.1
+Django>=1.7.1,<1.8
 python-social-auth>=0.1.23
 djangorestframework
 markdown
@@ -24,7 +24,7 @@ scipy
 numexpr
 lxml
 shapely
-pycortex
+git+https://github.com/gallantlab/pycortex.git
 Pillow
 requests
 requests-oauthlib
@@ -41,3 +41,7 @@ pybraincompare
 django-cleanup
 django-chosen
 git+https://github.com/sinnwerkstatt/django-file-resubmit.git#egg=file_resubmit
+opbeat
+djrill
+git+https://github.com/infocortex/nidm-results_fsl.git@nv_testdata_fixes#nidm-results_fsl
+git+https://github.com/infocortex/nidm-results_fsl.git@nv_testdata_fixes#nidm-results_fsl

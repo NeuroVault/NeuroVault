@@ -19,6 +19,7 @@ class ComparisonTestCase(TestCase):
     pearson_metric = None
     
     def setUp(self):
+        print "Preparing to test image comparison..."
         self.tmpdir = tempfile.mkdtemp()
         app_path = os.path.abspath(os.path.dirname(__file__))
         self.u1 = User.objects.create(username='neurovault')
@@ -48,11 +49,14 @@ class ComparisonTestCase(TestCase):
         image4.save()
         self.pk3 = image4.id
         
-        self.pearson_metric = Similarity(similarity_metric="pearson product-moment correlation coefficient",
+        Similarity.objects.update_or_create(similarity_metric="pearson product-moment correlation coefficient",
                                          transformation="voxelwise",
                                          metric_ontology_iri="http://webprotege.stanford.edu/RCS8W76v1MfdvskPLiOdPaA",
                                          transformation_ontology_iri="http://webprotege.stanford.edu/R87C6eFjEftkceScn1GblDL")
-        self.pearson_metric.save()
+        self.pearson_metric = Similarity.objects.filter(similarity_metric="pearson product-moment correlation coefficient",
+                                         transformation="voxelwise",
+                                         metric_ontology_iri="http://webprotege.stanford.edu/RCS8W76v1MfdvskPLiOdPaA",
+                                         transformation_ontology_iri="http://webprotege.stanford.edu/R87C6eFjEftkceScn1GblDL")        
         
     def tearDown(self):
         shutil.rmtree(self.tmpdir)

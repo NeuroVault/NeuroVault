@@ -1,7 +1,9 @@
 # Django settings for neurovault project.
 import os
+import sys
 from datetime import timedelta
 import matplotlib
+import tempfile
 matplotlib.use('Agg')
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -150,7 +152,8 @@ INSTALLED_APPS = (
     'polymorphic',
     'djcelery',
     'django_cleanup',
-    'file_resubmit'
+    'file_resubmit',
+    'djrill'
 )
 
 # A sample logging configuration. The only tangible logging
@@ -251,12 +254,6 @@ PRIVATE_MEDIA_REDIRECT_HEADER = 'X-Accel-Redirect'
 
 PYCORTEX_DATASTORE = os.path.join(BASE_DIR,'pycortex_data')
 
-# Pycortex static data is deployed by collectstatic at build time.
-STATICFILES_DIRS = (
-    ('pycortex-resources', '/path/to/pycortex/cortex/webgl/resources'),
-    ('pycortex-ctmcache', os.path.join(PYCORTEX_DATASTORE,'db/fsaverage/cache')),
-)
-
 CACHES = {
             'default': {
                 'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -266,7 +263,10 @@ CACHES = {
                 "LOCATION": '/tmp/file_resubmit/'
             }
           }
-
+          
+# Mandrill config
+MANDRILL_API_KEY = "z2O_vfFUJB4L2yeF4Be9Tg" # this is a test key replace wit ha different one in production
+EMAIL_BACKEND = "djrill.mail.backends.djrill.DjrillBackend"
 
 # Bogus secret key.
 try:
@@ -303,3 +303,9 @@ CELERY_RESULT_SERIALIZER = 'json'
 #}
 # or manage periodic schedule in django admin
 #CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
+
+if "test" in sys.argv:
+    test_media_root = os.path.join(BASE_DIR, 'apps/statmaps/tests/test_media_root')
+    PRIVATE_MEDIA_ROOT = test_media_root
+    CELERY_ALWAYS_EAGER = True
+    CELERY_EAGER_PROPAGATES_EXCEPTIONS = True

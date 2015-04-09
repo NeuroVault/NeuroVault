@@ -359,12 +359,19 @@ class ImageForm(ModelForm):
                 del cleaned_data["file"]
                 return cleaned_data
 
+            # prepare file to loading into memory
+            file.open()
+            if file.name.lower().endswith(".gz"):
+                fileobj = GzipFile(filename=file.name, mode='rb', fileobj=file.file)
+            else:
+                fileobj=file.file
+            
+            file_map = {'image': nb.FileHolder(file.name, fileobj)}
             try:
                 tmp_dir = tempfile.mkdtemp()
                 if ext.lower() == ".img":
                     hdr_file = cleaned_data.get('hdr_file')
                     if hdr_file:
-
                         # check extension of the hdr file
                         _, _, hdr_ext = split_filename(hdr_file.name)
                         if not hdr_ext.lower() in [".hdr"]:
@@ -373,22 +380,17 @@ class ImageForm(ModelForm):
                             del cleaned_data["hdr_file"]
                             return cleaned_data
                         else:
-                            # write the header file to a temporary directory
-                            hf = open(os.path.join(tmp_dir, fname + ".hdr"), "wb")
-                            hf.write(hdr_file.file.read())
-                            hf.close()
+                            hdr_file.open()
+                            file_map["header"] = nb.FileHolder(hdr_file.name, hdr_file.file)
                     else:
-                        self._errors["hdr_file"] = self.error_class([".img files require .hdr"])
+                        self._errors["hdr_file"] = self.error_class(
+                                [".img file requires .hdr file"])
                         del cleaned_data["hdr_file"]
                         return cleaned_data
 
-                # prepare file to loading into memory
-                file.open()
-                gzfileobj = GzipFile(filename=file.name, mode='rb', fileobj=file.file)
-
                 # check if it is really nifti
                 try:
-                    nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(file.name, gzfileobj)})
+                    nii = nb.Nifti1Image.from_file_map(file_map)
                 except Exception as e:
                     self._errors["file"] = self.error_class([str(e)])
                     del cleaned_data["file"]

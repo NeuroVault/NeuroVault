@@ -9,6 +9,7 @@ from neurovault.apps.statmaps.utils import detect_feat_directory, get_traceback
 from nidmfsl.fsl_exporter.fsl_exporter import FSLtoNIDMExporter
 import urllib
 import zipfile
+from .utils import clearTestMediaRoot
 
 
 class FeatDirectoryTest(TestCase):
@@ -76,6 +77,7 @@ class FeatDirectoryTest(TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
+        clearTestMediaRoot()
 
     def testFEAT_NIDM(self):
 
