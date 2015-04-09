@@ -81,11 +81,9 @@ def run_voxelwise_pearson_similarity(pk1):
     # Calculate comparisons for other images, and generate transform if needed
     imgs = Image.objects.filter(collection__private=False).exclude(pk=pk1)
     comp_qs = imgs.exclude(polymorphic_ctype__model__in=['image','atlas']).order_by('id')
-    print "Found %s other images to compare to!" % len(comp_qs)
     for comp_img in comp_qs:
         iargs = sorted([comp_img.pk,pk1]) 
         
-        print "Calculating pearson similarity for images %s and %s" % (iargs[0],iargs[1])
         save_voxelwise_pearson_similarity.apply_async(iargs)  # Default uses transformation, transformation = True
 
 
