@@ -1,5 +1,6 @@
 from neurovault.apps.statmaps.models import Image, Comparison, Similarity, User, Collection, StatisticMap
 from neurovault.apps.statmaps.tasks import save_voxelwise_pearson_similarity, get_images_by_ordered_id
+from numpy.testing import assert_array_equal, assert_almost_equal, assert_equal
 from django.core.files.uploadedfile import SimpleUploadedFile
 from neurovault.apps.statmaps.utils import split_afni4D_to_3D
 from django.shortcuts import get_object_or_404
@@ -95,10 +96,10 @@ class ComparisonTestCase(TestCase):
         comparison = Comparison.objects.filter(image1=image1,image2=image2,similarity_metric=self.pearson_metric)
         self.assertEqual(len(comparison), 1)
         print comparison[0].similarity_score
-        self.assertAlmostEqual(comparison[0].similarity_score, 0.0196480800969)
+        assert_almost_equal(comparison[0].similarity_score, 0.0196480800969,decimal=5)
 
         image2, image3 = get_images_by_ordered_id(self.pk3, self.pk2)
         comparison = Comparison.objects.filter(image1=image2,image2=image3,similarity_metric=self.pearson_metric)
         self.assertEqual(len(comparison), 1)
         print comparison[0].similarity_score
-        self.assertAlmostEqual(comparison[0].similarity_score, 0.312548260436)
+        assert_almost_equal(comparison[0].similarity_score, 0.312548260436,decimal=5)
