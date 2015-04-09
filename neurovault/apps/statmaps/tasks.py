@@ -18,14 +18,22 @@ from pybraincompare.mr.datasets import get_data_directory
 @shared_task
 def generate_glassbrain_image(image_pk):
     from neurovault.apps.statmaps.models import Image
+    import shutil
+    import neurovault
     img = Image.objects.get(pk=image_pk)
     png_img_name = "glass_brain_%s.png" % img.pk
     png_img_path = os.path.join(os.path.split(img.file.path)[0], png_img_name)
     if os.path.exists(png_img_path):
         os.unlink(png_img_path)
-    glass_brain = plot_glass_brain(img.file.path)
-    glass_brain.savefig(png_img_path)
-    plt.close('all')
+    try:
+        glass_brain = plot_glass_brain(img.file.path)
+        glass_brain.savefig(png_img_path)
+        plt.close('all')
+    except:
+        # Glass brains that do not produce will be given dummy image
+        glassbrain_dummy = os.path.abspath(os.path.join(neurovault.settings.BASE_DIR,
+                                           "static","images","glass_brain_empty.png"))
+        shutil.copy(glassbrain_dummy,png_img_path)  
     return png_img_path
 
 # IMAGE TRANSFORMATION ################################################################################

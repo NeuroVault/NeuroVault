@@ -131,7 +131,7 @@ class Test_Atlas_APIs(TestCase):
         url = '/api/images/'
         response = json.loads(self.client.get(url, follow=True).content)
         self.assertEqual(response[0][u'name'], u'unorderedAtlas')
-        self.assertEqual(response[4][u'name'], u'orderedAtlas')
+        self.assertEqual(response[4][u'name'], u'Z-Statistic Map: Generation')
     def test_images_pk(self):
         url = '/api/images/%d/' % self.Image1.pk
         response = json.loads(self.client.get(url, follow=True).content)
