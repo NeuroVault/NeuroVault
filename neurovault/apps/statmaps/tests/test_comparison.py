@@ -3,6 +3,7 @@ from neurovault.apps.statmaps.tasks import save_voxelwise_pearson_similarity, ge
 from numpy.testing import assert_array_equal, assert_almost_equal, assert_equal
 from django.core.files.uploadedfile import SimpleUploadedFile
 from neurovault.apps.statmaps.utils import split_afni4D_to_3D
+from neurovault.apps.statmaps.tests.utils import clearDB
 from django.shortcuts import get_object_or_404
 from django.db import IntegrityError
 from django.test import TestCase
