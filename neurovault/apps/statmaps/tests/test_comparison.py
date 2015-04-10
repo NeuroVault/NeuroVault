@@ -61,6 +61,7 @@ class ComparisonTestCase(TestCase):
         
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
+        clearDB()
 
     def test_save_pearson_similarity(self):
         # Should be 1
