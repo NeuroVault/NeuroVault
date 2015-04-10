@@ -51,7 +51,6 @@
           'Do you really want to discard them ?';
       }
     };
-
   });
 
 }(jQuery));
