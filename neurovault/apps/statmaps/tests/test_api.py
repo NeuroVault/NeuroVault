@@ -151,5 +151,3 @@ class Test_Atlas_APIs(TestCase):
         response = json.loads(self.client.get(url, follow=True).content)
         self.assertTrue('fsl.nidm.ttl' in response['ttl_file'])
         self.assertEqual(response['statmaps'][0][u'figure'], None)
-    
-        
