@@ -93,7 +93,8 @@ class Test_Atlas_APIs(TestCase):
         url = '/api/atlases/'
         response = json.loads(self.client.get(url, follow=True).content)
         self.assertTrue('.nii.gz' in response[0][u'file'])
-        self.assertEqual(response[0]['name'], u'orderedAtlas')
+        names = [item[u'name'] for item in response]
+        self.assertTrue(u'orderedAtlas' in names)
     def test_atlases_pk(self):
         url = '/api/atlases/%d/' % self.unorderedAtlas.pk
         response = json.loads(self.client.get(url, follow=True).content)
