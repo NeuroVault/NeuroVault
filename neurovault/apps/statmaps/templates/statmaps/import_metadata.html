@@ -47,8 +47,7 @@
 <div class="row">
 	<div class="span9">
 		<h2><a href="{{collection.get_absolute_url}}">{{ collection.name }}</a> / Import metadata</h2>
-        <div class="lead">Upload a .CSV file with image metadata. This file should contain a) column with filenames of images in this collection; b) column with subject ids; c) column with image types.</div>
-
+        <div class="lead">Upload a .CSV file with information about each image. This file should contain a header and row for each image. The file must contain: (a) a column with unique filenames for each image in the collection, and (b) a column specifying each type of image (e.g., group, trial, subject). If there are multiple trials per subject, we recommend including a column with indicating the deidentified subject ID.</div>
 	</div>
 	<div class="span11"><hr/></div>
 </div>
