@@ -11,9 +11,6 @@ addons:
     packages:
     - libhdf5-serial-dev
     - default-jre
-services:
-  - redis-server
-env: PIP_DOWNLOAD_CACHE=$HOME/.cache/pip
 before_install:
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh
@@ -24,11 +21,8 @@ before_install:
   - conda install --yes -n condaenv pip
   - source activate condaenv
 install:
- - conda install --yes -c https://conda.binstar.org/ska pycairo
- - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy
+ - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy pandas cython scikit-learn matplotlib
  - conda install --yes -c dan_blanchard python-coveralls
- - pip install --upgrade pip setuptools
- - pip install cython
  - pip install git+https://github.com/gallantlab/pycortex.git --egg
  - cat requirements.txt | xargs -n 1 -L 1 -I{} pip install '{}'
  - wget -O /tmp/toolbox-0.6.1-release.zip http://search.maven.org/remotecontent?filepath=org/openprovenance/prov/toolbox/0.6.1/toolbox-0.6.1-release.zip
