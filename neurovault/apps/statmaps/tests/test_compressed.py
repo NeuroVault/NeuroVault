@@ -3,7 +3,7 @@ from django.test import TestCase, Client
 import os
 import tempfile
 import shutil
-from .utils import clearTestMediaRoot
+from .utils import clearDB
 
 from django.core.urlresolvers import reverse
 from zipfile import ZipFile
@@ -39,7 +39,7 @@ class UploadFolderTestCase(TestCase):
         self.coll.save()
  
     def tearDown(self):
-        clearTestMediaRoot()
+        clearDB()
         shutil.rmtree(self.tmpdir)
         self.coll.delete()
         self.user.delete()

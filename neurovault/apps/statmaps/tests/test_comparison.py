@@ -63,6 +63,7 @@ class ComparisonTestCase(TestCase):
     def tearDown(self):
         clearTestMediaRoot()
         shutil.rmtree(self.tmpdir)
+        clearDB()
 
     def test_save_pearson_similarity(self):
         with self.assertRaises(Exception):

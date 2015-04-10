@@ -1,8 +1,11 @@
 import os
 import shutil
 from neurovault.settings import PRIVATE_MEDIA_ROOT
+from neurovault.apps.statmaps.models import Collection, Image
 
-def clearTestMediaRoot():
+def clearDB():
+    Image.objects.all().delete()
+    Collection.objects.all().delete()
     if os.path.exists(PRIVATE_MEDIA_ROOT):
         for the_file in os.listdir(PRIVATE_MEDIA_ROOT):
             file_path = os.path.join(PRIVATE_MEDIA_ROOT, the_file)
