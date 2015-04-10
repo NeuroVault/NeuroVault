@@ -156,7 +156,7 @@ INSTALLED_APPS = (
     'djcelery',
     'django_cleanup',
     'file_resubmit',
-    'djrill'
+    'djrill',
     'django_hstore'
 )
 
