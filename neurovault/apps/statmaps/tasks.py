@@ -34,6 +34,7 @@ def generate_glassbrain_image(image_pk):
         glassbrain_dummy = os.path.abspath(os.path.join(neurovault.settings.BASE_DIR,
                                            "static","images","glass_brain_empty.png"))
         shutil.copy(glassbrain_dummy,png_img_path)  
+        raise Exception("Unable to generate glass-brain image for %s" %(image_pk))
     return png_img_path
 
 # IMAGE TRANSFORMATION ################################################################################
