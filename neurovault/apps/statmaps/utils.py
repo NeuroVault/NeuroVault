@@ -5,7 +5,7 @@ import shutil
 import numpy as np
 import string
 import random
-from neurovault.apps.statmaps.models import Collection, NIDMResults
+from neurovault.apps.statmaps.models import Collection, NIDMResults, StatisticMap
 from neurovault import settings
 import urllib2
 from lxml import etree
@@ -22,6 +22,7 @@ from ast import literal_eval
 from subprocess import CalledProcessError
 from django.core.exceptions import ValidationError
 import zipfile
+import pickle
 
 # see CollectionRedirectMiddleware
 class HttpRedirectException(Exception):
@@ -282,6 +283,26 @@ def memory_uploadfile(new_file, fname, old_file):
                                 content_type, cfile.size, charset)
 
 
+# Atomic save for a transform pickle file - save to tmp directory and rename
+def save_pickle_atomically(pkl_data,filename,directory=None):
+
+    # Give option to save to specific (not /tmp) directory
+    if directory == None:
+        tmp_file = tempfile.mktemp()
+    else:
+        tmp_file = tempfile.mktemp(dir=directory)
+
+    filey = open(tmp_file, 'wb')
+    # We don't want pickle to close the file
+    pickle_text = pickle.dumps(pkl_data)
+    filey.writelines(pickle_text)
+    # make sure that all data is on disk
+    filey.flush()
+    os.fsync(filey.fileno()) 
+    filey.close()
+    os.rename(tmp_file, filename)
+
+
 def populate_nidm_results(request,collection):
     inst = NIDMResults(collection=collection)
     # resolves a odd circular import issue
@@ -438,3 +459,13 @@ def not_in_mni(nii, plot=False):
         ret = False
     
     return ret, perc_mask_covered, perc_voxels_outside_of_mask
+
+# Returns images still processing
+def count_images_processing():
+    
+    # Count the number of images still processing
+    number_stat_maps = StatisticMap.objects.filter(collection__private=False)
+    # First use same filters used to determine if should calculate comparison
+    number_stat_maps = number_stat_maps.filter(is_thresholded=False).exclude(polymorphic_ctype__model__in=['image','atlas'])
+    # Images still processing in this set have transform = None
+    return number_stat_maps.filter(transform=None).count()

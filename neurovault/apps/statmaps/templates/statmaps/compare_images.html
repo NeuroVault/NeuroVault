@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load coffeescript %}
 {% block head %}
+<script src="{% static "scripts/d3.v3.min.js" %}"></script>
 <script type="text/javascript"> 
 var addthis_config = {
      data_track_clickback: false 
@@ -15,4 +16,11 @@ var addthis_config = {
     {% endfor %}
  {% endautoescape %}
 
+<div style="width:90%; margin-left:42px; margin-top:30px">
+    <h5>About</h5>
+    <div class="well">
+    Regional correlations are calculated from a brain-masked, 4mm transformation of the original image.  This visualization displays every 10th voxel for rendering purposes only.</div></div>
+
 {% endblock %}
+
+

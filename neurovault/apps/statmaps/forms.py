@@ -352,7 +352,7 @@ class ImageForm(ModelForm):
         file = cleaned_data.get("file")
 
         if file:
-            # check extension of the data filr
+            # check extension of the data file
             _, fname, ext = split_filename(file.name)
             if not ext.lower() in [".nii.gz", ".nii", ".img"]:
                 self._errors["file"] = self.error_class(["Doesn't have proper extension"])

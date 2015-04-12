@@ -1,5 +1,5 @@
-from .models import Collection, Image, Atlas, Comparison, StatisticMap, NIDMResults, NIDMResultStatisticMap
-from .forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
+from neurovault.apps.statmaps.models import Collection, Image, Atlas, Comparison, StatisticMap, NIDMResults, NIDMResultStatisticMap
+from neurovault.apps.statmaps.forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
@@ -11,16 +11,17 @@ from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_vol
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
     get_file_ctime, detect_afni4D, split_afni4D_to_3D, splitext_nii_gz, mkdir_p, \
     send_email_notification, populate_nidm_results, get_server_url, populate_feat_directory, \
-    detect_feat_directory, format_image_collection_names
+    detect_feat_directory, format_image_collection_names, count_images_processing
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponse
-from django.db.models import Q
+from django.db.models import Q, Count
 from neurovault import settings
 from sendfile import sendfile
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.renderers import JSONRenderer
-from voxel_query_functions import *
-from compare import compare, atlas as pybrainatlas
+from neurovault.apps.statmaps.voxel_query_functions import *
+from pybraincompare.compare import scatterplot, search
+from pybraincompare.mr.datasets import get_mni_atlas
 from glob import glob
 import pandas
 import zipfile
@@ -40,10 +41,8 @@ from django.db.models.aggregates import Count
 from django.contrib import messages
 import traceback
 from django.forms import widgets
+import pickle
 from neurovault.settings import PRIVATE_MEDIA_ROOT
-
-
-
 
 def owner_or_contrib(request,collection):
     if collection.owner == request.user or request.user in collection.contributors.all() or request.user.is_superuser:
@@ -175,7 +174,7 @@ def view_image(request, pk, collection_cid=None):
     image = get_image(pk,collection_cid,request)
     user_owns_image = True if owner_or_contrib(request,image.collection) else False
     api_cid = pk
-
+    
     num_comparisons = Comparison.objects.filter(Q(image1=image) | Q(image2=image)).count()
     #comparison_is_possible = True if num_comparisons >= 1 and not image.collection.private else False
     comparison_is_possible = False
@@ -425,7 +424,7 @@ def upload_folder(request, collection_cid):
                                 niftiFiles.extend(split_afni4D_to_3D(nii))
                             else:
                                 niftiFiles.append((fname,nii_path))
-
+                
                 for label,fpath in niftiFiles:
                     # Read nifti file information
                     nii = nib.load(fpath)
@@ -480,6 +479,7 @@ def upload_folder(request, collection_cid):
 
                     new_image.file = f
                     new_image.save()
+
             except:
                 raise
                 error = traceback.format_exc().splitlines()[-1]
@@ -503,6 +503,13 @@ def delete_image(request, pk):
     cid = image.collection.pk
     if not owner_or_contrib(request,image.collection):
         return HttpResponseForbidden()
+    # Delete transformation and thumbnail
+    if image.thumbnail is not None:
+        if os.path.exists(image.thumbnail):
+            os.remove(image.thumbnail)
+    if image.transform is not None:
+        if os.path.exists(image.transform):
+            os.remove(image.transform)
     image.delete()
     return redirect('collection_details', cid=cid)
 
@@ -715,12 +722,6 @@ def compare_images(request,pk1,pk2):
     path, name1, ext = split_filename(image1.file.url)
     path, name2, ext = split_filename(image2.file.url)
 
-    # For now, manually choose an atlas - this can be user choice
-    atlas_file = os.path.join(settings.STATIC_ROOT,'atlas','MNI-maxprob-thr25-2mm.nii')
-    atlas_xml = os.path.join(settings.STATIC_ROOT,'atlas','MNI.xml')
-    # Default slices are "coronal","axial","sagittal"
-    atlas = pybrainatlas.atlas(atlas_xml,atlas_file)
-
     # Get image: collection: [map_type] names no longer than ~125 characters
     image1_custom_name = format_image_collection_names(image_name=image1.name,
                                                        collection_name=image1.collection.name,
@@ -729,20 +730,42 @@ def compare_images(request,pk1,pk2):
                                                        collection_name=image2.collection.name,
                                                        map_type=image2.map_type,total_length=125)
 
-    # Create custom image names and links for the visualization
+    image_names = [image1_custom_name,image2_custom_name]
+
+    # Create custom links for the visualization
     custom = {
-            "IMAGE_1":image1_custom_name,
-            "IMAGE_2":image2_custom_name,
-            "IMAGE_1_LINK":"/images/%s" % (image1.pk),"IMAGE_2_LINK":"/images/%s" % (image2.pk)
+            "IMAGE_1_LINK":"/images/%s" % (image1.pk),
+            "IMAGE_2_LINK":"/images/%s" % (image2.pk)
     }
 
-    html_snippet,data_table = compare.scatterplot_compare(image1=image1.file.path,
-                                                          image2=image2.file.path,
-                                                          software="FREESURFER",
-                                                          voxdim=[8,8,8],
-                                                          atlas=atlas,custom=custom,corr="pearson")
+    # Load image vectors from pickle files
+    image_vector1 = pickle.load(open(image1.transform,"rb"))
+    image_vector2 = pickle.load(open(image2.transform,"rb"))
 
-    html = [h.strip("\n") for h in html_snippet]
+    # Load atlas pickle, containing vectors of atlas labels, colors, and values for same voxel dimension (4mm)
+    neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))        
+    atlas_pkl_path = os.path.join(neurovault_root, 'neurovault/static/atlas/atlas_mni_4mm.pkl')
+    atlas = pickle.load(open(atlas_pkl_path,"rb"))
+
+    # Load the atlas svg, so we don't need to dynamically generate it
+    atlas_svg = os.path.join(neurovault_root,'neurovault/static/atlas/atlas_mni_2mm_svg.pkl')
+    atlas_svg = pickle.load(open(atlas_svg,"rb"))
+
+    # Generate html for similarity search, do not specify atlas    
+    html_snippet,data_table = scatterplot.scatterplot_compare_vector(image_vector1=image_vector1,
+                                                                 image_vector2=image_vector2,
+                                                                 image_names=image_names,
+                                                                 atlas_vector=atlas["atlas_vector"],
+                                                                 atlas_labels=atlas["atlas_labels"],
+                                                                 atlas_colors=atlas["atlas_colors"],
+                                                                 corr_type="pearson",
+                                                                 subsample_every=10, # subsample every 10th voxel
+                                                                 custom=custom,
+                                                                 remove_scripts="D3_MIN_JS") 
+
+    # Add atlas svg to the image, and prepare html for rendering
+    html = [h.replace("[coronal]",atlas_svg) for h in html_snippet]
+    html = [h.strip("\n").replace("[axial]","").replace("[sagittal]","") for h in html]
     context = {'html': html}
     return render(request, 'statmaps/compare_images.html', context)
 
@@ -752,53 +775,71 @@ def find_similar(request,pk):
     image1 = get_image(pk,None,request)
     pk = int(pk)
 
-    # Get all similarity calculations for this image, and ids of other images
-    comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1),
-                  image1__collection__private=False, image2__collection__private=False)
+    # Search only enabled if the image is not thresholded
+    if image1.is_thresholded == False:
+
+        # Count the number of comparisons that we have to determine max that we can return
+        number_comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1),
+                  image1__collection__private=False, 
+                  image2__collection__private=False).count()
+
+        max_results = 100
+        if number_comparisons < 100:
+          max_results = number_comparisons
+
+        # Get only # max_results similarity calculations for this image, and ids of other images
+        comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1),
+                  image1__collection__private=False, 
+                  image2__collection__private=False).extra(select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[0:max_results] # "-" indicates descending
+
+        images = [image1]
+        scores = [1] # pearsonr
+        for comp in comparisons:
+          # pick the image we are comparing with
+          image = [image for image in [comp.image1,
+                             comp.image2] if image.id != pk][0]
+          if hasattr(image, "map_type"):
+            images.append(image)
+            scores.append(comp.similarity_score)
     
-    images = [image1]
-    scores = [1] # pearsonr
-    for comp in comparisons:
-      #pick the image we are comparing with
-      image = [image for image in [comp.image1,
-                         comp.image2] if image.id != pk][0]
-      if hasattr(image, "map_type"):
-        images.append(image)
-        scores.append(comp.similarity_score)
-    
-    # We will need lists of image ids, png paths, query id, query path, tags, names, scores
-    image_ids = [image.pk for image in images]
-    image_paths = [image.file.url for image in images]
-    png_img_names = ["glass_brain_%s.png" % image.pk for image in images]
-    png_img_paths = [os.path.join(os.path.split(image_paths[i])[0],
+        # We will need lists of image ids, png paths, query id, query path, tags, names, scores
+        image_ids = [image.pk for image in images]
+        image_paths = [image.file.url for image in images]
+        png_img_names = ["glass_brain_%s.png" % image.pk for image in images]
+        png_img_paths = [os.path.join(os.path.split(image_paths[i])[0],
                                   png_img_names[i]) for i in range(0,len(image_paths))]
-    tags = [[str(image.map_type)] for image in images]
+        tags = [[str(image.map_type)] for image in images]
     
-    # The top text will be the collection name, the bottom text the image name
-    bottom_text = ["%s" % (image.name) for image in images]
-    top_text = ["%s" % (image.collection.name) for image in images]
-    compare_url = "/images/compare"  # format will be prefix/[query_id]/[other_id]
-    image_url = "/images"  # format will be prefix/[other_id]
-    image_title = format_image_collection_names(image_name=image1.name,
+        # The top text will be the collection name, the bottom text the image name
+        bottom_text = ["%s" % (image.name) for image in images]
+        top_text = ["%s" % (image.collection.name) for image in images]
+        compare_url = "/images/compare"  # format will be prefix/[query_id]/[other_id]
+        image_url = "/images"  # format will be prefix/[other_id]
+        image_title = format_image_collection_names(image_name=image1.name,
                                                        collection_name=image1.collection.name,
                                                        map_type=image1.map_type,total_length=125)
     
-    # Here is the query image
-    query_png = os.path.join(os.path.split(image1.file.url)[0],"glass_brain_%s.png" % (image1.pk))
+        # Here is the query image
+        query_png = os.path.join(os.path.split(image1.file.url)[0],"glass_brain_%s.png" % (image1.pk))
 
-    # Do similarity search and return html to put in page, specify 100 max results, take absolute value of scores
-    html_snippet = compare.similarity_search(image_scores=scores,tags=tags,png_paths=png_img_paths,
-                                button_url=compare_url,image_url=image_url,query_png=query_png,
-                                query_id=pk,top_text=top_text,image_ids=image_ids,
-                                bottom_text=bottom_text,max_results=100,absolute_value=True)
+        # Do similarity search and return html to put in page, specify 100 max results, take absolute value of scores
+        html_snippet = search.similarity_search(image_scores=scores,tags=tags,png_paths=png_img_paths,
+                                    button_url=compare_url,image_url=image_url,query_png=query_png,
+                                    query_id=pk,top_text=top_text,image_ids=image_ids,
+                                    bottom_text=bottom_text,max_results=max_results,absolute_value=True)
 
-    html = [h.strip("\n") for h in html_snippet]
+        html = [h.strip("\n") for h in html_snippet]
     
-    images_processing = StatisticMap.objects.filter(collection__private=False).count() - len(image_ids)
-    context = {'html': html,'images_processing':images_processing,
-               'image_title':image_title, 'image_url': '/images/%s' % (image1.pk) }
-    return render(request, 'statmaps/compare_search.html', context)
+        # Get the number of images still processing
+        images_processing = count_images_processing()
 
+        context = {'html': html,'images_processing':images_processing,
+                   'image_title':image_title, 'image_url': '/images/%s' % (image1.pk) }
+        return render(request, 'statmaps/compare_search.html', context)
+    else:
+        error_message = "Image comparison is not enabled for thresholded images." 
+        context = {'error_message': error_message}
+        return render(request, 'statmaps/error_message.html', context)
 
 class JSONResponse(HttpResponse):
     """
