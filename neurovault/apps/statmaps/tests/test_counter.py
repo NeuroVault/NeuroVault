@@ -9,7 +9,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from neurovault.apps.statmaps.utils import count_images_processing
 from neurovault.apps.statmaps.forms import NIDMResultsForm
 from numpy.testing import assert_array_equal, assert_almost_equal, assert_equal
-from neurovault.apps.statmaps.models import Atlas, Collection, Image,StatisticMap
+from neurovault.apps.statmaps.models import Atlas, Collection, Image,StatisticMap, Comparison
 
 class Test_Counter(TestCase):
     def setUp(self):
@@ -57,3 +57,26 @@ class Test_Counter(TestCase):
         print "%s images processing [should be 0]" %(images_processing)
         assert_equal(images_processing,0)
 
+    # Adding a group of NIDM result images
+    def test_adding_nidm(self):
+        zip_file = open(os.path.join(self.test_path,'test_data/nidm/fsl.nidm.zip'), 'rb')
+        post_dict = {
+            'name': 'fsl_nidm',
+            'description':'{0} upload test'.format('fsl_nidm'),
+            'collection':self.Collection1.pk}
+        fname = os.path.basename(os.path.join(self.test_path,'test_data/nidm/fsl.nidm.zip'))
+        file_dict = {'zip_file': SimpleUploadedFile(fname, zip_file.read())}
+        zip_file.close()
+        form = NIDMResultsForm(post_dict, file_dict)
+        # Transforms should be generated synchronously
+        nidm = form.save()
+        images_processing = count_images_processing()
+        print "\nTesting Counter - added nidm result ###" 
+        # And when we count, there should be 0 still processing
+        print "%s images processing [should be 0]" %(images_processing)
+        assert_equal(images_processing,0)
+
+        # Make sure comparisons were calculated
+        number_comparisons = len(Comparison.objects.all())
+        print "\n %s comparisons exist after adding NIDM [should not be 0]" %(number_comparisons)
+        assert_equal(number_comparisons>0,True)
