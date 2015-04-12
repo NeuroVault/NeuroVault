@@ -11,7 +11,7 @@ from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_vol
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
     get_file_ctime, detect_afni4D, split_afni4D_to_3D, splitext_nii_gz, mkdir_p, \
     send_email_notification, populate_nidm_results, get_server_url, populate_feat_directory, \
-    detect_feat_directory, format_image_collection_names
+    detect_feat_directory, format_image_collection_names, count_images_processing
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponse
 from django.db.models import Q, Count
@@ -830,10 +830,8 @@ def find_similar(request,pk):
 
         html = [h.strip("\n") for h in html_snippet]
     
-        # Count the number of images still processing - we don't include image or atlas, or thresholded images
-        number_stat_maps = StatisticMap.objects.filter(collection__private=False)
-        number_stat_maps = number_stat_maps.filter(is_thresholded=False).exclude(polymorphic_ctype__model__in=['image','atlas']).count()
-        images_processing = number_stat_maps - number_comparisons - 1 # number_stat_maps includes query image
+        # Get the number of images still processing
+        images_processing = count_images_processing()
 
         context = {'html': html,'images_processing':images_processing,
                    'image_title':image_title, 'image_url': '/images/%s' % (image1.pk) }
