@@ -715,8 +715,10 @@ def atlas_query_voxel(request):
 
 # Compare Two Images
 def compare_images(request,pk1,pk2):
+    import numpy as np
     image1 = get_image(pk1,None,request)
     image2 = get_image(pk2,None,request)
+    images = [image1,image2]
 
     # Name the data file based on the new volumes
     path, name1, ext = split_filename(image1.file.url)
@@ -767,6 +769,15 @@ def compare_images(request,pk1,pk2):
     html = [h.replace("[coronal]",atlas_svg) for h in html_snippet]
     html = [h.strip("\n").replace("[axial]","").replace("[sagittal]","") for h in html]
     context = {'html': html}
+
+    # Determine if either image is thresholded
+    threshold_status = np.array([image_names[i] for i in range(0,2) if images[i].is_thresholded])
+    if len(threshold_status) > 0:
+      warnings = list()
+      for i in range(0,len(image_names)):
+          warnings.append('Warning: Thresholded image: %s (%.4g%% of voxels are zeros),' %(image_names[i],images[i].perc_bad_voxels))
+      context["warnings"] = warnings
+
     return render(request, 'statmaps/compare_images.html', context)
 
 
@@ -778,10 +789,12 @@ def find_similar(request,pk):
     # Search only enabled if the image is not thresholded
     if image1.is_thresholded == False:
 
-        # Count the number of comparisons that we have to determine max that we can return
-        number_comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1),
+        # Count the number of comparisons that we have to determine max that we can return, query takes 0.0014 sec
+        comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1),
                   image1__collection__private=False, 
-                  image2__collection__private=False).count()
+                  image2__collection__private=False)   # below takes 0.189, needs to be optimized
+        #comparisons = [comp for comp in comparisons if comp.image1.is_thresholded==False and comp.image2.is_thresholded==False]        
+        number_comparisons = len(comparisons)        
 
         max_results = 100
         if number_comparisons < 100:

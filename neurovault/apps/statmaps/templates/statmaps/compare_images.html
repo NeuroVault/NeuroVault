@@ -10,6 +10,12 @@ var addthis_config = {
 {% endblock %}
 {% block content %}
 
+    {% if warnings %}
+       {% for warning in warnings %}
+        <div class="alert alert-danger" style="width:90%; margin-bottom:5px; margin-top:5px">{{ warning }}</div>   
+       {% endfor %}
+    {% endif %}
+
  {% autoescape off %}
     {% for snippet in html %}
        {{ snippet }}
