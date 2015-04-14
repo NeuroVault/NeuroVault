@@ -6,7 +6,7 @@ from operator import itemgetter
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
-from neurovault.apps.statmaps.utils import count_images_processing
+from neurovault.apps.statmaps.utils import count_processing_comparisons,count_existing_comparisons
 from neurovault.apps.statmaps.forms import NIDMResultsForm
 from numpy.testing import assert_array_equal, assert_almost_equal, assert_equal
 from neurovault.apps.statmaps.models import Atlas, Collection, Image,StatisticMap, Comparison
@@ -27,7 +27,7 @@ class Test_Counter(TestCase):
 
     # An empty database should have zero images still processing
     def test_empty_database(self):
-        images_processing = count_images_processing()
+        images_processing = count_processing_comparisons()
         print "%s images processing [should be 0]" %(images_processing)
         assert_equal(images_processing,0)
 
@@ -41,9 +41,9 @@ class Test_Counter(TestCase):
         Image1 = StatisticMap(name='Image1', collection=self.Collection1, file='motor_lips.nii.gz', map_type="Z")
         Image1.file = SimpleUploadedFile('motor_lips.nii.gz', file(os.path.join(self.test_path,'test_data/statmaps/motor_lips.nii.gz')).read())
         Image1.save()
-        images_processing = count_images_processing()
-        print "%s images processing [should be 1]" %(images_processing)
-        assert_equal(images_processing,1)
+        images_processing = count_processing_comparisons()
+        print "%s images processing [should be 0]" %(images_processing)
+        assert_equal(images_processing,0)
 
         # When we add an image, the comparison will be calculated with image1, and both images transform fields will be populated
         # the counter will be set to 0.  Celery runs in synchronous mode when testing (meaning that jobs are run locally, one
@@ -53,9 +53,13 @@ class Test_Counter(TestCase):
         Image2 = StatisticMap(name='Image2', collection=self.Collection1, file='beta_0001.nii.gz', map_type="Other")
         Image2.file = SimpleUploadedFile('beta_0001.nii.gz', file(os.path.join(self.test_path,'test_data/statmaps/beta_0001.nii.gz')).read())
         Image2.save()
-        images_processing = count_images_processing()
+        images_processing = count_processing_comparisons()
         print "%s images processing [should be 0]" %(images_processing)
         assert_equal(images_processing,0)
+
+        # We should have 2 images total, so 1 comparison
+        total_comparisons = count_existing_comparisons()
+        assert_equal(total_comparisons,1)
 
     # Adding a group of NIDM result images
     def test_adding_nidm(self):
@@ -70,11 +74,15 @@ class Test_Counter(TestCase):
         form = NIDMResultsForm(post_dict, file_dict)
         # Transforms should be generated synchronously
         nidm = form.save()
-        images_processing = count_images_processing()
+        images_processing = count_processing_comparisons()
         print "\nTesting Counter - added nidm result ###" 
         # And when we count, there should be 0 still processing
         print "%s images processing [should be 0]" %(images_processing)
         assert_equal(images_processing,0)
+
+        # We should have 2 images total, so 1 comparison
+        total_comparisons = count_existing_comparisons()
+        assert_equal(total_comparisons,1)
 
         # Make sure comparisons were calculated
         number_comparisons = len(Comparison.objects.all())

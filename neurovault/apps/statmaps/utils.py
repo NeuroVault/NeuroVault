@@ -1,4 +1,4 @@
-from neurovault.apps.statmaps.models import Collection, NIDMResults, StatisticMap, Comparison
+from neurovault.apps.statmaps.models import Collection, NIDMResults, StatisticMap, Comparison, NIDMResultStatisticMap
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
@@ -473,18 +473,24 @@ def count_existing_comparisons(pk1=None):
 def count_possible_comparisons(pk1=None):
     if pk1!=None:
         # Comparisons possible for one pk is the number of other pks
-        return StatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(pk=pk1).count()
+        count_statistic_maps = StatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(pk=pk1).count()
+        count_nidm_maps = NIDMResultStatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(pk=pk1).count()
+        return count_statistic_maps + count_nidm_maps
 
     else:
         # Comparisons possible across entire database is N combinations of k=2 things
-        N = StatisticMap.objects.filter(is_thresholded=False,collection__private=False).count()
+        Nstat = StatisticMap.objects.filter(is_thresholded=False,collection__private=False).count()
+        Nnidm = NIDMResultStatisticMap.objects.filter(is_thresholded=False,collection__private=False).count()
+        N = Nstat+Nnidm
         k = 2
         return int(comb(N, k))
 
 # Returns image comparisons still processing for a given pk
-def count_processing_comparisons(pk1):
-    return count_possible_comparisons(pk1) - count_existing_comparisons(pk1)
-
+def count_processing_comparisons(pk1=None):
+    if pk1!=None:
+        return count_possible_comparisons(pk1) - count_existing_comparisons(pk1)
+    else:
+        return count_possible_comparisons() - count_existing_comparisons()
 
 # Returns existing comparisons for specific pk, or entire database
 def get_existing_comparisons(pk1=None):
