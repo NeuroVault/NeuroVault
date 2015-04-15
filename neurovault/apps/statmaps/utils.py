@@ -1,28 +1,30 @@
-import os
-import tempfile
-import subprocess
-import shutil
-import numpy as np
-import string
-import random
-from neurovault.apps.statmaps.models import Collection, NIDMResults, StatisticMap
-from neurovault import settings
-import urllib2
-from lxml import etree
-from datetime import datetime,date
-import cortex
-import pytz
-import errno
+from neurovault.apps.statmaps.models import Collection, NIDMResults, StatisticMap, Comparison, NIDMResultStatisticMap
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-import nibabel as nib
-from django.core.files.base import ContentFile
-from django.core.files.uploadedfile import InMemoryUploadedFile
-from ast import literal_eval
-from subprocess import CalledProcessError
 from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
+from subprocess import CalledProcessError
+from datetime import datetime,date
+from neurovault import settings
+from django.db.models import Q
+from ast import literal_eval
+from scipy.misc import comb
+from lxml import etree
+import nibabel as nib
+import numpy as np
+import subprocess
+import tempfile
+import urllib2
 import zipfile
 import pickle
+import shutil
+import string
+import random
+import cortex
+import errno
+import pytz
+import os
 
 # see CollectionRedirectMiddleware
 class HttpRedirectException(Exception):
@@ -460,12 +462,44 @@ def not_in_mni(nii, plot=False):
     
     return ret, perc_mask_covered, perc_voxels_outside_of_mask
 
-# Returns images still processing
-def count_images_processing():
-    
-    # Count the number of images still processing
-    number_stat_maps = StatisticMap.objects.filter(collection__private=False)
-    # First use same filters used to determine if should calculate comparison
-    number_stat_maps = number_stat_maps.filter(is_thresholded=False).exclude(polymorphic_ctype__model__in=['image','atlas'])
-    # Images still processing in this set have transform = None
-    return number_stat_maps.filter(transform=None).count()
+
+# QUERY FUNCTIONS -------------------------------------------------------------------------------
+
+# Returns number of total comparisons, with public, not thresholded maps
+def count_existing_comparisons(pk1=None):
+    return get_existing_comparisons(pk1).count()
+
+# Returns number of total comparisons possible
+def count_possible_comparisons(pk1=None):
+    if pk1!=None:
+        # Comparisons possible for one pk is the number of other pks
+        count_statistic_maps = StatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(pk=pk1).count()
+        count_nidm_maps = NIDMResultStatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(pk=pk1).count()
+        return count_statistic_maps + count_nidm_maps
+
+    else:
+        # Comparisons possible across entire database is N combinations of k=2 things
+        Nstat = StatisticMap.objects.filter(is_thresholded=False,collection__private=False).count()
+        Nnidm = NIDMResultStatisticMap.objects.filter(is_thresholded=False,collection__private=False).count()
+        N = Nstat+Nnidm
+        k = 2
+        return int(comb(N, k))
+
+# Returns image comparisons still processing for a given pk
+def count_processing_comparisons(pk1=None):
+    if pk1!=None:
+        return count_possible_comparisons(pk1) - count_existing_comparisons(pk1)
+    else:
+        return count_possible_comparisons() - count_existing_comparisons()
+
+# Returns existing comparisons for specific pk, or entire database
+def get_existing_comparisons(pk1=None):
+    threshold_pks = StatisticMap.objects.filter(is_thresholded=True).values_list("pk",flat=True)
+    if pk1!=None:
+        comparisons = Comparison.objects.filter(Q(image1__pk=pk1) | Q(image2__pk=pk1), 
+                     image1__collection__private=False,
+                     image2__collection__private=False)
+    else:
+        comparisons = Comparison.objects.filter(image1__collection__private=False,
+                                                image2__collection__private=False) 
+    return comparisons.exclude(image1__id__in=threshold_pks,image2__id__in=threshold_pks)

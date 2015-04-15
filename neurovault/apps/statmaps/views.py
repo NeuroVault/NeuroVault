@@ -11,7 +11,8 @@ from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_vol
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
     get_file_ctime, detect_afni4D, split_afni4D_to_3D, splitext_nii_gz, mkdir_p, \
     send_email_notification, populate_nidm_results, get_server_url, populate_feat_directory, \
-    detect_feat_directory, format_image_collection_names, count_images_processing
+    detect_feat_directory, format_image_collection_names, count_existing_comparisons, \
+    count_processing_comparisons, get_existing_comparisons
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponse
 from django.db.models import Q, Count
@@ -715,8 +716,10 @@ def atlas_query_voxel(request):
 
 # Compare Two Images
 def compare_images(request,pk1,pk2):
+    import numpy as np
     image1 = get_image(pk1,None,request)
     image2 = get_image(pk2,None,request)
+    images = [image1,image2]
 
     # Name the data file based on the new volumes
     path, name1, ext = split_filename(image1.file.url)
@@ -767,6 +770,15 @@ def compare_images(request,pk1,pk2):
     html = [h.replace("[coronal]",atlas_svg) for h in html_snippet]
     html = [h.strip("\n").replace("[axial]","").replace("[sagittal]","") for h in html]
     context = {'html': html}
+
+    # Determine if either image is thresholded
+    threshold_status = np.array([image_names[i] for i in range(0,2) if images[i].is_thresholded])
+    if len(threshold_status) > 0:
+      warnings = list()
+      for i in range(0,len(image_names)):
+          warnings.append('Warning: Thresholded image: %s (%.4g%% of voxels are zeros),' %(image_names[i],images[i].perc_bad_voxels))
+      context["warnings"] = warnings
+
     return render(request, 'statmaps/compare_images.html', context)
 
 
@@ -779,18 +791,14 @@ def find_similar(request,pk):
     if image1.is_thresholded == False:
 
         # Count the number of comparisons that we have to determine max that we can return
-        number_comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1),
-                  image1__collection__private=False, 
-                  image2__collection__private=False).count()
+        number_comparisons = count_existing_comparisons(pk)
 
         max_results = 100
         if number_comparisons < 100:
           max_results = number_comparisons
 
         # Get only # max_results similarity calculations for this image, and ids of other images
-        comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1),
-                  image1__collection__private=False, 
-                  image2__collection__private=False).extra(select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[0:max_results] # "-" indicates descending
+        comparisons = get_existing_comparisons(pk).extra(select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[0:max_results] # "-" indicates descending
 
         images = [image1]
         scores = [1] # pearsonr
@@ -831,7 +839,7 @@ def find_similar(request,pk):
         html = [h.strip("\n") for h in html_snippet]
     
         # Get the number of images still processing
-        images_processing = count_images_processing()
+        images_processing = count_processing_comparisons(pk)
 
         context = {'html': html,'images_processing':images_processing,
                    'image_title':image_title, 'image_url': '/images/%s' % (image1.pk) }
