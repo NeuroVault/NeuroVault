@@ -507,7 +507,7 @@ class PolymorphicImageForm(ImageForm):
         elif "map_type" in self.fields.keys():
             use_form = StatisticMapForm
         else:
-            use_form = ImageForm
+            raise Exception("unknown image type! %s"%str(self.fields.keys()))
             
         new_instance = use_form(self) 
         new_instance.cleaned_data = self.cleaned_data
