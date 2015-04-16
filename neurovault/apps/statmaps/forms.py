@@ -390,8 +390,13 @@ class ImageForm(ModelForm):
 
                 # check if it is really nifti
                 try:
-                    nii = nb.Nifti1Image.from_file_map(file_map)
+                    print file_map
+                    if "header" in file_map:
+                        nii = nb.Nifti1Pair.from_file_map(file_map)
+                    else:
+                        nii = nb.Nifti1Image.from_file_map(file_map)
                 except Exception as e:
+                    raise
                     self._errors["file"] = self.error_class([str(e)])
                     del cleaned_data["file"]
                     return cleaned_data
@@ -507,7 +512,7 @@ class PolymorphicImageForm(ImageForm):
         elif "map_type" in self.fields.keys():
             use_form = StatisticMapForm
         else:
-            use_form = ImageForm
+            raise Exception("unknown image type! %s"%str(self.fields.keys()))
             
         new_instance = use_form(self) 
         new_instance.cleaned_data = self.cleaned_data
