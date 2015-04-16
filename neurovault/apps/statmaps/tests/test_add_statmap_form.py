@@ -37,3 +37,41 @@ class AddStatmapsTests(TestCase):
             form.save()
             
             self.assertEqual(StatisticMap.objects.filter(collection=self.coll.pk)[0].name, "test map")
+            
+    def testaddImgHdr(self):
+
+            post_dict = {
+                'name': "test map",
+                'cognitive_paradigm_cogatlas': 'trm_4f24126c22011',
+                'modality':'fMRI-BOLD',
+                'map_type': 'T',
+                'collection':self.coll.pk,
+            }
+            testpath = os.path.abspath(os.path.dirname(__file__))
+            fname_img = os.path.join(testpath,'test_data/statmaps/box_0b_vs_1b.img')
+            fname_hdr = os.path.join(testpath,'test_data/statmaps/box_0b_vs_1b.hdr')
+            file_dict = {'file': SimpleUploadedFile(fname_img, open(fname_img).read()),
+                         'hdr_file': SimpleUploadedFile(fname_hdr, open(fname_hdr).read())}
+            form = StatisticMapForm(post_dict, file_dict)
+            self.assertFalse(form.is_valid())
+            self.assertTrue("thresholded" in form.errors["file"][0])
+            
+            post_dict = {
+                'name': "test map",
+                'cognitive_paradigm_cogatlas': 'trm_4f24126c22011',
+                'modality':'fMRI-BOLD',
+                'map_type': 'T',
+                'collection':self.coll.pk,
+                'ignore_file_warning': True
+            }
+            testpath = os.path.abspath(os.path.dirname(__file__))
+            fname_img = os.path.join(testpath,'test_data/statmaps/box_0b_vs_1b.img')
+            fname_hdr = os.path.join(testpath,'test_data/statmaps/box_0b_vs_1b.hdr')
+            file_dict = {'file': SimpleUploadedFile(fname_img, open(fname_img).read()),
+                         'hdr_file': SimpleUploadedFile(fname_hdr, open(fname_hdr).read())}
+            form = StatisticMapForm(post_dict, file_dict)
+            self.assertTrue(form.is_valid())
+
+            form.save()
+            
+            self.assertEqual(StatisticMap.objects.filter(collection=self.coll.pk)[0].name, "test map")

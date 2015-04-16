@@ -390,8 +390,13 @@ class ImageForm(ModelForm):
 
                 # check if it is really nifti
                 try:
-                    nii = nb.Nifti1Image.from_file_map(file_map)
+                    print file_map
+                    if "header" in file_map:
+                        nii = nb.Nifti1Pair.from_file_map(file_map)
+                    else:
+                        nii = nb.Nifti1Image.from_file_map(file_map)
                 except Exception as e:
+                    raise
                     self._errors["file"] = self.error_class([str(e)])
                     del cleaned_data["file"]
                     return cleaned_data
