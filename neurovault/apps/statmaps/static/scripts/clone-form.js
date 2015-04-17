@@ -68,8 +68,10 @@ cloneMore = function (selector, type, imgtype) {
     });
     $.each(['input','select','textarea'], function(i, etype) {
       $(n_ele).find(etype).each(function(n,ele) {
-        $(ele).attr('id', $(ele).attr('id').replace(rname,name));
-        $(ele).attr('name', $(ele).attr('name').replace(rname,name));
+      	if ($(ele).attr('id')){
+          $(ele).attr('id', $(ele).attr('id').replace(rname,name));
+          $(ele).attr('name', $(ele).attr('name').replace(rname,name));
+      	}
       });
     });
   });
