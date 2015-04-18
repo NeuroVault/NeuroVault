@@ -176,7 +176,7 @@ def view_image(request, pk, collection_cid=None):
     user_owns_image = True if owner_or_contrib(request,image.collection) else False
     api_cid = pk
     
-    num_comparisons = Comparison.objects.filter(Q(image1=image) | Q(image2=image)).count()
+    #num_comparisons = Comparison.objects.filter(Q(image1=image) | Q(image2=image)).count()
     #comparison_is_possible = True if num_comparisons >= 1 and not image.collection.private else False
     comparison_is_possible = False
 
