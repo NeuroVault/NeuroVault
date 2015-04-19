@@ -7,7 +7,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf.urls.static import static
 from rest_framework.filters import DjangoFilterBackend
 from lxml.etree import xmlfile
-from rest_framework.relations import StringRelatedField
+from rest_framework.relations import StringRelatedField, PrimaryKeyRelatedField
 admin.autodiscover()
 from django.contrib.auth.models import User, Group
 from rest_framework import viewsets, routers, serializers, mixins, generics
@@ -135,6 +135,7 @@ class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
     collection = HyperlinkedRelatedURL(read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
     cognitive_paradigm_cogatlas = StringRelatedField(read_only=True)
+    cognitive_paradigm_cogatlas_id = PrimaryKeyRelatedField(read_only=True, source="cognitive_paradigm_cogatlas")
 
     class Meta:
         model = StatisticMap
