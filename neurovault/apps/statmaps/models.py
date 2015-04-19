@@ -296,17 +296,6 @@ class Image(PolymorphicModel, BaseCollectionItem):
                 file_changed = True
         do_update = True if file_changed else False
         new_image = True if self.pk is None else False
-
-        # If we have an update, delete old pkl and comparisons first before saving
-        if do_update and self.collection:
-            if self.transform is not None: # not applicable for private collections 
-                self.transform = None
-                
-                # If more than one metric is added to NeuroVault, this must also filter based on metric
-                comparisons = Comparison.objects.filter(Q(image1=self) | Q(image2=self))
-                if comparisons: 
-                    comparisons.delete()
-
         super(Image, self).save()
 
         if (do_update or new_image) and self.collection and self.collection.private == False:
@@ -314,9 +303,6 @@ class Image(PolymorphicModel, BaseCollectionItem):
             # Generate glass brain image, transform, and comparisons
             generate_glassbrain_image.apply_async([self.pk])
 
-            print "Calculating transformation for image %s" % (self.pk)
-            # Default resample_dim is 4mm
-            run_voxelwise_pearson_similarity.apply_async([self.pk]) 
 
 class BaseStatisticMap(Image):
     Z = 'Z'
@@ -368,6 +354,30 @@ class BaseStatisticMap(Image):
 
         # Set the thumbnail path, if we save in the thumbnail generation task it will break dependency
         self.thumbnail = os.path.abspath(os.path.join(os.path.split(self.file.path)[0],"glass_brain_%s.png" %(self.pk)))
+
+        # Calculation of image transformation and comparisons        
+        file_changed = False
+        if self.pk is not None:
+            existing = Image.objects.get(pk=self.pk)
+            if existing.file != self.file:
+                file_changed = True
+        do_update = True if file_changed else False
+        new_image = True if self.pk is None else False
+
+        # If we have an update, delete old pkl and comparisons first before saving
+        if do_update and self.collection:
+            if self.transform is not None: # not applicable for private collections 
+                self.transform = None
+                
+                # If more than one metric is added to NeuroVault, this must also filter based on metric
+                comparisons = Comparison.objects.filter(Q(image1=self) | Q(image2=self))
+                if comparisons: 
+                    comparisons.delete()
+
+        if (do_update or new_image) and self.collection and self.collection.private == False:
+
+            # Default resample_dim is 4mm
+            run_voxelwise_pearson_similarity.apply_async([self.pk]) 
 
         super(BaseStatisticMap, self).save()
 
