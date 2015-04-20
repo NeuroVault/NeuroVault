@@ -129,6 +129,8 @@ ul.collection_nav li {
 	font-size: 32px;
 	padding: 20px;
 	background-color: rgba(245, 245, 245, 0.52);
+	line-height:32px;
+	word-break: break-word;
 }
 
 .form-horizontal .controls {

@@ -176,7 +176,7 @@ def view_image(request, pk, collection_cid=None):
     user_owns_image = True if owner_or_contrib(request,image.collection) else False
     api_cid = pk
     
-    #num_comparisons = Comparison.objects.filter(Q(image1=image) | Q(image2=image)).count()
+    #num_comparisons = count_existing_comparisons(pk1=pk)
     #comparison_is_possible = True if num_comparisons >= 1 and not image.collection.private else False
     comparison_is_possible = False
 
@@ -825,7 +825,7 @@ def find_similar(request,pk):
         image_url = "/images"  # format will be prefix/[other_id]
         image_title = format_image_collection_names(image_name=image1.name,
                                                        collection_name=image1.collection.name,
-                                                       map_type=image1.map_type,total_length=125)
+                                                       map_type=image1.map_type,total_length=95)
     
         # Here is the query image
         query_png = os.path.join(os.path.split(image1.file.url)[0],"glass_brain_%s.png" % (image1.pk))
