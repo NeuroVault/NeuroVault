@@ -2,7 +2,7 @@ from django.conf.urls import patterns, include, url
 from django.conf import settings
 from django.contrib import admin
 from neurovault.apps.statmaps.models import Image, Collection, StatisticMap,\
-    Atlas, NIDMResults, NIDMResultStatisticMap
+    Atlas, NIDMResults, NIDMResultStatisticMap, CognitiveAtlasTask
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf.urls.static import static
 from rest_framework.filters import DjangoFilterBackend

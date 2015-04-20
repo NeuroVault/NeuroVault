@@ -92,8 +92,8 @@ def run_voxelwise_pearson_similarity(pk1):
     comp_qs = imgs.exclude(polymorphic_ctype__model__in=['image','atlas']).order_by('id')
     for comp_img in comp_qs:
         iargs = sorted([comp_img.pk,pk1]) 
-        
-        save_voxelwise_pearson_similarity.apply_async(iargs)  # Default uses transformation, transformation = True
+        if comp_img.is_thresholded == False:
+            save_voxelwise_pearson_similarity.apply_async(iargs)  # Default uses transformation, transformation = True
 
 
 @shared_task

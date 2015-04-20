@@ -502,4 +502,4 @@ def get_existing_comparisons(pk1=None):
     else:
         comparisons = Comparison.objects.filter(image1__collection__private=False,
                                                 image2__collection__private=False) 
-    return comparisons.exclude(image1__id__in=threshold_pks,image2__id__in=threshold_pks)
+    return comparisons.exclude(image1__id__in=threshold_pks).exclude(image2__id__in=threshold_pks)

@@ -1,28 +1,27 @@
 # -*- coding: utf-8 -*-
-
-from django.contrib.auth.models import User
-from django.core.urlresolvers import reverse
-from django.db import models
+from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, generate_glassbrain_image
 from neurovault.apps.statmaps.storage import NiftiGzStorage, NIDMStorage
-from taggit.managers import TaggableManager
+from polymorphic.polymorphic_model import PolymorphicModel
+from django.db.models.signals import post_delete, pre_delete
 from taggit.models import GenericTaggedItemBase, TagBase
-from xml import etree
-from datetime import datetime
-import os
-import urllib2
+from django.core.exceptions import ValidationError
+from django.dispatch.dispatcher import receiver
+from django.core.urlresolvers import reverse
+from taggit.managers import TaggableManager
+from django.contrib.auth.models import User
+from django.db.models import Q, DO_NOTHING
 from dirtyfields import DirtyFieldsMixin
 from django.core.files import File
-import nibabel as nb
-from django.core.exceptions import ValidationError
 from neurovault import settings
-from polymorphic.polymorphic_model import PolymorphicModel
-from django.db.models import Q
-from django.db.models.signals import post_delete, pre_delete
-from django.dispatch.dispatcher import receiver
-import shutil
-from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, generate_glassbrain_image
-from django import forms
+from datetime import datetime
+from django.db import models
 from gzip import GzipFile
+from django import forms
+from xml import etree
+import nibabel as nb
+import urllib2
+import shutil
+import os
 
 class Collection(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of collection")
@@ -296,17 +295,6 @@ class Image(PolymorphicModel, BaseCollectionItem):
                 file_changed = True
         do_update = True if file_changed else False
         new_image = True if self.pk is None else False
-
-        # If we have an update, delete old pkl and comparisons first before saving
-        if do_update and self.collection:
-            if self.transform is not None: # not applicable for private collections 
-                self.transform = None
-                
-                # If more than one metric is added to NeuroVault, this must also filter based on metric
-                comparisons = Comparison.objects.filter(Q(image1=self) | Q(image2=self))
-                if comparisons: 
-                    comparisons.delete()
-
         super(Image, self).save()
 
         if (do_update or new_image) and self.collection and self.collection.private == False:
@@ -314,9 +302,6 @@ class Image(PolymorphicModel, BaseCollectionItem):
             # Generate glass brain image, transform, and comparisons
             generate_glassbrain_image.apply_async([self.pk])
 
-            print "Calculating transformation for image %s" % (self.pk)
-            # Default resample_dim is 4mm
-            run_voxelwise_pearson_similarity.apply_async([self.pk]) 
 
 class BaseStatisticMap(Image):
     Z = 'Z'
@@ -369,7 +354,32 @@ class BaseStatisticMap(Image):
         # Set the thumbnail path, if we save in the thumbnail generation task it will break dependency
         self.thumbnail = os.path.abspath(os.path.join(os.path.split(self.file.path)[0],"glass_brain_%s.png" %(self.pk)))
 
+        # Calculation of image transformation and comparisons        
+        file_changed = False
+        if self.pk is not None:
+            existing = Image.objects.get(pk=self.pk)
+            if existing.file != self.file:
+                file_changed = True
+        do_update = True if file_changed else False
+        new_image = True if self.pk is None else False
+
+        # If we have an update, delete old pkl and comparisons first before saving
+        if do_update and self.collection:
+            if self.transform is not None: # not applicable for private collections 
+                self.transform = None
+                
+                # If more than one metric is added to NeuroVault, this must also filter based on metric
+                comparisons = Comparison.objects.filter(Q(image1=self) | Q(image2=self))
+                if comparisons: 
+                    comparisons.delete()
         super(BaseStatisticMap, self).save()
+
+        # Calculate comparisons if private collection, update or save, not thresholded
+        if (do_update or new_image) and self.collection and self.collection.private == False:
+            if self.is_thresholded == False:
+                # Default resample_dim is 4mm
+                run_voxelwise_pearson_similarity.apply_async([self.pk]) 
+
 
     class Meta:
         abstract = True
@@ -408,8 +418,7 @@ class StatisticMap(BaseStatisticMap):
     smoothness_fwhm = models.FloatField(help_text="Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.", verbose_name="Smoothness FWHM", null=True, blank=True)
     contrast_definition = models.CharField(help_text="Exactly what terms are subtracted from what? Define these in terms of task or stimulus conditions (e.g., 'one-back task with objects versus zero-back task with objects') instead of underlying psychological concepts (e.g., 'working memory').", verbose_name="Contrast definition", max_length=200, null=True, blank=True)
     contrast_definition_cogatlas = models.CharField(help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast", verbose_name="Cognitive Atlas definition", max_length=200, null=True, blank=True)
-    cognitive_paradigm_cogatlas = models.ForeignKey(CognitiveAtlasTask, help_text="Task (or lack of it) performed by the subjects in the scanner described using <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> terms", verbose_name="Cognitive Paradigm", null=True, blank=False)
-
+    cognitive_paradigm_cogatlas = models.ForeignKey(CognitiveAtlasTask, help_text="Task (or lack of it) performed by the subjects in the scanner described using <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> terms", verbose_name="Cognitive Paradigm", null=True, blank=False, on_delete=DO_NOTHING)
 
 class NIDMResults(BaseCollectionItem):
     ttl_file = models.FileField(upload_to=upload_nidm_to,
