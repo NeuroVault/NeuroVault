@@ -316,13 +316,13 @@ def add_image_for_neurosynth(request):
         temp_collection.save()
     image = StatisticMap(collection=temp_collection)
     if request.method == "POST":
-        form = SimplifiedStatisticMapForm(request.user, request.POST, request.FILES, instance=image)
+        form = SimplifiedStatisticMapForm(request.POST, request.FILES, instance=image, user=request.user)
         if form.is_valid():
             image = form.save()
             return HttpResponseRedirect("http://neurosynth.org/decode/?neurovault=%s-%s" % (
                 temp_collection.private_token,image.id))
     else:
-        form = SimplifiedStatisticMapForm(request.user, instance=image)
+        form = SimplifiedStatisticMapForm(user=request.user, instance=image)
 
     context = {"form": form}
     return render(request, "statmaps/add_image_for_neurosynth.html.haml", context)
