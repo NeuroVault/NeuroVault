@@ -101,9 +101,9 @@
               - if collection.image_set.all
                   %a.btn.btn-primary{href: "pycortex" } 3D View
               - if edit_permission
-                  %a.btn.btn-primary{href: "{% url 'edit_collection' cid %}" } Edit details
+                  %a.btn.btn-primary{href: "{% url 'edit_collection' cid %}" } Edit collection
                   -#%a.btn.btn-primary{href: "{% url 'add_image' cid %}" } Add image
-                  %a.btn.btn-primary{href: "{% url 'edit_images' cid %}" } Edit Images
+                  %a.btn.btn-primary{href: "{% url 'edit_images' cid %}" } Edit images
                   %a.btn.btn-primary{id:"upload_archive"} Upload archive (.zip)
                   <!--[if !IE]> -->
                   %a.btn.btn-primary{id:"upload_folder"} Upload folder

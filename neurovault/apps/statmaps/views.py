@@ -1,4 +1,5 @@
-from neurovault.apps.statmaps.models import Collection, Image, Atlas, Comparison, StatisticMap, NIDMResults, NIDMResultStatisticMap
+from neurovault.apps.statmaps.models import Collection, Image, Atlas, Comparison, StatisticMap, NIDMResults, NIDMResultStatisticMap,\
+    BaseStatisticMap
 from neurovault.apps.statmaps.forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm
@@ -173,12 +174,11 @@ def edit_collection(request, cid=None):
 
 def view_image(request, pk, collection_cid=None):
     image = get_image(pk,collection_cid,request)
-    user_owns_image = True if owner_or_contrib(request,image.collection) else False
+    user_owns_image = owner_or_contrib(request,image.collection)
     api_cid = pk
     
-    #num_comparisons = count_existing_comparisons(pk1=pk)
-    #comparison_is_possible = True if num_comparisons >= 1 and not image.collection.private else False
-    comparison_is_possible = False
+    comparison_is_possible = (image.collection.private == False and isinstance(image, BaseStatisticMap) and \
+                              image.is_thresholded == False)
 
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
