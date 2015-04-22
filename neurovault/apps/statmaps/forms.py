@@ -335,14 +335,13 @@ class OwnerCollectionForm(CollectionForm):
 class ImageForm(ModelForm):
     hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
     
-    def __init__(self, user, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(ImageForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
         self.helper.form_tag = False
         self.afni_subbricks = []
         self.afni_tmp = None
-        self.fields['collection'].queryset = Collection.objects.filter(owner=user)
 
     class Meta:
         model = Image
@@ -524,18 +523,20 @@ class PolymorphicImageForm(ImageForm):
 
 class EditStatisticMapForm(StatisticMapForm):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, user, *args, **kwargs):
         super(EditStatisticMapForm, self).__init__(*args, **kwargs)
         self.helper.form_tag = False
         self.helper.add_input(Submit('submit', 'Submit'))
+        self.fields['collection'].queryset = Collection.objects.filter(owner=user)
 
 
 class EditAtlasForm(AtlasForm):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, user, *args, **kwargs):
         super(EditAtlasForm, self).__init__(*args, **kwargs)
         self.helper.form_tag = True
         self.helper.add_input(Submit('submit', 'Submit'))
+        self.fields['collection'].queryset = Collection.objects.filter(owner=user)
 
     class Meta(AtlasForm.Meta):
         exclude = ()
