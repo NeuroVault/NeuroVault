@@ -23,12 +23,14 @@ def generate_glassbrain_image(image_pk):
     import neurovault
     import matplotlib as mpl
     mpl.rcParams['savefig.format'] = 'jpg'
+    my_dpi = 50
+    fig = plt.figure(figsize=(330.0/my_dpi, 130.0/my_dpi), dpi=my_dpi)
     
     img = Image.objects.get(pk=image_pk)    
     f = BytesIO()
     try:
-        glass_brain = plot_glass_brain(img.file.path)
-        glass_brain.savefig(f)
+        glass_brain = plot_glass_brain(img.file.path, figure=fig)
+        glass_brain.savefig(f, dpi=my_dpi)
     except:
         # Glass brains that do not produce will be given dummy image
         f = open(os.path.abspath(os.path.join(neurovault.settings.BASE_DIR,
