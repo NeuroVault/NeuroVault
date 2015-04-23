@@ -523,7 +523,9 @@ class PolymorphicImageForm(ImageForm):
 
 class EditStatisticMapForm(StatisticMapForm):
 
-    def __init__(self, user, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
+        user = kwargs['user']
+        del kwargs['user']
         super(EditStatisticMapForm, self).__init__(*args, **kwargs)
         self.helper.form_tag = False
         self.helper.add_input(Submit('submit', 'Submit'))
@@ -532,7 +534,9 @@ class EditStatisticMapForm(StatisticMapForm):
 
 class EditAtlasForm(AtlasForm):
 
-    def __init__(self, user, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
+        user = kwargs['user']
+        del kwargs['user']
         super(EditAtlasForm, self).__init__(*args, **kwargs)
         self.helper.form_tag = True
         self.helper.add_input(Submit('submit', 'Submit'))
