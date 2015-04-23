@@ -504,10 +504,7 @@ def delete_image(request, pk):
     cid = image.collection.pk
     if not owner_or_contrib(request,image.collection):
         return HttpResponseForbidden()
-    # Delete transformation and thumbnail
-    if image.thumbnail is not None:
-        if os.path.exists(image.thumbnail):
-            os.remove(image.thumbnail)
+    # Delete transformation
     if image.transform is not None:
         if os.path.exists(image.transform):
             os.remove(image.transform)
@@ -795,7 +792,7 @@ def find_similar(request,pk):
 
         max_results = 100
         if number_comparisons < 100:
-          max_results = number_comparisons
+            max_results = number_comparisons
 
         # Get only # max_results similarity calculations for this image, and ids of other images
         comparisons = get_existing_comparisons(pk).extra(select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[0:max_results] # "-" indicates descending
@@ -803,19 +800,15 @@ def find_similar(request,pk):
         images = [image1]
         scores = [1] # pearsonr
         for comp in comparisons:
-          # pick the image we are comparing with
-          image = [image for image in [comp.image1,
-                             comp.image2] if image.id != pk][0]
-          if hasattr(image, "map_type"):
-            images.append(image)
+            # pick the image we are comparing with
+            image = [image for image in [comp.image1, comp.image2] if image.id != pk][0]
+            if hasattr(image, "map_type"):
+                    images.append(image)
             scores.append(comp.similarity_score)
     
         # We will need lists of image ids, png paths, query id, query path, tags, names, scores
         image_ids = [image.pk for image in images]
-        image_paths = [image.file.url for image in images]
-        png_img_names = ["glass_brain_%s.png" % image.pk for image in images]
-        png_img_paths = [os.path.join(os.path.split(image_paths[i])[0],
-                                  png_img_names[i]) for i in range(0,len(image_paths))]
+        png_img_paths = [image.thumbnail.url for image in images]
         tags = [[str(image.map_type)] for image in images]
     
         # The top text will be the collection name, the bottom text the image name
@@ -824,11 +817,11 @@ def find_similar(request,pk):
         compare_url = "/images/compare"  # format will be prefix/[query_id]/[other_id]
         image_url = "/images"  # format will be prefix/[other_id]
         image_title = format_image_collection_names(image_name=image1.name,
-                                                       collection_name=image1.collection.name,
-                                                       map_type=image1.map_type,total_length=95)
+                                                    collection_name=image1.collection.name,
+                                                    map_type=image1.map_type,total_length=95)
     
         # Here is the query image
-        query_png = os.path.join(os.path.split(image1.file.url)[0],"glass_brain_%s.png" % (image1.pk))
+        query_png = image1.thumbnail.url
 
         # Do similarity search and return html to put in page, specify 100 max results, take absolute value of scores
         html_snippet = search.similarity_search(image_scores=scores,tags=tags,png_paths=png_img_paths,

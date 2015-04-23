@@ -245,7 +245,10 @@ class BaseCollectionItem(models.Model):
 class Image(PolymorphicModel, BaseCollectionItem):
     file = models.FileField(upload_to=upload_img_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='File with the unthresholded map (.img, .nii, .nii.gz)')
     figure = models.CharField(help_text="Which figure in the corresponding paper was this map displayed in?", verbose_name="Corresponding figure", max_length=200, null=True, blank=True)
-
+    thumbnail = models.FileField(help_text="The orthogonal view thumbnail path of the nifti image",
+                                 null=True, blank=True, upload_to=upload_img_to,
+                                 verbose_name='Image orthogonal view thumbnail (.png)',
+                                 storage=NiftiGzStorage())
     def get_absolute_url(self):
         return_args = [str(self.id)]
         url_name = 'image_details'
@@ -326,9 +329,6 @@ class BaseStatisticMap(Image):
                     help_text=("The path to the pickle file with a brain masked vector of resampled image data"),
                     verbose_name="Image transformation pickle path",
                     max_length=200, null=True, blank=True)
-    thumbnail = models.CharField(help_text="The orthogonal view thumbnail path of the nifti image",
-                    null=True, blank=True,max_length=200,
-                    verbose_name='Image orthogonal view thumbnail (.png)')
     is_thresholded = models.NullBooleanField(null=True, blank=True)
     perc_bad_voxels = models.FloatField(null=True, blank=True)
     not_mni = models.NullBooleanField(null=True, blank=True)
@@ -350,9 +350,6 @@ class BaseStatisticMap(Image):
             gzfileobj = GzipFile(filename=self.file.name, mode='rb', fileobj=self.file.file)
             nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(self.file.name, gzfileobj)})
             self.not_mni, self.brain_coverage, self.perc_voxels_outside = nvutils.not_in_mni(nii)
-
-        # Set the thumbnail path, if we save in the thumbnail generation task it will break dependency
-        self.thumbnail = os.path.abspath(os.path.join(os.path.split(self.file.path)[0],"glass_brain_%s.png" %(self.pk)))
 
         # Calculation of image transformation and comparisons        
         file_changed = False
