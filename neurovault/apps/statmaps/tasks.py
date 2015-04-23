@@ -12,30 +12,36 @@ from neurovault.celery import nvcelery as celery_app
 from pybraincompare.compare.mrutils import resample_images_ref, make_binary_deletion_mask, make_binary_deletion_vector
 from pybraincompare.compare.maths import calculate_correlation, calculate_pairwise_correlation
 from pybraincompare.mr.datasets import get_data_directory
+from six import BytesIO
+from django.core.files.base import ContentFile
 
 # THUMBNAIL IMAGE GENERATION ###########################################################################
 
 @shared_task
 def generate_glassbrain_image(image_pk):
     from neurovault.apps.statmaps.models import Image
-    import shutil
     import neurovault
-    img = Image.objects.get(pk=image_pk)
-    png_img_name = "glass_brain_%s.png" % img.pk
-    png_img_path = os.path.join(os.path.split(img.file.path)[0], png_img_name)
-    if os.path.exists(png_img_path):
-        os.unlink(png_img_path)
+    import matplotlib as mpl
+    mpl.rcParams['savefig.format'] = 'jpg'
+    my_dpi = 50
+    fig = plt.figure(figsize=(330.0/my_dpi, 130.0/my_dpi), dpi=my_dpi)
+    
+    img = Image.objects.get(pk=image_pk)    
+    f = BytesIO()
     try:
-        glass_brain = plot_glass_brain(img.file.path)
-        glass_brain.savefig(png_img_path)
-        plt.close('all')
+        glass_brain = plot_glass_brain(img.file.path, figure=fig)
+        glass_brain.savefig(f, dpi=my_dpi)
     except:
         # Glass brains that do not produce will be given dummy image
-        glassbrain_dummy = os.path.abspath(os.path.join(neurovault.settings.BASE_DIR,
-                                           "static","images","glass_brain_empty.png"))
-        shutil.copy(glassbrain_dummy,png_img_path)  
-        raise Exception("Unable to generate glass-brain image for %s" %(image_pk))
-    return png_img_path
+        f = open(os.path.abspath(os.path.join(neurovault.settings.BASE_DIR,
+                                           "static","images","glass_brain_empty.jpg"))) 
+        raise
+    finally:
+        plt.close('all')
+        f.seek(0)
+        content_file = ContentFile(f.read())
+        img.thumbnail.save("glass_brain_%s.jpg" % img.pk, content_file)
+        img.save()
 
 # IMAGE TRANSFORMATION ################################################################################
 
