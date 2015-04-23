@@ -802,7 +802,7 @@ def find_similar(request,pk):
         for comp in comparisons:
             # pick the image we are comparing with
             image = [image for image in [comp.image1, comp.image2] if image.id != pk][0]
-            if hasattr(image, "map_type"):
+            if hasattr(image, "map_type") and image.thumbnail:
                     images.append(image)
             scores.append(comp.similarity_score)
     
