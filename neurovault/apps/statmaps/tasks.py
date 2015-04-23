@@ -34,7 +34,7 @@ def generate_glassbrain_image(image_pk):
     except:
         # Glass brains that do not produce will be given dummy image
         f = open(os.path.abspath(os.path.join(neurovault.settings.BASE_DIR,
-                                           "static","images","glass_brain_empty.png"))) 
+                                           "static","images","glass_brain_empty.jpg"))) 
         raise
     finally:
         plt.close('all')
