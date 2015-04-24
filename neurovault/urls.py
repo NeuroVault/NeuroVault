@@ -1,29 +1,30 @@
-from django.conf.urls import patterns, include, url
-from django.conf import settings
-from django.contrib import admin
+from neurovault.apps.statmaps.voxel_query_functions import voxelToRegion, getSynonyms, toAtlas, getAtlasVoxels
+from rest_framework.relations import StringRelatedField, PrimaryKeyRelatedField
 from neurovault.apps.statmaps.models import Image, Collection, StatisticMap,\
     Atlas, NIDMResults, NIDMResultStatisticMap, CognitiveAtlasTask
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
-from django.conf.urls.static import static
 from rest_framework.filters import DjangoFilterBackend
+from django.conf.urls import patterns, include, url
+from django.conf.urls.static import static
+from django.conf import settings
+from django.contrib import admin
 from lxml.etree import xmlfile
-from rest_framework.relations import StringRelatedField, PrimaryKeyRelatedField
 admin.autodiscover()
-from django.contrib.auth.models import User, Group
 from rest_framework import viewsets, routers, serializers, mixins, generics
+from neurovault.apps.statmaps.views import get_image,get_collection
 from rest_framework.decorators import detail_route, list_route
+from django.contrib.auth.models import User, Group
+from rest_framework.renderers import JSONRenderer
+from django.http import Http404, HttpResponse
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from taggit.models import Tag
-from django.http import Http404, HttpResponse
-from rest_framework.renderers import JSONRenderer
-from neurovault.apps.statmaps.views import get_image,get_collection
-import re
 import xml.etree.ElementTree as ET
+from taggit.models import Tag
+import cPickle as pickle
 import urllib2
 import os
-import cPickle as pickle
-from neurovault.apps.statmaps.voxel_query_functions import voxelToRegion, getSynonyms, toAtlas, getAtlasVoxels
+import re
+
 
 from django import template
 template.add_to_builtins('django.templatetags.future')
