@@ -146,7 +146,8 @@ class Test_Atlas_APIs(TestCase):
     def test_nidm_results(self):
         url = '/api/nidm_results/'
         response = json.loads(self.client.get(url, follow=True).content)
-        self.assertEqual(response[0][u'statmaps'][0][u'description'], 'NIDM Results: fsl.nidm.zip > TStatistic.nii.gz')
+        descriptions = [item[u'description'] for item in response[0][u'statmaps']]
+        self.assertTrue('NIDM Results: fsl.nidm.zip > TStatistic.nii.gz' in descriptions)
         self.assertEqual(response[0]['description'], u'fsl_nidm upload test')
     def test_nidm_results_pk(self):
         url = '/api/nidm_results/%d/' % self.nidm.pk

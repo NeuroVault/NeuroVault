@@ -460,11 +460,15 @@ class StatisticMapForm(ImageForm):
             
             if cleaned_data["is_thresholded"] and not cleaned_data.get("ignore_file_warning"):
                 self._errors["file"] = self.error_class(["This map seems to be thresholded (%.4g%% of voxels are zeros). Please use an unthresholded version of the map if possible."%(cleaned_data["perc_bad_voxels"])])
+                if cleaned_data.get("hdr_file"):
+                    self._errors["hdr_file"] = self.error_class(["This map seems to be thresholded (%.4g%% of voxels are zeros). Please use an unthresholded version of the map if possible."%(cleaned_data["perc_bad_voxels"])])
                 self.fields["ignore_file_warning"].widget = forms.CheckboxInput()
             else:
                 cleaned_data["not_mni"], cleaned_data["brain_coverage"], cleaned_data["perc_voxels_outside"] = not_in_mni(nii)
                 if cleaned_data["not_mni"] and not cleaned_data.get("ignore_file_warning"):
-                    self._errors["file"] = self.error_class(["This map seems not to be in the MNI space (%.4g%% of meaningful voxels are outside of the brain). Please use transform your dat to MNI space."%(cleaned_data["perc_voxels_outside"])])
+                    self._errors["file"] = self.error_class(["This map seems not to be in the MNI space (%.4g%% of meaningful voxels are outside of the brain). Please use transform your data to MNI space."%(cleaned_data["perc_voxels_outside"])])
+                    if cleaned_data.get("hdr_file"):
+                        self._errors["hdr_file"] = self.error_class(["This map seems not to be in the MNI space (%.4g%% of meaningful voxels are outside of the brain). Please use transform your data to MNI space."%(cleaned_data["perc_voxels_outside"])])
                     self.fields["ignore_file_warning"].widget = forms.CheckboxInput()
 
         return cleaned_data
