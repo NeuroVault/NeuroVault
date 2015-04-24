@@ -263,12 +263,12 @@ def edit_image(request, pk):
     if not owner_or_contrib(request,image.collection):
         return HttpResponseForbidden()
     if request.method == "POST":
-        form = form(request.user, request.POST, request.FILES, instance=image)
+        form = form(request.POST, request.FILES, instance=image, user=request.user)
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(image.get_absolute_url())
     else:
-        form = form(request.user, instance=image)
+        form = form(instance=image, user=request.user)
 
     context = {"form": form}
     return render(request, "statmaps/edit_image.html.haml", context)
