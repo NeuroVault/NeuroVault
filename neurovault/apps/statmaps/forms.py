@@ -333,7 +333,7 @@ class OwnerCollectionForm(CollectionForm):
 
 
 class ImageForm(ModelForm):
-    hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
+    hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)', widget=AdminResubmitFileWidget)
     
     def __init__(self, *args, **kwargs):
         super(ImageForm, self).__init__(*args, **kwargs)
@@ -346,6 +346,10 @@ class ImageForm(ModelForm):
     class Meta:
         model = Image
         exclude = []
+        widgets = {
+            'file': AdminResubmitFileWidget,
+            'hdr_file': AdminResubmitFileWidget,
+        }
 
     def clean(self, **kwargs):
         cleaned_data = super(ImageForm, self).clean()
@@ -451,7 +455,7 @@ class StatisticMapForm(ImageForm):
         cleaned_data = super(StatisticMapForm, self).clean()
         django_file = cleaned_data.get("file")
 
-        if django_file:
+        if django_file and "file" not in self._errors and "hdr_file" not in self._errors:
             django_file.open()
             gzfileobj = GzipFile(filename=django_file.name, mode='rb', fileobj=django_file.file)
             nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(django_file.name, gzfileobj)})
