@@ -262,8 +262,7 @@ class Image(PolymorphicModel, BaseCollectionItem):
         try:
             url =  self.thumbnail.url
         except ValueError:
-            url = os.path.abspath(os.path.join(neurovault.settings.BASE_DIR,
-                                 "static","images","glass_brain_empty.jpg"))
+            url = os.path.abspath(os.path.join("/static","images","glass_brain_empty.jpg"))
         return url         
 
     @classmethod
