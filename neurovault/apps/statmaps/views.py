@@ -808,7 +808,7 @@ def find_similar(request,pk):
     
         # We will need lists of image ids, png paths, query id, query path, tags, names, scores
         image_ids = [image.pk for image in images]
-        png_img_paths = [image.thumbnail.url for image in images]
+        png_img_paths = [image.get_thumbnail_url() for image in images]
         tags = [[str(image.map_type)] for image in images]
     
         # The top text will be the collection name, the bottom text the image name

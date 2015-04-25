@@ -19,6 +19,7 @@ from gzip import GzipFile
 from django import forms
 from xml import etree
 import nibabel as nb
+import neurovault
 import urllib2
 import shutil
 import os
@@ -256,6 +257,14 @@ class Image(PolymorphicModel, BaseCollectionItem):
             return_args.insert(0,str(self.collection.private_token))
             url_name = 'private_image_details'
         return reverse(url_name, args=return_args)
+
+    def get_thumbnail_url(self):
+        try:
+            url =  self.thumbnail.url
+        except ValueError:
+            url = os.path.abspath(os.path.join(neurovault.settings.BASE_DIR,
+                                 "static","images","glass_brain_empty.jpg"))
+        return url         
 
     @classmethod
     def create(cls, my_file, my_file_name, my_name, my_desc, my_collection_pk, my_map_type):

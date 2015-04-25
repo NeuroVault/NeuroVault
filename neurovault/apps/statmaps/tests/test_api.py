@@ -55,10 +55,7 @@ class Test_Atlas_APIs(TestCase):
 
     def test_query_region_out_of_order_indices(self):
         
-        # First test, tell user testing API
-        print "\n#### TESTING API\n"
-
-        print "Assessing equality of ordered vs. unordered atlas query..."
+        print "\nAssessing equality of ordered vs. unordered atlas query..."
         atlas_dir = os.path.join(self.test_path, 'test_data/api')
         tree = ET.parse(os.path.join(atlas_dir,'VentralFrontal_thr75_summaryimage_2mm.xml'))
         root = tree.getroot()
@@ -79,7 +76,7 @@ class Test_Atlas_APIs(TestCase):
             print "Equality of lists for region %s: %s" %(region,orderedSorted==unorderedSorted) 
             self.assertEqual(orderedSorted, unorderedSorted)
 
-        print "Assessing consistency of results for regional query..."             
+        print "\nAssessing consistency of results for regional query..."             
         testRegions = {'6v':[(58.00,-4.00,18.00),(62.00,6.00,30.00)], 
                        'fop':[(56.00,20.00,24.00),(34.00,18.00,30.00)], 
                        'fpm':[(8.00,62.00,10.00),(10.00,62.00,-16.00)]}
@@ -93,7 +90,7 @@ class Test_Atlas_APIs(TestCase):
 
 
     def test_out_of_order_indices(self):
-        print "Assessing consistency of results for coordinate query..."             
+        print "\nAssessing consistency of results for coordinate query..."             
         testRegions = {'6v':[(58.00,-4.00,18.00),(62.00,6.00,30.00)],
                        'fop':[(56.00,20.00,24.00),(34.00,18.00,30.00)],
                        'fpm':[(8.00,62.00,10.00),(10.00,62.00,-16.00)]}        
@@ -110,7 +107,7 @@ class Test_Atlas_APIs(TestCase):
 ### General API Tests
 
     def test_atlases(self):
-        print "Checking that atlas images are returned by atlas api..."
+        print "\nChecking that atlas images are returned by atlas api..."
         url = '/api/atlases/'
         response = json.loads(self.client.get(url, follow=True).content)
         self.assertTrue('.nii.gz' in response['results'][0][u'file'])
@@ -118,27 +115,27 @@ class Test_Atlas_APIs(TestCase):
         self.assertTrue(u'orderedAtlas' in names)
 
     def test_atlases_pk(self):
-        print "Testing atlas query with specific atlas pk...."
+        print "\nTesting atlas query with specific atlas pk...."
         url = '/api/atlases/%d/' % self.unorderedAtlas.pk
         response = json.loads(self.client.get(url, follow=True).content)
         self.assertTrue('.nii.gz' in response[u'file'])
         self.assertEqual(response['name'], u'unorderedAtlas')
 
     def test_atlases_datatable(self):
-        print "Testing atlas datatable query...."
+        print "\nTesting atlas datatable query...."
         url = '/api/atlases/%d/datatable/' % self.unorderedAtlas.pk
         response = json.loads(self.client.get(url, follow=True).content)
         self.assertTrue('.xml' in response['aaData'][1][1])
 
     def test_atlases_regions_table(self):
-        print "Testing atlas regions table query...."
+        print "\nTesting atlas regions table query...."
         url = '/api/atlases/%d/regions_table/' % self.unorderedAtlas.pk
         response = json.loads(self.client.get(url, follow=True).content)
         self.assertEqual(response['aaData'][2][1], u'fop')
         self.assertEqual(response['aaData'][11][1], u'46')
 
     def test_collections(self):
-        print "Testing collections API...."
+        print "\nTesting collections API...."
         url = '/api/collections/'
         response = json.loads(self.client.get(url, follow=True).content)
         self.assertEqual(response['results'][0][u'nidm_results'][0][u'name'], u'fsl.nidm')
@@ -161,7 +158,7 @@ class Test_Atlas_APIs(TestCase):
         self.assertEqual(collection_name, u'Collection1' )
 
     def test_images(self):
-        print "Testing images API...."
+        print "\nTesting images API...."
         url = '/api/images/'
         response = json.loads(self.client.get(url, follow=True).content)
         names = [item[u'name'] for item in response['results']]
@@ -180,7 +177,7 @@ class Test_Atlas_APIs(TestCase):
         self.assertTrue('http' in response['aaData'][1][1])
 
     def test_nidm_results(self):
-        print "Testing NIDM results API...."
+        print "\nTesting NIDM results API...."
         url = '/api/nidm_results/'
         response = json.loads(self.client.get(url, follow=True).content)
         descriptions = [item[u'description'] for item in response['results'][0][u'statmaps']]
@@ -197,7 +194,7 @@ class Test_Atlas_APIs(TestCase):
 ### Pagination
 
     def test_pagination(self):
-        print "Testing API pagination..."
+        print "\nTesting API pagination..."
         print "Max limit is set to %s" %(StandardResultPagination.max_limit)
         self.assertEqual(1000,StandardResultPagination.max_limit)
         print "Default limit is set to %s" %(StandardResultPagination.default_limit)
