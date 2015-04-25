@@ -169,7 +169,8 @@ class Test_Atlas_APIs(TestCase):
         url = '/api/images/%d/' % self.Image1.pk
         response = json.loads(self.client.get(url, follow=True).content)
         self.assertTrue('http' in response['collection'])
-        self.assertEqual(response['name'], u'/opt/nv_env/NeuroVault/neurovault/apps/statmaps/tests/test_data/statmaps/motor_lips.nii.gz')
+        image_path = os.path.join(self.test_path,'test_data/statmaps/motor_lips.nii.gz')
+        self.assertEqual(response['name'], image_path)
 
     def test_images_datatable(self):
         url = '/api/images/%d/datatable/' % self.Image2.pk
