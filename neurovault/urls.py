@@ -186,7 +186,7 @@ class CollectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Collection
-        exclude = ['private_token', 'private']
+        exclude = ['private_token', 'private','images','nidm_results']
 
 
 class ImageViewSet(mixins.RetrieveModelMixin,
