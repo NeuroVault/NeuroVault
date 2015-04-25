@@ -145,5 +145,6 @@ urlpatterns = patterns('',
 
 # Pagination Custom Function to modify LimitedResultPagination
 class StandardResultPagination(LimitOffsetPagination):
-    page_size = 100  # this also sets default_limit to same value
+    PAGE_SIZE = 100  # this also sets default_limit to same value
     max_limit = 1000 # we need to set this, default is None
+    default_limit = 100
