@@ -215,6 +215,11 @@ REST_FRAMEWORK = {
     'DEFAULT_MODEL_SERIALIZER_CLASS':
         'rest_framework.serializers.HyperlinkedModelSerializer',
 
+    # LimitOffsetPagination will allow to set a ?limit= and ?offset= 
+    # variable in the URL.
+    'DEFAULT_PAGINATION_CLASS': 
+         'neurovault.apps.statmaps.urls.StandardResultPagination',
+
     # Use Django's standard `django.contrib.auth` permissions,
     # or allow read-only access for unauthenticated users.
     'DEFAULT_PERMISSION_CLASSES': [

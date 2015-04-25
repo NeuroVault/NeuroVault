@@ -1,9 +1,9 @@
-import os
-import shutil
-from neurovault.settings import PRIVATE_MEDIA_ROOT
+from neurovault.apps.statmaps.forms import StatisticMapForm, AtlasForm, NIDMResultsForm
 from neurovault.apps.statmaps.models import Collection, Image
 from django.core.files.uploadedfile import SimpleUploadedFile
-from neurovault.apps.statmaps.forms import StatisticMapForm, AtlasForm
+from neurovault.settings import PRIVATE_MEDIA_ROOT
+import shutil
+import os
 
 
 def clearDB():
@@ -46,10 +46,13 @@ def save_statmap_form(image_path,collection,ignore_file_warning=False):
     return form.save()
 
 
-def save_atlas_form(nii_path,xml_path,collection,ignore_file_warning=False):
+def save_atlas_form(nii_path,xml_path,collection,ignore_file_warning=False,name=None):
+
+    if name == None:
+        name = nii_path
 
     post_dict = {
-        'name': nii_path,
+        'name': name,
         'map_type': 'Atlas',
         'collection':collection.pk,
         'ignore_file_warning': ignore_file_warning
@@ -59,4 +62,18 @@ def save_atlas_form(nii_path,xml_path,collection,ignore_file_warning=False):
     form = AtlasForm(post_dict, file_dict)
     return form.save()
 
+
+def save_nidm_form(zip_file,collection,name=None):
+    
+    if name == None:
+        name = "fsl_nidm"
+    zip_file_obj = open(zip_file, 'rb')
+    post_dict = {'name': name,
+                 'description':'{0} upload test'.format('fsl_nidm'),
+                 'collection':collection.pk}
+    fname = os.path.basename(zip_file)
+    file_dict = {'zip_file': SimpleUploadedFile(fname, zip_file_obj.read())}
+    zip_file_obj.close()
+    form = NIDMResultsForm(post_dict, file_dict)
+    return form.save()
 
