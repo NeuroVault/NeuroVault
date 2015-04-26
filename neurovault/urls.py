@@ -339,6 +339,18 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
             data['description'] = data['description'].replace('\n', '<br />')
         return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date', 'images'])
 
+    @detail_route()
+    def images(self, request, pk=None):
+        collection = get_collection(pk,request,mode='api')
+        # We don't want to exclude images
+        CollectionSerializer.Meta.exclude.remove("images")
+        CollectionSerializer.Meta.exclude.remove("nidm_results")
+        data = CollectionSerializer(collection, context={'request': request}).data
+        CollectionSerializer.Meta.exclude = CollectionSerializer.Meta.exclude +["images","nidm_results"]
+        if data and 'description' in data and data['description']:
+            data['description'] = data['description'].replace('\n', '<br />')
+        return Response(data)
+
     def retrieve(self, request, pk=None):
         collection = get_collection(pk,request,mode='api')
         data = CollectionSerializer(collection, context={'request': request}).data
