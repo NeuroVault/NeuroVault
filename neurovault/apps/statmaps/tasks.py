@@ -6,6 +6,7 @@ import nibabel as nib
 from django.db.models import Q
 from celery import shared_task 
 from sklearn.externals import joblib
+from nilearn.image import resample_img
 from nilearn.plotting import plot_glass_brain
 from django.shortcuts import get_object_or_404
 from neurovault.celery import nvcelery as celery_app
@@ -63,15 +64,19 @@ def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
       standard = os.path.abspath(os.path.join(neurovault.settings.BASE_DIR,"static","anatomical","MNI152.nii.gz"))
     standard_brain = nib.load(standard)
     
-    # Resample both image and mask - resampling will be skipped if affines already equivalent
-    img_resamp, ref_resamp = resample_images_ref(images=[nii_obj], 
-                                                 reference=standard_brain, 
-                                                 interpolation="continuous",
-                                                 resample_dim=resample_dim)
+    # Set all absolute zeros == NaN, we do this so resampling does not make "almost zero"
+    nii_obj.get_data()[nii_obj.get_data()==0] = numpy.nan
+
+    reference = resample_img(standard_brain, target_affine=numpy.diag(resample_dim))
+    if not (nii_obj.get_affine() == reference.get_affine()).all():
+      nii_obj = resample_img(nii_obj,target_affine=reference.get_affine(), 
+                             target_shape=reference.shape,
+                             interpolation="continuous",
+                             ensure_finite=False)
 
     # Mask the image, and save pickle image folder 
     # (this is the same procedure used to produce the atlas vector that will be used for scatterplot)
-    image_vector = img_resamp[0].get_data()[ref_resamp.get_data()!=0]
+    image_vector = nii_obj.get_data()[reference.get_data()!=0]
 
     pkl_resamp_name = "transform_%smm_%s.pkl" %(resample_dim[0],img.pk)
     img_directory = os.path.split(img.file.path)[0]
