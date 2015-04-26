@@ -1,11 +1,11 @@
 from __future__ import absolute_import
 import os
 import numpy
-import pickle
 import pylab as plt
 import nibabel as nib
 from django.db.models import Q
 from celery import shared_task 
+from sklearn.externals import joblib
 from nilearn.plotting import plot_glass_brain
 from django.shortcuts import get_object_or_404
 from neurovault.celery import nvcelery as celery_app
@@ -133,8 +133,8 @@ def save_voxelwise_pearson_similarity_transformation(pk1, pk2):
             image2 = get_object_or_404(Image, pk=image2.pk)
 
         # Load image pickles
-        image_vector1 = pickle.load(open(image1.transform,"rb"))
-        image_vector2 = pickle.load(open(image2.transform,"rb"))
+        image_vector1 = joblib.load(image1.transform)
+        image_vector2 = joblib.load(image2.transform)
 
         # Calculate binary deletion vector mask (find 0s and nans)
         mask = make_binary_deletion_vector([image_vector1,image_vector2])
