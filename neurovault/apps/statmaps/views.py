@@ -817,7 +817,7 @@ def find_similar(request,pk):
         image_url = "/images"  # format will be prefix/[other_id]
         image_title = format_image_collection_names(image_name=image1.name,
                                                     collection_name=image1.collection.name,
-                                                    map_type=image1.map_type,total_length=95)
+                                                    map_type=image1.map_type,total_length=50)
     
         # Here is the query image
         query_png = image1.thumbnail.url
