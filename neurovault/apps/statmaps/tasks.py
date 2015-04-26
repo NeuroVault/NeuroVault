@@ -63,20 +63,21 @@ def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
     if not os.path.exists(standard):
       standard = os.path.abspath(os.path.join(neurovault.settings.BASE_DIR,"static","anatomical","MNI152.nii.gz"))
     standard_brain = nib.load(standard)
-    
-    # Set all absolute zeros == NaN, we do this so resampling does not make "almost zero"
-    nii_obj.get_data()[nii_obj.get_data()==0] = numpy.nan
-
     reference = resample_img(standard_brain, target_affine=numpy.diag(resample_dim))
-    if not (nii_obj.get_affine() == reference.get_affine()).all():
-      nii_obj = resample_img(nii_obj,target_affine=reference.get_affine(), 
-                             target_shape=reference.shape,
-                             interpolation="continuous",
-                             ensure_finite=False)
 
+    # To set 0s to nan, we need to have float64 data type
+    true_zeros = numpy.zeros(nii_obj.shape) # default data_type is float64
+    true_zeros[:] = nii_obj.get_data()
+    true_zeros[true_zeros==0] = numpy.nan
+
+    # Resample image to 4mm voxel, nans are preserved
+    true_zeros = nib.nifti1.Nifti1Image(true_zeros,affine=nii_obj.get_affine())
+    true_zeros = resample_img(true_zeros,target_affine=reference.get_affine(), 
+                             target_shape=reference.shape)
+      
     # Mask the image, and save pickle image folder 
     # (this is the same procedure used to produce the atlas vector that will be used for scatterplot)
-    image_vector = nii_obj.get_data()[reference.get_data()!=0]
+    image_vector = true_zeros.get_data()[reference.get_data()!=0]
 
     pkl_resamp_name = "transform_%smm_%s.pkl" %(resample_dim[0],img.pk)
     img_directory = os.path.split(img.file.path)[0]

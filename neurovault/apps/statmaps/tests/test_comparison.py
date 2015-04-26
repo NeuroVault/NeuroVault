@@ -1,15 +1,19 @@
+from neurovault.apps.statmaps.tasks import save_voxelwise_pearson_similarity, get_images_by_ordered_id, save_resampled_transformation_single
+from neurovault.apps.statmaps.tests.utils import clearDB, save_atlas_form, save_statmap_form, save_nidm_form
 from neurovault.apps.statmaps.models import Image, Comparison, Similarity, User, Collection, StatisticMap
-from neurovault.apps.statmaps.tasks import save_voxelwise_pearson_similarity, get_images_by_ordered_id
 from numpy.testing import assert_array_equal, assert_almost_equal, assert_equal
 from django.core.files.uploadedfile import SimpleUploadedFile
 from neurovault.apps.statmaps.utils import split_afni4D_to_3D
 from neurovault.apps.statmaps.tests.utils import clearDB
 from django.shortcuts import get_object_or_404
+from sklearn.externals import joblib
 from django.db import IntegrityError
 from django.test import TestCase
+import neurovault
 import tempfile
 import nibabel
 import shutil
+import numpy
 import errno
 import os
 
@@ -19,6 +23,7 @@ class ComparisonTestCase(TestCase):
     pk2 = None
     pk3 = None
     pearson_metric = None
+    pknan = None
     
     def setUp(self):
         print "Preparing to test image comparison..."
@@ -27,30 +32,34 @@ class ComparisonTestCase(TestCase):
         self.u1 = User.objects.create(username='neurovault')
         self.comparisonCollection = Collection(name='comparisonCollection',owner=self.u1)
         self.comparisonCollection.save()
-        
-        image1 = StatisticMap(name='image1', description='',collection=self.comparisonCollection)
-        image1.file = SimpleUploadedFile('VentralFrontal_thr75_summaryimage_2mm.nii.gz', file(os.path.join(app_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz')).read())
-        image1.save()
+
+        image1 = save_statmap_form(image_path=os.path.join(app_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz'),
+                              collection=self.comparisonCollection,
+                              image_name = "image1",
+                              ignore_file_warning=True)
         self.pk1 = image1.id
-        
+                
         # Image 2 is equivalent to 1, so pearson should be 1.0
-        image2 = StatisticMap(name='image1_copy', description='',collection=self.comparisonCollection)
-        image2.file = SimpleUploadedFile('VentralFrontal_thr75_summaryimage_2mm.nii.gz', file(os.path.join(app_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz')).read())
-        image2.save()
+        image2 = save_statmap_form(image_path=os.path.join(app_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz'),
+                              collection=self.comparisonCollection,
+                              image_name = "image1_copy",
+                              ignore_file_warning=True)
         self.pk1_copy = image2.id
         
+        # "Bricks" images
         bricks = split_afni4D_to_3D(nibabel.load(os.path.join(app_path,'test_data/TTatlas.nii.gz')),tmp_dir=self.tmpdir)
-        
-        image3 = StatisticMap(name='image2', description='',collection=self.comparisonCollection)
-        image3.file = SimpleUploadedFile('brik1.nii.gz', file(bricks[0][1]).read())
-        image3.save()
-        self.pk2 = image3.id
-        
-        image4 = StatisticMap(name='image3', description='',collection=self.comparisonCollection)
-        image4.file = SimpleUploadedFile('brik2.nii.gz', file(bricks[1][1]).read())
-        image4.save()
+        image3 = save_statmap_form(image_path=bricks[0][1],collection=self.comparisonCollection,image_name="image2",ignore_file_warning=True)
+        self.pk2 = image3.id     
+        image4 = save_statmap_form(image_path=bricks[1][1],collection=self.comparisonCollection,image_name="image3",ignore_file_warning=True)
         self.pk3 = image4.id
-        
+
+        # This last image is a statmap with NaNs to test that transformation doesn't eliminate them
+        image_nan = save_statmap_form(image_path=os.path.join(app_path,'test_data/statmaps/motor_lips_nan.nii.gz'),
+                              collection=self.comparisonCollection,
+                              image_name = "image_nan",
+                              ignore_file_warning=True)
+        self.pknan = image_nan.id
+                        
         Similarity.objects.update_or_create(similarity_metric="pearson product-moment correlation coefficient",
                                          transformation="voxelwise",
                                          metric_ontology_iri="http://webprotege.stanford.edu/RCS8W76v1MfdvskPLiOdPaA",
@@ -63,6 +72,15 @@ class ComparisonTestCase(TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
         clearDB()
+
+
+    # When generating transformations for comparison, NaNs should be maintained in the map 
+    # (and not replaced with zero / interpolated to "almost zero" values.
+    def test_interpolated_transform_zeros(self): 
+        transform = save_resampled_transformation_single(self.pknan, resample_dim=[4, 4, 4])
+        data = joblib.load(transform)
+        print "Does transformation calculation maintain NaN values?: %s" %(numpy.isnan(data).any())
+        assert_equal(numpy.isnan(data).any(),True)
 
     def test_save_pearson_similarity(self):
         # Should be 1
@@ -98,7 +116,7 @@ class ComparisonTestCase(TestCase):
         comparison = Comparison.objects.filter(image1=image1,image2=image2,similarity_metric=self.pearson_metric)
         self.assertEqual(len(comparison), 1)
         print comparison[0].similarity_score
-        assert_almost_equal(comparison[0].similarity_score, 0.0196480800969,decimal=5)
+        assert_almost_equal(comparison[0].similarity_score, 0.214495998015581,decimal=5)
 
         image2, image3 = get_images_by_ordered_id(self.pk3, self.pk2)
         comparison = Comparison.objects.filter(image1=image2,image2=image3,similarity_metric=self.pearson_metric)
