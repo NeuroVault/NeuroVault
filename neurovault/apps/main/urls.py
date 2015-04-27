@@ -9,6 +9,6 @@ urlpatterns = patterns('',
         name="index"),
     url(r'^FAQ', TemplateView.as_view(template_name="FAQ.html.haml"), 
         name="FAQ"),
-    url(r'^api-docs', TemplateView.as_view(template_name="api-docs.html.haml"), 
+    url(r'^api-docs', TemplateView.as_view(template_name="api-docs.html"), 
         name="api-docs"),
 )
