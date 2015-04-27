@@ -1,11 +1,12 @@
 from __future__ import absolute_import
 import os
 import numpy
-import pickle
 import pylab as plt
 import nibabel as nib
 from django.db.models import Q
 from celery import shared_task 
+from sklearn.externals import joblib
+from nilearn.image import resample_img
 from nilearn.plotting import plot_glass_brain
 from django.shortcuts import get_object_or_404
 from neurovault.celery import nvcelery as celery_app
@@ -62,16 +63,21 @@ def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
     if not os.path.exists(standard):
       standard = os.path.abspath(os.path.join(neurovault.settings.BASE_DIR,"static","anatomical","MNI152.nii.gz"))
     standard_brain = nib.load(standard)
-    
-    # Resample both image and mask - resampling will be skipped if affines already equivalent
-    img_resamp, ref_resamp = resample_images_ref(images=[nii_obj], 
-                                                 reference=standard_brain, 
-                                                 interpolation="continuous",
-                                                 resample_dim=resample_dim)
+    reference = resample_img(standard_brain, target_affine=numpy.diag(resample_dim))
 
+    # To set 0s to nan, we need to have float64 data type
+    true_zeros = numpy.zeros(nii_obj.shape) # default data_type is float64
+    true_zeros[:] = nii_obj.get_data()
+    true_zeros[true_zeros==0] = numpy.nan
+
+    # Resample image to 4mm voxel, nans are preserved
+    true_zeros = nib.nifti1.Nifti1Image(true_zeros,affine=nii_obj.get_affine())
+    true_zeros = resample_img(true_zeros,target_affine=reference.get_affine(), 
+                             target_shape=reference.shape)
+      
     # Mask the image, and save pickle image folder 
     # (this is the same procedure used to produce the atlas vector that will be used for scatterplot)
-    image_vector = img_resamp[0].get_data()[ref_resamp.get_data()!=0]
+    image_vector = true_zeros.get_data()[reference.get_data()!=0]
 
     pkl_resamp_name = "transform_%smm_%s.pkl" %(resample_dim[0],img.pk)
     img_directory = os.path.split(img.file.path)[0]
@@ -133,8 +139,8 @@ def save_voxelwise_pearson_similarity_transformation(pk1, pk2):
             image2 = get_object_or_404(Image, pk=image2.pk)
 
         # Load image pickles
-        image_vector1 = pickle.load(open(image1.transform,"rb"))
-        image_vector2 = pickle.load(open(image2.transform,"rb"))
+        image_vector1 = joblib.load(image1.transform)
+        image_vector2 = joblib.load(image2.transform)
 
         # Calculate binary deletion vector mask (find 0s and nans)
         mask = make_binary_deletion_vector([image_vector1,image_vector2])

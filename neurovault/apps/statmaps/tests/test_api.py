@@ -138,7 +138,6 @@ class Test_Atlas_APIs(TestCase):
         print "\nTesting collections API...."
         url = '/api/collections/'
         response = json.loads(self.client.get(url, follow=True).content)
-        self.assertEqual(response['results'][0][u'nidm_results'][0][u'name'], u'fsl.nidm')
         self.assertEqual(response['results'][0][u'echo_time'], None)
 
     def test_collections_pk(self):

@@ -4,47 +4,46 @@ from neurovault.apps.statmaps.forms import CollectionFormSet, CollectionForm, Up
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
-from django.template.context import RequestContext
-from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
     get_file_ctime, detect_afni4D, split_afni4D_to_3D, splitext_nii_gz, mkdir_p, \
     send_email_notification, populate_nidm_results, get_server_url, populate_feat_directory, \
     detect_feat_directory, format_image_collection_names, count_existing_comparisons, \
     count_processing_comparisons, get_existing_comparisons
-from django.core.exceptions import PermissionDenied
-from django.http import Http404, HttpResponse
-from django.db.models import Q, Count
-from neurovault import settings
-from sendfile import sendfile
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.renderers import JSONRenderer
 from neurovault.apps.statmaps.voxel_query_functions import *
+from django.contrib.auth.decorators import login_required
 from pybraincompare.compare import scatterplot, search
 from pybraincompare.mr.datasets import get_mni_atlas
+from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import PermissionDenied
+from neurovault.settings import PRIVATE_MEDIA_ROOT
+from django.template.context import RequestContext
+from rest_framework.renderers import JSONRenderer
+from django.core.files.base import ContentFile
+from django.db.models.aggregates import Count
+from django.http import Http404, HttpResponse
+from django.db.models import Q, Count
+from sklearn.externals import joblib
+from collections import OrderedDict
+from django.contrib import messages
+from django.forms import widgets
+from neurovault import settings
+from sendfile import sendfile
+from xml.dom import minidom
+from fnmatch import fnmatch
+import nibabel as nib
 from glob import glob
-import pandas
+import neurovault
+import traceback
+import tempfile
 import zipfile
 import tarfile
+import shutil
+import pandas
 import gzip
-import shutil
-import nibabel as nib
 import re
-import tempfile
-import neurovault
-import shutil
-from fnmatch import fnmatch
 import os
-from collections import OrderedDict
-from xml.dom import minidom
-from django.db.models.aggregates import Count
-from django.contrib import messages
-import traceback
-from django.forms import widgets
-import pickle
-from neurovault.settings import PRIVATE_MEDIA_ROOT
 
 def owner_or_contrib(request,collection):
     if collection.owner == request.user or request.user in collection.contributors.all() or request.user.is_superuser:
@@ -670,7 +669,7 @@ def atlas_query_region(request):
         else:
             synonymsDict = {}
             with open(os.path.join(neurovault_root, 'neurovault/apps/statmaps/NIFgraph.pkl'),'rb') as input:
-                graph = pickle.load(input)
+                graph = joblib.load(input)
             for atlasRegion in atlasRegions:
                 synonymsDict[atlasRegion] = getSynonyms(atlasRegion)
             try:
@@ -739,17 +738,17 @@ def compare_images(request,pk1,pk2):
     }
 
     # Load image vectors from pickle files
-    image_vector1 = pickle.load(open(image1.transform,"rb"))
-    image_vector2 = pickle.load(open(image2.transform,"rb"))
+    image_vector1 = joblib.load(image1.transform)
+    image_vector2 = joblib.load(image2.transform)
 
     # Load atlas pickle, containing vectors of atlas labels, colors, and values for same voxel dimension (4mm)
     neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))        
     atlas_pkl_path = os.path.join(neurovault_root, 'neurovault/static/atlas/atlas_mni_4mm.pkl')
-    atlas = pickle.load(open(atlas_pkl_path,"rb"))
+    atlas = joblib.load(atlas_pkl_path)
 
     # Load the atlas svg, so we don't need to dynamically generate it
     atlas_svg = os.path.join(neurovault_root,'neurovault/static/atlas/atlas_mni_2mm_svg.pkl')
-    atlas_svg = pickle.load(open(atlas_svg,"rb"))
+    atlas_svg = joblib.load(atlas_svg)
 
     # Generate html for similarity search, do not specify atlas    
     html_snippet,data_table = scatterplot.scatterplot_compare_vector(image_vector1=image_vector1,
@@ -818,7 +817,7 @@ def find_similar(request,pk):
         image_url = "/images"  # format will be prefix/[other_id]
         image_title = format_image_collection_names(image_name=image1.name,
                                                     collection_name=image1.collection.name,
-                                                    map_type=image1.map_type,total_length=95)
+                                                    map_type=image1.map_type,total_length=50)
     
         # Here is the query image
         query_png = image1.thumbnail.url

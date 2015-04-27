@@ -22,12 +22,14 @@ def clearDB():
 
 
 
-def save_statmap_form(image_path,collection,ignore_file_warning=False):
+def save_statmap_form(image_path,collection,ignore_file_warning=False,image_name=None):
 
-    if isinstance(image_path,list):
-        image_name = image_path[0]
-    else:
-        image_name = image_path
+    if image_name == None:
+        if isinstance(image_path,list):
+            image_name = image_path[0]
+        else:
+            image_name = image_path
+    
     post_dict = {
         'name': image_name,
         'cognitive_paradigm_cogatlas': 'trm_4f24126c22011',

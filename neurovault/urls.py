@@ -3,6 +3,7 @@ from rest_framework.relations import StringRelatedField, PrimaryKeyRelatedField
 from neurovault.apps.statmaps.models import Image, Collection, StatisticMap,\
     Atlas, NIDMResults, NIDMResultStatisticMap, CognitiveAtlasTask
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from neurovault.apps.statmaps.urls import StandardResultPagination
 from rest_framework.filters import DjangoFilterBackend
 from django.conf.urls import patterns, include, url
 from django.conf.urls.static import static
@@ -186,7 +187,7 @@ class CollectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Collection
-        exclude = ['private_token', 'private']
+        exclude = ['private_token', 'private','images','nidm_results']
 
 
 class ImageViewSet(mixins.RetrieveModelMixin,
@@ -338,6 +339,16 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
         if data and 'description' in data and data['description']:
             data['description'] = data['description'].replace('\n', '<br />')
         return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date', 'images'])
+
+    @detail_route()
+    def images(self, request, pk=None):
+        collection = get_collection(pk,request,mode='api')
+        queryset = Image.objects.filter(collection=collection)
+        paginator = StandardResultPagination()
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = ImageSerializer(page, context={'request': request}, many=True)
+        return paginator.get_paginated_response(serializer.data)
+        
 
     def retrieve(self, request, pk=None):
         collection = get_collection(pk,request,mode='api')
