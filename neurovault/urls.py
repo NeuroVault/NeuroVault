@@ -342,14 +342,9 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
     @detail_route()
     def images(self, request, pk=None):
         collection = get_collection(pk,request,mode='api')
-        # We don't want to exclude images
-        CollectionSerializer.Meta.exclude.remove("images")
-        CollectionSerializer.Meta.exclude.remove("nidm_results")
-        data = CollectionSerializer(collection, context={'request': request}).data
-        CollectionSerializer.Meta.exclude = CollectionSerializer.Meta.exclude +["images","nidm_results"]
-        if data and 'description' in data and data['description']:
-            data['description'] = data['description'].replace('\n', '<br />')
-        return Response(data)
+        queryset = collection.image_set
+        serializer = ImageSerializer(queryset, context={'request': request}, many=True)
+        return Response(serializer.data)
 
     def retrieve(self, request, pk=None):
         collection = get_collection(pk,request,mode='api')
