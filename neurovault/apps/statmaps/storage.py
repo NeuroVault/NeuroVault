@@ -1,19 +1,42 @@
 import os
 import itertools
+import errno
 from django.core.files.storage import FileSystemStorage
 from neurovault import settings
 from django.db.models import get_model
 from fnmatch import fnmatch
+import tempfile
+from django.core.files.base import File
+from django.core.files.move import file_move_safe
 
-
-class NiftiGzStorage(FileSystemStorage):
-
+class NeuroVaultStorage(FileSystemStorage):
+    
     def __init__(self, location=None, base_url=None):
         if location is None:
             location = settings.PRIVATE_MEDIA_ROOT
         if base_url is None:
             base_url = settings.PRIVATE_MEDIA_URL
-        return super(NiftiGzStorage, self).__init__(location, base_url)
+        return super(NeuroVaultStorage, self).__init__(location, base_url)
+
+    def url(self, name):
+        collection_id = None
+        spath,file_name = os.path.split(name)
+        urlsects = [v for v in spath.split('/') if v]
+        for i in range(len(urlsects)):
+            sect = urlsects.pop(0)
+            if sect.isdigit():
+                collection_id = sect
+                break
+        cont_path = '/'.join(urlsects)
+        coll_model = get_model('statmaps','Collection')
+        collection = coll_model.objects.get(id=collection_id)
+        if collection.private:
+            cid = collection.private_token
+        else:
+            cid = collection.id
+        return os.path.join(self.base_url,str(cid),cont_path,file_name)
+
+class NiftiGzStorage(NeuroVaultStorage):
 
     def get_available_name(self, name):
         """
@@ -36,25 +59,46 @@ class NiftiGzStorage(FileSystemStorage):
             name = os.path.join(dir_name, "%s_%s%s" % (file_root, next(count), file_ext))
 
         return name
-
-    def url(self, name):
-        collection_id = None
-        spath,file_name = os.path.split(name)
-        urlsects = [v for v in spath.split('/') if v]
-        for i in range(len(urlsects)):
-            sect = urlsects.pop(0)
-            if sect.isdigit():
-                collection_id = sect
-                break
-        cont_path = '/'.join(urlsects)
-        coll_model = get_model('statmaps','Collection')
-        collection = coll_model.objects.get(id=collection_id)
-        if collection.private:
-            cid = collection.private_token
-        else:
-            cid = collection.id
-        return os.path.join(self.base_url,str(cid),cont_path,file_name)
-
+    
+class OverwriteStorage(NeuroVaultStorage):
+    def get_available_name(self, name):
+        return name
+    
+    def _save(self, name, content):
+        full_path = self.path(name)
+        
+        # Create any intermediate directories that do not exist.
+        # Note that there is a race between os.path.exists and os.makedirs:
+        # if os.makedirs fails with EEXIST, the directory was created
+        # concurrently, and we can continue normally. Refs #16082.
+        directory = os.path.dirname(full_path)
+        if not os.path.exists(directory):
+            try:
+                if self.directory_permissions_mode is not None:
+                    # os.makedirs applies the global umask, so we reset it,
+                    # for consistency with file_permissions_mode behavior.
+                    old_umask = os.umask(0)
+                    try:
+                        os.makedirs(directory, self.directory_permissions_mode)
+                    finally:
+                        os.umask(old_umask)
+                else:
+                    os.makedirs(directory)
+            except OSError as e:
+                if e.errno != errno.EEXIST:
+                    raise
+        if not os.path.isdir(directory):
+            raise IOError("%s exists and is not a directory." % directory)
+        
+        tmp_file = tempfile.mktemp()
+        filey = open(tmp_file, 'wb')
+        filey.write(content.read())
+        # make sure that all data is on disk
+        filey.flush()
+        os.fsync(filey.fileno()) 
+        filey.close()
+        file_move_safe(tmp_file, full_path, allow_overwrite=True)
+        return name
 
 class NIDMStorage(NiftiGzStorage):
     def __init__(self, location=None, base_url=None):
