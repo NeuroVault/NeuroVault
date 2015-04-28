@@ -497,10 +497,6 @@ def delete_image(request, pk):
     cid = image.collection.pk
     if not owner_or_contrib(request,image.collection):
         return HttpResponseForbidden()
-    # Delete transformation
-    if image.transform is not None:
-        if os.path.exists(image.transform):
-            os.remove(image.transform)
     image.delete()
     return redirect('collection_details', cid=cid)
 
