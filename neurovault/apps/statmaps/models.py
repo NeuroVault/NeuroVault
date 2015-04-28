@@ -23,6 +23,7 @@ import neurovault
 import urllib2
 import shutil
 import os
+from neurovault.settings import PRIVATE_MEDIA_ROOT
 
 class Collection(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of collection")
@@ -141,6 +142,20 @@ class Collection(models.Model):
 
     class Meta:
         app_label = 'statmaps'
+        
+    def delete(self, using=None):
+        cid = self.pk
+        for image in self.image_set.all():
+            image.delete()
+        ret = models.Model.delete(self, using=using)
+        collDir = os.path.join(PRIVATE_MEDIA_ROOT, 'images',str(cid))
+        try:
+            shutil.rmtree(collDir)
+        except OSError: 
+            print 'Image directory for collection %s does not exist' %cid
+        
+        return ret
+        
          
 class CognitiveAtlasTask(models.Model):
     name = models.CharField(max_length=200, null=False, blank=False)
@@ -464,6 +479,8 @@ def mymodel_delete(sender, instance, **kwargs):
     nidm_path = os.path.dirname(instance.zip_file.path)
     if os.path.isdir(nidm_path):
         shutil.rmtree(nidm_path, ignore_errors=True)
+        if os.path.exists(nidm_path):
+            shutil.rmtree(nidm_path)
 
 
 class NIDMResultStatisticMap(BaseStatisticMap):

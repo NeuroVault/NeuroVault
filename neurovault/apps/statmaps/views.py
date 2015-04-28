@@ -238,13 +238,7 @@ def delete_collection(request, cid):
     collection = get_collection(cid,request)
     if collection.owner != request.user:
         return HttpResponseForbidden()
-    for image in collection.image_set.all():
-        image.delete()
     collection.delete()
-    collDir = os.path.join(PRIVATE_MEDIA_ROOT, 'images',str(cid))
-    try:
-        shutil.rmtree(collDir)
-    except OSError: print 'Image directory for collection %s does not exist' %cid
     return redirect('my_collections')
 
 
