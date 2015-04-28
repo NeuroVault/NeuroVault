@@ -717,10 +717,6 @@ def compare_images(request,pk1,pk2):
     image2 = get_image(pk2,None,request)
     images = [image1,image2]
 
-    # Name the data file based on the new volumes
-    path, name1, ext = split_filename(image1.file.url)
-    path, name2, ext = split_filename(image2.file.url)
-
     # Get image: collection: [map_type] names no longer than ~125 characters
     image1_custom_name = format_image_collection_names(image_name=image1.name,
                                                        collection_name=image1.collection.name,
@@ -738,8 +734,8 @@ def compare_images(request,pk1,pk2):
     }
 
     # Load image vectors from pickle files
-    image_vector1 = joblib.load(image1.transform)
-    image_vector2 = joblib.load(image2.transform)
+    image_vector1 = np.load(image1.transform)
+    image_vector2 = np.load(image2.transform)
 
     # Load atlas pickle, containing vectors of atlas labels, colors, and values for same voxel dimension (4mm)
     neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))        
@@ -751,7 +747,7 @@ def compare_images(request,pk1,pk2):
     atlas_svg = joblib.load(atlas_svg)
 
     # Generate html for similarity search, do not specify atlas    
-    html_snippet,data_table = scatterplot.scatterplot_compare_vector(image_vector1=image_vector1,
+    html_snippet, _ = scatterplot.scatterplot_compare_vector(image_vector1=image_vector1,
                                                                  image_vector2=image_vector2,
                                                                  image_names=image_names,
                                                                  atlas_vector=atlas["atlas_vector"],
@@ -770,10 +766,10 @@ def compare_images(request,pk1,pk2):
     # Determine if either image is thresholded
     threshold_status = np.array([image_names[i] for i in range(0,2) if images[i].is_thresholded])
     if len(threshold_status) > 0:
-      warnings = list()
-      for i in range(0,len(image_names)):
-          warnings.append('Warning: Thresholded image: %s (%.4g%% of voxels are zeros),' %(image_names[i],images[i].perc_bad_voxels))
-      context["warnings"] = warnings
+        warnings = list()
+        for i in range(0,len(image_names)):
+            warnings.append('Warning: Thresholded image: %s (%.4g%% of voxels are zeros),' %(image_names[i],images[i].perc_bad_voxels))
+        context["warnings"] = warnings
 
     return render(request, 'statmaps/compare_images.html', context)
 

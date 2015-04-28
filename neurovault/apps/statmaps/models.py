@@ -248,8 +248,13 @@ class Image(PolymorphicModel, BaseCollectionItem):
     figure = models.CharField(help_text="Which figure in the corresponding paper was this map displayed in?", verbose_name="Corresponding figure", max_length=200, null=True, blank=True)
     thumbnail = models.FileField(help_text="The orthogonal view thumbnail path of the nifti image",
                                  null=True, blank=True, upload_to=upload_img_to,
-                                 verbose_name='Image orthogonal view thumbnail (.png)',
+                                 verbose_name='Image orthogonal view thumbnail 2D bitmap',
                                  storage=NiftiGzStorage())
+    reduced_representation = models.FileField(help_text=("Binary file with the vector of in brain values resampled to lower resolution"),
+                                              verbose_name="Reduced representation of the image",
+                                              null=True, blank=True, upload_to=upload_img_to,
+                                              storage=NiftiGzStorage())
+    
     def get_absolute_url(self):
         return_args = [str(self.id)]
         url_name = 'image_details'
@@ -297,7 +302,7 @@ class Image(PolymorphicModel, BaseCollectionItem):
 
         return image
 
-    # Celery task to generate glass brain image on new/update, transform/pearson on update only
+    # Celery task to generate glass brain image on new/update
     def save(self):
         file_changed = False
         if self.pk is not None:
@@ -310,7 +315,7 @@ class Image(PolymorphicModel, BaseCollectionItem):
 
         if (do_update or new_image) and self.collection and self.collection.private == False:
 
-            # Generate glass brain image, transform, and comparisons
+            # Generate glass brain image
             generate_glassbrain_image.apply_async([self.pk])
 
 
@@ -333,10 +338,7 @@ class BaseStatisticMap(Image):
                     help_text=("Type of statistic that is the basis of the inference"),
                     verbose_name="Map type",
                     max_length=200, null=False, blank=False, choices=MAP_TYPE_CHOICES)
-    transform = models.CharField(
-                    help_text=("The path to the pickle file with a brain masked vector of resampled image data"),
-                    verbose_name="Image transformation pickle path",
-                    max_length=200, null=True, blank=True)
+    
     is_thresholded = models.NullBooleanField(null=True, blank=True)
     perc_bad_voxels = models.FloatField(null=True, blank=True)
     not_mni = models.NullBooleanField(null=True, blank=True)
@@ -359,7 +361,7 @@ class BaseStatisticMap(Image):
             nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(self.file.name, gzfileobj)})
             self.not_mni, self.brain_coverage, self.perc_voxels_outside = nvutils.not_in_mni(nii)
 
-        # Calculation of image transformation and comparisons        
+        # Calculation of image reduced_representation and comparisons        
         file_changed = False
         if self.pk is not None:
             existing = Image.objects.get(pk=self.pk)
@@ -370,8 +372,8 @@ class BaseStatisticMap(Image):
 
         # If we have an update, delete old pkl and comparisons first before saving
         if do_update and self.collection:
-            if self.transform is not None: # not applicable for private collections 
-                self.transform = None
+            if self.reduced_representation: # not applicable for private collections 
+                self.reduced_representation.delete()
                 
                 # If more than one metric is added to NeuroVault, this must also filter based on metric
                 comparisons = Comparison.objects.filter(Q(image1=self) | Q(image2=self))
@@ -461,7 +463,7 @@ class NIDMResults(BaseCollectionItem):
 def mymodel_delete(sender, instance, **kwargs):
     nidm_path = os.path.dirname(instance.zip_file.path)
     if os.path.isdir(nidm_path):
-        shutil.rmtree(nidm_path)
+        shutil.rmtree(nidm_path, ignore_errors=True)
 
 
 class NIDMResultStatisticMap(BaseStatisticMap):

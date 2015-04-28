@@ -1,20 +1,13 @@
 from neurovault.apps.statmaps.tasks import save_voxelwise_pearson_similarity, get_images_by_ordered_id, save_resampled_transformation_single
-from neurovault.apps.statmaps.tests.utils import clearDB, save_atlas_form, save_statmap_form, save_nidm_form
-from neurovault.apps.statmaps.models import Image, Comparison, Similarity, User, Collection, StatisticMap
-from numpy.testing import assert_array_equal, assert_almost_equal, assert_equal
-from django.core.files.uploadedfile import SimpleUploadedFile
+from neurovault.apps.statmaps.tests.utils import clearDB, save_statmap_form
+from neurovault.apps.statmaps.models import Comparison, Similarity, User, Collection
+from numpy.testing import assert_almost_equal, assert_equal
 from neurovault.apps.statmaps.utils import split_afni4D_to_3D
-from neurovault.apps.statmaps.tests.utils import clearDB
-from django.shortcuts import get_object_or_404
-from sklearn.externals import joblib
-from django.db import IntegrityError
 from django.test import TestCase
-import neurovault
 import tempfile
 import nibabel
 import shutil
 import numpy
-import errno
 import os
 
 class ComparisonTestCase(TestCase):
@@ -55,9 +48,9 @@ class ComparisonTestCase(TestCase):
 
         # This last image is a statmap with NaNs to test that transformation doesn't eliminate them
         image_nan = save_statmap_form(image_path=os.path.join(app_path,'test_data/statmaps/motor_lips_nan.nii.gz'),
-                              collection=self.comparisonCollection,
-                              image_name = "image_nan",
-                              ignore_file_warning=True)
+                                      collection=self.comparisonCollection,
+                                      image_name = "image_nan",
+                                      ignore_file_warning=True)
         self.pknan = image_nan.id
                         
         Similarity.objects.update_or_create(similarity_metric="pearson product-moment correlation coefficient",
@@ -77,8 +70,8 @@ class ComparisonTestCase(TestCase):
     # When generating transformations for comparison, NaNs should be maintained in the map 
     # (and not replaced with zero / interpolated to "almost zero" values.
     def test_interpolated_transform_zeros(self): 
-        transform = save_resampled_transformation_single(self.pknan, resample_dim=[4, 4, 4])
-        data = joblib.load(transform)
+        img = save_resampled_transformation_single(self.pknan, resample_dim=[4, 4, 4])
+        data = numpy.load(img.reduced_representation.file)
         print "Does transformation calculation maintain NaN values?: %s" %(numpy.isnan(data).any())
         assert_equal(numpy.isnan(data).any(),True)
 
@@ -89,8 +82,8 @@ class ComparisonTestCase(TestCase):
  
         # Should not be saved
         with self.assertRaises(Exception):
-          print "Testing %s vs. %s: same pks, success is raising exception" %(self.pk1,self.pk1)
-          save_voxelwise_pearson_similarity(self.pk1,self.pk1)
+            print "Testing %s vs. %s: same pks, success is raising exception" %(self.pk1,self.pk1)
+            save_voxelwise_pearson_similarity(self.pk1,self.pk1)
 
         print "Testing %s vs. %s, different image set 1" %(self.pk1,self.pk2)
         save_voxelwise_pearson_similarity(self.pk1,self.pk2)
