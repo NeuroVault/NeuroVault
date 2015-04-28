@@ -36,7 +36,7 @@ class NeuroVaultStorage(FileSystemStorage):
             cid = collection.id
         return os.path.join(self.base_url,str(cid),cont_path,file_name)
 
-class NiftiGzStorage(FileSystemStorage):
+class NiftiGzStorage(NeuroVaultStorage):
 
     def get_available_name(self, name):
         """
