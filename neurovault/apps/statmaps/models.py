@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, generate_glassbrain_image
-from neurovault.apps.statmaps.storage import NiftiGzStorage, NIDMStorage
+from neurovault.apps.statmaps.storage import NiftiGzStorage, NIDMStorage,\
+    OverwriteStorage
 from polymorphic.polymorphic_model import PolymorphicModel
 from django.db.models.signals import post_delete, pre_delete
 from taggit.models import GenericTaggedItemBase, TagBase
@@ -268,7 +269,7 @@ class Image(PolymorphicModel, BaseCollectionItem):
     reduced_representation = models.FileField(help_text=("Binary file with the vector of in brain values resampled to lower resolution"),
                                               verbose_name="Reduced representation of the image",
                                               null=True, blank=True, upload_to=upload_img_to,
-                                              storage=NiftiGzStorage())
+                                              storage=OverwriteStorage())
     
     def get_absolute_url(self):
         return_args = [str(self.id)]

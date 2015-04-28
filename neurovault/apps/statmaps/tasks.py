@@ -94,6 +94,11 @@ def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
 @shared_task
 def run_voxelwise_pearson_similarity(pk1):
     from neurovault.apps.statmaps.models import Image
+    
+    image = Image.objects.get(pk=pk1)
+    #added for improved performance
+    if not image.reduced_representation:
+        image = save_resampled_transformation_single(pk1)
 
     # Calculate comparisons for other images, and generate reduced_representation if needed
     imgs = Image.objects.filter(collection__private=False).exclude(pk=pk1)
