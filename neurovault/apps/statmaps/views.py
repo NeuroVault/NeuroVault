@@ -723,9 +723,9 @@ def compare_images(request,pk1,pk2):
             "IMAGE_2_LINK":"/images/%s" % (image2.pk)
     }
 
-    # Load image vectors from pickle files
-    image_vector1 = np.load(image1.transform)
-    image_vector2 = np.load(image2.transform)
+    # Load image vectors from npy files
+    image_vector1 = np.load(image1.reduced_representation.file)
+    image_vector2 = np.load(image2.reduced_representation.file)
 
     # Load atlas pickle, containing vectors of atlas labels, colors, and values for same voxel dimension (4mm)
     neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))        
