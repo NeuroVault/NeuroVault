@@ -537,7 +537,10 @@ class EditStatisticMapForm(StatisticMapForm):
         super(EditStatisticMapForm, self).__init__(*args, **kwargs)
         self.helper.form_tag = False
         self.helper.add_input(Submit('submit', 'Submit'))
-        self.fields['collection'].queryset = Collection.objects.filter(owner=user)
+        if user.is_superuser:
+            self.fields['collection'].queryset = Collection.objects.all()
+        else:
+            self.fields['collection'].queryset = Collection.objects.filter(owner=user)
 
 
 class EditAtlasForm(AtlasForm):
@@ -548,7 +551,10 @@ class EditAtlasForm(AtlasForm):
         super(EditAtlasForm, self).__init__(*args, **kwargs)
         self.helper.form_tag = True
         self.helper.add_input(Submit('submit', 'Submit'))
-        self.fields['collection'].queryset = Collection.objects.filter(owner=user)
+        if user.is_superuser:
+            self.fields['collection'].queryset = Collection.objects.all()
+        else:
+            self.fields['collection'].queryset = Collection.objects.filter(owner=user)
 
     class Meta(AtlasForm.Meta):
         exclude = ()
