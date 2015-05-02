@@ -1,7 +1,9 @@
 from django.test import TestCase, Client, override_settings, RequestFactory
 from django.core.urlresolvers import reverse
-from neurovault.apps.statmaps.models import Collection,User, Atlas
+from neurovault.apps.statmaps.models import Collection, User, Image, Atlas
 from django.core.files.uploadedfile import SimpleUploadedFile
+import mock
+import json
 from uuid import uuid4
 import tempfile
 import os
@@ -76,17 +78,17 @@ class DeleteCollectionsTest(TestCase):
         self.unorderedAtlas.file = SimpleUploadedFile('VentralFrontal_thr75_summaryimage_2mm.nii.gz', file(os.path.join(self.test_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz')).read())
         self.unorderedAtlas.label_description_file = SimpleUploadedFile('test_VentralFrontal_thr75_summaryimage_2mm.xml', file(os.path.join(self.test_path,'test_data/api/unordered_VentralFrontal_thr75_summaryimage_2mm.xml')).read())
         self.unorderedAtlas.save()
-        
+
         self.Collection2 = Collection(name='Collection2',owner=self.user)
         self.Collection2.save()
         self.orderedAtlas = Atlas(name='orderedAtlas', collection=self.Collection2, label_description_file='VentralFrontal_thr75_summaryimage_2mm.xml')
         self.orderedAtlas.file = SimpleUploadedFile('VentralFrontal_thr75_summaryimage_2mm.nii.gz', file(os.path.join(self.test_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz')).read())
         self.orderedAtlas.label_description_file = SimpleUploadedFile('test_VentralFrontal_thr75_summaryimage_2mm.xml', file(os.path.join(self.test_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.xml')).read())
         self.orderedAtlas.save()
-    
+
     def tearDown(self):
         clearDB()
-        
+
     def testDeleteCollection(self):
         self.client.login(username=self.user)
         pk1 = self.Collection1.pk
@@ -99,7 +101,7 @@ class DeleteCollectionsTest(TestCase):
         print dirList
         self.assertIn(str(self.Collection2.pk), dirList)
         self.assertNotIn(str(self.Collection1.pk), dirList)
-    
+
 
 
 class Afni4DTest(TestCase):
@@ -147,3 +149,104 @@ class Afni4DTest(TestCase):
         # check that sliced niftis exist at output location
         self.assertTrue(os.path.exists(bricks[0][1]))
         self.assertTrue(os.path.exists(bricks[1][1]))
+
+
+class CollectionMetaDataTest(TestCase):
+    def setUp(self):
+        base_username = 'owner'
+        password = 'pwd'
+        test_path = os.path.abspath(os.path.dirname(__file__))
+
+        self.user = User.objects.create_user("%s_%s" % (base_username,
+            self.uniqid()), None, password)
+        self.user.save()
+
+        self.client = Client()
+        self.client.login(username=self.user.username, password=password)
+
+        self.coll = Collection(owner=self.user,
+                               name="Test %s" % self.uniqid())
+        self.coll.save()
+
+        self.image1 = Image(name='Image1',
+                            collection=self.coll,
+                            file='file1.nii.gz')
+
+        self.image2 = Image(name='Image2',
+                            collection=self.coll,
+                            file='file2.nii.gz')
+
+        self.files = []
+
+        # Avoid Celery
+        from neurovault.apps.statmaps import models
+        with mock.patch.object(models, 'generate_glassbrain_image',
+                               return_value=None):
+            self.image1.file = SimpleUploadedFile('file1.nii.gz',
+                file(os.path.join(test_path,
+                    'test_data/api/DorsalFrontal_thr25_1mm.nii.gz')).read())
+            self.image1.save()
+
+            self.image2.file = SimpleUploadedFile('file2.nii.gz',
+                file(os.path.join(test_path,
+                    'test_data/api/DorsalFrontal_thr25_1mm.nii.gz')).read())
+            self.image2.save()
+
+    def tearDown(self):
+        os.unlink(self.image1.file.path)
+        os.unlink(self.image2.file.path)
+
+        self.image1.delete()
+        self.image2.delete()
+
+        self.coll.delete()
+        self.user.delete()
+
+    def uniqid(self):
+        return str(uuid4())[:8]
+
+    def test_post_metadata(self):
+        test_json = ('[["File Name","Subject Id","Image Type","Sex"],'
+                     '["file1.nii.gz","12","subject","1"],'
+                     '["file2.nii.gz","13","subject","2"]]')
+
+        url = reverse('import_metadata',
+                      kwargs={'collection_cid': self.coll.pk})
+
+        resp = self.client.post(url,
+                                data=test_json,
+                                content_type='application/json; charset=utf-8')
+
+        self.assertEqual(resp.status_code, 200)
+
+        image1 = Image.objects.get(id=self.image1.id)
+
+        self.assertEqual(image1.data, {'Sex': '1',
+                                       'Subject Id': '12',
+                                       'Image Type': 'subject'})
+
+    def test_metadata_for_files_missing_in_the_collection(self):
+        test_json = ('[["File Name","Subject Id","Image Type","Sex"],'
+                     '["file1.nii.gz","12","subject","1"],'
+                     '["file2.nii.gz","13","subject","2"],'
+                     '["file3.nii.gz","14","subject","3"]]')
+
+        url = reverse('import_metadata',
+                      kwargs={'collection_cid': self.coll.pk})
+
+        resp = self.client.post(url,
+                                data=test_json,
+                                content_type='application/json; charset=utf-8')
+
+        self.assertEqual(resp.status_code, 400)
+
+        resp_json = json.loads(resp.content)
+
+        self.assertEqual(resp_json['message'],
+                         'File is not found in the collection: file3.nii.gz')
+
+    def test_missing_required_fields(self):
+        pass
+
+    def test_incorrect_values_in_column(self):
+        pass

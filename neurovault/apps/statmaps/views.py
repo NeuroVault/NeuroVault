@@ -16,7 +16,7 @@ from django.contrib.auth.decorators import login_required
 from pybraincompare.compare import scatterplot, search
 from pybraincompare.mr.datasets import get_mni_atlas
 from django.views.decorators.csrf import csrf_exempt
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 from django.template.context import RequestContext
 from rest_framework.renderers import JSONRenderer
@@ -44,6 +44,8 @@ import pandas
 import gzip
 import re
 import os
+import json
+
 
 def owner_or_contrib(request,collection):
     if collection.owner == request.user or request.user in collection.contributors.all() or request.user.is_superuser:
@@ -171,11 +173,145 @@ def edit_collection(request, cid=None):
     return render(request, "statmaps/edit_collection.html.haml", context)
 
 
+def dict_factory(header_row, row):
+    d = {}
+    for idx, field_name in enumerate(header_row):
+        d[field_name] = row[idx]
+    return d
+
+
+def convert_to_list(data):
+    return [dict_factory(data[0], row) for row in data[1:]]
+
+
+def list_to_dict(iterable, key):
+    return dict((key(item), item) for item in iterable)
+
+
+def diff_dicts(dict_a, dict_b):
+    keys = getattr(dict, 'viewkeys', dict.keys)
+    return keys(dict_a) - keys(dict_b)
+
+
+# TODO: add force flag
+def pair_data_and_objects(metadata_dict, image_obj_dict):
+    extra_files = diff_dicts(image_obj_dict, metadata_dict)
+
+    if extra_files:
+        raise ValidationError(
+            "Missing metadata for %s" % ', '.join(extra_files))
+
+    for image_filename, metadata in metadata_dict.items():
+        image_obj = image_obj_dict.get(image_filename)
+        if not image_obj:
+            raise ValidationError('File is not found in the collection: %s' %
+                                  image_filename,
+                                  code='file_not_found')
+        yield (metadata, image_obj)
+
+
+def error_response(exception):
+    return JSONResponse({'message': exception.message}, status=400)
+
+
+def save_metadata(collection, metadata):
+    def file_basename(image_obj):
+        return os.path.basename(image_obj.file.name)
+
+    metadata_list = convert_to_list(metadata)
+    metadata_dict = list_to_dict(metadata_list,
+                                 key=lambda x: x['File Name'])
+
+    image_obj_list = collection.image_set.all()
+    image_obj_dict = list_to_dict(image_obj_list,
+                                  key=file_basename)
+
+    pairs = pair_data_and_objects(metadata_dict,
+                                  image_obj_dict)
+    for metadata_item, image_obj in pairs:
+        for key in metadata_item:
+            if key != 'File Name':
+                if not image_obj.data:
+                    image_obj.data = {}
+                image_obj.data[key] = metadata_item[key]
+
+        image_obj.save()
+
+    return metadata_list
+
+
+def handle_post_metadata(request, collection, success_message):
+    metadata = json.loads(request.body)
+
+    try:
+        metadata_list = save_metadata(collection, metadata)
+    except ValidationError as e:
+        return error_response(e)
+
+    messages.success(request,
+                     success_message,
+                     extra_tags='alert-success')
+    return JSONResponse(metadata_list, status=200)
+
+
+def get_all_metadata_keys(image_obj_list):
+    return set(key for image in image_obj_list if image.data
+               for key in image.data)
+
+
+def get_images_metadata(collection):
+    image_obj_list = collection.image_set.all()
+    metadata_keys = list(get_all_metadata_keys(image_obj_list))
+
+    def list_metadata(image):
+        data = image.data
+
+        return ([os.path.basename(image.file.name)] +
+                [data.get(key, '') for key in metadata_keys])
+
+    return [['File Name'] + metadata_keys] + map(list_metadata, image_obj_list)
+
+
+@csrf_exempt
+@login_required
+def import_metadata(request, collection_cid):
+    collection = get_collection(collection_cid, request)
+
+    if not owner_or_contrib(request, collection):
+        return HttpResponseForbidden()
+
+    if request.method == "POST":
+        return handle_post_metadata(request, collection,
+                                    'Image metadata have been imported.')
+
+    return render(request, "statmaps/import_metadata.html", {
+        'collection': collection})
+
+
+@csrf_exempt
+@login_required
+def edit_metadata(request, collection_cid):
+    collection = get_collection(collection_cid, request)
+
+    if not owner_or_contrib(request, collection):
+        return HttpResponseForbidden()
+
+    if request.method == "POST":
+        return handle_post_metadata(request, collection,
+                                    'Image metadata have been saved.')
+
+    metadata = get_images_metadata(collection)
+
+    return render(request, "statmaps/edit_metadata.html", {
+        'collection': collection,
+        'metadata': json.dumps(metadata)})
+
+
 def view_image(request, pk, collection_cid=None):
     image = get_image(pk,collection_cid,request)
     user_owns_image = owner_or_contrib(request,image.collection)
     api_cid = pk
-    
+
     comparison_is_possible = (image.collection.private == False and isinstance(image, BaseStatisticMap) and \
                               image.is_thresholded == False)
 
@@ -402,7 +538,7 @@ def upload_folder(request, collection_cid):
                     for fname in sorted(filenames):
                         name, ext = splitext_nii_gz(fname)
                         nii_path = os.path.join(root, fname)
-                        
+
                         if ext == '.xml':
                             print "found xml"
                             dom = minidom.parse(os.path.join(root, fname))
@@ -418,7 +554,7 @@ def upload_folder(request, collection_cid):
                                 niftiFiles.extend(split_afni4D_to_3D(nii))
                             else:
                                 niftiFiles.append((fname,nii_path))
-                
+
                 for label,fpath in niftiFiles:
                     # Read nifti file information
                     nii = nib.load(fpath)
@@ -728,7 +864,7 @@ def compare_images(request,pk1,pk2):
     image_vector2 = np.load(image2.reduced_representation.file)
 
     # Load atlas pickle, containing vectors of atlas labels, colors, and values for same voxel dimension (4mm)
-    neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))        
+    neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))
     atlas_pkl_path = os.path.join(neurovault_root, 'neurovault/static/atlas/atlas_mni_4mm.pkl')
     atlas = joblib.load(atlas_pkl_path)
 
@@ -736,7 +872,7 @@ def compare_images(request,pk1,pk2):
     atlas_svg = os.path.join(neurovault_root,'neurovault/static/atlas/atlas_mni_2mm_svg.pkl')
     atlas_svg = joblib.load(atlas_svg)
 
-    # Generate html for similarity search, do not specify atlas    
+    # Generate html for similarity search, do not specify atlas
     html_snippet, _ = scatterplot.scatterplot_compare_vector(image_vector1=image_vector1,
                                                                  image_vector2=image_vector2,
                                                                  image_names=image_names,
@@ -746,7 +882,7 @@ def compare_images(request,pk1,pk2):
                                                                  corr_type="pearson",
                                                                  subsample_every=10, # subsample every 10th voxel
                                                                  custom=custom,
-                                                                 remove_scripts="D3_MIN_JS") 
+                                                                 remove_scripts="D3_MIN_JS")
 
     # Add atlas svg to the image, and prepare html for rendering
     html = [h.replace("[coronal]",atlas_svg) for h in html_snippet]
@@ -790,12 +926,12 @@ def find_similar(request,pk):
             if hasattr(image, "map_type") and image.thumbnail:
                 images.append(image)
                 scores.append(comp.similarity_score)
-    
+
         # We will need lists of image ids, png paths, query id, query path, tags, names, scores
         image_ids = [image.pk for image in images]
         png_img_paths = [image.get_thumbnail_url() for image in images]
         tags = [[str(image.map_type)] for image in images]
-    
+
         # The top text will be the collection name, the bottom text the image name
         bottom_text = ["%s" % (image.name) for image in images]
         top_text = ["%s" % (image.collection.name) for image in images]
@@ -804,7 +940,7 @@ def find_similar(request,pk):
         image_title = format_image_collection_names(image_name=image1.name,
                                                     collection_name=image1.collection.name,
                                                     map_type=image1.map_type,total_length=50)
-    
+
         # Here is the query image
         query_png = image1.thumbnail.url
 
@@ -815,7 +951,7 @@ def find_similar(request,pk):
                                     bottom_text=bottom_text,max_results=max_results,absolute_value=True)
 
         html = [h.strip("\n") for h in html_snippet]
-    
+
         # Get the number of images still processing
         images_processing = count_processing_comparisons(pk)
 
@@ -823,9 +959,10 @@ def find_similar(request,pk):
                    'image_title':image_title, 'image_url': '/images/%s' % (image1.pk) }
         return render(request, 'statmaps/compare_search.html', context)
     else:
-        error_message = "Image comparison is not enabled for thresholded images." 
+        error_message = "Image comparison is not enabled for thresholded images."
         context = {'error_message': error_message}
         return render(request, 'statmaps/error_message.html', context)
+
 
 class JSONResponse(HttpResponse):
     """

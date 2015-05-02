@@ -30,5 +30,6 @@ install:
 before_script:
   - psql -c "CREATE USER neurovault WITH PASSWORD 'neurovault';" -U postgres
   - psql -c "ALTER USER neurovault CREATEDB;" -U postgres
+  - psql -d template1 -c 'create extension hstore;'
   - ./manage.py collectstatic --noinput
 script: PATH=/tmp/provToolbox/bin:$PATH coverage run manage.py test
