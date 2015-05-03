@@ -156,7 +156,14 @@ class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = StatisticMap
-        exclude = ['polymorphic_ctype', 'ignore_file_warning']
+        exclude = ['polymorphic_ctype', 'ignore_file_warning', 'data']
+
+    def to_representation(self, obj):
+        ret = super(StatisticMapSerializer, self).to_representation(obj)
+        for field_name, value in obj.data.items():
+            if field_name not in ret:
+                ret[field_name] = value
+        return ret
 
 
 class NIDMResultStatisticMapSerializer(serializers.HyperlinkedModelSerializer):
@@ -373,7 +380,7 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
         page = paginator.paginate_queryset(queryset, request)
         serializer = ImageSerializer(page, context={'request': request}, many=True)
         return paginator.get_paginated_response(serializer.data)
-        
+
 
     def retrieve(self, request, pk=None):
         collection = get_collection(pk,request,mode='api')

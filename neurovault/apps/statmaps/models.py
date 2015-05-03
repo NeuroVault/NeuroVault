@@ -275,6 +275,9 @@ class BaseCollectionItem(models.Model):
                 raise ValidationError({"name":"An object with this name already exists in this " +
                                       "collection."})
 
+    @classmethod
+    def get_fixed_fields(cls):
+        return ('name', 'description')
 
 class Image(PolymorphicModel, BaseCollectionItem):
     file = models.FileField(upload_to=upload_img_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='File with the unthresholded map (.img, .nii, .nii.gz)')
@@ -463,6 +466,10 @@ class BaseStatisticMap(Image):
                 # Default resample_dim is 4mm
                 run_voxelwise_pearson_similarity.apply_async([self.pk])
 
+    @classmethod
+    def get_fixed_fields(cls):
+        return super(BaseStatisticMap, cls).get_fixed_fields() + (
+            'map_type', 'brain_coverage')
 
     class Meta:
         abstract = True
@@ -502,6 +509,12 @@ class StatisticMap(BaseStatisticMap):
     contrast_definition = models.CharField(help_text="Exactly what terms are subtracted from what? Define these in terms of task or stimulus conditions (e.g., 'one-back task with objects versus zero-back task with objects') instead of underlying psychological concepts (e.g., 'working memory').", verbose_name="Contrast definition", max_length=200, null=True, blank=True)
     contrast_definition_cogatlas = models.CharField(help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast", verbose_name="Cognitive Atlas definition", max_length=200, null=True, blank=True)
     cognitive_paradigm_cogatlas = models.ForeignKey(CognitiveAtlasTask, help_text="Task (or lack of it) performed by the subjects in the scanner described using <a href='http://www.cognitiveatlas.org/' target='_blank'>Cognitive Atlas</a> terms", verbose_name="Cognitive Paradigm", null=True, blank=False)
+
+    @classmethod
+    def get_fixed_fields(cls):
+        return super(StatisticMap, cls).get_fixed_fields() + (
+            'modality', 'contrast_definition')
+
 
 class NIDMResults(BaseCollectionItem):
     ttl_file = models.FileField(upload_to=upload_nidm_to,
