@@ -17,6 +17,7 @@ from pybraincompare.compare import scatterplot, search
 from pybraincompare.mr.datasets import get_mni_atlas
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.db.models.fields import FieldDoesNotExist
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 from django.template.context import RequestContext
 from rest_framework.renderers import JSONRenderer
@@ -233,10 +234,19 @@ def save_metadata(collection, metadata):
                                   image_obj_dict)
     for metadata_item, image_obj in pairs:
         for key in metadata_item:
-            if key != 'File Name':
-                if not image_obj.data:
-                    image_obj.data = {}
-                image_obj.data[key] = metadata_item[key]
+            if key in image_obj.get_fixed_fields():
+                try:
+                    image_obj._meta.get_field_by_name(key)
+                except FieldDoesNotExist:
+                    raise FieldDoesNotExist("Error in fixed field name in "
+                                            "get_fixed_fields. Field %s "
+                                            "doesn't exist." % key)
+                setattr(image_obj, key, metadata_item[key])
+            else:
+                if key != 'File Name':
+                    if not image_obj.data:
+                        image_obj.data = {}
+                    image_obj.data[key] = metadata_item[key]
 
         image_obj.save()
 
@@ -265,14 +275,17 @@ def get_all_metadata_keys(image_obj_list):
 def get_images_metadata(collection):
     image_obj_list = collection.image_set.all()
     metadata_keys = list(get_all_metadata_keys(image_obj_list))
+    fixed_fields = list(StatisticMap.get_fixed_fields())
 
     def list_metadata(image):
         data = image.data
 
         return ([os.path.basename(image.file.name)] +
+                [getattr(image, field) for field in fixed_fields] +
                 [data.get(key, '') for key in metadata_keys])
 
-    return [['File Name'] + metadata_keys] + map(list_metadata, image_obj_list)
+    return [['File Name'] + fixed_fields + metadata_keys] + map(list_metadata,
+                                                                image_obj_list)
 
 
 @csrf_exempt
