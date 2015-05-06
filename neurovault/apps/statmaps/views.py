@@ -726,9 +726,9 @@ def compare_images(request,pk1,pk2):
 
     # create reduced representation in case it's not there
     if not image1.reduced_representation:
-        image1 = save_resampled_transformation_single(image1.pk1) # cannot run this async
+        image1 = save_resampled_transformation_single(image1.id) # cannot run this async
     if not image2.reduced_representation:
-        image2 = save_resampled_transformation_single(image1.pk2) # cannot run this async
+        image2 = save_resampled_transformation_single(image1.id) # cannot run this async
     
     # Load image vectors from npy files
     image_vector1 = np.load(image1.reduced_representation.file)
