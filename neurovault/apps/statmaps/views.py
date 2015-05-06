@@ -44,6 +44,7 @@ import pandas
 import gzip
 import re
 import os
+from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
 
 def owner_or_contrib(request,collection):
     if collection.owner == request.user or request.user in collection.contributors.all() or request.user.is_superuser:
@@ -723,6 +724,12 @@ def compare_images(request,pk1,pk2):
             "IMAGE_2_LINK":"/images/%s" % (image2.pk)
     }
 
+    # create reduced representation in case it's not there
+    if not image1.reduced_representation:
+        image1 = save_resampled_transformation_single(image1.pk1) # cannot run this async
+    if not image2.reduced_representation:
+        image2 = save_resampled_transformation_single(image1.pk2) # cannot run this async
+    
     # Load image vectors from npy files
     image_vector1 = np.load(image1.reduced_representation.file)
     image_vector2 = np.load(image2.reduced_representation.file)
