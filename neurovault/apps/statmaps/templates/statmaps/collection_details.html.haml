@@ -102,12 +102,13 @@
                   %a.btn.btn-primary{href: "pycortex" } 3D View
               - if edit_permission
                   %a.btn.btn-primary{href: "{% url 'edit_collection' cid %}" } Edit collection
-                  -#%a.btn.btn-primary{href: "{% url 'add_image' cid %}" } Add image
-                  %a.btn.btn-primary{href: "{% url 'edit_images' cid %}" } Edit images
-                  %a.btn.btn-primary{id:"upload_archive"} Upload archive (.zip)
-                  <!--[if !IE]> -->
-                  %a.btn.btn-primary{id:"upload_folder"} Upload folder
-                  <!-- <![endif]-->
+                  - if collection.image_set.all
+	                  -#%a.btn.btn-primary{href: "{% url 'add_image' cid %}" } Add image
+	                  %a.btn.btn-primary{href: "{% url 'edit_images' cid %}" } Edit images
+	                  %a.btn.btn-primary{id:"upload_archive"} Upload archive (.zip)
+	                  <!--[if !IE]> -->
+	                  %a.btn.btn-primary{id:"upload_folder"} Upload folder
+	                  <!-- <![endif]-->
                   - if delete_permission
                       .float-right-wrapper
                        %a.btn.btn-danger{href: "{% url 'delete_collection' cid %}", id:"delete_collection"} Delete collection
@@ -142,40 +143,51 @@
 
         .tab-content
             #images.tab-pane.active
-                %table.table.table-striped.table-hover.collection-images-datatable
-                    %thead
-                        %tr
-                            %th ID
-                            %th Name
-                            %th Tags
-                            %th Type
-                            %th Description
-                    %tbody
-                        - for image in images
-                            %tr
-                                %td= image.id
-                                %td
-                                     - if image.zip_name
-                                        %a{ href: "{{image.nidm_results.get_absolute_url}}" }
-                                            {{image.nidm_results.name}}
-                                        &nbsp;<i class="icon-double-angle-right"></i>&nbsp;
-                                        %a{ href: "{{image.get_absolute_url}}" }
-                                            {{ image.name }}
-                                     - else
-                                        %a{ href: "{{image.get_absolute_url}}" }= image.name
-                                %td
-                                    - for tag in image.tags.all
-                                        %a{ href: "/images/tags/{{tag.name}}" }= tag.name
-                                        - if not forloop.last
+                - if collection.image_set.all or not edit_permission
+	                %table.table.table-striped.table-hover.collection-images-datatable
+	                    %thead
+	                        %tr
+	                            %th ID
+	                            %th Name
+	                            %th Tags
+	                            %th Type
+	                            %th Description
+	                    %tbody
+	                        - for image in images
+	                            %tr
+	                                %td= image.id
+	                                %td
+	                                     - if image.zip_name
+	                                        %a{ href: "{{image.nidm_results.get_absolute_url}}" }
+	                                            {{image.nidm_results.name}}
+	                                        &nbsp;<i class="icon-double-angle-right"></i>&nbsp;
+	                                        %a{ href: "{{image.get_absolute_url}}" }
+	                                            {{ image.name }}
+	                                     - else
+	                                        %a{ href: "{{image.get_absolute_url}}" }= image.name
+	                                %td
+	                                    - for tag in image.tags.all
+	                                        %a{ href: "/images/tags/{{tag.name}}" }= tag.name
+	                                        - if not forloop.last
+	
+	                                %td= image.polymorphic_ctype.name
+	                                %td
+	                                    - if image.zip_name
+	                                        NIDMResults:
+	                                        %a{href: "{{image.nidm_results.zip_file.url}}" }
+	                                            {{image.nidm_results.name}}.zip
+	                                    - else
+	                                        {{image.description}}
+                - else
+                    .light-head.center-text
+                        This collection is empty. You can:
+                        <br \>
+                        %a.btn.btn-lg{href: "{% url 'edit_images' cid %}" } Add images one by one
+	                    %a.btn.btn-lg{id:"upload_archive"} Upload an archive with images (.zip or .tar.gz)
+	                    <!--[if !IE]> -->
+	                    %a.btn.btn-lg{id:"upload_folder"} Upload a folder with images
+	                    <!-- <![endif]-->
 
-                                %td= image.polymorphic_ctype.name
-                                %td
-                                    - if image.zip_name
-                                        NIDMResults:
-                                        %a{href: "{{image.nidm_results.zip_file.url}}" }
-                                            {{image.nidm_results.name}}.zip
-                                    - else
-                                        {{image.description}}
             #details.tab-pane
                 %table.table.table-condensed.table-striped.table-hover.collection-details-datatable
                     %thead
