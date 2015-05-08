@@ -328,11 +328,18 @@ class Image(PolymorphicModel, BaseCollectionItem):
         do_update = True if file_changed else False
         new_image = True if self.pk is None else False
         super(Image, self).save()
+        print "saving image"
 
         if (do_update or new_image) and self.collection and self.collection.private == False:
-
+            print "generating glass brain"
             # Generate glass brain image
             generate_glassbrain_image.apply_async([self.pk])
+            
+        collection_changed = False
+        if self.pk is not None:
+            existing = Image.objects.get(pk=self.pk)
+            if existing.collection != self.collection:
+                collection_changed = True
 
 
 class BaseStatisticMap(Image):
