@@ -244,8 +244,7 @@ class ImageViewSet(mixins.RetrieveModelMixin,
         image = self._get_api_image(request,pk)
         data = ImageSerializer(image, context={'request': request}).data
         return APIHelper.wrap_for_datatables(data, ['name', 'modify_date',
-                                                    'description', 'add_date',
-                                                    'data'])
+                                                    'description', 'add_date'])
 
     def retrieve(self, request, pk=None):
         image = self._get_api_image(request,pk)
