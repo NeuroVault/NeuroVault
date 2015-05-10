@@ -40,7 +40,8 @@ class UploadFolderTestCase(TestCase):
  
     def tearDown(self):
         clearDB()
-        shutil.rmtree(self.tmpdir)
+        if os.path.exists(self.tmpdir):
+            shutil.rmtree(self.tmpdir)
         self.coll.delete()
         self.user.delete()
  

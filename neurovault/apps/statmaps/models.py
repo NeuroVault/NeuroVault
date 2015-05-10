@@ -498,9 +498,7 @@ class NIDMResults(BaseCollectionItem):
 def mymodel_delete(sender, instance, **kwargs):
     nidm_path = os.path.dirname(instance.zip_file.path)
     if os.path.isdir(nidm_path):
-        shutil.rmtree(nidm_path, ignore_errors=True)
-        if os.path.exists(nidm_path):
-            shutil.rmtree(nidm_path)
+        shutil.rmtree(nidm_path)
 
 
 class NIDMResultStatisticMap(BaseStatisticMap):
