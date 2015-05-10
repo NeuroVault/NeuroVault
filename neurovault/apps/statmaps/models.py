@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, generate_glassbrain_image
 from neurovault.apps.statmaps.storage import NiftiGzStorage, NIDMStorage,\
-    OverwriteStorage
+    OverwriteStorage, NeuroVaultStorage
 from polymorphic.polymorphic_model import PolymorphicModel
 from django.db.models.signals import post_delete, pre_delete
 from taggit.models import GenericTaggedItemBase, TagBase
@@ -25,6 +25,7 @@ import urllib2
 import shutil
 import os
 from neurovault.settings import PRIVATE_MEDIA_ROOT
+from django.db.models.fields.files import FileField, FieldFile
 
 class Collection(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of collection")
@@ -321,26 +322,37 @@ class Image(PolymorphicModel, BaseCollectionItem):
     # Celery task to generate glass brain image on new/update
     def save(self):
         file_changed = False
+        collection_changed = False
         if self.pk is not None:
-            existing = Image.objects.get(pk=self.pk)
-            if existing.file != self.file:
+            old_pk = Image.objects.get(pk=self.pk)
+            if old_pk.file != self.file:
                 file_changed = True
+            if old_pk.collection != self.collection:
+                collection_changed = True
+                
         do_update = True if file_changed else False
         new_image = True if self.pk is None else False
         super(Image, self).save()
-        print "saving image"
 
         if (do_update or new_image) and self.collection and self.collection.private == False:
-            print "generating glass brain"
             # Generate glass brain image
             generate_glassbrain_image.apply_async([self.pk])
-            
-        collection_changed = False
-        if self.pk is not None:
-            existing = Image.objects.get(pk=self.pk)
-            if existing.collection != self.collection:
-                collection_changed = True
-
+        
+        if collection_changed:
+            for field_name in self._meta.get_all_field_names():
+                field_instance = getattr(self, field_name)
+                if field_instance and isinstance(field_instance, FieldFile):
+                    old_path = field_instance.path
+                    new_name = upload_img_to(self, field_instance.name.split("/")[-1])
+                    new_name = field_instance.storage.get_available_name(new_name)
+                    new_path = field_instance.storage.path(new_name)
+                    if not os.path.exists(os.path.dirname(new_path)):
+                        os.mkdir(os.path.dirname(new_path))
+                    shutil.copy(old_path, new_path)
+                    field_instance.name = new_name
+                    assert(old_path != new_path)
+                    os.remove(old_path)
+            super(Image, self).save()
 
 class BaseStatisticMap(Image):
     Z = 'Z'
