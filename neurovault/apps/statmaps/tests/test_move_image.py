@@ -29,6 +29,9 @@ class MoveImageTest(TestCase):
         
         self.coll2 = Collection(owner=self.user, name="Test Collection 2")
         self.coll2.save()
+    
+    def tearDown(self):
+        clearDB()
 
     def testCollectionSharing(self):
 
