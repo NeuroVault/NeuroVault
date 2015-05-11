@@ -105,14 +105,14 @@
                     %ul.dropdown-menu
                       %li
                         %a{href: "{% url 'edit_collection' cid %}" } Collection
-                  - if collection.image_set.all
+                     - if collection.image_set.all
                       %li
                         -#%a{href: "{% url 'edit_images' cid %}" } Images
                       %li
                         %a{href: "{% url 'edit_metadata' cid %}" } Metadata
 
                   -#%a.btn.btn-primary{href: "{% url 'add_image' cid %}" } Add image
-                  - if collection.image_set.all
+                 - if collection.image_set.all
                   .btn-group
                     %a.btn.btn-primary.dropdown-toggle{href: "#", data-toggle: "dropdown"} Upload
                       %span.caret
