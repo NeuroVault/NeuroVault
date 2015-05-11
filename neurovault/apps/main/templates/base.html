@@ -26,43 +26,56 @@
 <!-- UserVoice JavaScript SDK (only needed once on a page) -->
 <script>(function(){var uv=document.createElement('script');uv.type='text/javascript';uv.async=true;uv.src='//widget.uservoice.com/py7m8MbdHZIXptw3qAaw.js';var s=document.getElementsByTagName('script')[0];s.parentNode.insertBefore(uv,s)})()</script>
 
-    <div class="container" id="main">
-        <div class="navbar">
-            <div class="navbar-inner">
-                <a class="brand" href="{% url 'index' %}">NeuroVault (beta)</a>
-                <ul class="nav">
-                    <li><a href="{% url 'new_collection' %}">Add new collection</a></li>
-					<li><a href="{% url 'collections_list' %}">See all collections</a></li>
-					<li><a href="{% url 'FAQ' %}">FAQ</a></li>
-					<li><a href="javascript:void(0)" data-uv-lightbox="classic_widget" data-uv-mode="full" data-uv-primary-color="#cc6d00" data-uv-link-color="#007dbf" data-uv-default-mode="feedback" data-uv-forum-id="210717">Give feedback</a>
-					</li>
-				</ul>
-				<ul class="nav pull-right">
-					{% if request.user.is_authenticated %}
-					  <li class="dropdown">
-					    <a href="{% url 'my_profile' %}" class="dropdown-toggle" data-toggle="dropdown">
-					      {{ request.user.username }}
-					      <b class="caret"></b>
-					    </a>
-					    <ul class="dropdown-menu">
-					      <li><a href="{% url 'my_collections' %}">My collections</a></li>
-					      <li><a href="{% url 'logout' %}">Logout</a></li>
-					      <li><a href="{% url 'edit_user' %}">Edit</a></li>
-					    </ul>
-					  </li>
-	                {% else %}
-                        <li><a href="{% url 'login' %}">Log in</a></li>
-                    {% endif %}
-				</ul>
-            </div>
-        </div>
-        <div class="row" id="content">
-            <div class="span12">
-                {% block content %}{% endblock %}
-            </div>
-        </div>
+<div class="container navigation-container">
+
+<nav class="navbar navbar-default" id="navigation">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#main-links">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="{% url 'index' %}">NeuroVault (beta) </a>
     </div>
-    <script type="text/javascript">
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="main-links">
+      <ul class="nav navbar-nav">
+         <li><a href="{% url 'new_collection' %}">Add new collection</a></li>
+	 <li><a href="{% url 'collections_list' %}">See all collections</a></li>
+	 <li><a href="{% url 'FAQ' %}">FAQ</a></li>
+	 <li><a href="javascript:void(0)" data-uv-lightbox="classic_widget" data-uv-mode="full" data-uv-primary-color="#cc6d00" data-uv-link-color="#007dbf" data-uv-default-mode="feedback" data-uv-forum-id="210717">Give feedback</a>
+	</li>        
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+          {% if request.user.is_authenticated %}
+	  <li class="dropdown">
+	  <a href="{% url 'my_profile' %}" class="dropdown-toggle" data-toggle="dropdown">
+	      {{ request.user.username }}
+	      <b class="caret"></b>
+	  </a>
+	  <ul class="dropdown-menu">
+	      <li><a href="{% url 'my_collections' %}">My collections</a></li>
+	      <li><a href="{% url 'logout' %}">Logout</a></li>
+	      <li><a href="{% url 'edit_user' %}">Edit</a></li>
+	  </ul>
+	  </li>
+	  {% else %}
+          <li><a href="{% url 'login' %}">Log in</a></li>
+          {% endif %}
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container -->
+</nav>
+
+    <div class="container" id="main">
+        <div class="row" id="content">
+                {% block content %}{% endblock %}
+        </div>
+   </div>
+
+<script type="text/javascript">
 
       var _gaq = _gaq || [];
       var pluginUrl = '//www.google-analytics.com/plugins/ga/inpage_linkid.js';

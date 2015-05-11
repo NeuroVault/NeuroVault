@@ -38,5 +38,6 @@
 						%td= collection.description
 						%td {% if collection.DOI %} Yes {% endif %}
 
-%a.btn.btn-primary{href: "{% url 'new_collection' %}" } Add new collection
+.row
+	%a.btn.btn-primary{href: "{% url 'new_collection' %}" } Add new collection
 {% endblock %}

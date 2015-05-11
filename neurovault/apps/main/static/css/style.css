@@ -13,9 +13,36 @@ body {
 }
 
 #content {
-	padding: 20px;
+	padding: 30px 20px 30px 20px;
+        margin-right: 20px;
+        margin-left: 20px;
 }
 
+
+#navigation {
+       margin-bottom:0px; 
+       padding-right:10px; 
+       padding-left:10px;
+       width:1200px;
+       background: white;
+}
+
+.container {
+       width:1200px;
+
+}
+
+.navigation-container {
+      padding-left:0px; 
+      background:white;
+}
+
+.navbar-brand {
+       font-size: 20px;
+       font-weight: 200;
+       color: #777777;
+       text-shadow: 0 1px 0 #ffffff;
+}
 
 .bigtext {
 	font-size: 16px;
@@ -47,15 +74,15 @@ body {
 }
 
 .third {
-	width: 260px;
+	width: 33%;
 }
 
 .two-thirds {
-	width: 570px;
+	width: 66%;
 }
 
 .half {
-	width: 415px;
+	width: 50%;
 }
 
 .middle {
@@ -67,7 +94,7 @@ body {
 	font-size: 20px;
 	font-family: "HelveticaNeue-Light", Helvetica, Arial, sans-serif;
 	line-height: 1.3em;
-	padding: 0px 15px 0px 35px;
+	padding: 20px 15px 20px 35px;
 }
 
 .benefit-list li {
