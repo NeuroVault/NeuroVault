@@ -2,6 +2,7 @@
 {% load coffeescript %}
 
 {% block head %}
+<title>{% block title %}NeuroVault: My Collections{% endblock %}</title>
     :javascript
         {% inlinecoffeescript %}
             $(document).ready ->

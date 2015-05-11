@@ -2,6 +2,7 @@
 {% load coffeescript %}
 {% block includes %}
 <script type="text/javascript" src="{% static "scripts/papaya.js"%}"/>
+<title>{% block title %}NeuroVault: Atlas - {{image.name}}{% endblock %}</title>
 {% endblock %}
 {% block head %}
     :javascript

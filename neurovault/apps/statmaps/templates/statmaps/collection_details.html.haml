@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load coffeescript %}
 {% block head %}
-
+<title>{% block title %}NeuroVault: {{collection.name}}{% endblock %}</title>
     :javascript
         {% inlinecoffeescript %}
             uldata = undefined
