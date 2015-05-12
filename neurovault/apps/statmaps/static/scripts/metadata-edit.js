@@ -20,9 +20,12 @@
         rowHeaders: true,
         contextMenu: true,
         height: 400,
-        cells: function (r) {
+        cells: function (r, c) {
           if (r === 0) {
             this.renderer = boldRenderer;
+          }
+          if (c === 0) {
+            return {readOnly: true};
           }
         }
       });
