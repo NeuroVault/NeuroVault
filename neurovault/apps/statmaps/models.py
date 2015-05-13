@@ -24,7 +24,7 @@ import shutil
 from neurovault.apps.statmaps.tasks import generate_glassbrain_image, save_voxelwise_pearson_similarity
 from django import forms
 from gzip import GzipFile
-
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 
 class Collection(models.Model):
@@ -55,7 +55,7 @@ class Collection(models.Model):
     subject_age_min = models.FloatField(help_text="Minimum age of subjects", null=True, verbose_name="Subject age min", blank=True)
     subject_age_max = models.FloatField(help_text="Maximum age of subjects", null=True, verbose_name="Subject age max", blank=True)
     handedness = models.CharField(choices=[('right', 'right'), ('left', 'left'), ('both', 'both')], max_length=200, blank=True, help_text="Handedness of subjects", null=True, verbose_name="Handedness")
-    proportion_male_subjects = models.FloatField(help_text="The proportion of subjects who were male", null=True, verbose_name="Prop. male subjects", blank=True)
+    proportion_male_subjects = models.FloatField(validators =[MinValueValidator(0.0), MaxValueValidator(1.0)], help_text="The proportion (not percentage) of subjects who were male", null=True, verbose_name="Prop. male subjects", blank=True)
     inclusion_exclusion_criteria = models.CharField(help_text="Additional inclusion/exclusion criteria, if any (including specific sampling strategies that limit inclusion to a specific group, such as laboratory members)", verbose_name="Inclusion / exclusion criteria", max_length=200, null=True, blank=True)
     number_of_rejected_subjects = models.IntegerField(help_text="Number of subjects scanned but rejected from analysis", null=True, verbose_name="No. of rejected subjects", blank=True)
     group_comparison = models.NullBooleanField(help_text="Was this study a comparison between subject groups?", null=True, verbose_name="Group comparison?", blank=True)
