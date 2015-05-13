@@ -78,7 +78,7 @@ collection_fieldsets = [
                                     'field_of_view',
                                     'matrix_size',
                                     'slice_thickness',
-                                    'skip_factor',
+                                    'skip_distance',
                                     'acquisition_orientation',
                                     'order_of_acquisition',
                                     'repetition_time',
@@ -217,7 +217,7 @@ collection_row_attrs = {
     'subject_age_mean': {'priority': 1},
     'used_motion_susceptibiity_correction': {'priority': 3},
     'group_statistic_type': {'priority': 2},
-    'skip_factor': {'priority': 2},
+    'skip_distance': {'priority': 2},
     'used_reaction_time_regressor': {'priority': 2},
     'group_modeling_software': {'priority': 2},
     'parallel_imaging': {'priority': 3},
@@ -274,7 +274,7 @@ class ContributorCommaField(ModelMultipleChoiceField):
         return self.queryset.filter(username__in=split_vals)
 
 class CollectionForm(ModelForm):
-
+    
     class Meta:
         exclude = ('owner','private_token','contributors','private')
         model = Collection
