@@ -41,8 +41,17 @@
     <!-- Collect the nav links, forms, and other content for toggling -->
     <div class="collapse navbar-collapse" id="main-links">
       <ul class="nav navbar-nav">
-         <li><a href="{% url 'new_collection' %}">Add new collection</a></li>
-	 <li><a href="{% url 'collections_list' %}">See all collections</a></li>
+	  <li class="dropdown">
+	  <a href="{% url 'collections_list' %}" class="dropdown-toggle" data-toggle="dropdown">
+	      Collections
+	      <b class="caret"></b>
+	  </a>
+	  <ul class="dropdown-menu">
+	      <li><a href="{% url 'my_collections' %}">My collections</a></li>
+	      <li><a href="{% url 'new_collection' %}">Add new collection</a></li>
+	      <li><a href="{% url 'collections_list' %}">See all collections</a></li>
+	  </ul>
+	  </li>
 	 <li><a href="{% url 'FAQ' %}">FAQ</a></li>
 	 <li><a href="javascript:void(0)" data-uv-lightbox="classic_widget" data-uv-mode="full" data-uv-primary-color="#cc6d00" data-uv-link-color="#007dbf" data-uv-default-mode="feedback" data-uv-forum-id="210717">Give feedback</a>
 	</li>        
@@ -74,9 +83,13 @@
         </div>
    </div>
 
-<footer>
+<footer style="text-align:center">
       <div class="container navigation-container">
-        <p class="text-muted">Copyright.</p>
+        <p class="text-muted">&copy; 2015 NeuroVault &middot; 
+            <a href="/api-docs">API</a>  &middot;
+            <a href="https://github.com/NeuroVault/NeuroVault">Github </a> &middot;
+            <a href="http://www.cognitiveatlas.org">Cognitive Atlas </a> &middot; 
+            <a href="http://www.neurosynth.org">NeuroSynth </a></p>
       </div>
 </footer>
 

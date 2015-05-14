@@ -1,15 +1,17 @@
 body {
-	background: url('/static/images/denim.png');
+    background: url('/static/images/brainbutterfly/brain-butterfly_seamless1200px.png');
 }
 
 #main {
 	background: white;
-	border-left: 1px solid #666;
-	border-right: 1px solid #666;
-	border-bottom: 1px solid #999;
+	/* border-left: 1px solid #666; */
+	/* border-right: 1px solid #666; */
+	/* border-bottom: 1px solid #999; */
 	margin: 0 auto
 	margin-bottom: 30px
 	float: none
+;
+	border-radius: 6px;
 }
 
 #content {
@@ -18,30 +20,54 @@ body {
         margin-left: 20px;
 }
 
-
 #navigation {
        margin-bottom:0px; 
        padding-right:10px; 
        padding-left:10px;
        width:1200px;
-       background: white;
 }
 
-.container {
-       width:1200px;
-
+.navbar-default .navbar-brand:hover, .navbar-default .navbar-brand:focus {
+  color: #333;
+  background-color: transparent;
 }
 
 .navigation-container {
       padding-left:0px; 
-      background:white;
+      /* background:white; */
+      margin-bottom: 20px;
+      margin-top: 20px;
+      border-radius: 6px;
+}
+
+
+.container {
+    width:1200px;
+
+}
+
+.navbar-default .navbar-brand {
+  color: #fff;
 }
 
 .navbar-brand {
        font-size: 20px;
        font-weight: 200;
-       color: #777777;
-       text-shadow: 0 1px 0 #ffffff;
+       color: #fff;
+}
+
+.navbar {
+	background: #337ab7;}
+
+
+
+.navbar-default .navbar-nav > li > a {
+  color: #fff;
+}
+
+.navbar-nav {
+	color:#fff
+
 }
 
 .bigtext {

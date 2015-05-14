@@ -753,7 +753,8 @@ def compare_images(request,pk1,pk2):
                                                                  corr_type="pearson",
                                                                  subsample_every=10, # subsample every 10th voxel
                                                                  custom=custom,
-                                                                 remove_scripts="D3_MIN_JS") 
+                                                                 remove_scripts="D3_MIN_JS",
+                                                                 width=1000) 
 
     # Add atlas svg to the image, and prepare html for rendering
     html = [h.replace("[coronal]",atlas_svg) for h in html_snippet]
@@ -819,7 +820,8 @@ def find_similar(request,pk):
         html_snippet = search.similarity_search(image_scores=scores,tags=tags,png_paths=png_img_paths,
                                     button_url=compare_url,image_url=image_url,query_png=query_png,
                                     query_id=pk,top_text=top_text,image_ids=image_ids,
-                                    bottom_text=bottom_text,max_results=max_results,absolute_value=True)
+                                    bottom_text=bottom_text,max_results=max_results,absolute_value=True,
+                                    remove_scripts=["BOOTSTRAP","BOOTSTRAP_MIN"],container_width=1200)
 
         html = [h.strip("\n") for h in html_snippet]
     

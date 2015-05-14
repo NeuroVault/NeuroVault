@@ -43,16 +43,15 @@
 
 {% endblock %}
 {% block content %}
-<div class="row">
-	<div class="span9">
+	<div class="col-md-9">
 		<h2><a href="{{formset.0.instance.collection.get_absolute_url}}">{{formset.0.instance.collection.name}}</a> / Edit images</h2>
 		<div class="lead">Select an image from the list at left and edit its properties in the form at right.</div>
 	</div>
-	<div class="span2">
+	<div class="span8">
 		<button class="btn btn-large btn-primary" id="submit-form" style="margin: 35px 0px 0px 20px; font-size: 24px; padding: 10px 20px; line-height: 1.4em">Save</button>
 	</div>
-	<div class="span11"><hr/></div>
-	<div class="span3 well well-lite">
+        <hr>
+	<div class="col-md-3 well well-lite">
 		<ul>
 			<li class="nav-header">Images in collection:</li>
 		</ul>
@@ -76,7 +75,7 @@
       		</ul>
     	</div>
 	</div>
-	<div class="span8">
+	<div class="col-md-9">
 		<ul class="breadcrumb">
 			<li>
 				<div id="current-image">{{ formset.0.name.value }}</div>
@@ -122,6 +121,5 @@
 			</form>
 		</div>
 	</div>
-</div>
 
 {% endblock %}

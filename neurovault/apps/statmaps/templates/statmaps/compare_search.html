@@ -1,12 +1,13 @@
 {% extends "base.html" %}
 {% load coffeescript %}
 {% block head %}
-<script type="text/javascript"> 
 <title>{% block title %}NeuroVault: Image Comparison{% endblock %}</title>
+<script type="text/javascript"> 
 var addthis_config = {
      data_track_clickback: false 
 } 
 </script>
+<script src="https://tunidesign.googlecode.com/files/jquery.prettyPhoto.min.js"></script>
 {% endblock %}
 {% block content %}
 
@@ -46,7 +47,7 @@ for (i = 0; i < text.length; i++) {
 
 </script>
 
-<div style="width:70%; margin-left:42px; margin-top:30px">
+<div style="width:100%; margin-top:30px">
     <p><strong>About</p></strong>
     <div class="well">
     Whole-brain pearson correlations are calculated from a brain-masked, 4mm transformation of the original image with complete-case analysis, meaning only using voxels that are present in both images are used in the calculation.  Images that are tagged as "thresholded," meaning that the image has less than 25% of coverage for a standard brain mask, are not included in the comparison.</div>
