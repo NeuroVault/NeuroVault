@@ -47,16 +47,16 @@ var addthis_config = {
         %table.table.table-striped
             %thead
                 %tr
-                    %th.span9
+                    %th.col-md-9
                         Name
-                    %th.span1
+                    %th.col-md-1
                         Number of images
             %tbody
                 - for collection in recent_collections
                     %tr
-                        %td.span9
+                        %td.col-md-9
                             %a{href: "{% url 'collection_details' collection.id %}"}= collection.name
-                        %td.span1
+                        %td.col-md-1
                             {{ collection.image_set.all.count }}
                         
 .row
