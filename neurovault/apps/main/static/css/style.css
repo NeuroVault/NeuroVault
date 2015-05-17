@@ -11,7 +11,7 @@ body {
 	margin-bottom: 30px
 	float: none
 ;
-	border-radius: 6px;
+	border-radius: 0px 0px 6px 6px;
 }
 
 #content {
@@ -25,6 +25,7 @@ body {
        padding-right:10px; 
        padding-left:10px;
        width:1200px;
+       border-radius: 6px 6px 0px 0px;
 }
 
 .navbar-default .navbar-brand:hover, .navbar-default .navbar-brand:focus {
@@ -35,9 +36,9 @@ body {
 .navigation-container {
       padding-left:0px; 
       /* background:white; */
-      margin-bottom: 20px;
-      margin-top: 20px;
-      border-radius: 6px;
+      /* margin-bottom: 20px; */
+      /* margin-top: 20px; */
+      /* border-radius: 6px 6px 0px 0px; */
 }
 
 
@@ -78,7 +79,7 @@ body {
 
 .massive {
 	font-size: 80px;
-	padding: 0px 0px 20px 0px;
+	padding: 20px 0px 20px 0px;
 	line-height: 1em;
 	font-family: "HelveticaNeue-Light", Helvetica, Arial, sans-serif;
 	text-align: center;
