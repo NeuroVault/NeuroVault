@@ -83,11 +83,8 @@ class FeatDirectoryTest(TestCase):
 
         # test feat parsing
         for fname, info in self.testfiles.items():
-            print "Testing %s, location is %s" %(fname,info["dir"]) 
             info['found_feat'] = False
             for root, dirs, files in os.walk(info['dir']):
-                print "<Root:%s,dirs:%s,files%s>" %(root,dirs,files)
-                print "Does it pass detect_feat_directory?: %s" %(detect_feat_directory(root))
                 if detect_feat_directory(root):
                     print 'Found FEAT directory at {}.'.format(root)
                     info['found_feat'] = True
