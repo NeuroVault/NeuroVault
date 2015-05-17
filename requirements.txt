@@ -41,7 +41,7 @@ pybraincompare
 django-cleanup
 django-chosen
 git+https://github.com/sinnwerkstatt/django-file-resubmit.git#egg=file_resubmit
-git+https://github.com/infocortex/nidm-results_fsl.git@nv_testdata_fixes@git+https://github.com/infocortex/nidm-results_fsl.git@bee02f48b9164a7250d63bfa0d58a89fcf59eadf
+git+https://github.com/infocortex/nidm-results_fsl.git@bee02f48b9164a7250d63bfa0d58a89fcf59eadf
 git+https://github.com/incf-nidash/nidmresults.git@d3ac863c568ac63cc78a430fa42f65474babb0fd
 git+https://github.com/trungdong/prov.git#egg=prov
 opbeat
