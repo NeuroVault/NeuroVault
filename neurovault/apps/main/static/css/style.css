@@ -1,5 +1,5 @@
 body {
-    background: url('/static/images/brainbutterfly/multiple-bb-texture-light-big.png');
+    background: url('/static/images/denim.png');
 }
 
 #main {
@@ -57,7 +57,9 @@ body {
 }
 
 .navbar {
-	background: #337ab7;}
+	background: #337ab7;
+	border-color: #337ab7;
+}
 
 
 
