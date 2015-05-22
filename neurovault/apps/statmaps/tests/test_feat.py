@@ -23,7 +23,7 @@ class FeatDirectoryTest(TestCase):
                 'fileuri':'ds105.feat.zip?raw=true',
                 'num_statmaps':2,
                 'export_dir':'ds105.feat/cope1.feat/nidm',
-                'ttl_fsize': 37872,
+                'ttl_fsize': 39595,
                 'map_types': ['T','Z'],
                 'names':['Statistic Map: group mean', 'Z-Statistic Map: group mean'],
 
