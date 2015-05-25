@@ -179,11 +179,11 @@
                 - else
                     .light-head.center-text
                         This collection is empty. You can:
-                        <br \>
-                        %a.btn.btn-lg{href: "{% url 'edit_images' cid %}" } Add images one by one
-	                    %a.btn.btn-lg{id:"upload_archive"} Upload an archive with images (.zip or .tar.gz)
+                        <br><br>
+                        %a.btn.btn-lg.btn-primary{href: "{% url 'edit_images' cid %}" } Add images one by one
+	                    %a.btn.btn-lg.btn-primary{id:"upload_archive"} Upload an archive with images (.zip or .tar.gz)
 	                    <!--[if !IE]> -->
-	                    %a.btn.btn-lg{id:"upload_folder"} Upload a folder with images
+	                    %a.btn.btn-lg.btn-primary{id:"upload_folder"} Upload a folder with images
 	                    <!-- <![endif]-->
 
             #details.tab-pane
