@@ -41,6 +41,9 @@ body {
       /* border-radius: 6px 6px 0px 0px; */
 }
 
+#footer.a:hover {
+    color: #CCC;
+}
 
 .container {
     width:1200px;
@@ -155,6 +158,11 @@ ul.nav-tabs li {
 	font-family: "HelveticaNeue-Light", Helvetica, Arial, sans-serif;
 }
 
+.tab-content {
+    padding-top: 10px;
+    padding-bottom: 5px;
+}
+
 .image-form {
 	display: none;
 }
@@ -190,8 +198,7 @@ ul.collection_nav li {
 }
 
 .form-horizontal .controls {
-	margin-right: 45px;
-	margin-top: 8px;
+    margin: 10px 10px 10px 0px;
 }
 
 #collection_hldr {

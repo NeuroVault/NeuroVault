@@ -21,12 +21,10 @@
                 $('#collection-tabs a:first').tab('show')
                 $("table[class*=image-details-datatable]").dataTable
                     sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
-                    sPaginationType: "bootstrap"
                     sAjaxSource: "/api/images/" + "{{ api_cid }}" + "/datatable/?format=json"
                     iDisplayLength: 10
                 $("table[class*=image-regions-datatable]").dataTable
                     sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
-                    sPaginationType: "bootstrap"
                     sAjaxSource: "/api/atlases/" + "{{ api_cid }}" + "/regions_table/?format=json"
                     iDisplayLength: 25
 

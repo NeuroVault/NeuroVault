@@ -7,7 +7,9 @@
     <script src="{% static "scripts/jquery-ui.min.js"%}" type="text/javascript"></script>
     <script src="{% static "scripts/jquery.cookie.js"%}" type="text/javascript"></script>
     <script src="{% static "scripts/bootstrap.min.js"%}" type="text/javascript"></script>
-    <script src="{% static "scripts/jquery.dataTables.min.js"%}" type="text/javascript"></script>
+    <script src="//cdn.datatables.net/1.10.7/js/jquery.dataTables.min.js" type="text/javascript"></script>
+    <script src="//cdn.datatables.net/plug-ins/1.10.7/integration/bootstrap/3/dataTables.bootstrap.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="//cdn.datatables.net/plug-ins/1.10.7/integration/bootstrap/3/dataTables.bootstrap.css"/>
     <script src="{% static "scripts/paging.js"%}" type="text/javascript"></script>
     <script src="{% static "scripts/base.js"%}" type="text/javascript"></script>
     <link rel="stylesheet" href="{% static "css/bootstrap.css" %}" />
@@ -83,7 +85,7 @@
         </div>
    </div>
 
-<footer style="text-align:center">
+<footer style="text-align:center;padding-top:10px">
       <div class="container navigation-container">
         <p class="text-muted"> 
             <a href="/api-docs">API</a>  &middot;
