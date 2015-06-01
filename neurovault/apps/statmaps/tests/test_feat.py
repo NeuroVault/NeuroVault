@@ -7,6 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from neurovault.apps.statmaps.forms import NIDMResultsForm
 from neurovault.apps.statmaps.utils import detect_feat_directory, get_traceback
 from nidmfsl.fsl_exporter.fsl_exporter import FSLtoNIDMExporter
+from neurovault.apps.statmaps.nidm_results import NIDMUpload
 import urllib
 import zipfile
 from .utils import clearDB
@@ -120,12 +121,13 @@ class FeatDirectoryTest(TestCase):
                 'description':'{0} upload test'.format(zname),
                 'collection':self.coll.pk,
             }
+            
 
             file_dict = {'zip_file': SimpleUploadedFile(zname, open(nidm_zpath,'r').read())}
             form = NIDMResultsForm(post_dict, file_dict)
 
             # validate NIDM Results
-            self.assertTrue(form.is_valid())
+            self.assertEqual(form.errors, {})
             nidm = form.save()
 
             statmaps = nidm.nidmresultstatisticmap_set.all()
