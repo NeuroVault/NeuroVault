@@ -12,16 +12,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='collection',
-            name='skip_factor',
-        ),
-        migrations.AddField(
-            model_name='collection',
-            name='skip_distance',
-            field=models.FloatField(help_text=b'The size of the skipped area between slices in millimeters', null=True, verbose_name=b'Skip distance', blank=True),
-            preserve_default=True,
-        ),
+        migrations.RenameField('collection', 'skip_factor', 'skip_distance'),
         migrations.AlterField(
             model_name='collection',
             name='length_of_trials',
