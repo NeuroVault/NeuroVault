@@ -375,9 +375,12 @@ class BaseStatisticMap(Image):
     X2 = 'X2'
     P = 'P'
     OTHER = 'Other'
-    W = 'weight/beta map'
-    R = 'ROI/mask'
-    Pa = 'parcellation'
+    W = 'Q'
+    R = 'R'
+    Pa = 'Pa'
+    S = 'S'
+    G = 'G'
+    M = 'M'
     MAP_TYPE_CHOICES = (
         (T, 'T map'),
         (Z, 'Z map'),
@@ -389,6 +392,13 @@ class BaseStatisticMap(Image):
         (Pa, 'parcellation'),
         (OTHER, 'Other'),
     )
+    ANALYSIS_LEVEL_CHOICES = (
+        (S, 'single-subject')
+        (G, 'group')
+        (M, 'meta-analysis')
+        (OTHER, 'other')
+    )
+    
     map_type = models.CharField(
                     help_text=("Type of statistic that is the basis of the inference"),
                     verbose_name="Map type",
@@ -400,9 +410,9 @@ class BaseStatisticMap(Image):
     brain_coverage = models.FloatField(null=True, blank=True)
     perc_voxels_outside = models.FloatField(null=True, blank=True)
     analysis_level = models.CharField(
-                    help_text=("Type of statistic that is the basis of the inference"),
+                    help_text=("What level of summary data was used as the input to this analysis?"),
                     verbose_name="Analysis level",
-                    max_length=200, null=False, blank=False, choices=MAP_TYPE_CHOICES)
+                    max_length=200, null=False, blank=False, choices=ANALYSIS_LEVEL_CHOICES)
     
     def save(self):
         if self.perc_bad_voxels == None and self.file:
