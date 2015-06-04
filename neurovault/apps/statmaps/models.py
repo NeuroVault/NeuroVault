@@ -393,10 +393,10 @@ class BaseStatisticMap(Image):
         (OTHER, 'Other'),
     )
     ANALYSIS_LEVEL_CHOICES = (
-        (S, 'single-subject')
-        (G, 'group')
-        (M, 'meta-analysis')
-        (OTHER, 'other')
+        (S, 'single-subject'),
+        (G, 'group'),
+        (M, 'meta-analysis'),
+        (OTHER, 'Other'),
     )
     
     map_type = models.CharField(
@@ -412,7 +412,7 @@ class BaseStatisticMap(Image):
     analysis_level = models.CharField(
                     help_text=("What level of summary data was used as the input to this analysis?"),
                     verbose_name="Analysis level",
-                    max_length=200, null=False, blank=False, choices=ANALYSIS_LEVEL_CHOICES)
+                    max_length=200, null=True, blank=True, choices=ANALYSIS_LEVEL_CHOICES)
     
     def save(self):
         if self.perc_bad_voxels == None and self.file:
