@@ -45,6 +45,7 @@ import gzip
 import re
 import os
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
+from django.views.decorators.cache import never_cache
 
 def owner_or_contrib(request,collection):
     if collection.owner == request.user or request.user in collection.contributors.all() or request.user.is_superuser:
@@ -88,6 +89,7 @@ def get_image(pk,collection_cid,request,mode=None):
 
 
 @login_required
+@never_cache
 def edit_images(request, collection_cid):
     collection = get_collection(collection_cid,request)
     if not owner_or_contrib(request,collection):
