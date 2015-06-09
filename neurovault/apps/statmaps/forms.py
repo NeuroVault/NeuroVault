@@ -505,6 +505,10 @@ class AtlasForm(ImageForm):
 class PolymorphicImageForm(ImageForm):
     def __init__(self, *args, **kwargs):
         super(PolymorphicImageForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-lg-2' 
+        self.helper.field_class = 'col-lg-8'
         if self.instance.polymorphic_ctype is not None:
             if self.instance.polymorphic_ctype.model == 'atlas':
                 self.fields = AtlasForm.base_fields
@@ -513,7 +517,8 @@ class PolymorphicImageForm(ImageForm):
                                                          instance=self.instance).fields
             else:
                 self.fields = StatisticMapForm.base_fields
-    
+     
+
     def clean(self, **kwargs):
         if "label_description_file" in self.fields.keys():
             use_form = AtlasForm
