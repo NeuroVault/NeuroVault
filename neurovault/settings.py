@@ -152,7 +152,7 @@ INSTALLED_APPS = (
     'polymorphic',
     'djcelery',
     'django_cleanup',
-    'file_resubmit',
+#    'file_resubmit',
     'djrill'
 )
 
@@ -263,10 +263,10 @@ CACHES = {
             'default': {
                 'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
             },
-            "file_resubmit": {
-                'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-                "LOCATION": '/tmp/file_resubmit/'
-            }
+#             "file_resubmit": {
+#                 'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+#                 "LOCATION": '/tmp/file_resubmit/'
+#             }
           }
           
 # Mandrill config
