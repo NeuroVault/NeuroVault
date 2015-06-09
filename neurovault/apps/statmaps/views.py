@@ -486,7 +486,8 @@ def upload_folder(request, collection_cid):
 
             finally:
                 shutil.rmtree(tmp_directory)
-
+            if not niftiFiles:
+                messages.warning(request, "No NIFTI files (.nii, .nii.gz, .img/.hdr) found in the upload.")
             return HttpResponseRedirect(collection.get_absolute_url())
     else:
         form = UploadFileForm()
