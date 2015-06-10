@@ -180,6 +180,11 @@
                     .light-head.center-text
                         This collection is empty. You can:
                         <br><br>
+                        {% csrf_token %}
+                        %div{style: "height: 0px;width: 0px; overflow:hidden;"}
+                            {{ form.file }}
+                            %input{type: "file", name: "file_input[]", id: "folder_input", multiple:"", directory:"", mozdirectory:"", webkitdirectory:""}
+                            %input{type: "hidden", name: "paths", id: "paths"}
                         %a.btn.btn-lg.btn-primary{href: "{% url 'edit_images' cid %}" } Add images one by one
 	                    %a.btn.btn-lg.btn-primary{id:"upload_archive"} Upload an archive with images (.zip or .tar.gz)
 	                    <!--[if !IE]> -->

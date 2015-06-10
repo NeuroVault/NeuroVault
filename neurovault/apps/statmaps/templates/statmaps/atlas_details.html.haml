@@ -54,13 +54,13 @@
 	                - for tag in image.tags.all
 	                    %a{ href: "/images/tags/{{tag.name}}" }= tag.name
 	                    - if not forloop.last
-            %a.btn.btn-primary.btn-large{href: "pycortex" } 3D View
-            %a.btn.btn-primary.btn-large{href: "{{ image.file.url }}" } Download
-            %a.btn.btn-primary.btn-large{href: "http://neurosynth.org/decode/?neurovault={{ api_cid }}" } Decode with neurosynth
+            %a.btn.btn-primary.btn-lg{href: "pycortex" } 3D View
+            %a.btn.btn-primary.btn-lg{href: "{{ image.file.url }}" } Download
+            %a.btn.btn-primary.btn-lg{href: "http://neurosynth.org/decode/?neurovault={{ api_cid }}" } Decode with neurosynth
             - if user_owns_image
-                %a.btn.btn-primary.btn-large{href: "{% url 'edit_image' image.id %}" } Edit details
+                %a.btn.btn-primary.btn-lg{href: "{% url 'edit_image' image.id %}" } Edit details
                 .float-right-wrapper
-                    %a.btn.btn-danger.btn-large{href: "{% url 'delete_image' image.id %}", id: 'delete_image' } Delete
+                    %a.btn.btn-danger.btn-lg{href: "{% url 'delete_image' image.id %}", id: 'delete_image' } Delete
 
         %ul#collection-tabs.nav.nav-tabs
             %li
