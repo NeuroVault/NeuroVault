@@ -50,7 +50,7 @@
                     $('#upload_process').modal 'show'
                 )
 
-                $("#upload_process").on "shown", (e) ->
+                $("#upload_process").on "shown.bs.modal", (e) ->
 
                     paths = ""
                     files = uldata
@@ -67,7 +67,7 @@
                     xhr.open 'POST', "upload_folder", false
                     xhr.setRequestHeader "X-CSRFToken", csrftoken
                     xhr.send(data)
-                    $('#upload_process').modal 'hide'
+                    $('#upload_process').modal
                     document.location = ""
 
 
@@ -196,12 +196,15 @@
             #viewer.tab-pane
                 {% include 'statmaps/_neurosynth_viewer_content.html.haml' %}
 
-            #upload_process.modal.fade.hide{data-backdrop: 'static', data-keyboard:'false', style: 'margin-top: 175px;'}
-                .modal-header
-                    %h4 Processing upload...
-                .modal-body
-                    .progress.progress-striped.active
-                        .bar{"style":"width: 100%;"}
+            #upload_process.modal{data-backdrop: 'static', data-keyboard:'false', style: 'margin-top: 175px;'}
+                .modal-dialog
+                    .modal-content
+                        .modal-header
+                            %h4 Processing upload...
+                        .modal-body
+                            .progress
+                                .progress-bar.active{"style":"width: 100%;"}
+                                .progress-bar{"style":"width: 100%;"}
 
 {% comment %}
 {% for image in collection.image_set.all %}
