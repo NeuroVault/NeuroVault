@@ -207,3 +207,7 @@ ul.collection_nav li {
     overflow-y:auto;
     overflow-x: hidden;
 }
+
+.radio {
+    padding-left:20px;
+}
