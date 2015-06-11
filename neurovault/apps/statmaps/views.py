@@ -426,7 +426,7 @@ def upload_folder(request, collection_cid):
                     # Read nifti file information
                     nii = nib.load(fpath)
                     if len(nii.get_shape()) > 3 and nii.get_shape()[3] > 1:
-                        print "skipping wrong size"
+                        messages.warning(request, "Skipping %s - not a 3D file."%label)
                         continue
                     hdr = nii.get_header()
                     raw_hdr = hdr.structarr
@@ -486,7 +486,8 @@ def upload_folder(request, collection_cid):
 
             finally:
                 shutil.rmtree(tmp_directory)
-
+            if not niftiFiles:
+                messages.warning(request, "No NIFTI files (.nii, .nii.gz, .img/.hdr) found in the upload.")
             return HttpResponseRedirect(collection.get_absolute_url())
     else:
         form = UploadFileForm()
