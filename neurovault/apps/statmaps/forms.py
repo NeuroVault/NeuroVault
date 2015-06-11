@@ -450,6 +450,11 @@ class ImageForm(ModelForm):
         return cleaned_data
 
 class StatisticMapForm(ImageForm):
+    
+    def __init__(self, *args, **kwargs):
+        super(StatisticMapForm, self).__init__(*args, **kwargs)
+        self.helper.form_tag = False
+        self.helper.add_input(Submit('submit', 'Submit'))
             
     def clean(self, **kwargs):
         cleaned_data = super(StatisticMapForm, self).clean()
@@ -535,12 +540,18 @@ class EditStatisticMapForm(StatisticMapForm):
         user = kwargs['user']
         del kwargs['user']
         super(EditStatisticMapForm, self).__init__(*args, **kwargs)
-        self.helper.form_tag = False
-        self.helper.add_input(Submit('submit', 'Submit'))
         if user.is_superuser:
             self.fields['collection'].queryset = Collection.objects.all()
         else:
             self.fields['collection'].queryset = Collection.objects.filter(owner=user)
+            
+class AddStatisticMapForm(StatisticMapForm):
+
+    class Meta(StatisticMapForm.Meta):
+        fields = ('name', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas', 'contrast_definition', 'figure',
+                  'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
+                  'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels')
+            
 
 
 class EditAtlasForm(AtlasForm):
