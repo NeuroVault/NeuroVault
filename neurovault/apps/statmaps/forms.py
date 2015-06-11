@@ -37,7 +37,7 @@ from django.core.files import File
 from neurovault.apps.statmaps.models import CognitiveAtlasTask
 from chosen import forms as chosenforms
 from gzip import GzipFile
-#from file_resubmit.admin import AdminResubmitFileWidget
+from file_resubmit.admin import AdminResubmitFileWidget
 
 
 # Create the form class.
@@ -333,7 +333,7 @@ class OwnerCollectionForm(CollectionForm):
 
 
 class ImageForm(ModelForm):
-    hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')#, widget=AdminResubmitFileWidget)
+    hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)', widget=AdminResubmitFileWidget)
     
     def __init__(self, *args, **kwargs):
         super(ImageForm, self).__init__(*args, **kwargs)
@@ -346,10 +346,10 @@ class ImageForm(ModelForm):
     class Meta:
         model = Image
         exclude = []
-#         widgets = {
-#             'file': AdminResubmitFileWidget,
-#             'hdr_file': AdminResubmitFileWidget,
-#         }
+        widgets = {
+            'file': AdminResubmitFileWidget,
+            'hdr_file': AdminResubmitFileWidget,
+        }
 
     def clean(self, **kwargs):
         cleaned_data = super(ImageForm, self).clean()
@@ -484,8 +484,8 @@ class StatisticMapForm(ImageForm):
                   'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels')
         widgets = {
-#             'file': AdminResubmitFileWidget,
-#             'hdr_file': AdminResubmitFileWidget,
+            'file': AdminResubmitFileWidget,
+            'hdr_file': AdminResubmitFileWidget,
             'is_thresholded': HiddenInput,
             'ignore_file_warning': HiddenInput,
             'perc_bad_voxels': HiddenInput,
