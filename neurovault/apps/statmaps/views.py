@@ -2,7 +2,7 @@ from neurovault.apps.statmaps.models import Collection, Image, Atlas, Comparison
     BaseStatisticMap
 from neurovault.apps.statmaps.forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
-    EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm
+    EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
@@ -329,12 +329,12 @@ def add_image(request, collection_cid):
     collection = get_collection(collection_cid,request)
     image = StatisticMap(collection=collection)
     if request.method == "POST":
-        form = StatisticMapForm(request.POST, request.FILES, instance=image)
+        form = AddStatisticMapForm(request.POST, request.FILES, instance=image)
         if form.is_valid():
             image = form.save()
             return HttpResponseRedirect(image.get_absolute_url())
     else:
-        form = StatisticMapForm(instance=image)
+        form = AddStatisticMapForm(instance=image)
 
     context = {"form": form}
     return render(request, "statmaps/add_image.html.haml", context)
