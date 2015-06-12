@@ -115,7 +115,6 @@ $(document).ready(function() {
 
   $('#submit-form').click(function(e) {
     e.preventDefault();
-    console.log("in submit")
     ret = $('#formset').submit()
     $('.image-form').each(function(ele) {
 	    if(!formIsClean('.image-form#' + $(this).attr('id'))) {
@@ -133,7 +132,7 @@ $(document).ready(function() {
     if(newType == 'zip') return uploadZip();
     cloneMore('div.image-form:last', 'image', newType);
     nextIndex = $('.image-form').length - 1;
-    $('#image-select').append($('<li id="showform-image-'+nextIndex+'" class="active"><a href="#"><i class="icon-file-alt"></i>&nbsp;[new image]</a></li>'));
+    $('#image-select').append($('<li id="showform-image-'+nextIndex+'"><a href="#"><i class="icon-file-alt"></i>&nbsp;[new image]</a></li>'));
     $('.image-form:last').attr('id', 'image-' + nextIndex);
     $('#image-select li:last').siblings().removeClass('active');
     $('#image-select li:last').addClass('active');
