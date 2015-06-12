@@ -59,7 +59,7 @@ cloneMore = function (selector, type, imgtype) {
     newElement.append($(this).clone(true));
   });
 
-  newElement.find('div.control-group').each(function(n,n_ele) {
+  newElement.find('div.form-group').each(function(n,n_ele) {
     rname = $(this).attr('id').replace('div_id_','');
     name = type + '_set-' + (total) + '-' + rname;
     $(n_ele).attr('id', $(this).attr('id').replace(rname,name));
