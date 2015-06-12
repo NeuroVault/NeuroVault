@@ -97,8 +97,8 @@ formIsClean = function(sele) {
   if(typeof sele === "undefined") {
     sele = '.image-form';
   }
-  if($(sele).find('div.errors').length === 0 && 
-        $(sele).find('div.error').length === 0 &&
+  if($(sele).find('div.has-errors').length === 0 && 
+        $(sele).find('div.has-error').length === 0 &&
         $(sele).find('div.alert-error').length === 0) {
     return true;
   } else {
@@ -115,8 +115,8 @@ $(document).ready(function() {
 
   $('#submit-form').click(function(e) {
     e.preventDefault();
-    ret = $('#formset').submit();
-    
+    console.log("in submit")
+    ret = $('#formset').submit()
     $('.image-form').each(function(ele) {
 	    if(!formIsClean('.image-form#' + $(this).attr('id'))) {
 	    	$($('#showform-' + $(this).attr('id')).children()[0]).css('color', '#b94a48')
@@ -133,7 +133,7 @@ $(document).ready(function() {
     if(newType == 'zip') return uploadZip();
     cloneMore('div.image-form:last', 'image', newType);
     nextIndex = $('.image-form').length - 1;
-    $('#image-select').append($('<li id="showform-image-'+nextIndex+'"><a href="#"><i class="icon-file-alt"></i>&nbsp;[new image]</a></li>'));
+    $('#image-select').append($('<li id="showform-image-'+nextIndex+'" class="active"><a href="#"><i class="icon-file-alt"></i>&nbsp;[new image]</a></li>'));
     $('.image-form:last').attr('id', 'image-' + nextIndex);
     $('#image-select li:last').siblings().removeClass('active');
     $('#image-select li:last').addClass('active');
