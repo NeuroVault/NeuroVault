@@ -561,7 +561,7 @@ def view_collection_with_pycortex(request, cid):
 def serve_image(request, collection_cid, img_name):
     collection = get_collection(collection_cid,request,mode='file')
     path = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',str(collection.id),img_name)
-    return sendfile(request, path)
+    return sendfile(request, path, encoding="utf-8")
 
 
 def serve_pycortex(request, collection_cid, path, pycortex_dir='pycortex_all'):
