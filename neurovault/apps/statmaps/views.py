@@ -2,7 +2,7 @@ from neurovault.apps.statmaps.models import Collection, Image, Atlas, Comparison
     BaseStatisticMap
 from neurovault.apps.statmaps.forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
-    EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm
+    EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
@@ -329,12 +329,12 @@ def add_image(request, collection_cid):
     collection = get_collection(collection_cid,request)
     image = StatisticMap(collection=collection)
     if request.method == "POST":
-        form = StatisticMapForm(request.POST, request.FILES, instance=image)
+        form = AddStatisticMapForm(request.POST, request.FILES, instance=image)
         if form.is_valid():
             image = form.save()
             return HttpResponseRedirect(image.get_absolute_url())
     else:
-        form = StatisticMapForm(instance=image)
+        form = AddStatisticMapForm(instance=image)
 
     context = {"form": form}
     return render(request, "statmaps/add_image.html.haml", context)
@@ -426,7 +426,7 @@ def upload_folder(request, collection_cid):
                     # Read nifti file information
                     nii = nib.load(fpath)
                     if len(nii.get_shape()) > 3 and nii.get_shape()[3] > 1:
-                        print "skipping wrong size"
+                        messages.warning(request, "Skipping %s - not a 3D file."%label)
                         continue
                     hdr = nii.get_header()
                     raw_hdr = hdr.structarr
@@ -486,7 +486,8 @@ def upload_folder(request, collection_cid):
 
             finally:
                 shutil.rmtree(tmp_directory)
-
+            if not niftiFiles:
+                messages.warning(request, "No NIFTI files (.nii, .nii.gz, .img/.hdr) found in the upload.")
             return HttpResponseRedirect(collection.get_absolute_url())
     else:
         form = UploadFileForm()
@@ -560,7 +561,7 @@ def view_collection_with_pycortex(request, cid):
 def serve_image(request, collection_cid, img_name):
     collection = get_collection(collection_cid,request,mode='file')
     path = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',str(collection.id),img_name)
-    return sendfile(request, path)
+    return sendfile(request, path, encoding="utf-8")
 
 
 def serve_pycortex(request, collection_cid, path, pycortex_dir='pycortex_all'):
