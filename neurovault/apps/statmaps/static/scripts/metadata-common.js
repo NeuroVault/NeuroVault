@@ -5,6 +5,46 @@
   window.NVMetadata = window.NVMetadata || {};
   var NVMetadata = window.NVMetadata;
 
+
+  function formatFieldsError(messages) {
+    var result = '',
+      fieldName;
+
+    for (fieldName in messages) {
+      if (messages.hasOwnProperty(fieldName)) {
+        result += '<dl><dt>' + fieldName + '</dt> <dd>' + messages[fieldName].join('</dd><dd>') + '</dd></dl>';
+      }
+    }
+
+    return result;
+  }
+
+  function formatItemMessages(messages) {
+    var result = '',
+      i, len;
+
+    for (i = 0, len = messages.length; i < len; i += 1) {
+      result += formatFieldsError(messages[i]);
+    }
+
+    return result;
+  }
+
+  function formatMessages(messages) {
+    var item, result = [];
+
+    for (item in messages) {
+      if (messages.hasOwnProperty(item)) {
+        console.log(item);
+        result.push({msg: '<em>' + item + '</em> — some fields contain errors:' +
+          formatItemMessages(messages[item])
+        });
+      }
+    }
+
+    return result;
+  }
+
   NVMetadata.getCollectionIdFromURL = function (url) {
     var match = url.match(/collections\/(\d+)/);
     if (match[1]) {
@@ -19,9 +59,11 @@
       errors;
 
     if (r) {
-      errors = [{
-        msg: r.message
-      }];
+      if (r.messages) {
+        errors = formatMessages(r.messages);
+      } else {
+        errors = [{msg: r.message}];
+      }
     } else {
       errors = [{
         msg: 'Error while submitting data to server: ' + errorThrown

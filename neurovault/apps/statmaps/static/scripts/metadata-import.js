@@ -68,16 +68,16 @@
   var is = DataImport.is,
 
     fields = [{
-      id: 'File Name',
-      name: 'File Name',
+      id: 'Filename',
+      name: 'Filename',
       required: true,
       validate: [
         is.unique(),
         is.matchingRegex(['.*(?:\\.nii(?:\\.gz)?|\\.img)$']),
       ]
     }, {
-      id: 'Subject Id',
-      name: 'Subject Id',
+      id: 'Subject ID',
+      name: 'Subject ID',
       required: true
     }, {
       id: 'Image Type',
