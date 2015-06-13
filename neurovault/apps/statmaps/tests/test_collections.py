@@ -206,7 +206,7 @@ class CollectionMetaDataTest(TestCase):
         return str(uuid4())[:8]
 
     def test_post_metadata(self):
-        test_json = ('[["File Name","Subject Id","Image Type","Sex"],'
+        test_json = ('[["Filename","Subject ID","Image Type","Sex"],'
                      '["file1.nii.gz","12","subject","1"],'
                      '["file2.nii.gz","13","subject","2"]]')
 
@@ -222,11 +222,11 @@ class CollectionMetaDataTest(TestCase):
         image1 = Image.objects.get(id=self.image1.id)
 
         self.assertEqual(image1.data, {'Sex': '1',
-                                       'Subject Id': '12',
+                                       'Subject ID': '12',
                                        'Image Type': 'subject'})
 
     def test_metadata_for_files_missing_in_the_collection(self):
-        test_json = ('[["File Name","Subject Id","Image Type","Sex"],'
+        test_json = ('[["Filename","Subject ID","Image Type","Sex"],'
                      '["file1.nii.gz","12","subject","1"],'
                      '["file2.nii.gz","13","subject","2"],'
                      '["file3.nii.gz","14","subject","3"]]')

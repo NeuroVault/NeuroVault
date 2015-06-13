@@ -26,7 +26,7 @@ from django.db.models.aggregates import Count
 from django.http import Http404, HttpResponse
 from django.db.models import Q, Count
 from sklearn.externals import joblib
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from django.contrib import messages
 from django.forms import widgets
 from neurovault import settings
@@ -215,16 +215,40 @@ def pair_data_and_objects(metadata_dict, image_obj_dict):
 
 
 def error_response(exception):
-    return JSONResponse({'message': exception.message}, status=400)
+    resp = None
+
+    if hasattr(exception, 'items_messages_dict'):
+        resp = {'messages': exception.items_messages_dict}
+    else:
+        resp = {'message': exception.message}
+
+    return JSONResponse(resp, status=400)
+
+
+def clean_u_prefix(s):
+    return re.sub(r'u(\'[^\']+?\')', '\\1', s)
+
+
+def clearn_messages(message_dict):
+    return dict((k, map(clean_u_prefix, v))
+                for k, v in message_dict.items())
+
+
+class MetadataGridValidationError(ValidationError):
+    def __init__(self, items_messages_dict):
+        self.items_messages_dict = items_messages_dict
 
 
 def save_metadata(collection, metadata):
     def file_basename(image_obj):
         return os.path.basename(image_obj.file.name)
 
+    image_obj_errors = defaultdict(list)
+    image_obj_list = []
+
     metadata_list = convert_to_list(metadata)
     metadata_dict = list_to_dict(metadata_list,
-                                 key=lambda x: x['File Name'])
+                                 key=lambda x: x['Filename'])
 
     image_obj_list = collection.image_set.all()
     image_obj_dict = list_to_dict(image_obj_list,
@@ -243,11 +267,21 @@ def save_metadata(collection, metadata):
                                             "doesn't exist." % key)
                 setattr(image_obj, key, metadata_item[key])
             else:
-                if key != 'File Name':
+                if key != 'Filename':
                     if not image_obj.data:
                         image_obj.data = {}
                     image_obj.data[key] = metadata_item[key]
 
+        try:
+            image_obj.full_clean()
+        except ValidationError as e:
+            image_obj_errors[file_basename(image_obj)].append(
+                clearn_messages(e.message_dict))
+
+    if image_obj_errors:
+        raise MetadataGridValidationError(image_obj_errors)
+
+    for image_obj in image_obj_list:
         image_obj.save()
 
     return metadata_list
@@ -284,7 +318,7 @@ def get_images_metadata(collection):
                 [getattr(image, field) for field in fixed_fields] +
                 [data.get(key, '') for key in metadata_keys])
 
-    return [['File Name'] + fixed_fields + metadata_keys] + map(list_metadata,
+    return [['Filename'] + fixed_fields + metadata_keys] + map(list_metadata,
                                                                 image_obj_list)
 
 
@@ -314,7 +348,7 @@ def edit_metadata(request, collection_cid):
 
     if request.method == "POST":
         return handle_post_metadata(request, collection,
-                                    'Image metadata have been saved.')
+                                    'Images metadata have been saved.')
 
     metadata = get_images_metadata(collection)
 
