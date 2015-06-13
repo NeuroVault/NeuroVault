@@ -203,7 +203,8 @@ def pair_data_and_objects(metadata_dict, image_obj_dict):
 
     if extra_files:
         raise ValidationError(
-            "Missing metadata for %s" % ', '.join(extra_files))
+            "Missing metadata for %s. Specify metadata rows "
+            "for every image in the collection." % ', '.join(extra_files))
 
     for image_filename, metadata in metadata_dict.items():
         image_obj = image_obj_dict.get(image_filename)
@@ -319,7 +320,7 @@ def get_images_metadata(collection):
                 [data.get(key, '') for key in metadata_keys])
 
     return [['Filename'] + fixed_fields + metadata_keys] + map(list_metadata,
-                                                                image_obj_list)
+                                                               image_obj_list)
 
 
 @csrf_exempt
