@@ -21,8 +21,8 @@ body {
 }
 
 #navigation {
-       margin-bottom:0px; 
-       padding-right:10px; 
+       margin-bottom:0px;
+       padding-right:10px;
        padding-left:10px;
        width:1200px;
        border-radius: 6px 6px 0px 0px;
@@ -34,7 +34,7 @@ body {
 }
 
 .navigation-container {
-      padding-left:0px; 
+      padding-left:0px;
       /* background:white; */
       /* margin-bottom: 20px; */
       /* margin-top: 20px; */
@@ -211,3 +211,75 @@ ul.collection_nav li {
 .radio {
     padding-left:20px;
 }
+
+.auth-wrapper {
+    max-width: 320px;
+    margin: 0 auto 100px auto;
+}
+.login-or {
+    position: relative;
+    font-size: 18px;
+    color: #aaa;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+.span-or {
+    display: block;
+    position: absolute;
+    left: 50%;
+    top: -2px;
+    margin-left: -25px;
+    background-color: #fff;
+    width: 50px;
+    text-align: center;
+}
+.hr-or {
+    background-color: #cdcdcd;
+    height: 1px;
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+}
+.auth-wrapper h3 {
+    text-align: center;
+    margin-bottom: 28px !important;
+}
+.auth-wrapper p.centered-info {
+    text-align: center;
+}
+.social-buttons {
+    margin-bottom: 32px;
+}
+.btn-facebook {
+    color: #fff;
+    background-color: #3B5998;
+    border-color: #3B5998;
+}
+.btn-facebook:hover,
+.btn-facebook:focus,
+.btn-facebook.focus,
+.btn-facebook:active,
+.btn-facebook.active {
+    color: #fff;
+    background-color: #344E84;
+    border-color: #344E84;
+}
+.btn-google {
+    color: #fff;
+    background-color: #4184f3;
+    border-color: #4184f3;
+}
+.btn-google:hover,
+.btn-google:focus,
+.btn-google.focus,
+.btn-google:active,
+.btn-google.active {
+    color: #fff;
+    background-color: #4184f3;
+    border-color: #4184f3;
+}
+.social-buttons .btn-block + .btn-block {
+    margin-top: 8px;
+}
+
