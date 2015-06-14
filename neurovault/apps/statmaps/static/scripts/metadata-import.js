@@ -77,8 +77,8 @@
       ]
     }, {
       id: 'Subject ID',
-      name: 'Subject ID',
-      required: true
+      name: 'Subject ID'
+      required: false
     }, {
       id: 'Sex',
       name: 'Sex',
