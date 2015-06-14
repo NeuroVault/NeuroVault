@@ -9,7 +9,6 @@ import nibabel
 import shutil
 import numpy
 import os
-from __builtin__ import False
 
 class ComparisonTestCase(TestCase):
     pk1 = None
