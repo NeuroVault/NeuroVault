@@ -206,9 +206,9 @@ class CollectionMetaDataTest(TestCase):
         return str(uuid4())[:8]
 
     def test_post_metadata(self):
-        test_json = ('[["Filename","Subject ID","Image Type","Sex"],'
-                     '["file1.nii.gz","12","subject","1"],'
-                     '["file2.nii.gz","13","subject","2"]]')
+        test_json = ('[["Filename","Subject ID", "Sex"],'
+                     '["file1.nii.gz","12","1"],'
+                     '["file2.nii.gz","13","2"]]')
 
         url = reverse('import_metadata',
                       kwargs={'collection_cid': self.coll.pk})
@@ -222,14 +222,13 @@ class CollectionMetaDataTest(TestCase):
         image1 = Image.objects.get(id=self.image1.id)
 
         self.assertEqual(image1.data, {'Sex': '1',
-                                       'Subject ID': '12',
-                                       'Image Type': 'subject'})
+                                       'Subject ID': '12'})
 
     def test_metadata_for_files_missing_in_the_collection(self):
-        test_json = ('[["Filename","Subject ID","Image Type","Sex"],'
-                     '["file1.nii.gz","12","subject","1"],'
-                     '["file2.nii.gz","13","subject","2"],'
-                     '["file3.nii.gz","14","subject","3"]]')
+        test_json = ('[["Filename","Subject ID","Sex"],'
+                     '["file1.nii.gz","12","1"],'
+                     '["file2.nii.gz","13","2"],'
+                     '["file3.nii.gz","14","3"]]')
 
         url = reverse('import_metadata',
                       kwargs={'collection_cid': self.coll.pk})

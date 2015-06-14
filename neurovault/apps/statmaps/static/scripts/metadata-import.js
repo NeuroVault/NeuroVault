@@ -80,15 +80,6 @@
       name: 'Subject ID',
       required: true
     }, {
-      id: 'Image Type',
-      name: 'Image Type',
-      required: true,
-      choices: ['group', 'subject', 'item'],
-      validate: [
-        is.anyOf(['group', 'subject', 'item'],
-          'Wrong value')
-      ]
-    }, {
       id: 'Sex',
       name: 'Sex',
       required: false,
