@@ -1,10 +1,6 @@
 {% extends "base.html" %}
-{% block head %}
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js" type="text/javascript"></script>
-{% endblock %}
 
 {% block content %}
-
 <div class="auth-wrapper">
     <h3>Log In, or <a href="{% url 'create_user' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">Sign Up</a></h3>
 
@@ -47,5 +43,4 @@
         <input type="hidden" name="next" value="{{ next }}" />
     </form>
 </div>
-
 {% endblock %}
