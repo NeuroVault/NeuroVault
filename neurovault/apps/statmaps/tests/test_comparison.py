@@ -9,6 +9,7 @@ import nibabel
 import shutil
 import numpy
 import os
+from __builtin__ import False
 
 class ComparisonTestCase(TestCase):
     pk1 = None
@@ -116,3 +117,26 @@ class ComparisonTestCase(TestCase):
         self.assertEqual(len(comparison), 1)
         print comparison[0].similarity_score
         assert_almost_equal(comparison[0].similarity_score, 0.312548260436,decimal=5)
+        
+    def test_private_to_public_switch(self):
+        private_collection = Collection(name='privateCollection',owner=self.u1, private=True)
+        private_collection.save()
+
+        app_path = os.path.abspath(os.path.dirname(__file__))
+        private_image1 = save_statmap_form(image_path=os.path.join(app_path,'test_data/statmaps/all.nii.gz'),
+                                           collection=private_collection,
+                                           image_name = "image1")
+        private_image2 = save_statmap_form(image_path=os.path.join(app_path,'test_data/statmaps/motor_lips.nii.gz'),
+                                           collection=private_collection,
+                                           image_name = "image2")
+        comparison = Comparison.objects.filter(image1=private_image1,image2=private_image2)
+        self.assertEqual(len(comparison), 0)
+        
+        print "before private: %s"%Comparison.objects.all().count()
+        private_collection = Collection.objects.get(pk=private_collection.pk)
+        private_collection.private = False
+        private_collection.save()
+        print "after private: %s"%Comparison.objects.all().count()
+        print private_collection.image_set.all()
+        comparison = Comparison.objects.filter(image1=private_image1,image2=private_image2)
+        self.assertEqual(len(comparison), 1)
