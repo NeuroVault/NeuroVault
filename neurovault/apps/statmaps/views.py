@@ -537,7 +537,7 @@ def view_collection_with_pycortex(request, cid):
         return redirect(collection)
     else:
 
-        basedir = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',cid)
+        basedir = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',str(collection.id))
         baseurl = os.path.join(settings.PRIVATE_MEDIA_URL,cid)
 
         output_dir = os.path.join(basedir, "pycortex_all")
