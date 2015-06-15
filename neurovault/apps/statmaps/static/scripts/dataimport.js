@@ -421,7 +421,7 @@
         error = validate[i](data, field, columnIndex);
         if (error) {
           errors.push({
-            msg: error.msg + ' in field "' + field.id + '"'
+            msg: '"' + field.id + '": ' + error.msg
           });
           this.sheet.markCellsInColumn(columnIndex, error.rows);
         }
@@ -809,7 +809,7 @@
    */
 
   DataImport.is.matchingRegex = function (regExpAndFlags, message) {
-    message = message || 'Wrong value format';
+    message = message || 'wrong value format';
 
     var regex = new RegExp(regExpAndFlags[0], regExpAndFlags[1]);
 

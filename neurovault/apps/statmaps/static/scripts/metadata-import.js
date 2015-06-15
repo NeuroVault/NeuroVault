@@ -73,7 +73,8 @@
       required: true,
       validate: [
         is.unique(),
-        is.matchingRegex(['.*(?:\\.nii(?:\\.gz)?|\\.img)$']),
+        is.matchingRegex(['.*(?:\\.nii(?:\\.gz)?|\\.img)$'],
+          "wrong file extension. Should be .nii.gz, .nii or .img")
       ]
     }, {
       id: 'Subject ID',
