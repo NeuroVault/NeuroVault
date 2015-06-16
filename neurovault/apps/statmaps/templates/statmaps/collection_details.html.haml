@@ -101,8 +101,8 @@
               - if edit_permission
                   %a.btn.btn-primary{href: "{% url 'edit_collection' cid %}" } Edit collection
                   - if collection.image_set.all
-	                  -#%a.btn.btn-primary{href: "{% url 'add_image' cid %}" } Add image
-	                  %a.btn.btn-primary{href: "{% url 'edit_images' cid %}" } Edit images
+	                  %a.btn.btn-primary{href: "{% url 'add_image' cid %}" } Add image
+	                  -#%a.btn.btn-primary{href: "{% url 'edit_images' cid %}" } Edit images
 	                  %a.btn.btn-primary{id:"upload_archive"} Upload archive (.zip)
 	                  <!--[if !IE]> -->
 	                  %a.btn.btn-primary{id:"upload_folder"} Upload folder
@@ -185,7 +185,7 @@
                             {{ form.file }}
                             %input{type: "file", name: "file_input[]", id: "folder_input", multiple:"", directory:"", mozdirectory:"", webkitdirectory:""}
                             %input{type: "hidden", name: "paths", id: "paths"}
-                        %a.btn.btn-lg.btn-primary{href: "{% url 'edit_images' cid %}" } Add images one by one
+                        %a.btn.btn-lg.btn-primary{href: "{% url 'add_image' cid %}" } Add images one by one
 	                    %a.btn.btn-lg.btn-primary{id:"upload_archive"} Upload an archive with images (.zip or .tar.gz)
 	                    <!--[if !IE]> -->
 	                    %a.btn.btn-lg.btn-primary{id:"upload_folder"} Upload a folder with images
