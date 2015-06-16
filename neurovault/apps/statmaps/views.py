@@ -2,7 +2,7 @@ from neurovault.apps.statmaps.models import Collection, Image, Atlas, Comparison
     BaseStatisticMap
 from neurovault.apps.statmaps.forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
-    EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm
+    EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
@@ -329,12 +329,12 @@ def add_image(request, collection_cid):
     collection = get_collection(collection_cid,request)
     image = StatisticMap(collection=collection)
     if request.method == "POST":
-        form = StatisticMapForm(request.POST, request.FILES, instance=image)
+        form = AddStatisticMapForm(request.POST, request.FILES, instance=image)
         if form.is_valid():
             image = form.save()
             return HttpResponseRedirect(image.get_absolute_url())
     else:
-        form = StatisticMapForm(instance=image)
+        form = AddStatisticMapForm(instance=image)
 
     context = {"form": form}
     return render(request, "statmaps/add_image.html.haml", context)
@@ -537,7 +537,7 @@ def view_collection_with_pycortex(request, cid):
         return redirect(collection)
     else:
 
-        basedir = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',cid)
+        basedir = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',str(collection.id))
         baseurl = os.path.join(settings.PRIVATE_MEDIA_URL,cid)
 
         output_dir = os.path.join(basedir, "pycortex_all")
@@ -561,7 +561,7 @@ def view_collection_with_pycortex(request, cid):
 def serve_image(request, collection_cid, img_name):
     collection = get_collection(collection_cid,request,mode='file')
     path = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',str(collection.id),img_name)
-    return sendfile(request, path)
+    return sendfile(request, path, encoding="utf-8")
 
 
 def serve_pycortex(request, collection_cid, path, pycortex_dir='pycortex_all'):
@@ -756,7 +756,8 @@ def compare_images(request,pk1,pk2):
                                                                  corr_type="pearson",
                                                                  subsample_every=10, # subsample every 10th voxel
                                                                  custom=custom,
-                                                                 remove_scripts="D3_MIN_JS") 
+                                                                 remove_scripts="D3_MIN_JS",
+                                                                 width=1000) 
 
     # Add atlas svg to the image, and prepare html for rendering
     html = [h.replace("[coronal]",atlas_svg) for h in html_snippet]
@@ -822,7 +823,8 @@ def find_similar(request,pk):
         html_snippet = search.similarity_search(image_scores=scores,tags=tags,png_paths=png_img_paths,
                                     button_url=compare_url,image_url=image_url,query_png=query_png,
                                     query_id=pk,top_text=top_text,image_ids=image_ids,
-                                    bottom_text=bottom_text,max_results=max_results,absolute_value=True)
+                                    bottom_text=bottom_text,max_results=max_results,absolute_value=True,
+                                    remove_scripts=["BOOTSTRAP","BOOTSTRAP_MIN"],container_width=1200)
 
         html = [h.strip("\n") for h in html_snippet]
     

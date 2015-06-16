@@ -450,6 +450,11 @@ class ImageForm(ModelForm):
         return cleaned_data
 
 class StatisticMapForm(ImageForm):
+    
+    def __init__(self, *args, **kwargs):
+        super(StatisticMapForm, self).__init__(*args, **kwargs)
+        self.helper.form_tag = False
+        self.helper.add_input(Submit('submit', 'Submit'))
             
     def clean(self, **kwargs):
         cleaned_data = super(StatisticMapForm, self).clean()
@@ -505,6 +510,10 @@ class AtlasForm(ImageForm):
 class PolymorphicImageForm(ImageForm):
     def __init__(self, *args, **kwargs):
         super(PolymorphicImageForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-lg-2' 
+        self.helper.field_class = 'col-lg-8'
         if self.instance.polymorphic_ctype is not None:
             if self.instance.polymorphic_ctype.model == 'atlas':
                 self.fields = AtlasForm.base_fields
@@ -513,7 +522,8 @@ class PolymorphicImageForm(ImageForm):
                                                          instance=self.instance).fields
             else:
                 self.fields = StatisticMapForm.base_fields
-    
+     
+
     def clean(self, **kwargs):
         if "label_description_file" in self.fields.keys():
             use_form = AtlasForm
@@ -535,12 +545,18 @@ class EditStatisticMapForm(StatisticMapForm):
         user = kwargs['user']
         del kwargs['user']
         super(EditStatisticMapForm, self).__init__(*args, **kwargs)
-        self.helper.form_tag = False
-        self.helper.add_input(Submit('submit', 'Submit'))
         if user.is_superuser:
             self.fields['collection'].queryset = Collection.objects.all()
         else:
             self.fields['collection'].queryset = Collection.objects.filter(owner=user)
+            
+class AddStatisticMapForm(StatisticMapForm):
+
+    class Meta(StatisticMapForm.Meta):
+        fields = ('name', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas', 'contrast_definition', 'figure',
+                  'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
+                  'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels')
+            
 
 
 class EditAtlasForm(AtlasForm):

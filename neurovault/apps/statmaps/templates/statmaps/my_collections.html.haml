@@ -2,12 +2,12 @@
 {% load coffeescript %}
 
 {% block head %}
+<title>{% block title %}NeuroVault: My Collections{% endblock %}</title>
     :javascript
         {% inlinecoffeescript %}
             $(document).ready ->
                 $("#collections-table").dataTable
                     sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
-                    sPaginationType: "bootstrap"
                     iDisplayLength: 10
                     aoColumns: [ { sWidth: '45%' }, { sWidth: '10%'}, { sWidth: '45%'}]
         {% endinlinecoffeescript %}
@@ -46,5 +46,6 @@
                         {% endif %}
 
 
-%a.btn.btn-primary{href: "{% url 'new_collection' %}" } Add new collection
+.row
+	%a.btn.btn-primary{href: "{% url 'new_collection' %}" } Add new collection
 {% endblock %}

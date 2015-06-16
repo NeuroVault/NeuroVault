@@ -238,7 +238,7 @@ CORS_ORIGIN_REGEX_WHITELIST = (
 #LOGIN_REDIRECT_URL = '/logged-in/'
 #LOGIN_ERROR_URL    = '/login-error/'
 
-CRISPY_TEMPLATE_PACK = 'bootstrap'
+CRISPY_TEMPLATE_PACK = 'bootstrap3'
 
 DBBACKUP_STORAGE = 'dbbackup.storage.dropbox_storage'
 DBBACKUP_TOKENS_FILEPATH = '/home/filo/dbtokens'

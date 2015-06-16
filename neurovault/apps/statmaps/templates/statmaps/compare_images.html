@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load coffeescript %}
 {% block head %}
+<title>{% block title %}NeuroVault: Image Comparison{% endblock %}</title>
 <script src="{% static "scripts/d3.v3.min.js" %}"></script>
 <script type="text/javascript"> 
 var addthis_config = {
@@ -22,6 +23,11 @@ var addthis_config = {
     {% endfor %}
  {% endautoescape %}
 
+<style>    
+       body {
+         font: 14px sans-serif;
+       }
+</style>
 <div style="width:90%; margin-left:42px; margin-top:30px">
     <h5>About</h5>
     <div class="well">

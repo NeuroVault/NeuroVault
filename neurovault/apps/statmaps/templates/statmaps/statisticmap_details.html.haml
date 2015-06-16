@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load coffeescript %}
 {% block includes %}
+<title>{% block title %}NeuroVault: {{image.name}}{% endblock %}</title>
 <script type="text/javascript" src="{% static "scripts/papaya.js"%}"/>
 {% endblock %}
 {% block head %}
@@ -20,7 +21,6 @@
                 $('#collection-tabs a:first').tab('show')
                 $("table[class*=image-details-datatable]").dataTable
                     sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
-                    sPaginationType: "bootstrap"
                     sAjaxSource: "/api/images/" + "{{ api_cid }}" + "/datatable/?format=json"
                     iDisplayLength: 10
 
@@ -55,10 +55,10 @@
                         %a{ href: "/images/tags/{{tag.name}}" }= tag.name
                         - if not forloop.last
 	                
-            %a.btn.btn-primary.btn-large{href: "pycortex" } 3D View
+            %a.btn.btn-primary.btn-lg{href: "pycortex" } 3D View
             - if image.nidm_results
                 .btn-group
-                    %a.btn.btn-primary.btn-large.dropdown-toggle{"data-toggle" => "dropdown", :href => "#"}
+                    %a.btn.btn-primary.btn-lg.dropdown-toggle{"data-toggle" => "dropdown", :href => "#"}
                         Downloads
                         %span.caret
                     %ul.dropdown-menu
@@ -79,15 +79,15 @@
                                 Provn File
                                 %span.muted [{{ provn_basename }}]
             - else
-                %a.btn.btn-primary.btn-large{href: "{{ image.file.url }}" } Download
-            %a.btn.btn-primary.btn-large{href: "http://neurosynth.org/decode/?neurovault={{ api_cid }}" } Decode with neurosynth
+                %a.btn.btn-primary.btn-lg{href: "{{ image.file.url }}" } Download
+            %a.btn.btn-primary.btn-lg{href: "http://neurosynth.org/decode/?neurovault={{ api_cid }}" } Decode with neurosynth
             - if comparison_is_possible
-                %a.btn.btn-primary.btn-large{href: "{% url 'find_similar' image.id %}" } Find similar
+                %a.btn.btn-primary.btn-lg{href: "{% url 'find_similar' image.id %}" } Find similar
             - if user_owns_image
-                %a.btn.btn-primary.btn-large{href: "{% url 'edit_image' image.id %}" } Edit details
+                %a.btn.btn-primary.btn-lg{href: "{% url 'edit_image' image.id %}" } Edit details
                 .float-right-wrapper
                     - if not image.nidm_results
-                        %a.btn.btn-danger.btn-large{href: "{% url 'delete_image' image.id %}", id: 'delete_image' } Delete
+                        %a.btn.btn-danger.btn-lg{href: "{% url 'delete_image' image.id %}", id: 'delete_image' } Delete
                         
         - if warning
             .alert.alert-danger

@@ -140,7 +140,21 @@ class Collection(models.Model):
             self.DOI = None
         if self.private_token is not None and self.private_token.strip() == "":
             self.private_token = None
+        
+        # run calculations when collection turns public
+        privacy_changed = False
+        if self.pk is not None:
+            old_object = Collection.objects.get(pk=self.pk)
+            old_is_private = old_object.private    
+            privacy_changed = old_is_private != self.private        
+                
         super(Collection, self).save()
+        
+        if privacy_changed and self.private == False:
+            for image in self.image_set.all():
+                if image.pk:
+                    generate_glassbrain_image.apply_async([image.pk])
+                    run_voxelwise_pearson_similarity.apply_async([image.pk])
 
     class Meta:
         app_label = 'statmaps'
