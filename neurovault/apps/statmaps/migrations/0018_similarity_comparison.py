@@ -3,6 +3,14 @@ from __future__ import unicode_literals
 
 from django.db import models, migrations
 
+def add_pearson_similarity(apps, schema_editor):
+    Similarity = apps.get_model("statmaps", "Similarity")
+    pearson_metric = Similarity(similarity_metric="pearson product-moment correlation coefficient",
+                                     transformation="voxelwise",
+                                     metric_ontology_iri="http://webprotege.stanford.edu/RCS8W76v1MfdvskPLiOdPaA",
+                                     transformation_ontology_iri="http://webprotege.stanford.edu/R87C6eFjEftkceScn1GblDL")
+    pearson_metric.save()
+
 
 class Migration(migrations.Migration):
 
@@ -50,4 +58,5 @@ class Migration(migrations.Migration):
             name='comparison',
             unique_together=set([('image1', 'image2')]),
         ),
+        migrations.RunPython(add_pearson_similarity),
     ]

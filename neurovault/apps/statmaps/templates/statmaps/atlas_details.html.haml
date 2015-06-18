@@ -2,6 +2,7 @@
 {% load coffeescript %}
 {% block includes %}
 <script type="text/javascript" src="{% static "scripts/papaya.js"%}"/>
+<title>{% block title %}NeuroVault: Atlas - {{image.name}}{% endblock %}</title>
 {% endblock %}
 {% block head %}
     :javascript
@@ -20,12 +21,10 @@
                 $('#collection-tabs a:first').tab('show')
                 $("table[class*=image-details-datatable]").dataTable
                     sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
-                    sPaginationType: "bootstrap"
                     sAjaxSource: "/api/images/" + "{{ api_cid }}" + "/datatable/?format=json"
                     iDisplayLength: 10
                 $("table[class*=image-regions-datatable]").dataTable
                     sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
-                    sPaginationType: "bootstrap"
                     sAjaxSource: "/api/atlases/" + "{{ api_cid }}" + "/regions_table/?format=json"
                     iDisplayLength: 25
 
@@ -55,13 +54,13 @@
 	                - for tag in image.tags.all
 	                    %a{ href: "/images/tags/{{tag.name}}" }= tag.name
 	                    - if not forloop.last
-            %a.btn.btn-primary.btn-large{href: "pycortex" } 3D View
-            %a.btn.btn-primary.btn-large{href: "{{ image.file.url }}" } Download
-            %a.btn.btn-primary.btn-large{href: "http://neurosynth.org/decode/?neurovault={{ api_cid }}" } Decode with neurosynth
+            %a.btn.btn-primary.btn-lg{href: "pycortex" } 3D View
+            %a.btn.btn-primary.btn-lg{href: "{{ image.file.url }}" } Download
+            %a.btn.btn-primary.btn-lg{href: "http://neurosynth.org/decode/?neurovault={{ api_cid }}" } Decode with neurosynth
             - if user_owns_image
-                %a.btn.btn-primary.btn-large{href: "{% url 'edit_image' image.id %}" } Edit details
+                %a.btn.btn-primary.btn-lg{href: "{% url 'edit_image' image.id %}" } Edit details
                 .float-right-wrapper
-                    %a.btn.btn-danger.btn-large{href: "{% url 'delete_image' image.id %}", id: 'delete_image' } Delete
+                    %a.btn.btn-danger.btn-lg{href: "{% url 'delete_image' image.id %}", id: 'delete_image' } Delete
 
         %ul#collection-tabs.nav.nav-tabs
             %li

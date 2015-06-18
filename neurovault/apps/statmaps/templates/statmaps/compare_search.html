@@ -1,11 +1,13 @@
 {% extends "base.html" %}
 {% load coffeescript %}
 {% block head %}
+<title>{% block title %}NeuroVault: Image Comparison{% endblock %}</title>
 <script type="text/javascript"> 
 var addthis_config = {
      data_track_clickback: false 
 } 
 </script>
+<script src="https://tunidesign.googlecode.com/files/jquery.prettyPhoto.min.js"></script>
 {% endblock %}
 {% block content %}
 
@@ -18,8 +20,9 @@ var addthis_config = {
 <script type="text/javascript"> 
 
 var portfolio_filter = document.getElementsByClassName("portfolio-filter")
-var li = document.createElement("li");
-var a = document.createElement("a");
+var count_li = document.createElement("li");
+var image_li = document.createElement("li");
+var count_a = document.createElement("a");
 var image_a = document.createElement("a");
 
 function setAttributes(el, attrs) {
@@ -28,19 +31,29 @@ function setAttributes(el, attrs) {
   }
 }
 
-setAttributes(a, {"class": "btn btn-warning", "disabled": "true"});
+setAttributes(count_a, {"class": "btn btn-warning", "disabled": "true"});
 setAttributes(image_a,{"style": "float:right; margin-right:40px; font-weight:800;", "href": "{{ image_url }}"});
 
-a.appendChild(document.createTextNode(["{{ images_processing }} images still processing"]));
+count_a.appendChild(document.createTextNode(["{{ images_processing }} images still processing"]));
 image_a.appendChild(document.createTextNode(["{{ image_title }}"]));
-li.appendChild(a)
-portfolio_filter[0].appendChild(li.appendChild(image_a));
+portfolio_filter[0].appendChild(count_li.appendChild(count_a));
+portfolio_filter[0].appendChild(image_li.appendChild(image_a));
 
 // change oranges to NeuroVault blue
 var text = document.getElementsByTagName("span")
 for (i = 0; i < text.length; i++) { 
   setAttributes(text[i],{"style":"color:#0088cc;"});
 }
+
+// Resize query image
+document.getElementsByClassName("query_image")[0].style.width = 1000/3 + "px"
+
 </script>
+
+<div style="width:100%; margin-top:30px">
+    <p><strong>About</p></strong>
+    <div class="well">
+    Whole-brain pearson correlations are calculated from a brain-masked, 4mm transformation of the original image with complete-case analysis, meaning only using voxels that are present in both images are used in the calculation.  Images that are tagged as "thresholded," meaning that the image has less than 25% of coverage for a standard brain mask, are not included in the comparison.</div>
+</div>
 
 {% endblock %}

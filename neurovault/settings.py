@@ -1,7 +1,9 @@
 # Django settings for neurovault project.
 import os
+import sys
 from datetime import timedelta
 import matplotlib
+import tempfile
 matplotlib.use('Agg')
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -150,7 +152,8 @@ INSTALLED_APPS = (
     'polymorphic',
     'djcelery',
     'django_cleanup',
-    'file_resubmit'
+    'file_resubmit',
+    'djrill'
 )
 
 # A sample logging configuration. The only tangible logging
@@ -212,6 +215,11 @@ REST_FRAMEWORK = {
     'DEFAULT_MODEL_SERIALIZER_CLASS':
         'rest_framework.serializers.HyperlinkedModelSerializer',
 
+    # LimitOffsetPagination will allow to set a ?limit= and ?offset= 
+    # variable in the URL.
+    'DEFAULT_PAGINATION_CLASS': 
+         'neurovault.apps.statmaps.urls.StandardResultPagination',
+
     # Use Django's standard `django.contrib.auth` permissions,
     # or allow read-only access for unauthenticated users.
     'DEFAULT_PERMISSION_CLASSES': [
@@ -230,7 +238,7 @@ CORS_ORIGIN_REGEX_WHITELIST = (
 #LOGIN_REDIRECT_URL = '/logged-in/'
 #LOGIN_ERROR_URL    = '/login-error/'
 
-CRISPY_TEMPLATE_PACK = 'bootstrap'
+CRISPY_TEMPLATE_PACK = 'bootstrap3'
 
 DBBACKUP_STORAGE = 'dbbackup.storage.dropbox_storage'
 DBBACKUP_TOKENS_FILEPATH = '/home/filo/dbtokens'
@@ -251,12 +259,6 @@ PRIVATE_MEDIA_REDIRECT_HEADER = 'X-Accel-Redirect'
 
 PYCORTEX_DATASTORE = os.path.join(BASE_DIR,'pycortex_data')
 
-# Pycortex static data is deployed by collectstatic at build time.
-STATICFILES_DIRS = (
-    ('pycortex-resources', '/path/to/pycortex/cortex/webgl/resources'),
-    ('pycortex-ctmcache', os.path.join(PYCORTEX_DATASTORE,'db/fsaverage/cache')),
-)
-
 CACHES = {
             'default': {
                 'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -266,7 +268,10 @@ CACHES = {
                 "LOCATION": '/tmp/file_resubmit/'
             }
           }
-
+          
+# Mandrill config
+MANDRILL_API_KEY = "z2O_vfFUJB4L2yeF4Be9Tg" # this is a test key replace wit ha different one in production
+EMAIL_BACKEND = "djrill.mail.backends.djrill.DjrillBackend"
 
 # Bogus secret key.
 try:
@@ -303,3 +308,9 @@ CELERY_RESULT_SERIALIZER = 'json'
 #}
 # or manage periodic schedule in django admin
 #CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
+
+if "test" in sys.argv:
+    test_media_root = os.path.join(tempfile.mkdtemp(prefix="neurovault_test_"))
+    PRIVATE_MEDIA_ROOT = test_media_root
+    CELERY_ALWAYS_EAGER = True
+    CELERY_EAGER_PROPAGATES_EXCEPTIONS = True

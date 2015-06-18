@@ -1,21 +1,80 @@
 body {
-	background: url('/static/images/denim.png');
+    background: url('/static/images/denim.png');
 }
 
 #main {
 	background: white;
-	border-left: 1px solid #666;
-	border-right: 1px solid #666;
-	border-bottom: 1px solid #999;
+	/* border-left: 1px solid #666; */
+	/* border-right: 1px solid #666; */
+	/* border-bottom: 1px solid #999; */
 	margin: 0 auto
 	margin-bottom: 30px
 	float: none
+;
+	border-radius: 0px 0px 6px 6px;
 }
 
 #content {
-	padding: 20px;
+	padding: 30px 20px 30px 20px;
+        margin-right: 20px;
+        margin-left: 20px;
 }
 
+#navigation {
+       margin-bottom:0px; 
+       padding-right:10px; 
+       padding-left:10px;
+       width:1200px;
+       border-radius: 6px 6px 0px 0px;
+}
+
+.navbar-default .navbar-brand:hover, .navbar-default .navbar-brand:focus {
+  color: #333;
+  background-color: transparent;
+}
+
+.navigation-container {
+      padding-left:0px; 
+      /* background:white; */
+      /* margin-bottom: 20px; */
+      /* margin-top: 20px; */
+      /* border-radius: 6px 6px 0px 0px; */
+}
+
+#footer.a:hover {
+    color: #CCC;
+}
+
+.container {
+    width:1200px;
+
+}
+
+.navbar-default .navbar-brand {
+  color: #fff;
+}
+
+.navbar-brand {
+       font-size: 20px;
+       font-weight: 200;
+       color: #fff;
+}
+
+.navbar {
+	background: #337ab7;
+	border-color: #337ab7;
+}
+
+
+
+.navbar-default .navbar-nav > li > a {
+  color: #fff;
+}
+
+.navbar-nav {
+	color:#fff
+
+}
 
 .bigtext {
 	font-size: 16px;
@@ -23,7 +82,7 @@ body {
 
 .massive {
 	font-size: 80px;
-	padding: 0px 0px 20px 0px;
+	padding: 70px 0px 50px 0px;
 	line-height: 1em;
 	font-family: "HelveticaNeue-Light", Helvetica, Arial, sans-serif;
 	text-align: center;
@@ -47,15 +106,15 @@ body {
 }
 
 .third {
-	width: 260px;
+	width: 33%;
 }
 
 .two-thirds {
-	width: 570px;
+	width: 66%;
 }
 
 .half {
-	width: 415px;
+	width: 50%;
 }
 
 .middle {
@@ -67,7 +126,7 @@ body {
 	font-size: 20px;
 	font-family: "HelveticaNeue-Light", Helvetica, Arial, sans-serif;
 	line-height: 1.3em;
-	padding: 0px 15px 0px 35px;
+	padding: 20px 15px 20px 35px;
 }
 
 .benefit-list li {
@@ -97,6 +156,11 @@ body {
 ul.nav-tabs li {
 	font-size: 16px;
 	font-family: "HelveticaNeue-Light", Helvetica, Arial, sans-serif;
+}
+
+.tab-content {
+    padding-top: 10px;
+    padding-bottom: 5px;
 }
 
 .image-form {
@@ -129,11 +193,12 @@ ul.collection_nav li {
 	font-size: 32px;
 	padding: 20px;
 	background-color: rgba(245, 245, 245, 0.52);
+	line-height:32px;
+	word-break: break-word;
 }
 
 .form-horizontal .controls {
-	margin-right: 45px;
-	margin-top: 8px;
+    margin: 10px 10px 10px 0px;
 }
 
 #collection_hldr {
@@ -141,4 +206,8 @@ ul.collection_nav li {
     margin-bottom: 12px;
     overflow-y:auto;
     overflow-x: hidden;
+}
+
+.radio {
+    padding-left:20px;
 }

@@ -59,7 +59,7 @@ cloneMore = function (selector, type, imgtype) {
     newElement.append($(this).clone(true));
   });
 
-  newElement.find('div.control-group').each(function(n,n_ele) {
+  newElement.find('div.form-group').each(function(n,n_ele) {
     rname = $(this).attr('id').replace('div_id_','');
     name = type + '_set-' + (total) + '-' + rname;
     $(n_ele).attr('id', $(this).attr('id').replace(rname,name));
@@ -68,8 +68,10 @@ cloneMore = function (selector, type, imgtype) {
     });
     $.each(['input','select','textarea'], function(i, etype) {
       $(n_ele).find(etype).each(function(n,ele) {
-        $(ele).attr('id', $(ele).attr('id').replace(rname,name));
-        $(ele).attr('name', $(ele).attr('name').replace(rname,name));
+      	if ($(ele).attr('id')){
+          $(ele).attr('id', $(ele).attr('id').replace(rname,name));
+          $(ele).attr('name', $(ele).attr('name').replace(rname,name));
+      	}
       });
     });
   });
@@ -95,8 +97,8 @@ formIsClean = function(sele) {
   if(typeof sele === "undefined") {
     sele = '.image-form';
   }
-  if($(sele).find('div.errors').length === 0 && 
-        $(sele).find('div.error').length === 0 &&
+  if($(sele).find('div.has-errors').length === 0 && 
+        $(sele).find('div.has-error').length === 0 &&
         $(sele).find('div.alert-error').length === 0) {
     return true;
   } else {
@@ -113,8 +115,7 @@ $(document).ready(function() {
 
   $('#submit-form').click(function(e) {
     e.preventDefault();
-    ret = $('#formset').submit();
-    
+    ret = $('#formset').submit()
     $('.image-form').each(function(ele) {
 	    if(!formIsClean('.image-form#' + $(this).attr('id'))) {
 	    	$($('#showform-' + $(this).attr('id')).children()[0]).css('color', '#b94a48')

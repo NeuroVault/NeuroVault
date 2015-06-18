@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load coffeescript %}
+{% block content %}
+<title>{% block title %}NeuroVault: API Documentation{% endblock %}</title>
+
+<style>
+
+.indented {
+  margin-left: 30px;
+}
+
+.apibar {
+ margin-top: 5px;
+}
+
+</style>
+
+        <div class="row">
+            <div class = "col-lg-13">
+            <img class="img-responsive" src="http://placehold.it/1200x75&text=API+Documentation" alt="">
+           </div>
+         </div>
+
+        <div class="row apibar">
+        <a href="#collapseAtlas" data-toggle="collapse" aria-expanded="false" aria-controls="collapseAtlas">
+        <img class="img-responsive" src="http://placehold.it/1200x75/0088cc/ffffff&text=Atlases" alt=""></a>
+        <div class="collapse in" id="collapseAtlas">
+        <div class="well">
+           
+        <!--Atlases-->
+        <h4>Atlases:</h4>
+        <h5>/api/atlases/</h5>
+        <p class="indented">Returns a json file containing a list of dictionaries with information corresponding to each atlas stored in NeuroVault.</p>
+        <p class="indented"> example: <a href='http://neurovault.org/api/atlases/'>neurovault.org/api/atlases/</a></p>
+        <h5> /api/atlases/{pk}/</h5>
+        <p class="indented"> Returns a json file containing a dictionary with information corresponding to the particular atlas specified by the pk value.</p>
+        <p class="indented"> example: <a href='http://neurovault.org/api/atlases/1557'>neurovault.org/api/atlases/1557</a></p>
+        <h5> /api/atlases/atlas_query_region/</h5>
+        <p class="indented"> Searches atlas for specified region and related synonyms. If no matches are found, it will search the <a href='http://obofoundry.org/cgi-bin/detail.cgi?id=NIF_GrossAnatomy'>NIF ontology</a> recursively for children of the specified region that are found in the atlas. If no matches are found, it will search recursively for parents that are found in the atlas. Returns a json file containing a dictionary of a list of three lists, corresponding to the X, Y and Z coordinates, respectively, of the matching voxels. Coordinates are in mm in MNI space.</p>
+        <p class="indented"> Parameters: region, collection, atlas</p>
+        <p class="indented"> example: <a href='http://neurovault.org/api/atlases/atlas_query_region/?region=middle%20frontal%20gyrus&collection=Harvard-Oxford%20cortical%20and%20subcortical%20structural%20atlases&atlas=HarvardOxford%20cort%20maxprob%20thr25%201mm'>neurovault.org/api/atlases/atlas_query_region/?region=middle frontal gyrus&collection=Harvard-Oxford cortical and subcortical structural atlases&atlas=HarvardOxford cort maxprob thr25 1mm</a></p>
+        <h5> /api/atlases/atlas_query_voxel/</h5>
+        <p class="indented"> Returns a json file containing the region name that matches the specified coordinates in the specified atlas. Coordinates are in mm in MNI space.</p>
+        <p class="indented"> Parameters: x, y, z, collection, atlas</p>
+        <p class="indented"> example: <a href='http://neurovault.org/api/atlases/atlas_query_voxel/?x=30&y=30&z=30&collection=Harvard-Oxford cortical and subcortical structural atlases&atlas=HarvardOxford cort maxprob thr25 1mm'>neurovault.org/api/atlases/atlas_query_voxel/?x=30&y=30&z=30&collection=Harvard-Oxford cortical and subcortical structural atlases&atlas=HarvardOxford cort maxprob thr25 1mm</a></p>
+        </div>
+        </div>
+        </div>
+      
+<div class="row apibar">
+        <a href="#collapseCollections" data-toggle="collapse" aria-expanded="false" aria-controls="collapseCollections">
+        <img class="img-responsive" src="http://placehold.it/1200x75/0088cc/ffffff&text=Collections" alt="">
+        </a>
+        <div class="collapse in" id="collapseCollections">
+        <div class="well">
+        <h4> Collections: </h4>
+        <h5> /api/collections/</h5>
+        <p class="indented"> Returns a json file containing a list of dictionaries with information corresponding to each collection stored in NeuroVault.  Results can be filtered by specifying the name, DOI or owner of the collection.</p>
+        <p class="indented"> Parameters: name, DOI, owner</p>
+        <p class="indented"> example: <a href='http://neurovault.org/api/collections/?DOI=10.1016/j.neurobiolaging.2012.11.002'>neurovault.org/api/collections/?DOI=10.1016/j.neurobiolaging.2012.11.002</a></p>
+        <h5> /api/collections/{pk}/</h5>
+        <p class="indented"> Returns a json file containing a dictionary with information corresponding to the particular collection specified by the pk value.</p>
+        <p class="indented"> example: <a href='http://neurovault.org/api/collections/287'>neurovault.org/api/collections/20</a></p>
+        <h5> /api/collections/{pk}/images</h5>
+        <p class="indented"> Returns a json file containing a dictionary of all images from the collection specified by the pk value.</p>
+        <p class="indented"> example: <a href='http://neurovault.org/api/collections/287/images'>neurovault.org/api/collections/20/images</a></p>
+        </div>            
+        </div>
+</div>
+
+<div class="row apibar">
+        <a href="#collapseImages" data-toggle="collapse" aria-expanded="false" aria-controls="collapseImages">
+        <img class="img-responsive" src="http://placehold.it/1200x75/0088cc/ffffff&text=Images" alt=""></a>
+        <div class="collapse in" id="collapseImages">
+        <div class="well">
+        <h4> Images: </h4>
+
+        <h5> /api/images/</h5>
+        <p class="indented"> Returns a json file containing a list of dictionaries with information corresponding to each image stored in NeuroVault.</p>
+        <p class="indented"> example: <a href='http://neurovault.org/api/images/'>neurovault.org/api/images/</a></p>
+        <h5> /api/images/{pk}/</h5>
+        <p class="indented"> Returns a json file containing a dictionary with information corresponding to the particular atlas specified by the pk value.</p>
+        <p class="indented"> example: <a href='http://neurovault.org/api/images/1266'>neurovault.org/api/images/1203</a></p>
+        </div>
+        </div>
+</div>
+
+<div class="row apibar" style="margin-bottom: 20px">
+        <a href="#collapseNIDM" data-toggle="collapse" aria-expanded="false" aria-controls="collapseNIDM">
+        <img class="img-responsive" src="http://placehold.it/1200x75/0088cc/ffffff&text=NIDM-Results" alt="">
+        </a>
+        <div class="collapse in" id="collapseNIDM">
+        <div class="well">
+       
+        <h4> NIDM Results:</h4> 
+ 
+        <h5> /api/nidm_results/</h>
+        <p class="indented"> Returns a json file containing a list of dictionaries with information corresponding to each nidm_results stored in NeuroVault.</p>
+        <p class="indented"> example: <a href='http://neurovault.org/api/nidm_results'>neurovault.org/api/nidm_results</a></p>
+        </div>
+        </div>
+        </div>
+
+
+{% endblock %}

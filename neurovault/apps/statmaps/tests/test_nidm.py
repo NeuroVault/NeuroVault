@@ -6,6 +6,7 @@ import shutil
 from django.core.files.uploadedfile import SimpleUploadedFile
 from neurovault.apps.statmaps.nidm_results import NIDMUpload
 from neurovault.apps.statmaps.forms import NIDMResultsForm
+from .utils import clearDB
 
 
 class NIDMResultsTest(TestCase):
@@ -50,6 +51,7 @@ class NIDMResultsTest(TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
+        clearDB()
 
     def testParseNIDMZip(self):
         contrasts = {}

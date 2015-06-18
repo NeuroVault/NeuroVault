@@ -333,7 +333,7 @@ class OwnerCollectionForm(CollectionForm):
 
 
 class ImageForm(ModelForm):
-    hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)')
+    hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)', widget=AdminResubmitFileWidget)
     
     def __init__(self, *args, **kwargs):
         super(ImageForm, self).__init__(*args, **kwargs)
@@ -346,25 +346,36 @@ class ImageForm(ModelForm):
     class Meta:
         model = Image
         exclude = []
+        widgets = {
+            'file': AdminResubmitFileWidget,
+            'hdr_file': AdminResubmitFileWidget,
+        }
 
     def clean(self, **kwargs):
         cleaned_data = super(ImageForm, self).clean()
         file = cleaned_data.get("file")
 
         if file:
-            # check extension of the data filr
+            # check extension of the data file
             _, fname, ext = split_filename(file.name)
             if not ext.lower() in [".nii.gz", ".nii", ".img"]:
                 self._errors["file"] = self.error_class(["Doesn't have proper extension"])
                 del cleaned_data["file"]
                 return cleaned_data
 
+            # prepare file to loading into memory
+            file.open()
+            if file.name.lower().endswith(".gz"):
+                fileobj = GzipFile(filename=file.name, mode='rb', fileobj=file.file)
+            else:
+                fileobj=file.file
+            
+            file_map = {'image': nb.FileHolder(file.name, fileobj)}
             try:
                 tmp_dir = tempfile.mkdtemp()
                 if ext.lower() == ".img":
                     hdr_file = cleaned_data.get('hdr_file')
                     if hdr_file:
-
                         # check extension of the hdr file
                         _, _, hdr_ext = split_filename(hdr_file.name)
                         if not hdr_ext.lower() in [".hdr"]:
@@ -373,23 +384,23 @@ class ImageForm(ModelForm):
                             del cleaned_data["hdr_file"]
                             return cleaned_data
                         else:
-                            # write the header file to a temporary directory
-                            hf = open(os.path.join(tmp_dir, fname + ".hdr"), "wb")
-                            hf.write(hdr_file.file.read())
-                            hf.close()
+                            hdr_file.open()
+                            file_map["header"] = nb.FileHolder(hdr_file.name, hdr_file.file)
                     else:
-                        self._errors["hdr_file"] = self.error_class([".img files require .hdr"])
+                        self._errors["hdr_file"] = self.error_class(
+                                [".img file requires .hdr file"])
                         del cleaned_data["hdr_file"]
                         return cleaned_data
 
-                # prepare file to loading into memory
-                file.open()
-                gzfileobj = GzipFile(filename=file.name, mode='rb', fileobj=file.file)
-
                 # check if it is really nifti
                 try:
-                    nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(file.name, gzfileobj)})
+                    print file_map
+                    if "header" in file_map:
+                        nii = nb.Nifti1Pair.from_file_map(file_map)
+                    else:
+                        nii = nb.Nifti1Image.from_file_map(file_map)
                 except Exception as e:
+                    raise
                     self._errors["file"] = self.error_class([str(e)])
                     del cleaned_data["file"]
                     return cleaned_data
@@ -439,12 +450,17 @@ class ImageForm(ModelForm):
         return cleaned_data
 
 class StatisticMapForm(ImageForm):
+    
+    def __init__(self, *args, **kwargs):
+        super(StatisticMapForm, self).__init__(*args, **kwargs)
+        self.helper.form_tag = False
+        self.helper.add_input(Submit('submit', 'Submit'))
             
     def clean(self, **kwargs):
         cleaned_data = super(StatisticMapForm, self).clean()
         django_file = cleaned_data.get("file")
 
-        if django_file:
+        if django_file and "file" not in self._errors and "hdr_file" not in self._errors:
             django_file.open()
             gzfileobj = GzipFile(filename=django_file.name, mode='rb', fileobj=django_file.file)
             nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(django_file.name, gzfileobj)})
@@ -453,11 +469,15 @@ class StatisticMapForm(ImageForm):
             
             if cleaned_data["is_thresholded"] and not cleaned_data.get("ignore_file_warning"):
                 self._errors["file"] = self.error_class(["This map seems to be thresholded (%.4g%% of voxels are zeros). Please use an unthresholded version of the map if possible."%(cleaned_data["perc_bad_voxels"])])
+                if cleaned_data.get("hdr_file"):
+                    self._errors["hdr_file"] = self.error_class(["This map seems to be thresholded (%.4g%% of voxels are zeros). Please use an unthresholded version of the map if possible."%(cleaned_data["perc_bad_voxels"])])
                 self.fields["ignore_file_warning"].widget = forms.CheckboxInput()
             else:
                 cleaned_data["not_mni"], cleaned_data["brain_coverage"], cleaned_data["perc_voxels_outside"] = not_in_mni(nii)
                 if cleaned_data["not_mni"] and not cleaned_data.get("ignore_file_warning"):
-                    self._errors["file"] = self.error_class(["This map seems not to be in the MNI space (%.4g%% of meaningful voxels are outside of the brain). Please use transform your dat to MNI space."%(cleaned_data["perc_voxels_outside"])])
+                    self._errors["file"] = self.error_class(["This map seems not to be in the MNI space (%.4g%% of meaningful voxels are outside of the brain). Please use transform your data to MNI space."%(cleaned_data["perc_voxels_outside"])])
+                    if cleaned_data.get("hdr_file"):
+                        self._errors["hdr_file"] = self.error_class(["This map seems not to be in the MNI space (%.4g%% of meaningful voxels are outside of the brain). Please use transform your data to MNI space."%(cleaned_data["perc_voxels_outside"])])
                     self.fields["ignore_file_warning"].widget = forms.CheckboxInput()
 
         return cleaned_data
@@ -490,6 +510,10 @@ class AtlasForm(ImageForm):
 class PolymorphicImageForm(ImageForm):
     def __init__(self, *args, **kwargs):
         super(PolymorphicImageForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-lg-2' 
+        self.helper.field_class = 'col-lg-8'
         if self.instance.polymorphic_ctype is not None:
             if self.instance.polymorphic_ctype.model == 'atlas':
                 self.fields = AtlasForm.base_fields
@@ -498,14 +522,15 @@ class PolymorphicImageForm(ImageForm):
                                                          instance=self.instance).fields
             else:
                 self.fields = StatisticMapForm.base_fields
-    
+     
+
     def clean(self, **kwargs):
         if "label_description_file" in self.fields.keys():
             use_form = AtlasForm
         elif "map_type" in self.fields.keys():
             use_form = StatisticMapForm
         else:
-            use_form = ImageForm
+            raise Exception("unknown image type! %s"%str(self.fields.keys()))
             
         new_instance = use_form(self) 
         new_instance.cleaned_data = self.cleaned_data
@@ -516,19 +541,36 @@ class PolymorphicImageForm(ImageForm):
 
 class EditStatisticMapForm(StatisticMapForm):
 
-    def __init__(self, user, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
+        user = kwargs['user']
+        del kwargs['user']
         super(EditStatisticMapForm, self).__init__(*args, **kwargs)
-        self.helper.form_tag = False
-        self.helper.add_input(Submit('submit', 'Submit'))
+        if user.is_superuser:
+            self.fields['collection'].queryset = Collection.objects.all()
+        else:
+            self.fields['collection'].queryset = Collection.objects.filter(owner=user)
+            
+class AddStatisticMapForm(StatisticMapForm):
+
+    class Meta(StatisticMapForm.Meta):
+        fields = ('name', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas', 'contrast_definition', 'figure',
+                  'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
+                  'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels')
+            
 
 
 class EditAtlasForm(AtlasForm):
 
-    def __init__(self, user, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
+        user = kwargs['user']
+        del kwargs['user']
         super(EditAtlasForm, self).__init__(*args, **kwargs)
         self.helper.form_tag = True
         self.helper.add_input(Submit('submit', 'Submit'))
-        self.fields['collection'].queryset = Collection.objects.filter(owner=user)
+        if user.is_superuser:
+            self.fields['collection'].queryset = Collection.objects.all()
+        else:
+            self.fields['collection'].queryset = Collection.objects.filter(owner=user)
 
     class Meta(AtlasForm.Meta):
         exclude = ()

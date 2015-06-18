@@ -1,29 +1,31 @@
+from neurovault.apps.statmaps.voxel_query_functions import voxelToRegion, getSynonyms, toAtlas, getAtlasVoxels
+from rest_framework.relations import StringRelatedField, PrimaryKeyRelatedField
+from neurovault.apps.statmaps.models import Image, Collection, StatisticMap,\
+    Atlas, NIDMResults, NIDMResultStatisticMap, CognitiveAtlasTask
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from neurovault.apps.statmaps.urls import StandardResultPagination
+from rest_framework.filters import DjangoFilterBackend
 from django.conf.urls import patterns, include, url
+from django.conf.urls.static import static
 from django.conf import settings
 from django.contrib import admin
-from neurovault.apps.statmaps.models import Image, Collection, StatisticMap,\
-    Atlas, NIDMResults, NIDMResultStatisticMap
-from django.contrib.staticfiles.urls import staticfiles_urlpatterns
-from django.conf.urls.static import static
-from rest_framework.filters import DjangoFilterBackend
 from lxml.etree import xmlfile
-from rest_framework.relations import StringRelatedField
 admin.autodiscover()
-from django.contrib.auth.models import User, Group
 from rest_framework import viewsets, routers, serializers, mixins, generics
+from neurovault.apps.statmaps.views import get_image,get_collection
 from rest_framework.decorators import detail_route, list_route
+from django.contrib.auth.models import User, Group
+from rest_framework.renderers import JSONRenderer
+from django.http import Http404, HttpResponse
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from taggit.models import Tag
-from django.http import Http404, HttpResponse
-from rest_framework.renderers import JSONRenderer
-from neurovault.apps.statmaps.views import get_image,get_collection
-import re
 import xml.etree.ElementTree as ET
+from taggit.models import Tag
+import cPickle as pickle
 import urllib2
 import os
-import cPickle as pickle
-from neurovault.apps.statmaps.voxel_query_functions import voxelToRegion, getSynonyms, toAtlas, getAtlasVoxels
+import re
+
 
 from django import template
 template.add_to_builtins('django.templatetags.future')
@@ -135,6 +137,7 @@ class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
     collection = HyperlinkedRelatedURL(read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
     cognitive_paradigm_cogatlas = StringRelatedField(read_only=True)
+    cognitive_paradigm_cogatlas_id = PrimaryKeyRelatedField(read_only=True, source="cognitive_paradigm_cogatlas")
 
     class Meta:
         model = StatisticMap
@@ -184,7 +187,7 @@ class CollectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Collection
-        exclude = ['private_token', 'private']
+        exclude = ['private_token', 'private','images','nidm_results']
 
 
 class ImageViewSet(mixins.RetrieveModelMixin,
@@ -336,6 +339,16 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
         if data and 'description' in data and data['description']:
             data['description'] = data['description'].replace('\n', '<br />')
         return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date', 'images'])
+
+    @detail_route()
+    def images(self, request, pk=None):
+        collection = get_collection(pk,request,mode='api')
+        queryset = Image.objects.filter(collection=collection)
+        paginator = StandardResultPagination()
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = ImageSerializer(page, context={'request': request}, many=True)
+        return paginator.get_paginated_response(serializer.data)
+        
 
     def retrieve(self, request, pk=None):
         collection = get_collection(pk,request,mode='api')

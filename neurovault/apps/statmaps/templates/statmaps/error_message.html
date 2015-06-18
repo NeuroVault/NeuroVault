@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load coffeescript %}
+{% block head %}
+<title>{% block title %}NeuroVault: a new home for all brain statistical maps!{% endblock %}</title>
+<script type="text/javascript"> 
+var addthis_config = {
+     data_track_clickback: false 
+} 
+</script>
+{% endblock %}
+{% block content %}
+
+<div style="width:90%; margin-left:42px; margin-top:30px">
+<div class="alert alert-danger" role="alert" style="width:90%; margin-top:30px">
+{{ error_message }}
+</div>
+{% endblock %}
+
+

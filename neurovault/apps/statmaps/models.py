@@ -1,31 +1,32 @@
 # -*- coding: utf-8 -*-
-
-from django.contrib.auth.models import User
-from django.core.urlresolvers import reverse
-from django.db import models
-from neurovault.apps.statmaps.storage import NiftiGzStorage, NIDMStorage
-
-from taggit.managers import TaggableManager
+from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, generate_glassbrain_image
+from neurovault.apps.statmaps.storage import NiftiGzStorage, NIDMStorage,\
+    OverwriteStorage, NeuroVaultStorage
+from polymorphic.polymorphic_model import PolymorphicModel
+from django.db.models.signals import post_delete, pre_delete
 from taggit.models import GenericTaggedItemBase, TagBase
-from xml import etree
-from datetime import datetime
-import os
-import urllib2
+from django.core.exceptions import ValidationError
+from django.dispatch.dispatcher import receiver
+from django.core.urlresolvers import reverse
+from taggit.managers import TaggableManager
+from django.contrib.auth.models import User
+from django.db.models import Q, DO_NOTHING
 from dirtyfields import DirtyFieldsMixin
 from django.core.files import File
-import nibabel as nb
-from django.core.exceptions import ValidationError
 from neurovault import settings
-from polymorphic.polymorphic_model import PolymorphicModel
-from django.db.models import Q
-from django.db.models.signals import post_delete
-from django.dispatch.dispatcher import receiver
-import shutil
-from neurovault.apps.statmaps.tasks import generate_glassbrain_image, save_voxelwise_pearson_similarity
-from django import forms
+from datetime import datetime
+from django.db import models
 from gzip import GzipFile
+from django import forms
+from xml import etree
+import nibabel as nb
+import neurovault
+import urllib2
+import shutil
+import os
+from neurovault.settings import PRIVATE_MEDIA_ROOT
+from django.db.models.fields.files import FileField, FieldFile
 from django.core.validators import MaxValueValidator, MinValueValidator
-
 
 class Collection(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of collection")
@@ -140,12 +141,39 @@ class Collection(models.Model):
             self.DOI = None
         if self.private_token is not None and self.private_token.strip() == "":
             self.private_token = None
+        
+        # run calculations when collection turns public
+        privacy_changed = False
+        if self.pk is not None:
+            old_object = Collection.objects.get(pk=self.pk)
+            old_is_private = old_object.private    
+            privacy_changed = old_is_private != self.private        
+                
         super(Collection, self).save()
+        
+        if privacy_changed and self.private == False:
+            for image in self.image_set.all():
+                if image.pk:
+                    generate_glassbrain_image.apply_async([image.pk])
+                    run_voxelwise_pearson_similarity.apply_async([image.pk])
 
     class Meta:
         app_label = 'statmaps'
         
+    def delete(self, using=None):
+        cid = self.pk
+        for image in self.image_set.all():
+            image.delete()
+        ret = models.Model.delete(self, using=using)
+        collDir = os.path.join(PRIVATE_MEDIA_ROOT, 'images',str(cid))
+        try:
+            shutil.rmtree(collDir)
+        except OSError: 
+            print 'Image directory for collection %s does not exist' %cid
         
+        return ret
+        
+         
 class CognitiveAtlasTask(models.Model):
     name = models.CharField(max_length=200, null=False, blank=False)
     cog_atlas_id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
@@ -191,7 +219,6 @@ def upload_img_to(instance, filename):
     if hasattr(instance,'polymorphic_ctype') and instance.polymorphic_ctype.model in nidm_types:
         return upload_nidm_to(instance.nidm_results,filename)
     return os.path.join('images',str(instance.collection.id), filename)
-
 
 upload_to = upload_img_to  # for migration backwards compat.
 
@@ -251,7 +278,15 @@ class BaseCollectionItem(models.Model):
 class Image(PolymorphicModel, BaseCollectionItem):
     file = models.FileField(upload_to=upload_img_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='File with the unthresholded map (.img, .nii, .nii.gz)')
     figure = models.CharField(help_text="Which figure in the corresponding paper was this map displayed in?", verbose_name="Corresponding figure", max_length=200, null=True, blank=True)
-
+    thumbnail = models.FileField(help_text="The orthogonal view thumbnail path of the nifti image",
+                                 null=True, blank=True, upload_to=upload_img_to,
+                                 verbose_name='Image orthogonal view thumbnail 2D bitmap',
+                                 storage=NiftiGzStorage())
+    reduced_representation = models.FileField(help_text=("Binary file with the vector of in brain values resampled to lower resolution"),
+                                              verbose_name="Reduced representation of the image",
+                                              null=True, blank=True, upload_to=upload_img_to,
+                                              storage=OverwriteStorage())
+    
     def get_absolute_url(self):
         return_args = [str(self.id)]
         url_name = 'image_details'
@@ -259,6 +294,13 @@ class Image(PolymorphicModel, BaseCollectionItem):
             return_args.insert(0,str(self.collection.private_token))
             url_name = 'private_image_details'
         return reverse(url_name, args=return_args)
+
+    def get_thumbnail_url(self):
+        try:
+            url =  self.thumbnail.url
+        except ValueError:
+            url = os.path.abspath(os.path.join("/static","images","glass_brain_empty.jpg"))
+        return url         
 
     @classmethod
     def create(cls, my_file, my_file_name, my_name, my_desc, my_collection_pk, my_map_type):
@@ -292,26 +334,40 @@ class Image(PolymorphicModel, BaseCollectionItem):
 
         return image
 
-    # Celery task to (re)generate glass brain image and image comparisons
+    # Celery task to generate glass brain image on new/update
     def save(self):
         file_changed = False
+        collection_changed = False
         if self.pk is not None:
-            existing = Image.objects.get(pk=self.pk)
-            if existing.file != self.file:
+            old_pk = Image.objects.get(pk=self.pk)
+            if old_pk.file != self.file:
                 file_changed = True
-        do_update = True if file_changed or self.pk is None else False
-
+            if old_pk.collection != self.collection:
+                collection_changed = True
+                
+        do_update = True if file_changed else False
+        new_image = True if self.pk is None else False
         super(Image, self).save()
-        if do_update and self.collection and self.collection.private == False:
+
+        if (do_update or new_image) and self.collection and self.collection.private == False:
+            # Generate glass brain image
             generate_glassbrain_image.apply_async([self.pk])
-
-            imgs = Image.objects.filter(collection__private=False).exclude(pk=self.pk)
-            comp_qs = imgs.exclude(polymorphic_ctype__model__in=['image','atlas']).order_by('id')
-            for comp_img in comp_qs:
-                iargs = sorted([comp_img.pk,self.pk])
-                print "Calculating pearson similarity for images %s and %s" % (iargs[0],iargs[1])
-                save_voxelwise_pearson_similarity.apply_async(iargs)
-
+        
+        if collection_changed:
+            for field_name in self._meta.get_all_field_names():
+                field_instance = getattr(self, field_name)
+                if field_instance and isinstance(field_instance, FieldFile):
+                    old_path = field_instance.path
+                    new_name = upload_img_to(self, field_instance.name.split("/")[-1])
+                    new_name = field_instance.storage.get_available_name(new_name)
+                    new_path = field_instance.storage.path(new_name)
+                    if not os.path.exists(os.path.dirname(new_path)):
+                        os.mkdir(os.path.dirname(new_path))
+                    shutil.copy(old_path, new_path)
+                    field_instance.name = new_name
+                    assert(old_path != new_path)
+                    os.remove(old_path)
+            super(Image, self).save()
 
 class BaseStatisticMap(Image):
     Z = 'Z'
@@ -332,6 +388,7 @@ class BaseStatisticMap(Image):
                     help_text=("Type of statistic that is the basis of the inference"),
                     verbose_name="Map type",
                     max_length=200, null=False, blank=False, choices=MAP_TYPE_CHOICES)
+    
     is_thresholded = models.NullBooleanField(null=True, blank=True)
     perc_bad_voxels = models.FloatField(null=True, blank=True)
     not_mni = models.NullBooleanField(null=True, blank=True)
@@ -354,7 +411,32 @@ class BaseStatisticMap(Image):
             nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(self.file.name, gzfileobj)})
             self.not_mni, self.brain_coverage, self.perc_voxels_outside = nvutils.not_in_mni(nii)
 
+        # Calculation of image reduced_representation and comparisons        
+        file_changed = False
+        if self.pk is not None:
+            existing = Image.objects.get(pk=self.pk)
+            if existing.file != self.file:
+                file_changed = True
+        do_update = True if file_changed else False
+        new_image = True if self.pk is None else False
+
+        # If we have an update, delete old pkl and comparisons first before saving
+        if do_update and self.collection:
+            if self.reduced_representation: # not applicable for private collections 
+                self.reduced_representation.delete()
+                
+                # If more than one metric is added to NeuroVault, this must also filter based on metric
+                comparisons = Comparison.objects.filter(Q(image1=self) | Q(image2=self))
+                if comparisons: 
+                    comparisons.delete()
         super(BaseStatisticMap, self).save()
+
+        # Calculate comparisons if private collection, update or save, not thresholded
+        if (do_update or new_image) and self.collection and self.collection.private == False:
+            if self.is_thresholded == False:
+                # Default resample_dim is 4mm
+                run_voxelwise_pearson_similarity.apply_async([self.pk]) 
+
 
     class Meta:
         abstract = True
@@ -394,7 +476,6 @@ class StatisticMap(BaseStatisticMap):
     contrast_definition = models.CharField(help_text="Exactly what terms are subtracted from what? Define these in terms of task or stimulus conditions (e.g., 'one-back task with objects versus zero-back task with objects') instead of underlying psychological concepts (e.g., 'working memory').", verbose_name="Contrast definition", max_length=200, null=True, blank=True)
     contrast_definition_cogatlas = models.CharField(help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast", verbose_name="Cognitive Atlas definition", max_length=200, null=True, blank=True)
     cognitive_paradigm_cogatlas = models.ForeignKey(CognitiveAtlasTask, help_text="Task (or lack of it) performed by the subjects in the scanner described using <a href='http://www.cognitiveatlas.org/' target='_blank'>Cognitive Atlas</a> terms", verbose_name="Cognitive Paradigm", null=True, blank=False)
-
 
 class NIDMResults(BaseCollectionItem):
     ttl_file = models.FileField(upload_to=upload_nidm_to,
@@ -476,6 +557,10 @@ class Comparison(models.Model):
 
     class Meta:
         unique_together = ("image1","image2")
+        index_together = [["image1", "image2", "similarity_metric"], 
+                          ["image2", "similarity_metric"],
+                          ["image1", "similarity_metric"]]
+
         verbose_name = "pairwise image comparison"
         verbose_name_plural = "pairwise image comparisons"
     

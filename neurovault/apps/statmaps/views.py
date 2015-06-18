@@ -1,46 +1,51 @@
-from .models import Collection, Image, Atlas, Comparison, StatisticMap, NIDMResults, NIDMResultStatisticMap
-from .forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
+from neurovault.apps.statmaps.models import Collection, Image, Atlas, Comparison, StatisticMap, NIDMResults, NIDMResultStatisticMap,\
+    BaseStatisticMap
+from neurovault.apps.statmaps.forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
-    EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm
+    EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
-from django.template.context import RequestContext
-from django.core.files.base import ContentFile
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
     get_file_ctime, detect_afni4D, split_afni4D_to_3D, splitext_nii_gz, mkdir_p, \
     send_email_notification, populate_nidm_results, get_server_url, populate_feat_directory, \
-    detect_feat_directory, format_image_collection_names
+    detect_feat_directory, format_image_collection_names, count_existing_comparisons, \
+    count_processing_comparisons, get_existing_comparisons
+from neurovault.apps.statmaps.voxel_query_functions import *
+from django.contrib.auth.decorators import login_required
+from pybraincompare.compare import scatterplot, search
+from pybraincompare.mr.datasets import get_mni_atlas
+from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import PermissionDenied
+from neurovault.settings import PRIVATE_MEDIA_ROOT
+from django.template.context import RequestContext
+from rest_framework.renderers import JSONRenderer
+from django.core.files.base import ContentFile
+from django.db.models.aggregates import Count
 from django.http import Http404, HttpResponse
-from django.db.models import Q
+from django.db.models import Q, Count
+from sklearn.externals import joblib
+from collections import OrderedDict
+from django.contrib import messages
+from django.forms import widgets
 from neurovault import settings
 from sendfile import sendfile
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.renderers import JSONRenderer
-from voxel_query_functions import *
-from compare import compare, atlas as pybrainatlas
+from xml.dom import minidom
+from fnmatch import fnmatch
+import nibabel as nib
 from glob import glob
-import pandas
+import neurovault
+import traceback
+import tempfile
 import zipfile
 import tarfile
-import gzip
 import shutil
-import nibabel as nib
+import pandas
+import gzip
 import re
-import tempfile
-import neurovault
-from fnmatch import fnmatch
 import os
-from collections import OrderedDict
-from xml.dom import minidom
-from django.db.models.aggregates import Count
-from django.contrib import messages
-import traceback
-from django.forms import widgets
-
-
+from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
+from django.views.decorators.cache import never_cache
 
 def owner_or_contrib(request,collection):
     if collection.owner == request.user or request.user in collection.contributors.all() or request.user.is_superuser:
@@ -84,6 +89,7 @@ def get_image(pk,collection_cid,request,mode=None):
 
 
 @login_required
+@never_cache
 def edit_images(request, collection_cid):
     collection = get_collection(collection_cid,request)
     if not owner_or_contrib(request,collection):
@@ -170,12 +176,11 @@ def edit_collection(request, cid=None):
 
 def view_image(request, pk, collection_cid=None):
     image = get_image(pk,collection_cid,request)
-    user_owns_image = True if owner_or_contrib(request,image.collection) else False
+    user_owns_image = owner_or_contrib(request,image.collection)
     api_cid = pk
-
-    num_comparisons = Comparison.objects.filter(Q(image1=image) | Q(image2=image)).count()
-    #comparison_is_possible = True if num_comparisons >= 1 and not image.collection.private else False
-    comparison_is_possible = False
+    
+    comparison_is_possible = (image.collection.private == False and isinstance(image, BaseStatisticMap) and \
+                              image.is_thresholded == False)
 
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
@@ -236,8 +241,6 @@ def delete_collection(request, cid):
     collection = get_collection(cid,request)
     if collection.owner != request.user:
         return HttpResponseForbidden()
-    for image in collection.image_set.all():
-        image.delete()
     collection.delete()
     return redirect('my_collections')
 
@@ -256,12 +259,12 @@ def edit_image(request, pk):
     if not owner_or_contrib(request,image.collection):
         return HttpResponseForbidden()
     if request.method == "POST":
-        form = form(request.user, request.POST, request.FILES, instance=image)
+        form = form(request.POST, request.FILES, instance=image, user=request.user)
         if form.is_valid():
             form.save()
             return HttpResponseRedirect(image.get_absolute_url())
     else:
-        form = form(request.user, instance=image)
+        form = form(instance=image, user=request.user)
 
     context = {"form": form}
     return render(request, "statmaps/edit_image.html.haml", context)
@@ -309,13 +312,13 @@ def add_image_for_neurosynth(request):
         temp_collection.save()
     image = StatisticMap(collection=temp_collection)
     if request.method == "POST":
-        form = SimplifiedStatisticMapForm(request.user, request.POST, request.FILES, instance=image)
+        form = SimplifiedStatisticMapForm(request.POST, request.FILES, instance=image, user=request.user)
         if form.is_valid():
             image = form.save()
             return HttpResponseRedirect("http://neurosynth.org/decode/?neurovault=%s-%s" % (
                 temp_collection.private_token,image.id))
     else:
-        form = SimplifiedStatisticMapForm(request.user, instance=image)
+        form = SimplifiedStatisticMapForm(user=request.user, instance=image)
 
     context = {"form": form}
     return render(request, "statmaps/add_image_for_neurosynth.html.haml", context)
@@ -326,12 +329,12 @@ def add_image(request, collection_cid):
     collection = get_collection(collection_cid,request)
     image = StatisticMap(collection=collection)
     if request.method == "POST":
-        form = StatisticMapForm(request.POST, request.FILES, instance=image)
+        form = AddStatisticMapForm(request.POST, request.FILES, instance=image)
         if form.is_valid():
             image = form.save()
             return HttpResponseRedirect(image.get_absolute_url())
     else:
-        form = StatisticMapForm(instance=image)
+        form = AddStatisticMapForm(instance=image)
 
     context = {"form": form}
     return render(request, "statmaps/add_image.html.haml", context)
@@ -361,7 +364,9 @@ def upload_folder(request, collection_cid):
                     if archive_ext == '.zip':
                         compressed = zipfile.ZipFile(request.FILES['file'])
                     elif archive_ext == '.gz':
-                        compressed = tarfile.TarFile(fileobj=gzip.open(request.FILES['file']))
+                        django_file = request.FILES['file']
+                        django_file.open()
+                        compressed = tarfile.TarFile(fileobj=gzip.GzipFile(fileobj=django_file.file, mode='r'), mode='r')
                     else:
                         raise Exception("Unsupported archive type %s."%archive_name)
                     compressed.extractall(path=tmp_directory)
@@ -416,12 +421,12 @@ def upload_folder(request, collection_cid):
                                 niftiFiles.extend(split_afni4D_to_3D(nii))
                             else:
                                 niftiFiles.append((fname,nii_path))
-
+                
                 for label,fpath in niftiFiles:
                     # Read nifti file information
                     nii = nib.load(fpath)
                     if len(nii.get_shape()) > 3 and nii.get_shape()[3] > 1:
-                        print "skipping wrong size"
+                        messages.warning(request, "Skipping %s - not a 3D file."%label)
                         continue
                     hdr = nii.get_header()
                     raw_hdr = hdr.structarr
@@ -471,6 +476,7 @@ def upload_folder(request, collection_cid):
 
                     new_image.file = f
                     new_image.save()
+
             except:
                 raise
                 error = traceback.format_exc().splitlines()[-1]
@@ -480,7 +486,8 @@ def upload_folder(request, collection_cid):
 
             finally:
                 shutil.rmtree(tmp_directory)
-
+            if not niftiFiles:
+                messages.warning(request, "No NIFTI files (.nii, .nii.gz, .img/.hdr) found in the upload.")
             return HttpResponseRedirect(collection.get_absolute_url())
     else:
         form = UploadFileForm()
@@ -530,7 +537,7 @@ def view_collection_with_pycortex(request, cid):
         return redirect(collection)
     else:
 
-        basedir = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',cid)
+        basedir = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',str(collection.id))
         baseurl = os.path.join(settings.PRIVATE_MEDIA_URL,cid)
 
         output_dir = os.path.join(basedir, "pycortex_all")
@@ -554,7 +561,7 @@ def view_collection_with_pycortex(request, cid):
 def serve_image(request, collection_cid, img_name):
     collection = get_collection(collection_cid,request,mode='file')
     path = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',str(collection.id),img_name)
-    return sendfile(request, path)
+    return sendfile(request, path, encoding="utf-8")
 
 
 def serve_pycortex(request, collection_cid, path, pycortex_dir='pycortex_all'):
@@ -656,7 +663,7 @@ def atlas_query_region(request):
         else:
             synonymsDict = {}
             with open(os.path.join(neurovault_root, 'neurovault/apps/statmaps/NIFgraph.pkl'),'rb') as input:
-                graph = pickle.load(input)
+                graph = joblib.load(input)
             for atlasRegion in atlasRegions:
                 synonymsDict[atlasRegion] = getSynonyms(atlasRegion)
             try:
@@ -699,18 +706,10 @@ def atlas_query_voxel(request):
 
 # Compare Two Images
 def compare_images(request,pk1,pk2):
+    import numpy as np
     image1 = get_image(pk1,None,request)
     image2 = get_image(pk2,None,request)
-
-    # Name the data file based on the new volumes
-    path, name1, ext = split_filename(image1.file.url)
-    path, name2, ext = split_filename(image2.file.url)
-
-    # For now, manually choose an atlas - this can be user choice
-    atlas_file = os.path.join(settings.STATIC_ROOT,'atlas','MNI-maxprob-thr25-2mm.nii')
-    atlas_xml = os.path.join(settings.STATIC_ROOT,'atlas','MNI.xml')
-    # Default slices are "coronal","axial","sagittal"
-    atlas = pybrainatlas.atlas(atlas_xml,atlas_file)
+    images = [image1,image2]
 
     # Get image: collection: [map_type] names no longer than ~125 characters
     image1_custom_name = format_image_collection_names(image_name=image1.name,
@@ -720,21 +719,59 @@ def compare_images(request,pk1,pk2):
                                                        collection_name=image2.collection.name,
                                                        map_type=image2.map_type,total_length=125)
 
-    # Create custom image names and links for the visualization
+    image_names = [image1_custom_name,image2_custom_name]
+
+    # Create custom links for the visualization
     custom = {
-            "IMAGE_1":image1_custom_name,
-            "IMAGE_2":image2_custom_name,
-            "IMAGE_1_LINK":"/images/%s" % (image1.pk),"IMAGE_2_LINK":"/images/%s" % (image2.pk)
+            "IMAGE_1_LINK":"/images/%s" % (image1.pk),
+            "IMAGE_2_LINK":"/images/%s" % (image2.pk)
     }
 
-    html_snippet,data_table = compare.scatterplot_compare(image1=image1.file.path,
-                                                          image2=image2.file.path,
-                                                          software="FREESURFER",
-                                                          voxdim=[8,8,8],
-                                                          atlas=atlas,custom=custom,corr="pearson")
+    # create reduced representation in case it's not there
+    if not image1.reduced_representation:
+        image1 = save_resampled_transformation_single(image1.id) # cannot run this async
+    if not image2.reduced_representation:
+        image2 = save_resampled_transformation_single(image1.id) # cannot run this async
+    
+    # Load image vectors from npy files
+    image_vector1 = np.load(image1.reduced_representation.file)
+    image_vector2 = np.load(image2.reduced_representation.file)
 
-    html = [h.strip("\n") for h in html_snippet]
+    # Load atlas pickle, containing vectors of atlas labels, colors, and values for same voxel dimension (4mm)
+    neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))        
+    atlas_pkl_path = os.path.join(neurovault_root, 'neurovault/static/atlas/atlas_mni_4mm.pkl')
+    atlas = joblib.load(atlas_pkl_path)
+
+    # Load the atlas svg, so we don't need to dynamically generate it
+    atlas_svg = os.path.join(neurovault_root,'neurovault/static/atlas/atlas_mni_2mm_svg.pkl')
+    atlas_svg = joblib.load(atlas_svg)
+
+    # Generate html for similarity search, do not specify atlas    
+    html_snippet, _ = scatterplot.scatterplot_compare_vector(image_vector1=image_vector1,
+                                                                 image_vector2=image_vector2,
+                                                                 image_names=image_names,
+                                                                 atlas_vector=atlas["atlas_vector"],
+                                                                 atlas_labels=atlas["atlas_labels"],
+                                                                 atlas_colors=atlas["atlas_colors"],
+                                                                 corr_type="pearson",
+                                                                 subsample_every=10, # subsample every 10th voxel
+                                                                 custom=custom,
+                                                                 remove_scripts="D3_MIN_JS",
+                                                                 width=1000) 
+
+    # Add atlas svg to the image, and prepare html for rendering
+    html = [h.replace("[coronal]",atlas_svg) for h in html_snippet]
+    html = [h.strip("\n").replace("[axial]","").replace("[sagittal]","") for h in html]
     context = {'html': html}
+
+    # Determine if either image is thresholded
+    threshold_status = np.array([image_names[i] for i in range(0,2) if images[i].is_thresholded])
+    if len(threshold_status) > 0:
+        warnings = list()
+        for i in range(0,len(image_names)):
+            warnings.append('Warning: Thresholded image: %s (%.4g%% of voxels are zeros),' %(image_names[i],images[i].perc_bad_voxels))
+        context["warnings"] = warnings
+
     return render(request, 'statmaps/compare_images.html', context)
 
 
@@ -743,53 +780,64 @@ def find_similar(request,pk):
     image1 = get_image(pk,None,request)
     pk = int(pk)
 
-    # Get all similarity calculations for this image, and ids of other images
-    comparisons = Comparison.objects.filter(Q(image1=image1) | Q(image2=image1),
-                  image1__collection__private=False, image2__collection__private=False)
-    
-    images = [image1]
-    scores = [1] # pearsonr
-    for comp in comparisons:
-      #pick the image we are comparing with
-      image = [image for image in [comp.image1,
-                         comp.image2] if image.id != pk][0]
-      if hasattr(image, "map_type"):
-        images.append(image)
-        scores.append(comp.similarity_score)
-    
-    # We will need lists of image ids, png paths, query id, query path, tags, names, scores
-    image_ids = [image.pk for image in images]
-    image_paths = [image.file.url for image in images]
-    png_img_names = ["glass_brain_%s.png" % image.pk for image in images]
-    png_img_paths = [os.path.join(os.path.split(image_paths[i])[0],
-                                  png_img_names[i]) for i in range(0,len(image_paths))]
-    tags = [[str(image.map_type)] for image in images]
-    
-    # The top text will be the collection name, the bottom text the image name
-    bottom_text = ["%s" % (image.name) for image in images]
-    top_text = ["%s" % (image.collection.name) for image in images]
-    compare_url = "/images/compare"  # format will be prefix/[query_id]/[other_id]
-    image_url = "/images"  # format will be prefix/[other_id]
-    image_title = format_image_collection_names(image_name=image1.name,
-                                                       collection_name=image1.collection.name,
-                                                       map_type=image1.map_type,total_length=125)
-    
-    # Here is the query image
-    query_png = os.path.join(os.path.split(image1.file.url)[0],"glass_brain_%s.png" % (image1.pk))
+    # Search only enabled if the image is not thresholded
+    if image1.is_thresholded == False:
 
-    # Do similarity search and return html to put in page, specify 100 max results, take absolute value of scores
-    html_snippet = compare.similarity_search(image_scores=scores,tags=tags,png_paths=png_img_paths,
-                                button_url=compare_url,image_url=image_url,query_png=query_png,
-                                query_id=pk,top_text=top_text,image_ids=image_ids,
-                                bottom_text=bottom_text,max_results=100,absolute_value=True)
+        # Count the number of comparisons that we have to determine max that we can return
+        number_comparisons = count_existing_comparisons(pk)
 
-    html = [h.strip("\n") for h in html_snippet]
+        max_results = 100
+        if number_comparisons < 100:
+            max_results = number_comparisons
+
+        # Get only # max_results similarity calculations for this image, and ids of other images
+        comparisons = get_existing_comparisons(pk).extra(select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[0:max_results] # "-" indicates descending
+
+        images = [image1]
+        scores = [1] # pearsonr
+        for comp in comparisons:
+            # pick the image we are comparing with
+            image = [image for image in [comp.image1, comp.image2] if image.id != pk][0]
+            if hasattr(image, "map_type") and image.thumbnail:
+                images.append(image)
+                scores.append(comp.similarity_score)
     
-    images_processing = StatisticMap.objects.filter(collection__private=False).count() - len(image_ids)
-    context = {'html': html,'images_processing':images_processing,
-               'image_title':image_title, 'image_url': '/images/%s' % (image1.pk) }
-    return render(request, 'statmaps/compare_search.html', context)
+        # We will need lists of image ids, png paths, query id, query path, tags, names, scores
+        image_ids = [image.pk for image in images]
+        png_img_paths = [image.get_thumbnail_url() for image in images]
+        tags = [[str(image.map_type)] for image in images]
+    
+        # The top text will be the collection name, the bottom text the image name
+        bottom_text = ["%s" % (image.name) for image in images]
+        top_text = ["%s" % (image.collection.name) for image in images]
+        compare_url = "/images/compare"  # format will be prefix/[query_id]/[other_id]
+        image_url = "/images"  # format will be prefix/[other_id]
+        image_title = format_image_collection_names(image_name=image1.name,
+                                                    collection_name=image1.collection.name,
+                                                    map_type=image1.map_type,total_length=50)
+    
+        # Here is the query image
+        query_png = image1.thumbnail.url
 
+        # Do similarity search and return html to put in page, specify 100 max results, take absolute value of scores
+        html_snippet = search.similarity_search(image_scores=scores,tags=tags,png_paths=png_img_paths,
+                                    button_url=compare_url,image_url=image_url,query_png=query_png,
+                                    query_id=pk,top_text=top_text,image_ids=image_ids,
+                                    bottom_text=bottom_text,max_results=max_results,absolute_value=True,
+                                    remove_scripts=["BOOTSTRAP","BOOTSTRAP_MIN"],container_width=1200)
+
+        html = [h.strip("\n") for h in html_snippet]
+    
+        # Get the number of images still processing
+        images_processing = count_processing_comparisons(pk)
+
+        context = {'html': html,'images_processing':images_processing,
+                   'image_title':image_title, 'image_url': '/images/%s' % (image1.pk) }
+        return render(request, 'statmaps/compare_search.html', context)
+    else:
+        error_message = "Image comparison is not enabled for thresholded images." 
+        context = {'error_message': error_message}
+        return render(request, 'statmaps/error_message.html', context)
 
 class JSONResponse(HttpResponse):
     """
