@@ -43,6 +43,7 @@ import tarfile
 import shutil
 import pandas
 import gzip
+import csv
 import re
 import os
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
@@ -323,6 +324,11 @@ def get_images_metadata(collection):
                                                                image_obj_list)
 
 
+def get_images_filenames(collection):
+    return [os.path.basename(image.file.name)
+            for image in collection.image_set.all()]
+
+
 @csrf_exempt
 @login_required
 def import_metadata(request, collection_cid):
@@ -331,12 +337,14 @@ def import_metadata(request, collection_cid):
     if not owner_or_contrib(request, collection):
         return HttpResponseForbidden()
 
+    images_filenames = get_images_filenames(collection)
+
     if request.method == "POST":
         return handle_post_metadata(request, collection,
                                     'Image metadata have been imported.')
 
     return render(request, "statmaps/import_metadata.html", {
-        'collection': collection})
+        'collection': collection, 'images_filenames': images_filenames})
 
 
 @csrf_exempt
@@ -356,6 +364,22 @@ def edit_metadata(request, collection_cid):
     return render(request, "statmaps/edit_metadata.html", {
         'collection': collection,
         'metadata': json.dumps(metadata)})
+
+
+@login_required
+def export_images_filenames(request, collection_cid):
+    collection = get_collection(collection_cid, request)
+    images_filenames = get_images_filenames(collection)
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; ' \
+                                      'filename="collection_%s.csv"' % (
+                                          collection.id)
+
+    writer = csv.writer(response)
+    writer.writerows([['Filename']] + [[name] for name in images_filenames])
+
+    return response
 
 
 def view_image(request, pk, collection_cid=None):

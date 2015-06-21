@@ -111,17 +111,12 @@ map3.nii.gz, 8,      13,     21
                 <div class="col-md-5">
                 <pre>
 Filename
-Lorem_ipsum_map1.nii.gz
-Lorem_ipsum_map2.nii.gz
-Lorem_ipsum_map3.nii.gz
-Lorem_ipsum_map4.nii.gz
-Lorem_ipsum_map5.nii.gz
-Lorem_ipsum_map6.nii.gz
-Lorem_ipsum_map7.nii.gz
+{% for name in images_filenames %}{{ name }}
+{% endfor %}
                 </pre>
                 </div>
                 <div class="col-md-7">
-                    <a class="btn btn-default" href="#"><i class="fa fa-download"></i> Download image filenames as CSV</a>
+                    <a class="btn btn-default" href="{% url 'export_images_filenames' collection.id %}"><i class="fa fa-download"></i> Download image filenames as CSV</a>
                 </div>
             </div>
         </div>
