@@ -10,7 +10,7 @@ import os
 import shutil
 from neurovault.apps.statmaps.utils import detect_afni4D, split_afni4D_to_3D
 import nibabel
-from .utils import clearDB
+from .utils import clearDB, save_statmap_form
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 
 from neurovault.apps.statmaps.views import delete_collection
@@ -168,47 +168,28 @@ class CollectionMetaDataTest(TestCase):
                                name="Test %s" % self.uniqid())
         self.coll.save()
 
-        self.image1 = Image(name='Image1',
-                            collection=self.coll,
-                            file='file1.nii.gz')
+        def test_data_path(filename):
+            return os.path.join(test_path, 'test_data/statmaps/%s' % filename)
 
-        self.image2 = Image(name='Image2',
-                            collection=self.coll,
-                            file='file2.nii.gz')
-
-        self.files = []
-
-        # Avoid Celery
-        from neurovault.apps.statmaps import models
-        with mock.patch.object(models, 'generate_glassbrain_image',
-                               return_value=None):
-            self.image1.file = SimpleUploadedFile('file1.nii.gz',
-                file(os.path.join(test_path,
-                    'test_data/api/DorsalFrontal_thr25_1mm.nii.gz')).read())
-            self.image1.save()
-
-            self.image2.file = SimpleUploadedFile('file2.nii.gz',
-                file(os.path.join(test_path,
-                    'test_data/api/DorsalFrontal_thr25_1mm.nii.gz')).read())
-            self.image2.save()
+        self.image1 = save_statmap_form(
+            image_path=test_data_path('motor_lips.nii.gz'),
+            collection=self.coll
+        )
+        self.image2 = save_statmap_form(
+            image_path=test_data_path('beta_0001.nii.gz'),
+            collection=self.coll
+        )
 
     def tearDown(self):
-        os.unlink(self.image1.file.path)
-        os.unlink(self.image2.file.path)
-
-        self.image1.delete()
-        self.image2.delete()
-
-        self.coll.delete()
-        self.user.delete()
+        clearDB()
 
     def uniqid(self):
         return str(uuid4())[:8]
 
     def test_post_metadata(self):
-        test_json = ('[["Filename","Subject ID", "Sex"],'
-                     '["file1.nii.gz","12","1"],'
-                     '["file2.nii.gz","13","2"]]')
+        test_json = ('[["Filename","Subject ID","Sex","modality"],'
+                     '["motor_lips.nii.gz","12","1","fMRI-BOLD"],'
+                     '["beta_0001.nii.gz","13","2","fMRI-BOLD"]]')
 
         url = reverse('import_metadata',
                       kwargs={'collection_cid': self.coll.pk})
@@ -224,10 +205,12 @@ class CollectionMetaDataTest(TestCase):
         self.assertEqual(image1.data, {'Sex': '1',
                                        'Subject ID': '12'})
 
+        self.assertEqual(image1.modality, 'fMRI-BOLD')
+
     def test_metadata_for_files_missing_in_the_collection(self):
         test_json = ('[["Filename","Subject ID","Sex"],'
-                     '["file1.nii.gz","12","1"],'
-                     '["file2.nii.gz","13","2"],'
+                     '["motor_lips.nii.gz","12","1"],'
+                     '["beta_0001.nii.gz","13","2"],'
                      '["file3.nii.gz","14","3"]]')
 
         url = reverse('import_metadata',
@@ -244,8 +227,23 @@ class CollectionMetaDataTest(TestCase):
         self.assertEqual(resp_json['message'],
                          'File is not found in the collection: file3.nii.gz')
 
-    def test_missing_required_fields(self):
-        pass
+    def test_incorrect_value_in_fixed_field(self):
+        test_json = ('[["Filename","Subject ID","Sex","modality"],'
+                     '["motor_lips.nii.gz","12","1","fMRI-BOLD"],'
+                     '["beta_0001.nii.gz","13","2","-*NOT-EXISTING-MOD*-"]]')
 
-    def test_incorrect_values_in_column(self):
-        pass
+        url = reverse('import_metadata',
+                      kwargs={'collection_cid': self.coll.pk})
+
+        resp = self.client.post(url,
+                                data=test_json,
+                                content_type='application/json; charset=utf-8')
+
+        self.assertEqual(resp.status_code, 400)
+
+        resp_json = json.loads(resp.content)
+        print resp_json
+
+        self.assertEqual(resp_json['messages'], {'beta_0001.nii.gz': [{
+            'modality': ["Value '-*NOT-EXISTING-MOD*-' is not a valid choice."]
+        }]})
