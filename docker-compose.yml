@@ -1,7 +1,8 @@
 db:
   image: postgres
 web:
-  build: .
+  #build: .
+  image: filo/neurovault
   command: python manage.py runserver 0.0.0.0:8000
   volumes:
     - .:/code
