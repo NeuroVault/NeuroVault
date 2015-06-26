@@ -11,7 +11,7 @@ dependencies:
 test:
   override:
     - docker-compose run web python manage.py migrate
-    - docker-compose run web python manage.py collectstatic
+    - docker-compose run web python manage.py collectstatic --noinput
     - docker-compose run web python manage.py test
 #    - docker build .
 
