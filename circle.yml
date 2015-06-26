@@ -8,7 +8,6 @@ dependencies:
   override:
     - pip install docker-compose
     - docker build -t neurovault/neurovault .
-    - docker-compose pull
 
 test:
   override:
