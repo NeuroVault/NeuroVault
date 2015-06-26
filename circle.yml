@@ -1,0 +1,26 @@
+machine:
+  pre:
+    - sudo curl -L -o /usr/bin/docker 'http://s3-external-1.amazonaws.com/circle-downloads/docker-1.6.2-circleci'; sudo chmod 0755 /usr/bin/docker; true
+  services:
+    - docker
+
+dependencies:
+  cache_directories:
+    - "~/docker"
+
+  override:
+	- pip install docker-compose
+	- docker build -t filo/neurovault .
+	- docker-compose pull
+
+test:
+  override:
+    - docker-compose run web python manage.py migrate
+    - docker-compose run web python manage.py collectstatic --noinput
+    - docker-compose run web python manage.py test
+
+deployment:
+  hub:
+    branch: enh/docker
+    commands:
+      - $DEPLOY
