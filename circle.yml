@@ -9,7 +9,8 @@ dependencies:
 
 test:
   override:
-    - docker-compose run web python manage.py test
+#    - docker-compose run web python manage.py test
+    - docker build .
 
 deployment:
   hub:
