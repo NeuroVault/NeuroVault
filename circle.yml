@@ -1,0 +1,17 @@
+machine:
+  services:
+    - docker
+
+dependencies:
+  override:
+    - sudo pip install --upgrade docker-compose
+
+test:
+  override:
+    - docker-compose run web python manage.py test
+
+deployment:
+  hub:
+    branch: master
+    commands:
+      - $DEPLOY
