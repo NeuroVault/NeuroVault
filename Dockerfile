@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install numpy \
     cython 
-RUN pip install scipy
+RUN pip install -v scipy
 
 RUN mkdir /code
 WORKDIR /code
