@@ -63,11 +63,15 @@ USE_TZ = True
 MEDIA_ROOT = os.path.join(BASE_DIR,'media')
 MEDIA_URL = '/public/media/'
 
+PRIVATE_MEDIA_ROOT = '/var/www/images'
+PRIVATE_MEDIA_URL = '/media/images'
+
+
 # Absolute path to the directory static files should be collected to.
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/var/www/example.com/static/"
-STATIC_ROOT = os.path.join(BASE_DIR,'static')
+STATIC_ROOT = '/var/www/static'
 
 # URL prefix for static files.
 # Example: "http://example.com/static/", "http://static.example.com/"
@@ -242,12 +246,6 @@ CRISPY_TEMPLATE_PACK = 'bootstrap3'
 DBBACKUP_STORAGE = 'dbbackup.storage.dropbox_storage'
 DBBACKUP_TOKENS_FILEPATH = '/home/filo/dbtokens'
 DBBACKUP_POSTGRES_BACKUP_COMMAND = 'export PGPASSWORD=neurovault\n pg_dump --username={adminuser} --host={host} --port={port} {databasename} >'
-
-# the the original image paths are retained to support old links.
-# Nginx will serve the PRIVATE_MEDIA_URL with private/ prepended to the path
-# e.g. for PRIVATE_MEDIA_URL 'media/images', configure internal location '/private/media/images'
-PRIVATE_MEDIA_ROOT = os.path.join(BASE_DIR,'private_media')
-PRIVATE_MEDIA_URL = '/media/images'
 
 # For Apache, use 'sendfile.backends.xsendfile'
 # For Nginx, use 'sendfile.backends.nginx'
