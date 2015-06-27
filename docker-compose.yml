@@ -11,7 +11,7 @@ uwsgi:
     - redis
   volumes:
     - /var/www/static
-    - /var/www/images
+    - /var/www/image_data
 
 nginx:
   restart: always
@@ -29,3 +29,14 @@ nginx:
 redis:
   restart: always
   image: redis
+  
+worker:
+  image: neurovault/neurovault
+  command: celery worker -A neurovault.celery -Q default -n default@%h
+  volumes:
+    - .:/code
+  volumes_from:
+    - uwsgi
+  links:
+    - db
+    - redis

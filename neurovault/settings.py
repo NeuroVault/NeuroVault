@@ -4,6 +4,7 @@ import sys
 from datetime import timedelta
 import matplotlib
 import tempfile
+from kombu import Exchange, Queue
 matplotlib.use('Agg')
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -63,7 +64,7 @@ USE_TZ = True
 MEDIA_ROOT = os.path.join(BASE_DIR,'media')
 MEDIA_URL = '/public/media/'
 
-PRIVATE_MEDIA_ROOT = '/var/www/images'
+PRIVATE_MEDIA_ROOT = '/var/www/image_data'
 PRIVATE_MEDIA_URL = '/media/images'
 
 
@@ -296,6 +297,10 @@ CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
+CELERY_DEFAULT_QUEUE = 'default'
+CELERY_QUEUES = (
+    Queue('default', Exchange('default'), routing_key='default'),
+)
 
 #CELERYBEAT_SCHEDULE = {
 #    'run_make_correlation_df': {
