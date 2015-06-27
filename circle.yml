@@ -3,17 +3,6 @@ machine:
     - sudo curl -L -o /usr/bin/docker 'http://s3-external-1.amazonaws.com/circle-downloads/docker-1.6.2-circleci'; sudo chmod 0755 /usr/bin/docker; true
   services:
     - docker
-
-checkout:
-  post:
-    - git fetch --unshallow 2>/dev/null || true
-    - git fetch --tags
-    # Nasty hack: Because we get a freshly restored repo, timestamps do not
-    # correspond any more to when the file was last changed. To rectify this,
-    # first set everything to a timestamp in the past and then update the
-    # timestamp for all git-tracked files based on their last committed change.
-    - find . -exec touch -t 201401010000 {} \;
-    - for x in $(git ls-tree --full-tree --name-only -r HEAD); do touch -t $(date -d "$(git log -1 --format=%ci "${x}")" +%y%m%d%H%M.%S) "${x}"; done
   
 dependencies:
   cache_directories:
@@ -27,9 +16,7 @@ dependencies:
 
 test:
   override:
-    - docker-compose run uwsgi python manage.py migrate
-    - docker-compose run uwsgi python manage.py collectstatic --noinput
-    - docker-compose run uwsgi python manage.py test
+    - docker-compose run --rm uwsgi bash -c "python manage.py collectstatic --noinput && python manage.py test"
 
 
 deployment:
