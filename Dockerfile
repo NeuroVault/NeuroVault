@@ -26,8 +26,14 @@ ENV PATH /opt/provToolbox/bin:$PATH
 RUN apt-get -y remove unzip
 RUN rm -rf /tmp/toolbox-0.6.1-release.zip
 
+RUN pip install uwsgi
+
 RUN apt-get autoremove -y
 RUN apt-get clean
 RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ADD . /code/
+
+CMD run_uwsgi.sh
+
+EXPOSE 3031
