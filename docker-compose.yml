@@ -8,6 +8,7 @@ uwsgi:
     - .:/code
   links:
     - db
+    - redis
   volumes:
     - /var/www/static
     - /var/www/images
@@ -24,3 +25,7 @@ nginx:
     - uwsgi
   links:
     - uwsgi
+
+redis:
+  restart: always
+  image: redis
