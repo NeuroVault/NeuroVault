@@ -4,10 +4,24 @@ machine:
   services:
     - docker
 
+checkout:
+  post:
+    - find . -exec touch -t 201401010000 {} \;
+    - for x in $(git ls-tree --full-tree --name-only -r HEAD); do \
+      touch -t $(date -d "$(git log -1 --format=%ci "${x}")" \
+      +%y%m%d%H%M.%S) "${x}"; done
+
 dependencies:
+  cache_directories:
+    - "~/docker"
+
   override:
     - pip install docker-compose
+    - if [[ -e ~/docker/image.tar ]]; then \
+        docker load -i ~/docker/image.tar; fi
     - docker build -t neurovault/neurovault .
+    - mkdir -p ~/docker; docker save neurovault/neurovault \
+        > ~/docker/image.tar
 
 test:
   override:
@@ -20,4 +34,4 @@ deployment:
   hub:
     branch: master
     commands:
-      - $DEPLOY
+      - docker push neurovault/neurovault
