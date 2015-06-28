@@ -16,7 +16,8 @@ dependencies:
 
 test:
   override:
-    - docker-compose run --rm uwsgi bash -c "python manage.py collectstatic --noinput && python manage.py test"
+    - docker-compose run uwsgi python manage.py test 2>&1 | tee log.txt
+	- if grep -q "FAILED" log.txt; then false; else true; fi
 
 
 deployment:
