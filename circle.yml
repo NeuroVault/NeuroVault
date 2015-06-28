@@ -17,7 +17,7 @@ dependencies:
 test:
   override:
     - docker-compose run uwsgi python manage.py test 2>&1 | tee log.txt
-	- if grep -q "FAILED" log.txt; then false; else true; fi
+    - if grep -q "FAILED" log.txt; then false; else true; fi
 
 
 deployment:
