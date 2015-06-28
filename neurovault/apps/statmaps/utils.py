@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from subprocess import CalledProcessError
 from datetime import datetime,date
-from neurovault import settings
+from django.conf import settings
 from django.db.models import Q
 from ast import literal_eval
 from scipy.misc import comb

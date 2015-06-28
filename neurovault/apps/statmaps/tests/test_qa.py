@@ -3,14 +3,14 @@ import tempfile
 import shutil
 import nibabel as nb
 import numpy as np
-import neurovault.settings
+from django.conf import settings
 from django.test import TestCase
 from neurovault.apps.statmaps.utils import is_thresholded
 
 class QATest(TestCase):
 
     def setUp(self):
-        self.brain = nb.load(os.path.join(neurovault.settings.STATIC_ROOT,"anatomical","MNI152.nii.gz"))
+        self.brain = nb.load(os.path.join(settings.STATIC_ROOT,"anatomical","MNI152.nii.gz"))
         # We will fill in brain mask with this percentage of randomly placed values
         self.ratios = [0.0,0.1,0.15,0.2,0.25,0.3,0.4,0.5,0.6,0.96, 0.98]
         self.thresholded = [False,False,False,False,False,False,False,False,False,True,True]
