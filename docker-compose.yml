@@ -6,12 +6,11 @@ uwsgi:
   image: neurovault/neurovault
   volumes:
     - .:/code
+    - /var/www/static
+    - /var/www/image_data
   links:
     - db
     - redis
-  volumes:
-    - /var/www/static
-    - /var/www/image_data
 
 nginx:
   restart: always

@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
 RUN pip install numpy \
     cython 
 RUN pip install -v scipy
+RUN pip install scikit-learn pandas
 
 RUN pip install git+https://github.com/gallantlab/pycortex.git#egg=pycortex --egg
 

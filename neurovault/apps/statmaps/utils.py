@@ -425,7 +425,8 @@ def is_thresholded(nii_obj, thr=0.85):
 import nibabel as nb
 from nilearn.image import resample_img
 def not_in_mni(nii, plot=False):
-    mask_nii = nb.load(os.path.join(settings.STATIC_ROOT,'anatomical','MNI152_T1_2mm_brain_mask.nii.gz'))
+    this_path = os.path.abspath(os.path.dirname(__file__))
+    mask_nii = nb.load(os.path.join(this_path, "static", 'anatomical','MNI152_T1_2mm_brain_mask.nii.gz'))
     
     #resample to the smaller one
     if np.prod(nii.shape) > np.prod(mask_nii.shape):
