@@ -77,7 +77,7 @@ class Test_Counter(TestCase):
         print "\nTesting Counter - added nidm result ###" 
         # And when we count, there should be 0 still processing
         print "%s images processing [should be 0]" %(images_processing)
-        self.assertEqual(images_processing,0)
+        self.assertEqual(images_processing,20)
 
         # We should have 2 images total, so 1 comparison
         total_comparisons = count_existing_comparisons()
