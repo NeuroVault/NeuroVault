@@ -40,6 +40,10 @@ docker-compose up
 ```
 docker-compose run --rm uwsgi python manage.py shell
 ```
+### Running tests
+```
+docker-compose run --rm uwsgi python manage.py test
+```
 ### Updating docker image
 If you add a dependency to requirements.txt or modify Dockerfile you will need to rebuild the docker image
 ```
