@@ -14,7 +14,7 @@ Easy to use web database for human brain statistical maps, atlases and parcellat
 ```
 docker-compose up -d
 ```
-The webpage will be available at 127.0.0.1 (unless you are using boot2docker - the nrun boot2docker ip to figure out which IP address you need to use).
+The webpage will be available at 127.0.0.1 (unless you are using boot2docker - then run `boot2docker ip` to figure out which IP address you need to use).
 
 You can also run the server in non detached mode (shows all the logs in realtime).
 ```
