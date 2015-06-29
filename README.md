@@ -27,7 +27,7 @@ docker-compose stop
 ### Restarting the server
 After making changes to the code you need to restart the server (but just the uwsgi and celery components):
 ```
-docker-compose restart uwsgi worker
+docker-compose restart nginx uwsgi worker
 ```
 ### Reseting the server
 If you would like to reset the server and clean the database:
