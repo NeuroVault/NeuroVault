@@ -20,7 +20,7 @@ test:
 #    - if grep -q "FAILED" log.txt; then false; else true; fi
 #    - docker-compose --verbose up
     - docker-compose --verbose up -d && sleep 30
-    - curl --retry 10 --retry-delay 5 -vk https://localhost:80
+    - curl --retry 10 --retry-delay 5 -vk http://localhost
 
 
 deployment:
