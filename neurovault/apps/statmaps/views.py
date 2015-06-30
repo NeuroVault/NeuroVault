@@ -738,12 +738,12 @@ def compare_images(request,pk1,pk2):
     image_vector2 = np.load(image2.reduced_representation.file)
 
     # Load atlas pickle, containing vectors of atlas labels, colors, and values for same voxel dimension (4mm)
-    neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))        
-    atlas_pkl_path = os.path.join(neurovault_root, 'neurovault/static/atlas/atlas_mni_4mm.pkl')
+    this_path = os.path.abspath(os.path.dirname(__file__))        
+    atlas_pkl_path = os.path.join(this_path, 'static/atlas/atlas_mni_4mm.pkl')
     atlas = joblib.load(atlas_pkl_path)
 
     # Load the atlas svg, so we don't need to dynamically generate it
-    atlas_svg = os.path.join(neurovault_root,'neurovault/static/atlas/atlas_mni_2mm_svg.pkl')
+    atlas_svg = os.path.join(this_path, 'static/atlas/atlas_mni_2mm_svg.pkl')
     atlas_svg = joblib.load(atlas_svg)
 
     # Generate html for similarity search, do not specify atlas    
