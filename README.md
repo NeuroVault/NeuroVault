@@ -4,7 +4,8 @@ Easy to use web database for human brain statistical maps, atlases and parcellat
 
 ### Installing dependencies
 1. Fork the main repository (https://github.com/NeuroVault/NeuroVault)
-2. Clone your fork to your computer: `git clone https://github.com/<your_username>/NeuroVault` (*Warning: if you are using OS X you have to clone the repository to a subfolder in your home folder - `/Users/<your_username/...` - otherwise boot2docker will not be able to mount code directories and will fail silently.*)
+2. Clone your fork to your computer: `git clone https://github.com/<your_username>/NeuroVault` 
+  3. *Warning: if you are using OS X you have to clone the repository to a subfolder in your home folder - `/Users/<your_username/...` - otherwise boot2docker will not be able to mount code directories and will fail silently.*
 3. Install docker >= 1.6 (If you are using OS X you'll also need boot2docker)
 4. Install docker-compose >= 1.2
   5. If you are using OS X and homebrew steps 3 and 4 can be achieved by: `brew update && brew install docker boot2docker docker-compose`
