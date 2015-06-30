@@ -10,9 +10,9 @@ dependencies:
 
   override:
     - pip install docker-compose
-#    - if [[ -e ~/docker/image.tar ]]; then docker load -i ~/docker/image.tar; fi
-#    - docker build -t neurovault/neurovault .
-#    - mkdir -p ~/docker; docker save "neurovault/neurovault" > ~/docker/image.tar
+    - if [[ -e ~/docker/image.tar ]]; then docker load -i ~/docker/image.tar; fi
+    - docker build -t neurovault/neurovault .
+    - mkdir -p ~/docker; docker save "neurovault/neurovault" > ~/docker/image.tar
 
 test:
   override:
