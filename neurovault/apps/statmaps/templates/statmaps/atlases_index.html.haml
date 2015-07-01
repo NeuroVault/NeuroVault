@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load coffeescript %}
+
+{% block head %}
+<title>{% block title %}NeuroVault: Collections{% endblock %}</title>
+{% endblock %}
+
+{% block content %}
+.row
+	.span11
+		%h2 Atlases
+		.lead
+			%p A collection of all the atlases 
+		%table#collections-table.table.table-condensed.table-striped.table-hover
+			%thead
+				%tr
+					%th Name
+			%tbody
+				- for image in images
+					%tr
+						%td
+							%a{ href: "/images/{{image.id}}" }= image.name
+
+{% endblock %}

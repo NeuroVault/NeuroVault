@@ -2,7 +2,7 @@ from rest_framework.pagination import LimitOffsetPagination
 from django.conf.urls import patterns, url
 from django.views.generic import ListView
 from .models import Collection
-from .views import edit_collection, edit_images, view_image, delete_image, edit_image, \
+from .views import atlas, edit_collection, edit_images, view_image, delete_image, edit_image, \
                 view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
                 serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
                 papaya_js_embed, view_images_by_tag, \
@@ -139,7 +139,10 @@ urlpatterns = patterns('',
         name='compare_images'),
     url(r'^images/(?P<pk>\d+)/find_similar$',
         find_similar,
-        name='find_similar')
+        name='find_similar'),
+    url(r'^atlases/$',
+        atlas,
+        name='atlas')
 
 )
 

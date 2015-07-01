@@ -46,6 +46,7 @@ import re
 import os
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
 from django.views.decorators.cache import never_cache
+from django.views.generic import TemplateView
 
 def owner_or_contrib(request,collection):
     if collection.owner == request.user or request.user in collection.contributors.all() or request.user.is_superuser:
@@ -839,7 +840,7 @@ def find_similar(request,pk):
         context = {'error_message': error_message}
         return render(request, 'statmaps/error_message.html', context)
 
-class JSONResponse(HttpResponse):
+class JSONResponse(HttpResponse): 
     """
     An HttpResponse that renders its content into JSON.
     """
@@ -847,3 +848,9 @@ class JSONResponse(HttpResponse):
         content = JSONRenderer().render(data)
         kwargs['content_type'] = 'application/json'
         super(JSONResponse, self).__init__(content, **kwargs)
+
+def atlas(request):
+    images = Atlas.objects.all()
+    context = {"images": images}
+    return render(request, "statmaps/atlases_index.html.haml",context)
+
