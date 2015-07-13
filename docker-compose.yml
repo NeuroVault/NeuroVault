@@ -1,12 +1,41 @@
 db:
   image: postgres
-web:
-  #build: .
-  image: filo/neurovault
-  command: python manage.py runserver 0.0.0.0:8000
+
+uwsgi:
+  restart: always
+  image: neurovault/neurovault
   volumes:
     - .:/code
-  ports:
-    - "8000:8000"
+    - /var/www/static
+    - /var/www/image_data
   links:
     - db
+    - redis
+
+nginx:
+  restart: always
+  image: nginx
+  ports:
+    - "80:80"
+  volumes:
+    - nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    - uwsgi_params.par:/etc/nginx/uwsgi_params.par:ro
+  volumes_from:
+    - uwsgi
+  links:
+    - uwsgi
+
+redis:
+  restart: always
+  image: redis
+  
+worker:
+  image: neurovault/neurovault
+  command: celery worker -A neurovault.celery -Q default -n default@%h
+  volumes:
+    - .:/code
+  volumes_from:
+    - uwsgi
+  links:
+    - db
+    - redis

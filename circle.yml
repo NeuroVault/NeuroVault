@@ -3,24 +3,26 @@ machine:
     - sudo curl -L -o /usr/bin/docker 'http://s3-external-1.amazonaws.com/circle-downloads/docker-1.6.2-circleci'; sudo chmod 0755 /usr/bin/docker; true
   services:
     - docker
-
+  
 dependencies:
   cache_directories:
     - "~/docker"
 
   override:
-	- pip install docker-compose
-	- docker build -t filo/neurovault .
-	- docker-compose pull
+    - pip install docker-compose
+    - if [[ -e ~/docker/image.tar ]]; then docker load -i ~/docker/image.tar; fi
+    - docker build -t neurovault/neurovault .
+    - mkdir -p ~/docker; docker save "neurovault/neurovault" > ~/docker/image.tar
 
 test:
   override:
-    - docker-compose run web python manage.py migrate
-    - docker-compose run web python manage.py collectstatic --noinput
-    - docker-compose run web python manage.py test
+    - docker-compose --verbose up -d && sleep 40
+    - curl --retry 10 --retry-delay 5 -vk http://localhost
+    - docker-compose run uwsgi python manage.py test 2>&1 | tee log.txt
+    - if grep -q "FAILED" log.txt; then false; else true; fi
 
 deployment:
   hub:
-    branch: enh/docker
+    branch: master
     commands:
-      - $DEPLOY
+      - docker push neurovault/neurovault

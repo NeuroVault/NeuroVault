@@ -34,8 +34,9 @@ def generate_glassbrain_image(image_pk):
         glass_brain.savefig(f, dpi=my_dpi)
     except:
         # Glass brains that do not produce will be given dummy image
-        f = open(os.path.abspath(os.path.join(neurovault.settings.BASE_DIR,
-                                           "static","images","glass_brain_empty.jpg"))) 
+        this_path = os.path.abspath(os.path.dirname(__file__))
+        f = open(os.path.abspath(os.path.join(this_path,
+                                              "static","images","glass_brain_empty.jpg"))) 
         raise
     finally:
         plt.close('all')
@@ -58,11 +59,12 @@ def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
     nii_obj = nib.load(img.file.path)
     
     # If a standard already exists with the voxel dimension, we use that to save time
-    standard = os.path.abspath(os.path.join(neurovault.settings.BASE_DIR,
-                                                  "static","anatomical",
-                                                  "MNI152_%smm.nii.gz" % resample_dim[0]))
+    this_path = os.path.abspath(os.path.dirname(__file__))
+    standard = os.path.abspath(os.path.join(this_path,
+                                            "static","anatomical",
+                                            "MNI152_%smm.nii.gz" % resample_dim[0]))
     if not os.path.exists(standard):
-        standard = os.path.abspath(os.path.join(neurovault.settings.BASE_DIR,"static","anatomical","MNI152.nii.gz"))
+        standard = os.path.abspath(os.path.join(this_path,"static","anatomical","MNI152.nii.gz"))
     standard_brain = nib.load(standard)
     reference = resample_img(standard_brain, target_affine=numpy.diag(resample_dim))
 

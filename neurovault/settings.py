@@ -4,6 +4,7 @@ import sys
 from datetime import timedelta
 import matplotlib
 import tempfile
+from kombu import Exchange, Queue
 matplotlib.use('Agg')
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -22,12 +23,11 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'neurovault',
+        'NAME': 'postgres',
         # The following settings are not used with sqlite3:
-        'USER': 'neurovault',
-        'PASSWORD': 'neurovault',
-        'HOST': '127.0.0.1',                      # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
-        #'PORT': '',        # Set to empty string for default.
+        'USER': 'postgres',
+        'HOST': 'db',                      # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
+        'PORT': '5432',        # Set to empty string for default.
     }
 }
 
@@ -64,11 +64,15 @@ USE_TZ = True
 MEDIA_ROOT = os.path.join(BASE_DIR,'media')
 MEDIA_URL = '/public/media/'
 
+PRIVATE_MEDIA_ROOT = '/var/www/image_data'
+PRIVATE_MEDIA_URL = '/media/images'
+
+
 # Absolute path to the directory static files should be collected to.
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/var/www/example.com/static/"
-STATIC_ROOT = os.path.join(BASE_DIR,'static')
+STATIC_ROOT = '/var/www/static'
 
 # URL prefix for static files.
 # Example: "http://example.com/static/", "http://static.example.com/"
@@ -244,12 +248,6 @@ DBBACKUP_STORAGE = 'dbbackup.storage.dropbox_storage'
 DBBACKUP_TOKENS_FILEPATH = '/home/filo/dbtokens'
 DBBACKUP_POSTGRES_BACKUP_COMMAND = 'export PGPASSWORD=neurovault\n pg_dump --username={adminuser} --host={host} --port={port} {databasename} >'
 
-# the the original image paths are retained to support old links.
-# Nginx will serve the PRIVATE_MEDIA_URL with private/ prepended to the path
-# e.g. for PRIVATE_MEDIA_URL 'media/images', configure internal location '/private/media/images'
-PRIVATE_MEDIA_ROOT = os.path.join(BASE_DIR,'private_media')
-PRIVATE_MEDIA_URL = '/media/images'
-
 # For Apache, use 'sendfile.backends.xsendfile'
 # For Nginx, use 'sendfile.backends.nginx'
 # For Devserver, use 'sendfile.backends.development'
@@ -294,11 +292,15 @@ os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
 os.environ["PATH"] += os.pathsep + '/path/to/lib/provToolbox/bin'
 
 # Celery config
-BROKER_URL = 'redis://localhost:6379/0'
+BROKER_URL = 'redis://redis:6379/0'
 CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
+CELERY_DEFAULT_QUEUE = 'default'
+CELERY_QUEUES = (
+    Queue('default', Exchange('default'), routing_key='default'),
+)
 
 #CELERYBEAT_SCHEDULE = {
 #    'run_make_correlation_df': {

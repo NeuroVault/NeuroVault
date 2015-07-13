@@ -2,8 +2,6 @@ from __future__ import absolute_import
 import os
 from celery import Celery
 from django.conf import settings
-from opbeat.contrib.django.models import client, logger, register_handlers
-from opbeat.contrib.celery import register_signal
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'neurovault.settings')
 nvcelery = Celery('neurovault')
@@ -13,6 +11,9 @@ nvcelery = Celery('neurovault')
 nvcelery.config_from_object('django.conf:settings')
 nvcelery.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
+
+from opbeat.contrib.django.models import client, logger, register_handlers
+from opbeat.contrib.celery import register_signal
 try:
     register_signal(client)
 except Exception as e:
