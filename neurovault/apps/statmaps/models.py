@@ -369,15 +369,16 @@ class Image(PolymorphicModel, BaseCollectionItem):
             super(Image, self).save()
 
 class BaseStatisticMap(Image):
-    Z = 'Z'
     T = 'T'
+    Z = 'Z'
     F = 'F'
     X2 = 'X2'
     P = 'P'
-    OTHER = 'Other'
-    W = 'Q'
+    M ='M'
+    U = 'U'
     R = 'R'
     Pa = 'Pa'
+    OTHER = 'Other'
     S = 'S'
     G = 'G'
     M = 'M'
@@ -387,7 +388,8 @@ class BaseStatisticMap(Image):
         (F, 'F map'),
         (X2, 'Chi squared map'),
         (P, 'P map (given null hypothesis)'),
-        (W, 'weight/beta map'),
+        (M, 'multivariate-beta map'),
+        (U, 'univariate-beta map'),
         (R, 'ROI/mask'),
         (Pa, 'parcellation'),
         (OTHER, 'Other'),
