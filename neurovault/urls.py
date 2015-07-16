@@ -108,7 +108,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
     file = HyperlinkedFileField()
     collection = HyperlinkedRelatedURL(read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
-
+    
     class Meta:
         model = Image
         exclude = ['polymorphic_ctype']
@@ -121,11 +121,6 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
             orderedDict = StatisticMapSerializer(obj, context={
                                 'request': self.context['request']}).to_representation(obj)
             orderedDict['image_type'] = 'statistic map'
-            mapTypeChoicesDict = dict(BaseStatisticMap.MAP_TYPE_CHOICES)
-            analysisLevelChoicesDict = dict(BaseStatisticMap.ANALYSIS_LEVEL_CHOICES)
-            if orderedDict.get('analysis_level'):   
-                orderedDict['map_type'] = mapTypeChoicesDict[orderedDict['map_type']]
-                orderedDict['analysis_level'] = analysisLevelChoicesDict[orderedDict['analysis_level']]
             return orderedDict
         if isinstance(obj, Atlas):
             orderedDict = AtlasSerializer(obj, context={
@@ -150,6 +145,14 @@ class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
     url = HyperlinkedImageURL(source='get_absolute_url')
     cognitive_paradigm_cogatlas = StringRelatedField(read_only=True)
     cognitive_paradigm_cogatlas_id = PrimaryKeyRelatedField(read_only=True, source="cognitive_paradigm_cogatlas")
+    map_type = serializers.SerializerMethodField()
+    analysis_level = serializers.SerializerMethodField()
+    
+    def get_map_type(self,obj):
+        return obj.get_map_type_display()
+    
+    def get_analysis_level(self,obj):
+        return obj.get_analysis_level_display()
 
     class Meta:
         model = StatisticMap
@@ -162,6 +165,15 @@ class NIDMResultStatisticMapSerializer(serializers.HyperlinkedModelSerializer):
     url = HyperlinkedImageURL(source='get_absolute_url')
     nidm_results = HyperlinkedRelatedURL(read_only=True)
     description = NIDMDescriptionSerializedField(source='get_absolute_url')
+    map_type = serializers.SerializerMethodField()
+    analysis_level = serializers.SerializerMethodField()
+    
+    def get_map_type(self,obj):
+        return obj.get_map_type_display()
+    
+    def get_analysis_level(self,obj):
+        return obj.get_analysis_level_display()
+
 
     class Meta:
         model = NIDMResultStatisticMap
