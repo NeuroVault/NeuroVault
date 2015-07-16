@@ -369,20 +369,38 @@ class Image(PolymorphicModel, BaseCollectionItem):
             super(Image, self).save()
 
 class BaseStatisticMap(Image):
-    Z = 'Z'
     T = 'T'
+    Z = 'Z'
     F = 'F'
     X2 = 'X2'
     P = 'P'
+    M ='M'
+    U = 'U'
+    R = 'R'
+    Pa = 'Pa'
     OTHER = 'Other'
+    S = 'S'
+    G = 'G'
+    M = 'M'
     MAP_TYPE_CHOICES = (
         (T, 'T map'),
         (Z, 'Z map'),
         (F, 'F map'),
         (X2, 'Chi squared map'),
         (P, 'P map (given null hypothesis)'),
+        (M, 'multivariate-beta map'),
+        (U, 'univariate-beta map'),
+        (R, 'ROI/mask'),
+        (Pa, 'parcellation'),
         (OTHER, 'Other'),
     )
+    ANALYSIS_LEVEL_CHOICES = (
+        (S, 'single-subject'),
+        (G, 'group'),
+        (M, 'meta-analysis'),
+        (OTHER, 'Other'),
+    )
+    
     map_type = models.CharField(
                     help_text=("Type of statistic that is the basis of the inference"),
                     verbose_name="Map type",
@@ -393,6 +411,10 @@ class BaseStatisticMap(Image):
     not_mni = models.NullBooleanField(null=True, blank=True)
     brain_coverage = models.FloatField(null=True, blank=True)
     perc_voxels_outside = models.FloatField(null=True, blank=True)
+    analysis_level = models.CharField(
+                    help_text=("What level of summary data was used as the input to this analysis?"),
+                    verbose_name="Analysis level",
+                    max_length=200, null=True, blank=True, choices=ANALYSIS_LEVEL_CHOICES)
     
     def save(self):
         if self.perc_bad_voxels == None and self.file:

@@ -1,7 +1,7 @@
 from neurovault.apps.statmaps.voxel_query_functions import voxelToRegion, getSynonyms, toAtlas, getAtlasVoxels
 from rest_framework.relations import StringRelatedField, PrimaryKeyRelatedField
 from neurovault.apps.statmaps.models import Image, Collection, StatisticMap,\
-    Atlas, NIDMResults, NIDMResultStatisticMap, CognitiveAtlasTask
+    Atlas, NIDMResults, NIDMResultStatisticMap, CognitiveAtlasTask, BaseStatisticMap
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from neurovault.apps.statmaps.urls import StandardResultPagination
 from rest_framework.filters import DjangoFilterBackend
@@ -108,7 +108,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
     file = HyperlinkedFileField()
     collection = HyperlinkedRelatedURL(read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
-
+    
     class Meta:
         model = Image
         exclude = ['polymorphic_ctype']
@@ -118,26 +118,41 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
         Because GalleryItem is Polymorphic
         """
         if isinstance(obj, StatisticMap):
-            return StatisticMapSerializer(obj, context={
+            orderedDict = StatisticMapSerializer(obj, context={
                                 'request': self.context['request']}).to_representation(obj)
+            orderedDict['image_type'] = 'statistic map'
+            return orderedDict
         if isinstance(obj, Atlas):
-            return AtlasSerializer(obj, context={
+            orderedDict = AtlasSerializer(obj, context={
                                 'request': self.context['request']}).to_representation(obj)
+            orderedDict['image_type'] = 'atlas'
+            return orderedDict
 
         if isinstance(obj, NIDMResultStatisticMap):
-            return NIDMResultStatisticMapSerializer(obj, context={
+            orderedDict = NIDMResultStatisticMapSerializer(obj, context={
                                 'request': self.context['request']}).to_representation(obj)
+            orderedDict['image_type'] = 'NIDM results statistic map'
+            return orderedDict
 
         return super(ImageSerializer, self).to_representation(obj)
     
 
 class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
 
+
     file = HyperlinkedFileField()
     collection = HyperlinkedRelatedURL(read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
     cognitive_paradigm_cogatlas = StringRelatedField(read_only=True)
     cognitive_paradigm_cogatlas_id = PrimaryKeyRelatedField(read_only=True, source="cognitive_paradigm_cogatlas")
+    map_type = serializers.SerializerMethodField()
+    analysis_level = serializers.SerializerMethodField()
+    
+    def get_map_type(self,obj):
+        return obj.get_map_type_display()
+    
+    def get_analysis_level(self,obj):
+        return obj.get_analysis_level_display()
 
     class Meta:
         model = StatisticMap
@@ -150,6 +165,15 @@ class NIDMResultStatisticMapSerializer(serializers.HyperlinkedModelSerializer):
     url = HyperlinkedImageURL(source='get_absolute_url')
     nidm_results = HyperlinkedRelatedURL(read_only=True)
     description = NIDMDescriptionSerializedField(source='get_absolute_url')
+    map_type = serializers.SerializerMethodField()
+    analysis_level = serializers.SerializerMethodField()
+    
+    def get_map_type(self,obj):
+        return obj.get_map_type_display()
+    
+    def get_analysis_level(self,obj):
+        return obj.get_analysis_level_display()
+
 
     class Meta:
         model = NIDMResultStatisticMap

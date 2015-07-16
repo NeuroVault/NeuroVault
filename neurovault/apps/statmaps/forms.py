@@ -485,7 +485,7 @@ class StatisticMapForm(ImageForm):
             
     class Meta(ImageForm.Meta):
         model = StatisticMap
-        fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas', 'contrast_definition', 'figure',
+        fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas','analysis_level', 'contrast_definition', 'figure',
                   'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels')
         widgets = {
