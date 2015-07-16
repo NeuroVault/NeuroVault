@@ -1,7 +1,7 @@
 from neurovault.apps.statmaps.voxel_query_functions import voxelToRegion, getSynonyms, toAtlas, getAtlasVoxels
 from rest_framework.relations import StringRelatedField, PrimaryKeyRelatedField
 from neurovault.apps.statmaps.models import Image, Collection, StatisticMap,\
-    Atlas, NIDMResults, NIDMResultStatisticMap, CognitiveAtlasTask
+    Atlas, NIDMResults, NIDMResultStatisticMap, CognitiveAtlasTask, BaseStatisticMap
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from neurovault.apps.statmaps.urls import StandardResultPagination
 from rest_framework.filters import DjangoFilterBackend
@@ -118,20 +118,32 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
         Because GalleryItem is Polymorphic
         """
         if isinstance(obj, StatisticMap):
-            return StatisticMapSerializer(obj, context={
+            orderedDict = StatisticMapSerializer(obj, context={
                                 'request': self.context['request']}).to_representation(obj)
+            orderedDict['image_type'] = 'statistic map'
+            mapTypeChoicesDict = dict(BaseStatisticMap.MAP_TYPE_CHOICES)
+            analysisLevelChoicesDict = dict(BaseStatisticMap.ANALYSIS_LEVEL_CHOICES)
+            if orderedDict.get('analysis_level'):   
+                orderedDict['map_type'] = mapTypeChoicesDict[orderedDict['map_type']]
+                orderedDict['analysis_level'] = analysisLevelChoicesDict[orderedDict['analysis_level']]
+            return orderedDict
         if isinstance(obj, Atlas):
-            return AtlasSerializer(obj, context={
+            orderedDict = AtlasSerializer(obj, context={
                                 'request': self.context['request']}).to_representation(obj)
+            orderedDict['image_type'] = 'atlas'
+            return orderedDict
 
         if isinstance(obj, NIDMResultStatisticMap):
-            return NIDMResultStatisticMapSerializer(obj, context={
+            orderedDict = NIDMResultStatisticMapSerializer(obj, context={
                                 'request': self.context['request']}).to_representation(obj)
+            orderedDict['image_type'] = 'NIDM results statistic map'
+            return orderedDict
 
         return super(ImageSerializer, self).to_representation(obj)
     
 
 class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
+
 
     file = HyperlinkedFileField()
     collection = HyperlinkedRelatedURL(read_only=True)
