@@ -14,6 +14,11 @@
          {"name":"OrRd", "data":[[0,1,0.968627,0.92549],[0.125,0.996078,0.909804,0.784314],[0.25,0.992157,0.831373,0.619608],[0.375,0.992157,0.733333,0.517647],[0.5,0.988235,0.552941,0.34902],[0.625,0.937255,0.396078,0.282353],[0.75,0.843137,0.188235,0.121569],[0.875,0.701961,0,0],[1,0.498039,0,0]]}];
 
          var filename = "{{ image.file.url }}".replace(/^.*[\\\/]/, '')
+    - if image.map_type == "R" or image.map_type == "Pa"
+      :javascript
+         params[filename] = {"parametric": true,  "lut":"Spectrum", "alpha":"0.75"};
+    - else
+      :javascript
          params[filename] = {"parametric": true,  "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric": true};
     :javascript
         {% inlinecoffeescript %}
@@ -54,7 +59,7 @@
                     - for tag in image.tags.all
                         %a{ href: "/images/tags/{{tag.name}}" }= tag.name
                         - if not forloop.last
-	                
+
             %a.btn.btn-primary.btn-lg{href: "pycortex" } 3D View
             - if image.nidm_results
                 .btn-group
@@ -88,7 +93,7 @@
                 .float-right-wrapper
                     - if not image.nidm_results
                         %a.btn.btn-danger.btn-lg{href: "{% url 'delete_image' image.id %}", id: 'delete_image' } Delete
-                        
+
         - if warning
             .alert.alert-danger
                 {{ warning }}
