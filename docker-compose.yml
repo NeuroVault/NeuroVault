@@ -1,16 +1,23 @@
 db:
   image: postgres
 
+data:
+  image: cogniteev/echo
+  volumes:
+    - /var/www/image_data
+
 uwsgi:
   restart: always
   image: neurovault/neurovault
+  volumes_from:
+    - data
   volumes:
     - .:/code
     - /var/www/static
-    - /var/www/image_data
   links:
     - db
     - redis
+    - data
 
 nginx:
   restart: always
@@ -22,13 +29,15 @@ nginx:
     - uwsgi_params.par:/etc/nginx/uwsgi_params.par:ro
   volumes_from:
     - uwsgi
+    - data
   links:
     - uwsgi
+    - data
 
 redis:
   restart: always
   image: redis
-  
+
 worker:
   image: neurovault/neurovault
   command: celery worker -A neurovault.celery -Q default -n default@%h
@@ -36,6 +45,8 @@ worker:
     - .:/code
   volumes_from:
     - uwsgi
+    - data
   links:
     - db
     - redis
+    - data
