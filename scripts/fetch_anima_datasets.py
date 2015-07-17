@@ -72,8 +72,8 @@ for url in datasets:
 
                 quantity_dict = {"Mask": "R",
                                  "F-statistic": "F",
-                                 "F-statistic": "T",
-                                 "F-statistic": "Z",
+                                 "T-statistic": "T",
+                                 "Z-statistic": "Z",
                                  "Beta": "U"}
 
                 quantity = study_element.find("./Metadata/Element[@name='Quantity']")
