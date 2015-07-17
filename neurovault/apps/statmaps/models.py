@@ -135,21 +135,21 @@ class Collection(models.Model):
     def __unicode__(self):
         return self.name
 
-    def save(self):
+    def save(self, *args, **kwargs):
         if self.DOI is not None and self.DOI.strip() == "":
             self.DOI = None
         if self.private_token is not None and self.private_token.strip() == "":
             self.private_token = None
-        
+
         # run calculations when collection turns public
         privacy_changed = False
         if self.pk is not None:
             old_object = Collection.objects.get(pk=self.pk)
-            old_is_private = old_object.private    
-            privacy_changed = old_is_private != self.private        
-                
-        super(Collection, self).save()
-        
+            old_is_private = old_object.private
+            privacy_changed = old_is_private != self.private
+
+        super(Collection, self).save(*args, **kwargs)
+
         if privacy_changed and self.private == False:
             for image in self.image_set.all():
                 if image.pk:
@@ -158,7 +158,7 @@ class Collection(models.Model):
 
     class Meta:
         app_label = 'statmaps'
-        
+
     def delete(self, using=None):
         cid = self.pk
         for image in self.image_set.all():
@@ -167,22 +167,22 @@ class Collection(models.Model):
         collDir = os.path.join(PRIVATE_MEDIA_ROOT, 'images',str(cid))
         try:
             shutil.rmtree(collDir)
-        except OSError: 
+        except OSError:
             print 'Image directory for collection %s does not exist' %cid
-        
+
         return ret
-        
-         
+
+
 class CognitiveAtlasTask(models.Model):
     name = models.CharField(max_length=200, null=False, blank=False)
     cog_atlas_id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
-    
+
     def __str__(self):
         return self.name
-    
+
     def __unicode__(self):
         return self.name
-    
+
     class Meta:
         ordering = ['name']
 
@@ -190,13 +190,13 @@ class CognitiveAtlasContrast(models.Model):
     name = models.CharField(max_length=200, null=False, blank=False)
     cog_atlas_id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
     task = models.ForeignKey(CognitiveAtlasTask)
-    
+
     def __str__(self):
         return self.name
-    
+
     def __unicode__(self):
         return self.name
-    
+
     class Meta:
         ordering = ['name']
 
@@ -285,7 +285,7 @@ class Image(PolymorphicModel, BaseCollectionItem):
                                               verbose_name="Reduced representation of the image",
                                               null=True, blank=True, upload_to=upload_img_to,
                                               storage=OverwriteStorage())
-    
+
     def get_absolute_url(self):
         return_args = [str(self.id)]
         url_name = 'image_details'
@@ -299,7 +299,7 @@ class Image(PolymorphicModel, BaseCollectionItem):
             url =  self.thumbnail.url
         except ValueError:
             url = os.path.abspath(os.path.join("/static","images","glass_brain_empty.jpg"))
-        return url         
+        return url
 
     @classmethod
     def create(cls, my_file, my_file_name, my_name, my_desc, my_collection_pk, my_map_type):
@@ -343,7 +343,7 @@ class Image(PolymorphicModel, BaseCollectionItem):
                 file_changed = True
             if old_pk.collection != self.collection:
                 collection_changed = True
-                
+
         do_update = True if file_changed else False
         new_image = True if self.pk is None else False
         super(Image, self).save()
@@ -351,7 +351,7 @@ class Image(PolymorphicModel, BaseCollectionItem):
         if (do_update or new_image) and self.collection and self.collection.private == False:
             # Generate glass brain image
             generate_glassbrain_image.apply_async([self.pk])
-        
+
         if collection_changed:
             for field_name in self._meta.get_all_field_names():
                 field_instance = getattr(self, field_name)
@@ -400,12 +400,12 @@ class BaseStatisticMap(Image):
         (M, 'meta-analysis'),
         (OTHER, 'Other'),
     )
-    
+
     map_type = models.CharField(
                     help_text=("Type of statistic that is the basis of the inference"),
                     verbose_name="Map type",
                     max_length=200, null=False, blank=False, choices=MAP_TYPE_CHOICES)
-    
+
     is_thresholded = models.NullBooleanField(null=True, blank=True)
     perc_bad_voxels = models.FloatField(null=True, blank=True)
     not_mni = models.NullBooleanField(null=True, blank=True)
@@ -415,7 +415,7 @@ class BaseStatisticMap(Image):
                     help_text=("What level of summary data was used as the input to this analysis?"),
                     verbose_name="Analysis level",
                     max_length=200, null=True, blank=True, choices=ANALYSIS_LEVEL_CHOICES)
-    
+
     def save(self):
         if self.perc_bad_voxels == None and self.file:
             import neurovault.apps.statmaps.utils as nvutils
@@ -424,7 +424,7 @@ class BaseStatisticMap(Image):
             nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(self.file.name, gzfileobj)})
             self.is_thresholded, ratio_bad = nvutils.is_thresholded(nii)
             self.perc_bad_voxels = ratio_bad*100.0
-            
+
         if self.brain_coverage == None and self.file:
             import neurovault.apps.statmaps.utils as nvutils
             self.file.open()
@@ -432,7 +432,7 @@ class BaseStatisticMap(Image):
             nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(self.file.name, gzfileobj)})
             self.not_mni, self.brain_coverage, self.perc_voxels_outside = nvutils.not_in_mni(nii)
 
-        # Calculation of image reduced_representation and comparisons        
+        # Calculation of image reduced_representation and comparisons
         file_changed = False
         if self.pk is not None:
             existing = Image.objects.get(pk=self.pk)
@@ -443,12 +443,12 @@ class BaseStatisticMap(Image):
 
         # If we have an update, delete old pkl and comparisons first before saving
         if do_update and self.collection:
-            if self.reduced_representation: # not applicable for private collections 
+            if self.reduced_representation: # not applicable for private collections
                 self.reduced_representation.delete()
-                
+
                 # If more than one metric is added to NeuroVault, this must also filter based on metric
                 comparisons = Comparison.objects.filter(Q(image1=self) | Q(image2=self))
-                if comparisons: 
+                if comparisons:
                     comparisons.delete()
         super(BaseStatisticMap, self).save()
 
@@ -456,7 +456,7 @@ class BaseStatisticMap(Image):
         if (do_update or new_image) and self.collection and self.collection.private == False:
             if self.is_thresholded == False:
                 # Default resample_dim is 4mm
-                run_voxelwise_pearson_similarity.apply_async([self.pk]) 
+                run_voxelwise_pearson_similarity.apply_async([self.pk])
 
 
     class Meta:
@@ -488,7 +488,7 @@ class StatisticMap(BaseStatisticMap):
         (EEG, 'EEG'),
         (Other, 'Other')
     )
-    ignore_file_warning = models.BooleanField(blank=False, default=False, verbose_name='Ignore the warning', 
+    ignore_file_warning = models.BooleanField(blank=False, default=False, verbose_name='Ignore the warning',
                                               help_text="Ignore the warning when the map is sparse by nature, an ROI mask, or was acquired with limited field of view.")
     modality = models.CharField(verbose_name="Modality & Acquisition Type", help_text="Brain imaging procedure that was used to acquire the data.",
                                 max_length=200, null=False, blank=False, choices=MODALITY_CHOICES)
@@ -559,9 +559,9 @@ class Similarity(models.Model):
     transformation_ontology_iri = models.URLField(max_length=200, blank=True, db_index=True,help_text="If defined, a url of an ontology IRI to describe the transformation metric",verbose_name="image transformation ontology IRI")
 
     class Meta:
-        verbose_name = "similarity metric"    
+        verbose_name = "similarity metric"
         verbose_name_plural = "similarity metrics"
-        unique_together = ("similarity_metric","transformation")    
+        unique_together = ("similarity_metric","transformation")
 
     def __unicode__(self):
       return "<metric:%s><transformation:%s>" %(self.similarity_metric,self.transformation)
@@ -578,10 +578,9 @@ class Comparison(models.Model):
 
     class Meta:
         unique_together = ("image1","image2")
-        index_together = [["image1", "image2", "similarity_metric"], 
+        index_together = [["image1", "image2", "similarity_metric"],
                           ["image2", "similarity_metric"],
                           ["image1", "similarity_metric"]]
 
         verbose_name = "pairwise image comparison"
         verbose_name_plural = "pairwise image comparisons"
-    
