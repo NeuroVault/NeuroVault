@@ -178,7 +178,7 @@ def view_image(request, pk, collection_cid=None):
     image = get_image(pk,collection_cid,request)
     user_owns_image = owner_or_contrib(request,image.collection)
     api_cid = pk
-    
+
     comparison_is_possible = (image.collection.private == False and isinstance(image, BaseStatisticMap) and \
                               image.is_thresholded == False)
 
@@ -405,7 +405,7 @@ def upload_folder(request, collection_cid):
                     for fname in sorted(filenames):
                         name, ext = splitext_nii_gz(fname)
                         nii_path = os.path.join(root, fname)
-                        
+
                         if ext == '.xml':
                             print "found xml"
                             dom = minidom.parse(os.path.join(root, fname))
@@ -421,7 +421,7 @@ def upload_folder(request, collection_cid):
                                 niftiFiles.extend(split_afni4D_to_3D(nii))
                             else:
                                 niftiFiles.append((fname,nii_path))
-                
+
                 for label,fpath in niftiFiles:
                     # Read nifti file information
                     nii = nib.load(fpath)
@@ -505,11 +505,15 @@ def delete_image(request, pk):
     return redirect('collection_details', cid=cid)
 
 
-@login_required
+
 def view_images_by_tag(request, tag):
-    images = Image.objects.filter(tags__name__in=[tag]).filter(
+    if request.user.is_authenticated():
+        images = Image.objects.filter(tags__name__in=[tag]).filter(
                                         Q(collection__private=False) |
                                         Q(collection__owner=request.user))
+    else:
+        images = Image.objects.filter(tags__name__in=[tag]).filter(
+                                        collection__private=False)
     context = {'images': images, 'tag': tag}
     return render(request, 'statmaps/images_by_tag.html.haml', context)
 
@@ -732,13 +736,13 @@ def compare_images(request,pk1,pk2):
         image1 = save_resampled_transformation_single(image1.id) # cannot run this async
     if not image2.reduced_representation:
         image2 = save_resampled_transformation_single(image1.id) # cannot run this async
-    
+
     # Load image vectors from npy files
     image_vector1 = np.load(image1.reduced_representation.file)
     image_vector2 = np.load(image2.reduced_representation.file)
 
     # Load atlas pickle, containing vectors of atlas labels, colors, and values for same voxel dimension (4mm)
-    this_path = os.path.abspath(os.path.dirname(__file__))        
+    this_path = os.path.abspath(os.path.dirname(__file__))
     atlas_pkl_path = os.path.join(this_path, 'static/atlas/atlas_mni_4mm.pkl')
     atlas = joblib.load(atlas_pkl_path)
 
@@ -746,7 +750,7 @@ def compare_images(request,pk1,pk2):
     atlas_svg = os.path.join(this_path, 'static/atlas/atlas_mni_2mm_svg.pkl')
     atlas_svg = joblib.load(atlas_svg)
 
-    # Generate html for similarity search, do not specify atlas    
+    # Generate html for similarity search, do not specify atlas
     html_snippet, _ = scatterplot.scatterplot_compare_vector(image_vector1=image_vector1,
                                                                  image_vector2=image_vector2,
                                                                  image_names=image_names,
@@ -757,7 +761,7 @@ def compare_images(request,pk1,pk2):
                                                                  subsample_every=10, # subsample every 10th voxel
                                                                  custom=custom,
                                                                  remove_scripts="D3_MIN_JS",
-                                                                 width=1000) 
+                                                                 width=1000)
 
     # Add atlas svg to the image, and prepare html for rendering
     html = [h.replace("[coronal]",atlas_svg) for h in html_snippet]
@@ -801,12 +805,12 @@ def find_similar(request,pk):
             if hasattr(image, "map_type") and image.thumbnail:
                 images.append(image)
                 scores.append(comp.similarity_score)
-    
+
         # We will need lists of image ids, png paths, query id, query path, tags, names, scores
         image_ids = [image.pk for image in images]
         png_img_paths = [image.get_thumbnail_url() for image in images]
         tags = [[str(image.map_type)] for image in images]
-    
+
         # The top text will be the collection name, the bottom text the image name
         bottom_text = ["%s" % (image.name) for image in images]
         top_text = ["%s" % (image.collection.name) for image in images]
@@ -815,7 +819,7 @@ def find_similar(request,pk):
         image_title = format_image_collection_names(image_name=image1.name,
                                                     collection_name=image1.collection.name,
                                                     map_type=image1.map_type,total_length=50)
-    
+
         # Here is the query image
         query_png = image1.thumbnail.url
 
@@ -827,7 +831,7 @@ def find_similar(request,pk):
                                     remove_scripts=["BOOTSTRAP","BOOTSTRAP_MIN"],container_width=1200)
 
         html = [h.strip("\n") for h in html_snippet]
-    
+
         # Get the number of images still processing
         images_processing = count_processing_comparisons(pk)
 
@@ -835,7 +839,7 @@ def find_similar(request,pk):
                    'image_title':image_title, 'image_url': '/images/%s' % (image1.pk) }
         return render(request, 'statmaps/compare_search.html', context)
     else:
-        error_message = "Image comparison is not enabled for thresholded images." 
+        error_message = "Image comparison is not enabled for thresholded images."
         context = {'error_message': error_message}
         return render(request, 'statmaps/error_message.html', context)
 
