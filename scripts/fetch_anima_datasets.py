@@ -30,7 +30,7 @@ for url in datasets:
             xml_obj = e.fromstring(content)
 
             study_description = xml_obj.find(".//Element[@name='Description']").text.strip()
-            study_description += "/n/n This dataset was automatically imported from the ANIMA <http://anima.modelgui.org/> database."
+            study_description += " This dataset was automatically imported from the ANIMA <http://anima.modelgui.org/> database."
             study_name = xml_obj.find(".").attrib['name']
             tags = xml_obj.find(".//Element[@name='Keywords']").text.strip().split(";")
             tags.append("ANIMA")
