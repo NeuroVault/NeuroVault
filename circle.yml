@@ -15,9 +15,9 @@ dependencies:
 
 test:
   override:
-    - set -o pipefail && docker-compose run uwsgi python manage.py test 2>&1 | tee log.txt
     - docker-compose --verbose up -d && sleep 40
     - curl --retry 10 --retry-delay 5 -vk http://localhost
+    - set -o pipefail && docker-compose run uwsgi python manage.py test 2>&1 | tee log.txt
     - if grep -q "FAILED" log.txt; then false; else true; fi
 
 deployment:
