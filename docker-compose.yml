@@ -17,7 +17,6 @@ uwsgi:
   links:
     - db
     - redis
-    - data
 
 nginx:
   restart: always
@@ -32,7 +31,6 @@ nginx:
     - data
   links:
     - uwsgi
-    - data
 
 redis:
   restart: always
@@ -49,4 +47,3 @@ worker:
   links:
     - db
     - redis
-    - data
