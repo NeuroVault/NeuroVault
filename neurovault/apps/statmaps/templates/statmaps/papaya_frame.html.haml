@@ -26,8 +26,9 @@ body {margin:0;padding:0;background:none transparent;}
 
      $(document).ready(function() {
         $('#NeuroVaultPapayaHolder').addClass('well');
-        $('#NeuroVaultPapayaHolder').prepend($('<h4>NeuroVault Image: <a target="_top" href="http://{{ request.get_host }}{% url 'image_details' image.pk %}">{{image.name}}</a></h4>'));
-        $('#NeuroVaultPapayaHolder').css("width","470px").css("height","502px").css("padding","5px");
+        $('#NeuroVaultPapayaHolder').prepend($('<div style="margin: 8px;"><h4>NeuroVault Image: <a target="_top" href="http://{{ request.get_host }}{% url 'image_details' image.pk %}">{{image.name|truncatechars:35}}</a></h4></div>'));
+        $('#NeuroVaultPapayaHolder').css("width","470px").css("height","auto").css("padding","5px");
+        $('#NeuroVaultPapayaHolder').append($('<div style="height: 90px; overflow: auto; margin: 7px;"><p><b>Description:</b> {{image.description}}</p></div>'));
     });
 
 </script>
@@ -39,7 +40,7 @@ body {margin:0;padding:0;background:none transparent;}
 
 {% block body %}
 <body style="background-color:transparent">
-#NeuroVaultPapayaHolder{style: "width:470px; height:472px;"}
+#NeuroVaultPapayaHolder{style: "width:470px; height: auto;"}
   .papaya{"data-params" => "params"}
 </body>
 {% endblock %}
