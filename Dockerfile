@@ -4,10 +4,10 @@ RUN apt-get update && apt-get install -y \
     libopenblas-dev \
     gfortran \
     libhdf5-dev \
-	default-jre
+	  default-jre
 
 RUN pip install numpy \
-    cython 
+    cython
 RUN pip install -v scipy
 RUN pip install scikit-learn pandas h5py matplotlib
 
