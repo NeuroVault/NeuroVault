@@ -64,57 +64,43 @@
     $('#upload_archive').click(function(e) {
       return document.getElementById("id_file").click();
     });
-    $('#show_modal').click(function(e) {
-      showModal();
+    $('#upload_folder').click(function(e) {
+      showLoader()
+      return document.getElementById("folder_input").click();
     });
-
-    // UPLOADING FILES
-    var form = document.getElementById('file_form');
-    var fileSelect = document.getElementById('file_select');
-    var uploadButton = document.getElementById('upload_button');
-    
-    form.onsubmit = function(event) {
-        event.preventDefault()
-        // Tell user we are uploading
-        uploadButton.innerHTML = "Uploading..."
-        // Get the files
-        var files = fileSelect.files;
-        var csrftoken, data, files, i, paths, xhr;
-        paths = "";
-        xhr = new XMLHttpRequest();
-        data = new FormData();
-        for (i in files) {
-            if (files[i].name !== void 0 && files[i].webkitRelativePath !== void 0) {
-                if (files[i].name.indexOf(".") !== 0 && files[i].webkitRelativePath.indexOf('.files') === -1) {
-                    data.append('paths[]', files[i].webkitRelativePath);
-                    data.append('file_input[]', files[i]);
-                }
-            }
+    $('#id_file').change(function(e) {
+      return document.upload_folder_form.submit();
+    });
+    $('#folder_input').change(function(e) {
+      uldata = e.target.files;
+      var csrftoken, data, files, i, paths, xhr;
+      paths = "";
+      files = uldata;
+      xhr = new XMLHttpRequest();
+      data = new FormData();
+      for (i in files) {
+        if (files[i].name !== void 0 && files[i].webkitRelativePath !== void 0) {
+          if (files[i].name.indexOf(".") !== 0 && files[i].webkitRelativePath.indexOf('.files') === -1) {
+            data.append('paths[]', files[i].webkitRelativePath);
+            data.append('file_input[]', files[i]);
+          }
         }
+      }
 
         csrftoken = $.cookie('csrftoken');
         xhr.open('POST', "upload_folder", true);
         xhr.setRequestHeader("X-CSRFToken", csrftoken);
         xhr.onloadstart = function(){
-            hideModal()
             showLoader()
         };
         // We need to know when the request finishes. 
         xhr.onload = function () {
         if (xhr.status === 200) {
-            // File(s) uploaded.
-            uploadButton.innerHTML = 'Done';
-            document.location = ''
-            } else {
-            uploadButton.innerHTML = 'Cancelled';
-            }
             hideLoader();
-        };
+            document.location = ''
+           };
+        }
       xhr.send(data);
-    }
-    
-    $('#id_file').change(function(e) {
-      return document.upload_folder_form.submit();
     });
     if (navigator.userAgent.indexOf("Safari") > -1 && navigator.userAgent.indexOf("Chrome") === -1) {
       return $('a[href="pycortex"]').hide();
@@ -127,14 +113,6 @@
 
 {% block content %}
 <script>
-function showModal() {
-    document.getElementById('upload_files').style.display = 'block';
-    document.getElementById('fade').style.display = 'block';
-}
-function hideModal() {
-    document.getElementById('upload_files').style.display = 'none';
-    document.getElementById('fade').style.display = 'none';
-}
 function showLoader() {
     document.getElementById('upload_process').style.display = 'block';
     document.getElementById('fade').style.display = 'block';
@@ -144,15 +122,7 @@ function hideLoader() {
     document.getElementById('upload_process').style.display = 'none';
     document.getElementById('fade').style.display = 'none';
 }
-
-
 </script>
-<!-- Hidden loader -->
-<div id='upload_process' class='neuron_loader' data-backdrop='static' style='margin-top: 175px; left:42%; top:5%; position:absolute; z-index:2000; display:none'>          
-    <img src="{% static "css/neuron_loader.gif"%}"/>
-</div><!-- close upload process-->
-
-
 <div class='row'>
     <div class='col-md-12'>
         <h2>{{ collection.name }}</h2>
@@ -177,20 +147,13 @@ function hideLoader() {
                 <a class='btn btn-primary' href='pycortex'>3D View</a>
                 {% endif %}      
                 {% if edit_permission %}
-                    <a class='btn btn-primary' href='/collections/1/edit'>Edit collection</a>
-                    
+                    <a class='btn btn-primary' href='/collections/{{ collection.id }}/edit'>Edit collection</a>
                     {% if collection.image_set.all %}
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Add images <span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a href='/collections/{{ collection.id }}/addimage'>Add single image</a></li>
-                            <li><a id='upload_archive' href="#">Upload archive (.zip)</a></li>
-                            <li><a id="show_modal">Add many images</a></li>
-                        </ul>
-                    </div>
-
+                    <a class='btn btn-primary' href='/collections/{{ collection.id }}/addimage'>Add image</a>
+                    <a id='upload_archive' class='btn btn-primary'>Upload archive (.zip)</a>
+                    <!--[if !IE]> -->
+                    <a id='upload_folder' class='btn btn-primary'>Upload folder</a>
+                    <!-- <![endif]-->
                     {% endif %}
                     {% if delete_permission %}
                     <div class='float-right-wrapper'>
@@ -289,12 +252,16 @@ function hideLoader() {
                        <input id='folder_input' multiple='' name='file_input[]' webkitdirectory='' mozdirectory='' directory='' type='file' />
                        <input id='paths' type='hidden' name='paths' />
                    </div>
-                    <a class='btn btn-primary btn-lg' href='/collections/{{ collection.id }}/addimage'>Add a single image</a>
-                    <a id='upload_archive' class='btn-lg btn btn-primary'>Upload an archive (.zip)</a>
-                   <a class='btn btn-primary btn-lg' id="show_modal">Add images</a>
+                   <a class='btn btn-lg btn-primary' href='/collections/{{ collection.pk }}/addimage'>Add images one by one</a>
+                   <a id='upload_archive' class='btn btn-lg btn-primary'>Upload an archive with images (.zip or .tar.gz)</a>	
+                   <!--[if !IE]> -->
+	
+                   <a id='upload_folder' class='btn btn-lg btn-primary'>Upload a folder with images</a>
+                   <!-- <![endif]-->
                </div>
                {% endif %}<!-- close if collection.image_set.all -->
             </div><!-- Close images tab-->
+
             <div id='details' class='tab-pane'>
                 <table class='table table-condensed table-striped table-hover collection-details-datatable'>
                     <thead>
@@ -313,28 +280,9 @@ function hideLoader() {
             </div>
       </div><!-- Close tab content-->
 
-      <!-- Upload files modal-->
-      <div id='upload_files' class='modal' data-backdrop='static' style='margin-top: 175px;'>
-          <div class='modal-dialog'>
-              <div class='modal-content'>
-                  <div class='modal-header'>
-                      <button type="button" class="close" data-dismiss="modal" aria-hidden="true" onclick="hideModal()">&times;</button>
-                      <h4 class="modal-title">Add Images</h4>
-                  </div>
-                  <div class='modal-body' style="height:65px">
-                    <!--[if !IE]> -->
-                   <form id="file_form" method="POST">
-                        <div class="float-right-wrapper">
-                            <button type="submit" class="btn btn-primary" style="width:150px" id="upload_button">Upload images</button>
-                        </div>
-                        <input type="file" id="file_select" name="brainmaps[]" multiple/>
-                   </form>
-                    <!-- <![endif]-->
-                  </div>
-              </div>
-          </div>
-      </div><!-- close modal -->
-      
+      <div id='upload_process' class='modal neuron_loader' data-backdrop='static' style='margin-top: 175px; left:42%; top:5%' data-keyboard='false'>
+          <img src="{% static "css/neuron_loader.gif"%}"/>
+      </div><!-- close upload process-->
     </div><!-- column-->
 </div><!-- row-->
 
