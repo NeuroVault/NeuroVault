@@ -149,11 +149,18 @@ function hideLoader() {
                 {% if edit_permission %}
                     <a class='btn btn-primary' href='/collections/{{ collection.id }}/edit'>Edit collection</a>
                     {% if collection.image_set.all %}
-                    <a class='btn btn-primary' href='/collections/{{ collection.id }}/addimage'>Add image</a>
-                    <a id='upload_archive' class='btn btn-primary'>Upload archive (.zip)</a>
-                    <!--[if !IE]> -->
-                    <a id='upload_folder' class='btn btn-primary'>Upload folder</a>
-                    <!-- <![endif]-->
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Add images <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a href='/collections/{{ collection.id }}/addimage'>Add single image</a></li>
+                            <li><a id='upload_archive' href="#">Upload archive (.zip)</a></li>
+                            <!--[if !IE]> -->
+                            <li><a id='upload_folder'>Upload folder</a>
+                            <!-- <![endif]-->
+                        </ul>
+                    </div>
                     {% endif %}
                     {% if delete_permission %}
                     <div class='float-right-wrapper'>
