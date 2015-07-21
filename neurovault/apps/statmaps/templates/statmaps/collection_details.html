@@ -71,37 +71,65 @@
     $('#id_file').change(function(e) {
       return document.upload_folder_form.submit();
     });
-    $('#folder_input').change(function(e) {
-      uldata = e.target.files;
-      var csrftoken, data, files, i, paths, xhr;
-      paths = "";
-      files = uldata;
-      xhr = new XMLHttpRequest();
-      data = new FormData();
-      for (i in files) {
-        if (files[i].name !== void 0 && files[i].webkitRelativePath !== void 0) {
-          if (files[i].name.indexOf(".") !== 0 && files[i].webkitRelativePath.indexOf('.files') === -1) {
-            data.append('paths[]', files[i].webkitRelativePath);
-            data.append('file_input[]', files[i]);
-          }
-        }
-      }
-
-        csrftoken = $.cookie('csrftoken');
-        xhr.open('POST', "upload_folder", true);
-        xhr.setRequestHeader("X-CSRFToken", csrftoken);
-        xhr.onloadstart = function(){
-            showLoader()
-        };
-        // We need to know when the request finishes. 
-        xhr.onload = function () {
-        if (xhr.status === 200) {
-            hideLoader();
-            document.location = ''
-           };
-        }
-      xhr.send(data);
+    $('#show_modal').click(function(e) {
+      showModal();
     });
+
+    // Folder upload
+    $('#folder_input').change(function(e) {
+      files = e.target.files;
+      sendFiles(files)
+     });
+
+    // Multiple Files Upload
+    var form = document.getElementById('file_form');
+    var fileSelect = document.getElementById('file_select');
+    var uploadButton = document.getElementById('upload_button');
+    
+    form.onsubmit = function(event) {
+        event.preventDefault()
+        // Tell user we are uploading
+        uploadButton.innerHTML = "Uploading..."
+        // Get the files
+        var files = fileSelect.files;
+        sendFiles(files);  
+    }
+
+    // Upload function
+    function sendFiles(files) {
+        var csrftoken, data, i, paths, xhr;
+        paths = "";
+        xhr = new XMLHttpRequest();
+        data = new FormData();
+        for (i in files) {
+            if (files[i].name !== void 0 && files[i].webkitRelativePath !== void 0) {
+                if (files[i].name.indexOf(".") !== 0 && files[i].webkitRelativePath.indexOf('.files') === -1) {
+                    data.append('paths[]', files[i].webkitRelativePath);
+                    data.append('file_input[]', files[i]);
+                }
+            }
+        }
+        if (files.length != 0) {
+            csrftoken = $.cookie('csrftoken');
+            xhr.open('POST', "upload_folder", true);
+            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            xhr.onloadstart = function(){
+                hideModal()
+                showLoader()
+            };
+            // We need to know when the request finishes. 
+            xhr.onload = function () {
+            if (xhr.status === 200) {
+                hideLoader();
+                document.location = ''
+               };
+            }
+          xhr.send(data);
+        } else {
+          uploadButton.innerHTML = "No images selected"
+        }  
+    }
+
     if (navigator.userAgent.indexOf("Safari") > -1 && navigator.userAgent.indexOf("Chrome") === -1) {
       return $('a[href="pycortex"]').hide();
     }
@@ -120,6 +148,14 @@ function showLoader() {
 
 function hideLoader() {
     document.getElementById('upload_process').style.display = 'none';
+    document.getElementById('fade').style.display = 'none';
+}
+function showModal() {
+    document.getElementById('upload_files').style.display = 'block';
+    document.getElementById('fade').style.display = 'block';
+}
+function hideModal() {
+    document.getElementById('upload_files').style.display = 'none';
     document.getElementById('fade').style.display = 'none';
 }
 </script>
@@ -154,7 +190,10 @@ function hideLoader() {
                         Add images <span class="caret"></span>
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a href='/collections/{{ collection.id }}/addimage'>Add single image</a></li>
+                            <li><a href='/collections/{{ collection.id }}/addimage'>Add a single image</a></li>
+                            <!--[if !IE]> -->
+                            <li><a id="show_modal">Add multiple images</a></li>
+                            <!-- <![endif]-->
                             <li><a id='upload_archive' href="#">Upload archive (.zip)</a></li>
                             <!--[if !IE]> -->
                             <li><a id='upload_folder'>Upload folder</a>
@@ -287,8 +326,28 @@ function hideLoader() {
             </div>
       </div><!-- Close tab content-->
 
-      <div id='upload_process' class='modal neuron_loader' data-backdrop='static' style='margin-top: 175px; left:42%; top:5%' data-keyboard='false'>
-          <img src="{% static "css/neuron_loader.gif"%}"/>
+      <!-- Upload files modal-->
+      <div id='upload_files' class='modal' data-backdrop='static' style='margin-top: 175px;'>
+          <div class='modal-dialog'>
+              <div class='modal-content'>
+                  <div class='modal-header'>
+                      <button type="button" class="close" data-dismiss="modal" aria-hidden="true" onclick="hideModal()">&times;</button>
+                      <h4 class="modal-title">Add Images</h4>
+                  </div>
+                  <div class='modal-body' style="height:65px">
+                   <form id="file_form" method="POST">
+                        <div class="float-right-wrapper">
+                            <button type="submit" class="btn btn-primary" style="width:150px" id="upload_button">Upload images</button>
+                        </div>
+                        <input type="file" id="file_select" name="brainmaps[]" multiple/>
+                   </form>
+                  </div>
+              </div>
+          </div>
+      </div><!-- close modal -->
+
+      <div id='upload_process' class='modal neuron_loader' data-backdrop='static' style='margin-top: 175px; left:45%; top:15%' data-keyboard='false'>
+          <img src="{% static "images/spinner.gif"%}"/>
       </div><!-- close upload process-->
     </div><!-- column-->
 </div><!-- row-->
