@@ -85,14 +85,14 @@
     var form = document.getElementById('file_form');
     var fileSelect = document.getElementById('file_select');
     var uploadButton = document.getElementById('upload_button');
-    
+
     form.onsubmit = function(event) {
         event.preventDefault()
         // Tell user we are uploading
         uploadButton.innerHTML = "Uploading..."
         // Get the files
         var files = fileSelect.files;
-        sendFiles(files);  
+        sendFiles(files);
     }
 
     // Upload function
@@ -117,7 +117,7 @@
                 hideModal()
                 showLoader()
             };
-            // We need to know when the request finishes. 
+            // We need to know when the request finishes.
             xhr.onload = function () {
             if (xhr.status === 200) {
                 hideLoader();
@@ -127,7 +127,7 @@
           xhr.send(data);
         } else {
           uploadButton.innerHTML = "No images selected"
-        }  
+        }
     }
 
     if (navigator.userAgent.indexOf("Safari") > -1 && navigator.userAgent.indexOf("Chrome") === -1) {
@@ -172,16 +172,16 @@ function hideModal() {
            </div>
         {% endif %}
         {% if collection.full_dataset_url %}
-           <div class="lead">Full dataset available at: 
+           <div class="lead">Full dataset available at:
                 <a href="{{ collection.full_dataset_url }}">{{ collection.full_dataset_url }}</a>
            </div>
         {% endif %}
-        
+
         <div class='management-options'>
             <form action='upload_folder' method='POST' name='upload_folder_form' enctype='multipart/form-data'>
                 {% if collection.image_set.all %}
                 <a class='btn btn-primary' href='pycortex'>3D View</a>
-                {% endif %}      
+                {% endif %}
                 {% if edit_permission %}
                     <a class='btn btn-primary' href='/collections/{{ collection.id }}/edit'>Edit collection</a>
                     {% if collection.image_set.all %}
@@ -194,9 +194,9 @@ function hideModal() {
                             <!--[if !IE]> -->
                             <li><a id="show_modal">Add multiple images</a></li>
                             <!-- <![endif]-->
-                            <li><a id='upload_archive' href="#">Upload archive (.zip)</a></li>
+                            <li><a id='upload_archive' href="#">Upload an archive (.zip)</a></li>
                             <!--[if !IE]> -->
-                            <li><a id='upload_folder'>Upload folder</a>
+                            <li><a id='upload_folder'>Upload a folder</a>
                             <!-- <![endif]-->
                         </ul>
                     </div>
@@ -219,10 +219,10 @@ function hideModal() {
                         </div>
                     </div>
                 {% endif %}
-                {% endif %}<!-- Close edit permission-->                 
+                {% endif %}<!-- Close edit permission-->
             </form>
         </div><!-- Close management options-->
-        
+
 
         {% if messages %}
         <ul class="messages">
@@ -283,7 +283,7 @@ function hideModal() {
                            {% else %}
 	                   {{ image.description }}
                            {% endif %}
-                       </td>	
+                       </td>
                   </tr>
                {% endfor %}
                </tbody>
@@ -299,9 +299,9 @@ function hideModal() {
                        <input id='paths' type='hidden' name='paths' />
                    </div>
                    <a class='btn btn-lg btn-primary' href='/collections/{{ collection.pk }}/addimage'>Add images one by one</a>
-                   <a id='upload_archive' class='btn btn-lg btn-primary'>Upload an archive with images (.zip or .tar.gz)</a>	
+                   <a id='upload_archive' class='btn btn-lg btn-primary'>Upload an archive with images (.zip or .tar.gz)</a>
                    <!--[if !IE]> -->
-	
+
                    <a id='upload_folder' class='btn btn-lg btn-primary'>Upload a folder with images</a>
                    <!-- <![endif]-->
                </div>
