@@ -64,22 +64,35 @@
     $('#upload_archive').click(function(e) {
       return document.getElementById("id_file").click();
     });
-    $('#upload_folder').click(function(e) {
-      showLoader()
-      return document.getElementById("folder_input").click();
-    });
-    $('#id_file').change(function(e) {
-      return document.upload_folder_form.submit();
-    });
     $('#show_modal').click(function(e) {
       showModal();
     });
+    $('#show_folder_modal').click(function(e) {
+      showFolderModal();
+    });
+    $('#show_folder_select').click(function(e) {
+      $('#upload_folder_button').prop('disabled', false);
+      folderMessage.innerHTML = "";
+      return document.getElementById("folder_input").click();
+    });
 
     // Folder upload
-    $('#folder_input').change(function(e) {
-      files = e.target.files;
-      sendFiles(files)
-     });
+    var folderform = document.getElementById('upload_folder_form');
+    var folderSelect = document.getElementById('folder_input');
+    var folderMessage = document.getElementById('upload_folder_message');
+
+    folderform.onsubmit = function(event) {
+        event.preventDefault()
+        // Get the files
+        var files = folderSelect.files;
+        if (files.length == 0){
+            folderMessage.innerHTML = "Empty folder"
+            $('#upload_folder_button').prop('disabled', true);
+        } else {
+            folderMessage.innerHTML = files.length + " files selected"
+        }
+        sendFiles(files);
+    }
 
     // Multiple Files Upload
     var form = document.getElementById('file_form');
@@ -115,6 +128,7 @@
             xhr.setRequestHeader("X-CSRFToken", csrftoken);
             xhr.onloadstart = function(){
                 hideModal()
+                hideFolderModal()
                 showLoader()
             };
             // We need to know when the request finishes.
@@ -148,6 +162,14 @@ function showLoader() {
 
 function hideLoader() {
     document.getElementById('upload_process').style.display = 'none';
+    document.getElementById('fade').style.display = 'none';
+}
+function showFolderModal() {
+    document.getElementById('upload_folder').style.display = 'block';
+    document.getElementById('fade').style.display = 'block';
+}
+function hideFolderModal() {
+    document.getElementById('upload_folder').style.display = 'none';
     document.getElementById('fade').style.display = 'none';
 }
 function showModal() {
@@ -196,7 +218,7 @@ function hideModal() {
                             <!-- <![endif]-->
                             <li><a id='upload_archive' href="#">Upload an archive (.zip)</a></li>
                             <!--[if !IE]> -->
-                            <li><a id='upload_folder'>Upload a folder</a>
+                            <li><a id='show_folder_modal'>Upload a folder</a>
                             <!-- <![endif]-->
                         </ul>
                     </div>
@@ -292,17 +314,13 @@ function hideModal() {
                <div class='light-head center-text'>
                    This collection is empty. You can:
                    <br><br>
-                   {% csrf_token %}
-                   <div style='height: 0px;width: 0px; overflow:hidden;'>
-                       {{ form.file }}
-                       <input id='folder_input' multiple='' name='file_input[]' webkitdirectory='' mozdirectory='' directory='' type='file' />
-                       <input id='paths' type='hidden' name='paths' />
-                   </div>
                    <a class='btn btn-lg btn-primary' href='/collections/{{ collection.pk }}/addimage'>Add images one by one</a>
+                   <!--[if !IE]> -->
+                   <a id='show_modal' class='btn btn-lg btn-primary'>Upload multiple images</a>
+                   <!-- <![endif]-->
                    <a id='upload_archive' class='btn btn-lg btn-primary'>Upload an archive with images (.zip or .tar.gz)</a>
                    <!--[if !IE]> -->
-
-                   <a id='upload_folder' class='btn btn-lg btn-primary'>Upload a folder with images</a>
+                   <a id='show_folder_modal' class='btn btn-lg btn-primary'>Upload a folder</a>
                    <!-- <![endif]-->
                </div>
                {% endif %}<!-- close if collection.image_set.all -->
@@ -340,6 +358,41 @@ function hideModal() {
                             <button type="submit" class="btn btn-primary" style="width:150px" id="upload_button">Upload images</button>
                         </div>
                         <input type="file" id="file_select" name="brainmaps[]" multiple/>
+                   </form>
+                  </div>
+              </div>
+          </div>
+      </div><!-- close modal -->
+
+      <!-- Upload folder modal-->
+      <div id='upload_folder' class='modal' data-backdrop='static' style='margin-top: 175px;'>
+          <div class='modal-dialog'>
+              <div class='modal-content'>
+                  <div class='modal-header'>
+                      <button type="button" class="close" data-dismiss="modal" aria-hidden="true" onclick="hideFolderModal()">&times;</button>
+                      <h4 class="modal-title">Add Images</h4>
+                  </div>
+                  <div class='modal-body' style="height:65px">
+                   <form id="upload_folder_form" method="POST">
+                      <div class="row">
+                          <div style='height: 0px;width: 0px; overflow:hidden;'>
+                              {{ form.file }}
+                              {% csrf_token %}
+                              <input id='folder_input' multiple='' name='file_input[]' webkitdirectory='' mozdirectory='' directory='' type='file' />
+                              <input id='paths' type='hidden' name='paths' />
+                          </div>
+                          <div class="col-md-3">
+                              <button type="button" class="btn btn-primary" id="show_folder_select">Select Folder</button>
+                          </div>
+                          <div class="col-md-3">
+                              <p style="padding-top:8px" id="upload_folder_message"></p>
+                          </div>
+                          <div class="col-md-6">
+                              <div class="float-right-wrapper">
+                                  <button type="submit" class="btn btn-primary" style="width:150px" id="upload_folder_button" disabled>Upload folder</button>
+                              </div>
+                          </div>
+                      </div><!--close row-->
                    </form>
                   </div>
               </div>
