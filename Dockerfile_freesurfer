@@ -8,3 +8,15 @@ ENV FS_FREESURFERENV_NO_OUTPUT 1
 RUN /bin/bash -c "source $FREESURFER_HOME/FreeSurferEnv.sh"
 
 RUN /bin/bash -c 'echo "krzysztof.gorgolewski@gmail.com\n5172\n *CvumvEV3zTfg" > /opt/freesurfer/.license'
+
+RUN svn export --force https://github.com/NeuroVault/neurovault_data/trunk/pycortex_datastore /usr/local/share/pycortex/
+
+RUN apt-get update && apt-get -y install tcsh libglu1-mesa libxmu6
+
+RUN /opt/freesurfer/bin/mri_convert /opt/freesurfer/subjects/fsaverage/mri/brain.mgz /opt/freesurfer/subjects/fsaverage/mri/brain.nii.gz
+
+RUN mkdir /usr/local/share/pycortex/db/fsaverage/transforms/
+
+RUN pip install tornado
+
+ADD neurovault/local_settings_fs.py neurovault/local_settings.py
