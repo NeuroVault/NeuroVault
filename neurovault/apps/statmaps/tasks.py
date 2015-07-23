@@ -13,6 +13,7 @@ from neurovault.celery import nvcelery as celery_app
 from pybraincompare.compare.mrutils import resample_images_ref, make_binary_deletion_mask, make_binary_deletion_vector
 from pybraincompare.compare.maths import calculate_correlation, calculate_pairwise_correlation
 from pybraincompare.mr.datasets import get_data_directory
+from .utils import get_existing_comparisons
 from six import BytesIO
 from django.core.files.base import ContentFile
 
@@ -117,6 +118,10 @@ def save_voxelwise_pearson_similarity(pk1,pk2,resample_dim=[4,4,4],reduced_repre
         save_voxelwise_pearson_similarity_resample(pk1,pk2,resample_dim)
     else:
         save_voxelwise_pearson_similarity_reduced_representation(pk1,pk2)
+    
+    max_results = 100
+    get_existing_comparisons(pk1).extra(select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[max_results:].delete()
+    get_existing_comparisons(pk2).extra(select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[max_results:].delete()
 
 
 # Calculate pearson correlation from pickle files with brain masked vectors of image values
@@ -155,7 +160,7 @@ def save_voxelwise_pearson_similarity_reduced_representation(pk1, pk2):
         if not numpy.isnan(pearson_score):     
             Comparison.objects.update_or_create(image1=image1, image2=image2,
                                                 similarity_metric=pearson_metric,
-                                                similarity_score=pearson_score)
+                                                defaults={'similarity_score':pearson_score})
             return image1.pk,image2.pk,pearson_score
         else:
             raise Exception("Comparison returned NaN.")
