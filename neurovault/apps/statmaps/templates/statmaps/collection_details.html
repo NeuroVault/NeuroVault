@@ -86,7 +86,7 @@
         // Get the files
         var files = folderSelect.files;
         if (files.length == 0){
-            folderMessage.innerHTML = "Empty folder"
+            folderMessage.innerHTML = "No files selected"
             $('#upload_folder_button').prop('disabled', true);
         } else {
             folderMessage.innerHTML = files.length + " files selected"
