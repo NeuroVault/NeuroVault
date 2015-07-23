@@ -271,6 +271,12 @@ CACHES = {
 MANDRILL_API_KEY = "z2O_vfFUJB4L2yeF4Be9Tg" # this is a test key replace wit ha different one in production
 EMAIL_BACKEND = "djrill.mail.backends.djrill.DjrillBackend"
 
+if os.path.exists('/usr/local/share/pycortex/db/fsaverage'):
+    STATICFILES_DIRS = (
+                        ('pycortex-resources', '/usr/local/lib/python2.7/site-packages/cortex/webgl/resources'),
+                        ('pycortex-ctmcache', '/usr/local/share/pycortex/db/fsaverage/cache')
+                        )
+
 # Bogus secret key.
 try:
     from secrets import *
@@ -316,3 +322,5 @@ if "test" in sys.argv:
     PRIVATE_MEDIA_ROOT = test_media_root
     CELERY_ALWAYS_EAGER = True
     CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
+    
+    

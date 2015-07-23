@@ -18,5 +18,3 @@ RUN /opt/freesurfer/bin/mri_convert /opt/freesurfer/subjects/fsaverage/mri/brain
 RUN mkdir /usr/local/share/pycortex/db/fsaverage/transforms/
 
 RUN pip install tornado
-
-ADD neurovault/local_settings_fs.py neurovault/local_settings.py
