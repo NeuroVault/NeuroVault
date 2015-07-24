@@ -26,3 +26,4 @@ deployment:
     commands:
       - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
       - docker push $DOCKER_REPO
+      - curl -H "Content-Type: application/json" --data '{"build": true}' -X POST https://registry.hub.docker.com/u/neurovault/neurovault_fs/trigger/591f2a58-87ed-41b4-bda4-196e4bb929bd/
