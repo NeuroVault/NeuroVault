@@ -95,7 +95,7 @@ urlpatterns = patterns('',
     url(r'^images/(?P<pk>\d+)/js/embed$',
         papaya_js_embed,
         name='papaya_js_embed'),
-    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidm_name>[A-Za-z0-9\.\+\-\_\s\[\]]+\.nidm\_?[0-9]*)/?$',
+    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidm_name>[A-Za-z0-9\.\+\-\_\s\[\]\(\)]+\.nidm\_?[0-9]*)/?$',
         view_nidm_results,
         name='view_nidm_results'),
 
@@ -103,7 +103,7 @@ urlpatterns = patterns('',
         papaya_js_embed,
         {'iframe':True},name='papaya_iframe_embed'),
 
-    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<img_name>[A-Za-z0-9\.\+\-\_\s\[\]]+)$',
+    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<img_name>[A-Za-z0-9\.\+\-\_\s\[\]\(\)]+)$',
         serve_image,
         name='serve_image'),
 
@@ -125,11 +125,11 @@ urlpatterns = patterns('',
         serve_pycortex,
         name='serve_pycortex_collection'),
 
-    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[A-Za-z0-9\.\+\-\_\s\[\]]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
+    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[A-Za-z0-9\.\+\-\_\s\[\]\(\)]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
         serve_nidm,
         name='serve_nidm_files'),
 
-    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[A-Za-z0-9\.\+\-\_\s\[\]]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
+    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[A-Za-z0-9\.\+\-\_\s\[\]\(\)]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
         serve_nidm_image,
         name='serve_nidm_images'),
 
