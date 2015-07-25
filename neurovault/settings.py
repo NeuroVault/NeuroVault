@@ -14,8 +14,7 @@ DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
-    (('Chris', 'krzysztof.gorgolewski@gmail.com'),
-     ('Gabriel', 'rivera@infocortex.com'))
+    (('Chris', 'krzysztof.gorgolewski@gmail.com'))
 )
 
 MANAGERS = ADMINS
@@ -219,9 +218,9 @@ REST_FRAMEWORK = {
     'DEFAULT_MODEL_SERIALIZER_CLASS':
         'rest_framework.serializers.HyperlinkedModelSerializer',
 
-    # LimitOffsetPagination will allow to set a ?limit= and ?offset= 
+    # LimitOffsetPagination will allow to set a ?limit= and ?offset=
     # variable in the URL.
-    'DEFAULT_PAGINATION_CLASS': 
+    'DEFAULT_PAGINATION_CLASS':
          'neurovault.apps.statmaps.urls.StandardResultPagination',
 
     # Use Django's standard `django.contrib.auth` permissions,
@@ -266,7 +265,7 @@ CACHES = {
                 "LOCATION": '/tmp/file_resubmit/'
             }
           }
-          
+
 # Mandrill config
 MANDRILL_API_KEY = "z2O_vfFUJB4L2yeF4Be9Tg" # this is a test key replace wit ha different one in production
 EMAIL_BACKEND = "djrill.mail.backends.djrill.DjrillBackend"
@@ -276,6 +275,17 @@ if os.path.exists('/usr/local/share/pycortex/db/fsaverage'):
                         ('pycortex-resources', '/usr/local/lib/python2.7/site-packages/cortex/webgl/resources'),
                         ('pycortex-ctmcache', '/usr/local/share/pycortex/db/fsaverage/cache')
                         )
+
+# Celery config
+BROKER_URL = 'redis://redis:6379/0'
+CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_DEFAULT_QUEUE = 'default'
+CELERY_QUEUES = (
+    Queue('default', Exchange('default'), routing_key='default'),
+)
 
 # Bogus secret key.
 try:
@@ -297,17 +307,6 @@ os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
 # provToolbox path
 os.environ["PATH"] += os.pathsep + '/path/to/lib/provToolbox/bin'
 
-# Celery config
-BROKER_URL = 'redis://redis:6379/0'
-CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_DEFAULT_QUEUE = 'default'
-CELERY_QUEUES = (
-    Queue('default', Exchange('default'), routing_key='default'),
-)
-
 #CELERYBEAT_SCHEDULE = {
 #    'run_make_correlation_df': {
 #        'task': 'neurovault.apps.statmaps.tasks...',
@@ -322,5 +321,3 @@ if "test" in sys.argv:
     PRIVATE_MEDIA_ROOT = test_media_root
     CELERY_ALWAYS_EAGER = True
     CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
-    
-    
