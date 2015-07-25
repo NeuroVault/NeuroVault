@@ -1,5 +1,5 @@
 db:
-  image: postgres
+  image: aidanlister/postgres-hstore
 
 data:
   image: cogniteev/echo
