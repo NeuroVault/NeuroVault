@@ -231,9 +231,9 @@ def view_collection(request, cid):
         form = UploadFileForm()
         c = RequestContext(request)
         c.update(context)
-        return render_to_response('statmaps/collection_details.html.haml', {'form': form}, c)
+        return render_to_response('statmaps/collection_details.html', {'form': form}, c)
     else:
-        return render(request, 'statmaps/collection_details.html.haml', context)
+        return render(request, 'statmaps/collection_details.html', context)
 
 
 @login_required

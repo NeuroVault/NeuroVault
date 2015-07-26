@@ -1,0 +1,417 @@
+{% extends "base.html" %}
+{% block head %}
+<title>{% block title %}NeuroVault: {{collection.name}}{% endblock %}</title>
+<style>
+/* neuron loader */
+#fade {
+    display: none;
+    position:absolute;
+    top: 0%;
+    left: 0%;
+    width: 100%;
+    height: 100%;
+    background-color: #ffffff;
+    z-index: 1001;
+    -moz-opacity: 0.8;
+    opacity: .90;
+    filter: alpha(opacity=80);
+}
+</style>
+<script type='text/javascript'>
+(function() {
+  var uldata;
+
+  uldata = void 0;
+
+  $(document).ready(function() {
+    $('#show-viewer').click((function(_this) {
+      return function() {
+        window.viewer.paint();
+        return setTimeout(function() {
+          return window.viewer.paint();
+        }, 1);
+      };
+    })(this));
+    $("table[class*=collection-details-datatable]").dataTable({
+      sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>",
+      sAjaxSource: "/api/collections/" + "{{cid}}" + "/datatable/?format=json",
+      iDisplayLength: 10
+    });
+    $("table[class*=collection-images-datatable]").dataTable({
+      sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>",
+      iDisplayLength: 10,
+      aoColumns: [
+        {
+          sWidth: '7%'
+        }, {
+          sWidth: '43%'
+        }, {
+          sWidth: '12%'
+        }, {
+          sWidth: '15%'
+        }, {
+          sWidth: '23%'
+        }
+      ],
+      fnRowCallback: function(nRow, aData, iDisplayIndex) {
+        return nRow;
+      }
+    });
+    $('#collection-tabs a:first').tab('show');
+    $('#delete_collection').click(function(e) {
+      return confirm("Are you sure you want to delete this collection? This operation cannot be undone!");
+    });
+    $('#upload_archive').click(function(e) {
+      return document.getElementById("id_file").click();
+    });
+    $('#show_modal').click(function(e) {
+      showModal();
+    });
+    $('#show_folder_modal').click(function(e) {
+      showFolderModal();
+    });
+    $('#show_folder_select').click(function(e) {
+      $('#upload_folder_button').prop('disabled', false);
+      folderMessage.innerHTML = "";
+      return document.getElementById("folder_input").click();
+    });
+
+    // Folder upload
+    var folderform = document.getElementById('upload_folder_form');
+    var folderSelect = document.getElementById('folder_input');
+    var folderMessage = document.getElementById('upload_folder_message');
+
+    folderform.onsubmit = function(event) {
+        event.preventDefault()
+        // Get the files
+        var files = folderSelect.files;
+        if (files.length == 0){
+            folderMessage.innerHTML = "No files selected"
+            $('#upload_folder_button').prop('disabled', true);
+        } else {
+            folderMessage.innerHTML = files.length + " files selected"
+        }
+        sendFiles(files);
+    }
+
+    // Multiple Files Upload
+    var form = document.getElementById('file_form');
+    var fileSelect = document.getElementById('file_select');
+    var uploadButton = document.getElementById('upload_button');
+
+    form.onsubmit = function(event) {
+        event.preventDefault()
+        // Tell user we are uploading
+        uploadButton.innerHTML = "Uploading..."
+        // Get the files
+        var files = fileSelect.files;
+        sendFiles(files);
+    }
+
+    // Upload function
+    function sendFiles(files) {
+        var csrftoken, data, i, paths, xhr;
+        paths = "";
+        xhr = new XMLHttpRequest();
+        data = new FormData();
+        for (i in files) {
+            if (files[i].name !== void 0 && files[i].webkitRelativePath !== void 0) {
+                if (files[i].name.indexOf(".") !== 0 && files[i].webkitRelativePath.indexOf('.files') === -1) {
+                    data.append('paths[]', files[i].webkitRelativePath);
+                    data.append('file_input[]', files[i]);
+                }
+            }
+        }
+        if (files.length != 0) {
+            csrftoken = $.cookie('csrftoken');
+            xhr.open('POST', "upload_folder", true);
+            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            xhr.onloadstart = function(){
+                hideModal()
+                hideFolderModal()
+                showLoader()
+            };
+            // We need to know when the request finishes.
+            xhr.onload = function () {
+            if (xhr.status === 200) {
+                hideLoader();
+                document.location = ''
+               };
+            }
+          xhr.send(data);
+        } else {
+          uploadButton.innerHTML = "No images selected"
+        }
+    }
+
+    if (navigator.userAgent.indexOf("Safari") > -1 && navigator.userAgent.indexOf("Chrome") === -1) {
+      return $('a[href="pycortex"]').hide();
+    }
+  });
+
+}).call(this);
+</script>
+{% endblock %}
+
+{% block content %}
+<script>
+function showLoader() {
+    document.getElementById('upload_process').style.display = 'block';
+    document.getElementById('fade').style.display = 'block';
+}
+
+function hideLoader() {
+    document.getElementById('upload_process').style.display = 'none';
+    document.getElementById('fade').style.display = 'none';
+}
+function showFolderModal() {
+    document.getElementById('upload_folder').style.display = 'block';
+    document.getElementById('fade').style.display = 'block';
+}
+function hideFolderModal() {
+    document.getElementById('upload_folder').style.display = 'none';
+    document.getElementById('fade').style.display = 'none';
+}
+function showModal() {
+    document.getElementById('upload_files').style.display = 'block';
+    document.getElementById('fade').style.display = 'block';
+}
+function hideModal() {
+    document.getElementById('upload_files').style.display = 'none';
+    document.getElementById('fade').style.display = 'none';
+}
+</script>
+<div class='row'>
+    <div class='col-md-12'>
+        <h2>{{ collection.name }}</h2>
+        <p>Contributed by {{ collection.owner }}</p>
+        {% if collection.authors %}
+           <div class="lead">{{collection.authors}}</div>
+        {% endif %}
+        {% if collection.doi %}
+           <div class="lead">{{collection.authors}}
+                <a href = "{{ collection.url }}">Link to the paper</a>
+           </div>
+        {% endif %}
+        {% if collection.full_dataset_url %}
+           <div class="lead">Full dataset available at:
+                <a href="{{ collection.full_dataset_url }}">{{ collection.full_dataset_url }}</a>
+           </div>
+        {% endif %}
+
+        <div class='management-options'>
+            <form action='upload_folder' method='POST' name='upload_folder_form' enctype='multipart/form-data'>
+                {% if collection.image_set.all %}
+                <a class='btn btn-primary' href='pycortex'>3D View</a>
+                {% endif %}
+                {% if edit_permission %}
+                    <a class='btn btn-primary' href='/collections/{{ collection.id }}/edit'>Edit collection</a>
+                    {% if collection.image_set.all %}
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Add images <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a href='/collections/{{ collection.id }}/addimage'>Add a single image</a></li>
+                            <!--[if !IE]> -->
+                            <li><a id="show_modal">Add multiple images</a></li>
+                            <!-- <![endif]-->
+                            <li><a id='upload_archive' href="#">Upload an archive (.zip)</a></li>
+                            <!--[if !IE]> -->
+                            <li><a id='show_folder_modal'>Upload a folder</a>
+                            <!-- <![endif]-->
+                        </ul>
+                    </div>
+                    {% endif %}
+                    {% if delete_permission %}
+                    <div class='float-right-wrapper'>
+                        <a id='delete_collection' class='btn btn-danger' href='/collections/{{ collection.id }}/delete'>Delete collection</a>
+                    </div>
+                    {% endif %}
+                    {% csrf_token %}
+                    <div style='height: 0px;width: 0px; overflow:hidden;'>
+                       {{ form.file }}
+                       <input id='folder_input' multiple='' name='file_input[]' webkitdirectory='' mozdirectory='' directory='' type='file' />
+                       <input id='paths' type='hidden' name='paths' />
+                    </div>
+                    {% if collection.private %}
+                    <div class="lead">
+                        <div style="font-size:16px; margin-top:20px;">
+                            <em>Private Collection</em>: To share the link to this collection, please use the private url:<a href="{{ request.path }}">{{ request.path }}</a>
+                        </div>
+                    </div>
+                {% endif %}
+                {% endif %}<!-- Close edit permission-->
+            </form>
+        </div><!-- Close management options-->
+
+
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+            <div id="alert fade in" class="{{ message.tags }}">
+                <button class="close" data-dismiss="alert" type="button"> × {{ message }}</button>
+            </div>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        <ul id='collection-tabs' class='nav nav-tabs'>
+            <li>
+                <a data-toggle='tab' href='#images'>Images</a>
+            </li>
+            <li>
+                <a data-toggle='tab' href='#details'>Details</a>
+
+            </li>
+        </ul>
+
+        <div class='tab-content'>
+            <div id='images' class='tab-pane active'>
+            {%  if collection.image_set.all or not edit_permission %}
+	    <table class='table table-striped table-hover collection-images-datatable'>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Tags</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                   </tr>
+               </thead>
+               <tbody>
+               {% for image in images %}
+                   <tr>
+                       <td>{{image.id}}</td>
+                       <td>{% if image.zip_name %}
+                           <a href="{{image.nidm_results.get_absolute_url}}">{{image.nidm_results.name}}</a>
+                           &nbsp;<i class="icon-double-angle-right"></i>&nbsp;
+                           <a href="{{image.get_absolute_url}}">{{ image.name }}</a>
+                           {% else %}
+                           <a href="{{image.get_absolute_url}}">{{ image.name }}</a>
+                           {% endif %}
+                       </td>
+                       <td>
+                           {% for tag in image.tags.all %}
+                           <a href="/images/tags/{{tag.name}}">{% if not forloop.last %}{{ tag.name }}{% endif %}</a>
+                           {% endfor %}
+                       </td>
+                       <td>
+                           {{ image.polymorphic_ctype.name }}
+                       </td>
+                       <td>{% if image.zip_name %}NIDMResults:
+                           <a href="{{image.nidm_results.zip_file.url}}">
+                               {{image.nidm_results.name}}.zip</a>
+                           {% else %}
+	                   {{ image.description }}
+                           {% endif %}
+                       </td>
+                  </tr>
+               {% endfor %}
+               </tbody>
+               </table>
+               {% else %}
+               <div class='light-head center-text'>
+                   This collection is empty. You can:
+                   <br><br>
+                   <a class='btn btn-lg btn-primary' href='/collections/{{ collection.pk }}/addimage'>Add images one by one</a>
+                   <!--[if !IE]> -->
+                   <a id='show_modal' class='btn btn-lg btn-primary'>Upload multiple images</a>
+                   <!-- <![endif]-->
+                   <a id='upload_archive' class='btn btn-lg btn-primary'>Upload an archive with images (.zip or .tar.gz)</a>
+                   <!--[if !IE]> -->
+                   <a id='show_folder_modal' class='btn btn-lg btn-primary'>Upload a folder</a>
+                   <!-- <![endif]-->
+               </div>
+               {% endif %}<!-- close if collection.image_set.all -->
+            </div><!-- Close images tab-->
+
+            <div id='details' class='tab-pane'>
+                <table class='table table-condensed table-striped table-hover collection-details-datatable'>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                    </tbody>
+                </table>
+            </div>
+            <div id='viewer' class='tab-pane'>
+                {% include 'statmaps/_neurosynth_viewer_content.html.haml' %}
+            </div>
+      </div><!-- Close tab content-->
+
+      <!-- Upload files modal-->
+      <div id='upload_files' class='modal' data-backdrop='static' style='margin-top: 175px;'>
+          <div class='modal-dialog'>
+              <div class='modal-content'>
+                  <div class='modal-header'>
+                      <button type="button" class="close" data-dismiss="modal" aria-hidden="true" onclick="hideModal()">&times;</button>
+                      <h4 class="modal-title">Add Images</h4>
+                  </div>
+                  <div class='modal-body' style="height:65px">
+                   <form id="file_form" method="POST">
+                        <div class="float-right-wrapper">
+                            <button type="submit" class="btn btn-primary" style="width:150px" id="upload_button">Upload images</button>
+                        </div>
+                        <input type="file" id="file_select" name="brainmaps[]" multiple/>
+                   </form>
+                  </div>
+              </div>
+          </div>
+      </div><!-- close modal -->
+
+      <!-- Upload folder modal-->
+      <div id='upload_folder' class='modal' data-backdrop='static' style='margin-top: 175px;'>
+          <div class='modal-dialog'>
+              <div class='modal-content'>
+                  <div class='modal-header'>
+                      <button type="button" class="close" data-dismiss="modal" aria-hidden="true" onclick="hideFolderModal()">&times;</button>
+                      <h4 class="modal-title">Add Images</h4>
+                  </div>
+                  <div class='modal-body' style="height:65px">
+                   <form id="upload_folder_form" method="POST">
+                      <div class="row">
+                          <div style='height: 0px;width: 0px; overflow:hidden;'>
+                              {{ form.file }}
+                              {% csrf_token %}
+                              <input id='folder_input' multiple='' name='file_input[]' webkitdirectory='' mozdirectory='' directory='' type='file' />
+                              <input id='paths' type='hidden' name='paths' />
+                          </div>
+                          <div class="col-md-3">
+                              <button type="button" class="btn btn-primary" id="show_folder_select">Select Folder</button>
+                          </div>
+                          <div class="col-md-3">
+                              <p style="padding-top:8px" id="upload_folder_message"></p>
+                          </div>
+                          <div class="col-md-6">
+                              <div class="float-right-wrapper">
+                                  <button type="submit" class="btn btn-primary" style="width:150px" id="upload_folder_button" disabled>Upload folder</button>
+                              </div>
+                          </div>
+                      </div><!--close row-->
+                   </form>
+                  </div>
+              </div>
+          </div>
+      </div><!-- close modal -->
+
+      <div id='upload_process' class='modal neuron_loader' data-backdrop='static' style='margin-top: 175px; left:45%; top:15%' data-keyboard='false'>
+          <img src="{% static "images/spinner.gif"%}"/>
+      </div><!-- close upload process-->
+    </div><!-- column-->
+</div><!-- row-->
+
+{% comment %}
+{% for image in collection.image_set.all %}
+    <li><a href="{% url 'image_details' image.id %}">{{ image.name }}</a></li>
+{% endfor %}
+
+<a href="{{collection.url}}">{{collection.name}}</a> by {{collection.authors}}
+
+<a href="{% url 'edit_images' cid %}">Add/edit files</a>
+{% endcomment %}
+{% endblock %}
