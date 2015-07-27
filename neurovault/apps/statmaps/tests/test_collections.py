@@ -2,7 +2,6 @@ from django.test import TestCase, Client, override_settings, RequestFactory
 from django.core.urlresolvers import reverse
 from neurovault.apps.statmaps.models import Collection, User, Image, Atlas
 from django.core.files.uploadedfile import SimpleUploadedFile
-import mock
 import json
 from uuid import uuid4
 import tempfile
@@ -152,13 +151,14 @@ class Afni4DTest(TestCase):
 
 
 class CollectionMetaDataTest(TestCase):
+
     def setUp(self):
         base_username = 'owner'
         password = 'pwd'
         test_path = os.path.abspath(os.path.dirname(__file__))
 
         self.user = User.objects.create_user("%s_%s" % (base_username,
-            self.uniqid()), None, password)
+                                                        self.uniqid()), None, password)
         self.user.save()
 
         self.client = Client()
@@ -191,9 +191,12 @@ class CollectionMetaDataTest(TestCase):
                                'Cambridge Gambling Task')
 
         test_data = [
-            ['Filename', 'Subject ID', 'Sex', 'modality', 'cognitive_paradigm_cogatlas'],
-            ['motor_lips.nii.gz', '12', '1', 'fMRI-BOLD', cognitive_paradigms[0]],
-            ['beta_0001.nii.gz', '13', '2', 'fMRI-BOLD', cognitive_paradigms[1]]
+            ['Filename', 'Subject ID', 'Sex', 'modality',
+                'cognitive_paradigm_cogatlas'],
+            ['motor_lips.nii.gz', '12', '1',
+                'fMRI-BOLD', cognitive_paradigms[0]],
+            ['beta_0001.nii.gz', '13', '2',
+                'fMRI-BOLD', cognitive_paradigms[1]]
         ]
 
         url = reverse('import_metadata',
@@ -243,9 +246,12 @@ class CollectionMetaDataTest(TestCase):
 
     def test_incorrect_value_in_fixed_basic_field(self):
         test_data = [
-            ['Filename', 'Subject ID', 'Sex', 'modality', 'cognitive_paradigm_cogatlas'],
-            ['motor_lips.nii.gz', '12', '1', 'fMRI-BOLD', 'Cambridge Gambling Task'],
-            ['beta_0001.nii.gz', '13', '2', '-*NOT-EXISTING-MOD*-', 'Cambridge Gambling Task']
+            ['Filename', 'Subject ID', 'Sex', 'modality',
+                'cognitive_paradigm_cogatlas'],
+            ['motor_lips.nii.gz', '12', '1',
+                'fMRI-BOLD', 'Cambridge Gambling Task'],
+            ['beta_0001.nii.gz', '13', '2',
+                '-*NOT-EXISTING-MOD*-', 'Cambridge Gambling Task']
         ]
 
         url = reverse('import_metadata',
@@ -265,9 +271,12 @@ class CollectionMetaDataTest(TestCase):
 
     def test_incorrect_value_in_fixed_foreign_field(self):
         test_data = [
-            ["Filename", "Subject ID", "Sex", "modality", "cognitive_paradigm_cogatlas"],
-            ["motor_lips.nii.gz", "12", "1", "fMRI-BOLD", '-*NOT-EXISTING-PARADIGM*-'],
-            ["beta_0001.nii.gz", "13", "2", "fMRI-BOLD", 'Cambridge Gambling Task']
+            ["Filename", "Subject ID", "Sex", "modality",
+                "cognitive_paradigm_cogatlas"],
+            ["motor_lips.nii.gz", "12", "1", "fMRI-BOLD",
+                '-*NOT-EXISTING-PARADIGM*-'],
+            ["beta_0001.nii.gz", "13", "2",
+                "fMRI-BOLD", 'Cambridge Gambling Task']
         ]
 
         url = reverse('import_metadata',
@@ -284,4 +293,3 @@ class CollectionMetaDataTest(TestCase):
         self.assertEqual(resp_json['messages'], {'motor_lips.nii.gz': [{
             'cognitive_paradigm_cogatlas': ["Value '-*NOT-EXISTING-PARADIGM*-' is not a valid choice."]
         }]})
-
