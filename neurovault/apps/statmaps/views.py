@@ -206,8 +206,9 @@ def edit_metadata(request, collection_cid):
         return HttpResponseForbidden()
 
     if request.method == "POST":
-        return image_metadata.handle_post_metadata(request, collection,
-                                    'Images metadata have been saved.')
+        return JSONResponse(
+            **image_metadata.handle_post_metadata(
+                request, collection, 'Images metadata have been saved.'))
 
     metadata = image_metadata.get_images_metadata(collection)
 
