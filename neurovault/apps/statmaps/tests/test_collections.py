@@ -187,20 +187,20 @@ class CollectionMetaDataTest(TestCase):
         return str(uuid4())[:8]
 
     def test_post_metadata(self):
-        COGNITIVE_PARADIGMS = ('Early Social and Communication Scales',
+        cognitive_paradigms = ('Early Social and Communication Scales',
                                'Cambridge Gambling Task')
 
-        test_json = (
-            '[["Filename","Subject ID","Sex","modality","cognitive_paradigm_cogatlas"],'
-            '["motor_lips.nii.gz","12","1","fMRI-BOLD","{0}"],'
-            '["beta_0001.nii.gz","13","2","fMRI-BOLD","{1}"]]'
-        ).format(*COGNITIVE_PARADIGMS)
+        test_data = [
+            ['Filename', 'Subject ID', 'Sex', 'modality', 'cognitive_paradigm_cogatlas'],
+            ['motor_lips.nii.gz', '12', '1', 'fMRI-BOLD', cognitive_paradigms[0]],
+            ['beta_0001.nii.gz', '13', '2', 'fMRI-BOLD', cognitive_paradigms[1]]
+        ]
 
         url = reverse('import_metadata',
                       kwargs={'collection_cid': self.coll.pk})
 
         resp = self.client.post(url,
-                                data=test_json,
+                                data=json.dumps(test_data),
                                 content_type='application/json; charset=utf-8')
 
         self.assertEqual(resp.status_code, 200)
@@ -212,24 +212,26 @@ class CollectionMetaDataTest(TestCase):
 
         self.assertEqual(image1.modality, 'fMRI-BOLD')
         self.assertEqual(image1.cognitive_paradigm_cogatlas.name,
-                         COGNITIVE_PARADIGMS[0])
+                         cognitive_paradigms[0])
 
         image2 = Image.objects.get(id=self.image2.id)
 
         self.assertEqual(image2.cognitive_paradigm_cogatlas.name,
-                         COGNITIVE_PARADIGMS[1])
+                         cognitive_paradigms[1])
 
     def test_metadata_for_files_missing_in_the_collection(self):
-        test_json = ('[["Filename","Subject ID","Sex"],'
-                     '["motor_lips.nii.gz","12","1"],'
-                     '["beta_0001.nii.gz","13","2"],'
-                     '["file3.nii.gz","14","3"]]')
+        test_data = [
+            ['Filename', 'Subject ID', 'Sex'],
+            ['motor_lips.nii.gz', '12', '1'],
+            ['beta_0001.nii.gz', '13', '2'],
+            ['file3.nii.gz', '14', '3']
+        ]
 
         url = reverse('import_metadata',
                       kwargs={'collection_cid': self.coll.pk})
 
         resp = self.client.post(url,
-                                data=test_json,
+                                data=json.dumps(test_data),
                                 content_type='application/json; charset=utf-8')
 
         self.assertEqual(resp.status_code, 400)
@@ -239,23 +241,47 @@ class CollectionMetaDataTest(TestCase):
         self.assertEqual(resp_json['message'],
                          'File is not found in the collection: file3.nii.gz')
 
-    def test_incorrect_value_in_fixed_field(self):
-        test_json = ('[["Filename","Subject ID","Sex","modality"],'
-                     '["motor_lips.nii.gz","12","1","fMRI-BOLD"],'
-                     '["beta_0001.nii.gz","13","2","-*NOT-EXISTING-MOD*-"]]')
+    def test_incorrect_value_in_fixed_basic_field(self):
+        test_data = [
+            ['Filename', 'Subject ID', 'Sex', 'modality', 'cognitive_paradigm_cogatlas'],
+            ['motor_lips.nii.gz', '12', '1', 'fMRI-BOLD', 'Cambridge Gambling Task'],
+            ['beta_0001.nii.gz', '13', '2', '-*NOT-EXISTING-MOD*-', 'Cambridge Gambling Task']
+        ]
 
         url = reverse('import_metadata',
                       kwargs={'collection_cid': self.coll.pk})
 
         resp = self.client.post(url,
-                                data=test_json,
+                                data=json.dumps(test_data),
                                 content_type='application/json; charset=utf-8')
 
         self.assertEqual(resp.status_code, 400)
 
         resp_json = json.loads(resp.content)
-        print resp_json
 
         self.assertEqual(resp_json['messages'], {'beta_0001.nii.gz': [{
             'modality': ["Value '-*NOT-EXISTING-MOD*-' is not a valid choice."]
         }]})
+
+    def test_incorrect_value_in_fixed_foreign_field(self):
+        test_data = [
+            ["Filename", "Subject ID", "Sex", "modality", "cognitive_paradigm_cogatlas"],
+            ["motor_lips.nii.gz", "12", "1", "fMRI-BOLD", '-*NOT-EXISTING-PARADIGM*-'],
+            ["beta_0001.nii.gz", "13", "2", "fMRI-BOLD", 'Cambridge Gambling Task']
+        ]
+
+        url = reverse('import_metadata',
+                      kwargs={'collection_cid': self.coll.pk})
+
+        resp = self.client.post(url,
+                                data=json.dumps(test_data),
+                                content_type='application/json; charset=utf-8')
+
+        self.assertEqual(resp.status_code, 400)
+
+        resp_json = json.loads(resp.content)
+
+        self.assertEqual(resp_json['messages'], {'motor_lips.nii.gz': [{
+            'cognitive_paradigm_cogatlas': ["Value '-*NOT-EXISTING-PARADIGM*-' is not a valid choice."]
+        }]})
+

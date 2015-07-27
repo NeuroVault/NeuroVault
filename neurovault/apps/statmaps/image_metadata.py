@@ -6,8 +6,26 @@ import json
 from django.core.exceptions import ValidationError
 from django.db.models.fields import FieldDoesNotExist
 from django.contrib import messages
+from django.db.models.fields.related import ForeignKey
 
 from .models import StatisticMap
+
+
+class MetadataGridValidationError(ValidationError):
+
+    def __init__(self, items_messages_dict):
+        self.items_messages_dict = items_messages_dict
+
+
+def error_response(exception):
+    data = None
+
+    if hasattr(exception, 'items_messages_dict'):
+        data = {'messages': exception.items_messages_dict}
+    else:
+        data = {'message': exception.message}
+
+    return {'data': data, 'status': 400}
 
 
 def dict_factory(header_row, row):
@@ -30,6 +48,23 @@ def diff_dicts(dict_a, dict_b):
     return keys(dict_a) - keys(dict_b)
 
 
+def file_basename(image_obj):
+    return os.path.basename(image_obj.file.name)
+
+
+def clean_u_prefix(s):
+    return re.sub(r'u(\'[^\']+?\')', '\\1', s)
+
+
+def clear_messages(message_dict):
+    return dict((k, map(clean_u_prefix, v))
+                for k, v in message_dict.items())
+
+
+def wrap_error(value):
+    return u"Value '%s' is not a valid choice." % value
+
+
 # TODO: add force flag
 def pair_data_and_objects(metadata_dict, image_obj_dict):
     extra_files = diff_dicts(image_obj_dict, metadata_dict)
@@ -48,40 +83,46 @@ def pair_data_and_objects(metadata_dict, image_obj_dict):
         yield (metadata, image_obj)
 
 
-def error_response(exception):
-    data = None
+def set_object_attribute(obj, key, value):
+    field_type = None
 
-    if hasattr(exception, 'items_messages_dict'):
-        data = {'messages': exception.items_messages_dict}
-    else:
-        data = {'message': exception.message}
+    try:
+        field_type, _, _, _ = obj._meta.get_field_by_name(key)
+    except FieldDoesNotExist:
+        raise FieldDoesNotExist("Error in fixed field name in "
+                                "get_fixed_fields. Field %s "
+                                "doesn't exist." % key)
 
-    return {'data': data, 'status': 400}
+    if isinstance(field_type, ForeignKey):
+        model = field_type.related_field.model
+        try:
+            value = model.objects.get(name=value)
+        except model.DoesNotExist:
+            raise ValidationError({key: wrap_error(value)})
+
+    setattr(obj, key, value)
 
 
-def clean_u_prefix(s):
-    return re.sub(r'u(\'[^\']+?\')', '\\1', s)
+def set_data_attribute(obj, key, value):
+    if not obj.data:
+        obj.data = {}
+    obj.data[key] = value
 
 
-def clear_messages(message_dict):
-    return dict((k, map(clean_u_prefix, v))
-                for k, v in message_dict.items())
+def set_object_data(image_obj, data):
+    for key in data:
+        value = data[key]
 
-
-class MetadataGridValidationError(ValidationError):
-
-    def __init__(self, items_messages_dict):
-        self.items_messages_dict = items_messages_dict
+        if key in image_obj.get_fixed_fields():
+            set_object_attribute(image_obj, key, value)
+        else:
+            if key != 'Filename':
+                set_data_attribute(image_obj, key, value)
 
 
 def save_metadata(collection, metadata):
-    from django.db.models.fields.related import ForeignKey
-
-    def file_basename(image_obj):
-        return os.path.basename(image_obj.file.name)
-
-    image_obj_errors = defaultdict(list)
     image_obj_list = []
+    image_obj_errors = defaultdict(list)
 
     metadata_list = convert_to_list(metadata)
     metadata_dict = list_to_dict(metadata_list,
@@ -93,36 +134,9 @@ def save_metadata(collection, metadata):
 
     pairs = pair_data_and_objects(metadata_dict,
                                   image_obj_dict)
-    for metadata_item, image_obj in pairs:
-        for key in metadata_item:
-            field_type = None
-            if key in image_obj.get_fixed_fields():
-                try:
-                    field_type, _, _, _ = image_obj._meta.get_field_by_name(
-                        key)
-                except FieldDoesNotExist:
-                    raise FieldDoesNotExist("Error in fixed field name in "
-                                            "get_fixed_fields. Field %s "
-                                            "doesn't exist." % key)
-
-                value = metadata_item[key]
-                if isinstance(field_type, ForeignKey):
-                    value = (
-                        field_type
-                        .related_field
-                        .model
-                        .objects
-                        .get(name=value)
-                    )
-
-                setattr(image_obj, key, value)
-            else:
-                if key != 'Filename':
-                    if not image_obj.data:
-                        image_obj.data = {}
-                    image_obj.data[key] = metadata_item[key]
-
+    for data, image_obj in pairs:
         try:
+            set_object_data(image_obj, data)
             image_obj.full_clean()
         except ValidationError as e:
             image_obj_errors[file_basename(image_obj)].append(
