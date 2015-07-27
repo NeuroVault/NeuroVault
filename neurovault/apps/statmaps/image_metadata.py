@@ -49,16 +49,14 @@ def pair_data_and_objects(metadata_dict, image_obj_dict):
 
 
 def error_response(exception):
-    from .views import JSONResponse
-
-    resp = None
+    data = None
 
     if hasattr(exception, 'items_messages_dict'):
-        resp = {'messages': exception.items_messages_dict}
+        data = {'messages': exception.items_messages_dict}
     else:
-        resp = {'message': exception.message}
+        data = {'message': exception.message}
 
-    return JSONResponse(resp, status=400)
+    return {'data': data, 'status': 400}
 
 
 def clean_u_prefix(s):
@@ -71,6 +69,7 @@ def clear_messages(message_dict):
 
 
 class MetadataGridValidationError(ValidationError):
+
     def __init__(self, items_messages_dict):
         self.items_messages_dict = items_messages_dict
 
@@ -99,7 +98,8 @@ def save_metadata(collection, metadata):
             field_type = None
             if key in image_obj.get_fixed_fields():
                 try:
-                    field_type, _, _, _ = image_obj._meta.get_field_by_name(key)
+                    field_type, _, _, _ = image_obj._meta.get_field_by_name(
+                        key)
                 except FieldDoesNotExist:
                     raise FieldDoesNotExist("Error in fixed field name in "
                                             "get_fixed_fields. Field %s "
@@ -138,8 +138,6 @@ def save_metadata(collection, metadata):
 
 
 def handle_post_metadata(request, collection, success_message):
-    from .views import JSONResponse
-
     metadata = json.loads(request.body)
 
     try:
@@ -150,7 +148,8 @@ def handle_post_metadata(request, collection, success_message):
     messages.success(request,
                      success_message,
                      extra_tags='alert-success')
-    return JSONResponse(metadata_list, status=200)
+
+    return {'data': metadata_list, 'status': 200}
 
 
 def get_all_metadata_keys(image_obj_list):
