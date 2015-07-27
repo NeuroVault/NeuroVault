@@ -189,8 +189,9 @@ def import_metadata(request, collection_cid):
     images_filenames = image_metadata.get_images_filenames(collection)
 
     if request.method == "POST":
-        return image_metadata.handle_post_metadata(request, collection,
-                                    'Image metadata have been imported.')
+        return JSONResponse(
+            **image_metadata.handle_post_metadata(
+                request, collection, 'Image metadata have been imported.'))
 
     return render(request, "statmaps/import_metadata.html", {
         'collection': collection, 'images_filenames': images_filenames})
