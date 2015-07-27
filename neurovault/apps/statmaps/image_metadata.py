@@ -172,8 +172,7 @@ def get_all_metadata_keys(image_obj_list):
                for key in image.data)
 
 
-def get_images_metadata(collection):
-    image_obj_list = collection.image_set.all()
+def get_images_metadata(image_obj_list):
     metadata_keys = list(get_all_metadata_keys(image_obj_list))
     fixed_fields = list(StatisticMap.get_fixed_fields())
 
