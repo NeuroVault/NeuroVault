@@ -187,9 +187,14 @@ class CollectionMetaDataTest(TestCase):
         return str(uuid4())[:8]
 
     def test_post_metadata(self):
-        test_json = ('[["Filename","Subject ID","Sex","modality"],'
-                     '["motor_lips.nii.gz","12","1","fMRI-BOLD"],'
-                     '["beta_0001.nii.gz","13","2","fMRI-BOLD"]]')
+        COGNITIVE_PARADIGMS = ('Early Social and Communication Scales',
+                               'Cambridge Gambling Task')
+
+        test_json = (
+            '[["Filename","Subject ID","Sex","modality","cognitive_paradigm_cogatlas"],'
+            '["motor_lips.nii.gz","12","1","fMRI-BOLD","{0}"],'
+            '["beta_0001.nii.gz","13","2","fMRI-BOLD","{1}"]]'
+        ).format(*COGNITIVE_PARADIGMS)
 
         url = reverse('import_metadata',
                       kwargs={'collection_cid': self.coll.pk})
@@ -206,6 +211,13 @@ class CollectionMetaDataTest(TestCase):
                                        'Subject ID': '12'})
 
         self.assertEqual(image1.modality, 'fMRI-BOLD')
+        self.assertEqual(image1.cognitive_paradigm_cogatlas.name,
+                         COGNITIVE_PARADIGMS[0])
+
+        image2 = Image.objects.get(id=self.image2.id)
+
+        self.assertEqual(image2.cognitive_paradigm_cogatlas.name,
+                         COGNITIVE_PARADIGMS[1])
 
     def test_metadata_for_files_missing_in_the_collection(self):
         test_json = ('[["Filename","Subject ID","Sex"],'
