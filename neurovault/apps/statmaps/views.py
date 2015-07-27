@@ -48,6 +48,7 @@ import os
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
 from django.views.decorators.cache import never_cache
 import json
+import functools
 from . import image_metadata
 
 
@@ -197,6 +198,24 @@ def import_metadata(request, collection_cid):
         'collection': collection, 'images_filenames': images_filenames})
 
 
+def get_field_by_name(model, field_name):
+    return model._meta.get_field_by_name(field_name)[0]
+
+
+def get_field_datasources():
+    statmap_field_obj = functools.partial(get_field_by_name, StatisticMap)
+    pick_second_item = functools.partial(map, lambda x: x[1])
+
+    fixed_fields = list(StatisticMap.get_fixed_fields())
+
+    field_choices = ((f, statmap_field_obj(f).choices) for f in fixed_fields)
+
+    fields_with_choices = (t for t in field_choices if t[1])
+
+    return dict((field_name, pick_second_item(choices))
+                for field_name, choices in fields_with_choices)
+
+
 @csrf_exempt
 @login_required
 def edit_metadata(request, collection_cid):
@@ -210,10 +229,13 @@ def edit_metadata(request, collection_cid):
             **image_metadata.handle_post_metadata(
                 request, collection, 'Images metadata have been saved.'))
 
-    metadata = image_metadata.get_images_metadata(collection)
+    collection_images = collection.image_set.all()
+    metadata = image_metadata.get_images_metadata(collection_images)
+    datasources = get_field_datasources()
 
     return render(request, "statmaps/edit_metadata.html", {
         'collection': collection,
+        'datasources': json.dumps(datasources),
         'metadata': json.dumps(metadata)})
 
 
