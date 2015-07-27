@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from django.db.models.fields import FieldDoesNotExist
 from django.contrib import messages
 from django.db.models.fields.related import ForeignKey
+from django.db.models import Model
 
 from .models import StatisticMap
 
@@ -176,11 +177,17 @@ def get_images_metadata(collection):
     metadata_keys = list(get_all_metadata_keys(image_obj_list))
     fixed_fields = list(StatisticMap.get_fixed_fields())
 
+    def serialize(value):
+        if isinstance(value, Model):
+            return unicode(value)
+        else:
+            return value
+
     def list_metadata(image):
         data = image.data
 
         return ([os.path.basename(image.file.name)] +
-                [getattr(image, field) for field in fixed_fields] +
+                [serialize(getattr(image, field)) for field in fixed_fields] +
                 [data.get(key, '') for key in metadata_keys])
 
     return [['Filename'] + fixed_fields + metadata_keys] + map(list_metadata,
