@@ -513,7 +513,7 @@ class StatisticMap(BaseStatisticMap):
     @classmethod
     def get_fixed_fields(cls):
         return super(StatisticMap, cls).get_fixed_fields() + (
-            'modality', 'contrast_definition')
+            'modality', 'contrast_definition', 'cognitive_paradigm_cogatlas')
 
 
 class NIDMResults(BaseCollectionItem):

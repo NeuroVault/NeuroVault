@@ -242,6 +242,8 @@ class MetadataGridValidationError(ValidationError):
 
 
 def save_metadata(collection, metadata):
+    from django.db.models.fields.related import ForeignKey
+
     def file_basename(image_obj):
         return os.path.basename(image_obj.file.name)
 
@@ -260,14 +262,26 @@ def save_metadata(collection, metadata):
                                   image_obj_dict)
     for metadata_item, image_obj in pairs:
         for key in metadata_item:
+            field_type = None
             if key in image_obj.get_fixed_fields():
                 try:
-                    image_obj._meta.get_field_by_name(key)
+                    field_type, _, _, _ = image_obj._meta.get_field_by_name(key)
                 except FieldDoesNotExist:
                     raise FieldDoesNotExist("Error in fixed field name in "
                                             "get_fixed_fields. Field %s "
                                             "doesn't exist." % key)
-                setattr(image_obj, key, metadata_item[key])
+
+                value = metadata_item[key]
+                if isinstance(field_type, ForeignKey):
+                    value = (
+                        field_type
+                        .related_field
+                        .model
+                        .objects
+                        .get(name=value)
+                    )
+
+                setattr(image_obj, key, value)
             else:
                 if key != 'Filename':
                     if not image_obj.data:
