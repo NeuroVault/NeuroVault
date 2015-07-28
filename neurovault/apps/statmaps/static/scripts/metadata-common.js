@@ -35,7 +35,6 @@
 
     for (item in messages) {
       if (messages.hasOwnProperty(item)) {
-        console.log(item);
         result.push({msg: '<em>' + item + '</em> — some fields contain errors:' +
           formatItemMessages(messages[item])
         });

@@ -2,13 +2,56 @@
 (function ($) {
   'use strict';
 
+  function isString(val) {
+    return (typeof val === 'string' || val instanceof String);
+  }
+
   function hasChoices(fieldName) {
     return NVMetadata.datasources
       && (NVMetadata.datasources[fieldName] !== undefined);
   }
 
-  function getChoices(fieldName) {
-    return hasChoices(fieldName) ? NVMetadata.datasources[fieldName] : [];
+  function cache() {
+    var storage = {};
+    return {
+      get: function(key) {
+        return storage[key];
+      },
+      set: function(key, value) {
+        storage[key] = value;
+      }
+    }
+  }
+
+  var cache = cache();
+
+  function cachedAjaxSource(source) {
+    return function (query, process) {
+      var data = cache.get(source);
+      if (data) {
+        process(data);
+      } else {
+        $.ajax({
+          url: source,
+          dataType: 'json',
+          success: function (response) {
+            cache.set(source, response.data);
+            process(response.data);
+          }
+        });
+      }
+    }
+  }
+
+  function getSource(fieldName) {
+    var source = NVMetadata.datasources[fieldName];
+
+    if(isString(source)) {
+      return cachedAjaxSource(source);
+    }
+    else {
+      return NVMetadata.datasources[fieldName];
+    }
   }
 
   var boldRenderer = function (instance, td, row, col, prop,
@@ -23,7 +66,7 @@
       value, cellProperties) {
 
       Handsontable.renderers.AutocompleteRenderer.apply(this, arguments);
-      cellProperties.source = getChoices(fieldName);
+      cellProperties.source = getSource(fieldName);
       cellProperties.editor = Handsontable.editors.DropdownEditor;
     };
   }
