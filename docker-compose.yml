@@ -1,5 +1,7 @@
 db:
-  image: aidanlister/postgres-hstore
+  image: postgres
+  volumes:
+    - create_hstore_extension.sh:/docker-entrypoint-initdb.d/create_hstore_extension.sh:ro
 
 data:
   image: cogniteev/echo
