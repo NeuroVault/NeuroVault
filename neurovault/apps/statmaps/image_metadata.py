@@ -84,6 +84,10 @@ def pair_data_and_objects(metadata_dict, image_obj_dict):
         yield (metadata, image_obj)
 
 
+def get_value_from_choices(value, choices):
+    return next(x for x in choices if x[1] == value)[0]
+
+
 def set_object_attribute(obj, key, value):
     field_type = None
 
@@ -100,6 +104,12 @@ def set_object_attribute(obj, key, value):
             value = model.objects.get(name=value)
         except model.DoesNotExist:
             raise ValidationError({key: wrap_error(value)})
+
+    elif field_type.choices:
+        try:
+            value = get_value_from_choices(value, field_type.choices)
+        except StopIteration:
+            pass # Delegate validation to the model
 
     setattr(obj, key, value)
 
@@ -176,9 +186,14 @@ def get_images_metadata(image_obj_list):
     metadata_keys = list(get_all_metadata_keys(image_obj_list))
     fixed_fields = list(StatisticMap.get_fixed_fields())
 
-    def serialize(value):
+    def serialize(obj, field):
+        value = getattr(obj, field)
+        display = getattr(obj, "get_%s_display" % field, None)
+
         if isinstance(value, Model):
             return unicode(value)
+        elif display:
+            return display()
         else:
             return value
 
@@ -186,7 +201,7 @@ def get_images_metadata(image_obj_list):
         data = image.data
 
         return ([os.path.basename(image.file.name)] +
-                [serialize(getattr(image, field)) for field in fixed_fields] +
+                [serialize(image, field) for field in fixed_fields] +
                 [data.get(key, '') for key in metadata_keys])
 
     return [['Filename'] + fixed_fields + metadata_keys] + map(list_metadata,
