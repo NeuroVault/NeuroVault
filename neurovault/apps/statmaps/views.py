@@ -1,5 +1,5 @@
 from neurovault.apps.statmaps.models import Collection, Image, Atlas, Comparison, StatisticMap, NIDMResults, NIDMResultStatisticMap,\
-    BaseStatisticMap
+    BaseStatisticMap, CognitiveAtlasTask
 from neurovault.apps.statmaps.forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
@@ -23,6 +23,7 @@ from rest_framework.renderers import JSONRenderer
 from django.core.files.base import ContentFile
 from django.db.models.aggregates import Count
 from django.http import Http404, HttpResponse
+from django.core.urlresolvers import reverse
 from django.db.models import Q, Count
 from sklearn.externals import joblib
 from collections import OrderedDict
@@ -42,10 +43,15 @@ import tarfile
 import shutil
 import pandas
 import gzip
+import csv
 import re
 import os
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
 from django.views.decorators.cache import never_cache
+import json
+import functools
+from . import image_metadata
+
 
 def owner_or_contrib(request,collection):
     if collection.owner == request.user or request.user in collection.contributors.all() or request.user.is_superuser:
@@ -172,6 +178,97 @@ def edit_collection(request, cid=None):
 
     context = {"form": form, "page_header": page_header, "is_owner": is_owner}
     return render(request, "statmaps/edit_collection.html.haml", context)
+
+
+@csrf_exempt
+@login_required
+def import_metadata(request, collection_cid):
+    collection = get_collection(collection_cid, request)
+
+    if not owner_or_contrib(request, collection):
+        return HttpResponseForbidden()
+
+    images_filenames = image_metadata.get_images_filenames(collection)
+
+    if request.method == "POST":
+        return JSONResponse(
+            **image_metadata.handle_post_metadata(
+                request, collection, 'Image metadata have been imported.'))
+
+    return render(request, "statmaps/import_metadata.html", {
+        'collection': collection, 'images_filenames': images_filenames})
+
+
+def get_field_by_name(model, field_name):
+    return model._meta.get_field_by_name(field_name)[0]
+
+
+def choice_datasources(model):
+    statmap_field_obj = functools.partial(get_field_by_name, model)
+    pick_second_item = functools.partial(map, lambda x: x[1])
+
+    fixed_fields = list(model.get_fixed_fields())
+
+    field_choices = ((f, statmap_field_obj(f).choices) for f in fixed_fields)
+
+    fields_with_choices = (t for t in field_choices if t[1])
+
+    return dict((field_name, pick_second_item(choices))
+                for field_name, choices in fields_with_choices)
+
+
+def cognitive_atlas_task_datasource(request):
+    data = map(lambda x: x.name, CognitiveAtlasTask.objects.all())
+    return JSONResponse({'data': data})
+
+
+def get_field_datasources():
+    datasources = choice_datasources(StatisticMap)
+
+    # Bigger dataset. Will be lazy-load via ajax
+    datasources['cognitive_paradigm_cogatlas'] = reverse(
+        cognitive_atlas_task_datasource)
+
+    return datasources
+
+
+@csrf_exempt
+@login_required
+def edit_metadata(request, collection_cid):
+    collection = get_collection(collection_cid, request)
+
+    if not owner_or_contrib(request, collection):
+        return HttpResponseForbidden()
+
+    if request.method == "POST":
+        return JSONResponse(
+            **image_metadata.handle_post_metadata(
+                request, collection, 'Images metadata have been saved.'))
+
+    collection_images = collection.image_set.all()
+    metadata = image_metadata.get_images_metadata(collection_images)
+    datasources = get_field_datasources()
+
+    return render(request, "statmaps/edit_metadata.html", {
+        'collection': collection,
+        'datasources': json.dumps(datasources),
+        'metadata': json.dumps(metadata)})
+
+
+@login_required
+def export_images_filenames(request, collection_cid):
+    collection = get_collection(collection_cid, request)
+    images_filenames = image_metadata.get_images_filenames(collection)
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; ' \
+                                      'filename="collection_%s.csv"' % (
+                                          collection.id)
+
+    writer = csv.writer(response)
+    writer.writerows([['Filename']] + [[name] for name in images_filenames])
+
+    return response
 
 
 def view_image(request, pk, collection_cid=None):
@@ -842,6 +939,7 @@ def find_similar(request,pk):
         error_message = "Image comparison is not enabled for thresholded images."
         context = {'error_message': error_message}
         return render(request, 'statmaps/error_message.html', context)
+
 
 class JSONResponse(HttpResponse):
     """

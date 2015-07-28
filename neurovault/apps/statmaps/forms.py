@@ -274,7 +274,7 @@ class ContributorCommaField(ModelMultipleChoiceField):
         return self.queryset.filter(username__in=split_vals)
 
 class CollectionForm(ModelForm):
-    
+
     class Meta:
         exclude = ('owner','private_token','contributors','private')
         model = Collection
@@ -522,7 +522,6 @@ class PolymorphicImageForm(ImageForm):
                                                          instance=self.instance).fields
             else:
                 self.fields = StatisticMapForm.base_fields
-
 
     def clean(self, **kwargs):
         if "label_description_file" in self.fields.keys():

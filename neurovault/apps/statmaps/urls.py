@@ -7,7 +7,8 @@ from .views import edit_collection, edit_images, view_image, delete_image, edit_
                 serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
                 papaya_js_embed, view_images_by_tag, \
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
-                view_nidm_results, find_similar, compare_images
+                view_nidm_results, find_similar, compare_images, import_metadata, \
+                edit_metadata, export_images_filenames, cognitive_atlas_task_datasource
 from neurovault.apps.statmaps.models import KeyValueTag
 from django.db.models import Count
 from django.contrib.auth.decorators import login_required
@@ -64,7 +65,18 @@ urlpatterns = patterns('',
     url(r'^collections/(?P<cid>\d+|[A-Z]{8})/pycortex$',
         view_collection_with_pycortex,
         name='view_collection_pycortex'),
-
+    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/importmetadata$',
+        import_metadata,
+        name="import_metadata"),
+    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/export/imagesfilenames$',
+        export_images_filenames,
+        name="export_images_filenames"),
+    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/editmetadata$',
+        edit_metadata,
+        name="edit_metadata"),
+    url(r'^datasource/cognitive-atlas-task$',
+        cognitive_atlas_task_datasource,
+        name="cognitive_atlas_task_datasource"),
     url(r'^images/tags/$',
         ListView.as_view(
             queryset=KeyValueTag.objects.all(),

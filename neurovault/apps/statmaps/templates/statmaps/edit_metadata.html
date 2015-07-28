@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block head %}
+<link rel="stylesheet" media="screen" href="{% static "css/handsontable.full.min.css"%}">
+<style>
+    .errors {
+        display: none;
+    }
+
+    .btn-save-metadata {
+        margin-bottom: 20px;
+    }
+
+    #hot {
+        overflow: auto;
+    }
+</style>
+<script type="text/javascript">
+    window.NVMetadata = window.NVMetadata || {};
+    window.NVMetadata.data = {{ metadata | safe }};
+    window.NVMetadata.datasources = {{ datasources | safe }};
+</script>
+
+{% endblock %}
+{% block content %}
+<div class="row">
+	<div class="span9">
+		<h2><a href="{{collection.get_absolute_url}}">{{ collection.name }}</a> / Edit&nbsp;Images&nbsp;Metadata</h2>
+	</div>
+	<div class="span11"><hr/></div>
+</div>
+<div class="row">
+    <div class="span11">
+        <a class="btn btn-primary pull-right btn-save-metadata">Save</a>
+    </div>
+</div>
+<div class="row">
+    <div class="span11 ">
+        <div class="alert alert-danger errors"></div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="span11">
+        <div id="hot" class="handsontable"></div>
+    </div>
+</div>
+
+<script src="{% static "scripts/handsontable.full.min.js"%}" type="text/javascript"></script>
+<script src="{% static "scripts/metadata-common.js"%}" type="text/javascript"></script>
+<script src="{% static "scripts/metadata-edit.js"%}" type="text/javascript"></script>
+{% endblock %}
