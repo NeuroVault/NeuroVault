@@ -1,5 +1,5 @@
 from neurovault.apps.statmaps.models import Collection, Image, Atlas, Comparison, StatisticMap, NIDMResults, NIDMResultStatisticMap,\
-    BaseStatisticMap
+    BaseStatisticMap, CognitiveAtlasTask
 from neurovault.apps.statmaps.forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
@@ -23,6 +23,7 @@ from rest_framework.renderers import JSONRenderer
 from django.core.files.base import ContentFile
 from django.db.models.aggregates import Count
 from django.http import Http404, HttpResponse
+from django.core.urlresolvers import reverse
 from django.db.models import Q, Count
 from sklearn.externals import joblib
 from collections import OrderedDict
@@ -202,11 +203,11 @@ def get_field_by_name(model, field_name):
     return model._meta.get_field_by_name(field_name)[0]
 
 
-def get_field_datasources():
-    statmap_field_obj = functools.partial(get_field_by_name, StatisticMap)
+def choice_datasources(model):
+    statmap_field_obj = functools.partial(get_field_by_name, model)
     pick_second_item = functools.partial(map, lambda x: x[1])
 
-    fixed_fields = list(StatisticMap.get_fixed_fields())
+    fixed_fields = list(model.get_fixed_fields())
 
     field_choices = ((f, statmap_field_obj(f).choices) for f in fixed_fields)
 
@@ -214,6 +215,21 @@ def get_field_datasources():
 
     return dict((field_name, pick_second_item(choices))
                 for field_name, choices in fields_with_choices)
+
+
+def cognitive_atlas_task_datasource(request):
+    data = map(lambda x: x.name, CognitiveAtlasTask.objects.all())
+    return JSONResponse({'data': data})
+
+
+def get_field_datasources():
+    datasources = choice_datasources(StatisticMap)
+
+    # Bigger dataset. Will be lazy-load via ajax
+    datasources['cognitive_paradigm_cogatlas'] = reverse(
+        cognitive_atlas_task_datasource)
+
+    return datasources
 
 
 @csrf_exempt
