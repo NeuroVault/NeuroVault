@@ -176,7 +176,7 @@ class Collection(models.Model):
 
 
 class CognitiveAtlasTask(models.Model):
-    name = models.CharField(max_length=200, null=False, blank=False)
+    name = models.CharField(max_length=200, null=False, blank=False, db_index=True)
     cog_atlas_id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
 
     def __str__(self):
