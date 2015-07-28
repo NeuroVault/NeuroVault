@@ -164,6 +164,7 @@
     }
 
     Papa.parse(file, {
+      skipEmptyLines: true,
       complete: openDataImport
     });
   }
