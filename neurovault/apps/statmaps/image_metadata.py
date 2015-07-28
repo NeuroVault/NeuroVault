@@ -109,7 +109,7 @@ def set_object_attribute(obj, key, value):
         try:
             value = get_value_from_choices(value, field_type.choices)
         except StopIteration:
-            pass # Delegate validation to the model
+            pass  # Delegate validation to the model
 
     setattr(obj, key, value)
 
