@@ -80,7 +80,6 @@
         colHeaders: true,
         rowHeaders: true,
         contextMenu: true,
-        height: 400,
         cells: function (r, c, prop) {
           if (r === 0) {
             this.renderer = boldRenderer;

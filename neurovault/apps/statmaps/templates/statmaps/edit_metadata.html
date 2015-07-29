@@ -10,6 +10,10 @@
         margin-bottom: 20px;
     }
 
+    .hot-wrapper {
+        min-height: 380px;
+    }
+
     #hot {
         overflow: auto;
     }
@@ -23,24 +27,24 @@
 {% endblock %}
 {% block content %}
 <div class="row">
-	<div class="span9">
+	<div class="col-md-12">
 		<h2><a href="{{collection.get_absolute_url}}">{{ collection.name }}</a> / Edit&nbsp;Images&nbsp;Metadata</h2>
 	</div>
-	<div class="span11"><hr/></div>
+	<div class="col-md-12"><hr/></div>
 </div>
 <div class="row">
-    <div class="span11">
+    <div class="col-md-12">
         <a class="btn btn-primary pull-right btn-save-metadata">Save</a>
     </div>
 </div>
 <div class="row">
-    <div class="span11 ">
+    <div class="col-md-12 ">
         <div class="alert alert-danger errors"></div>
     </div>
 </div>
 
-<div class="row">
-    <div class="span11">
+<div class="row hot-wrapper">
+    <div class="col-md-12">
         <div id="hot" class="handsontable"></div>
     </div>
 </div>
