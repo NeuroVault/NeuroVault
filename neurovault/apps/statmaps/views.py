@@ -180,25 +180,6 @@ def edit_collection(request, cid=None):
     return render(request, "statmaps/edit_collection.html.haml", context)
 
 
-@csrf_exempt
-@login_required
-def import_metadata(request, collection_cid):
-    collection = get_collection(collection_cid, request)
-
-    if not owner_or_contrib(request, collection):
-        return HttpResponseForbidden()
-
-    images_filenames = image_metadata.get_images_filenames(collection)
-
-    if request.method == "POST":
-        return JSONResponse(
-            **image_metadata.handle_post_metadata(
-                request, collection, 'Image metadata have been imported.'))
-
-    return render(request, "statmaps/import_metadata.html", {
-        'collection': collection, 'images_filenames': images_filenames})
-
-
 def get_field_by_name(model, field_name):
     return model._meta.get_field_by_name(field_name)[0]
 

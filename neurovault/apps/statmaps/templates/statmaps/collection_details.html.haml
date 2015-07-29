@@ -123,9 +123,6 @@
                       %li
                         %a{id:"upload_folder", href: "#" } Folder
                       <!-- <![endif]-->
-                      %li.divider
-                      %li
-                        %a{href: "{% url 'import_metadata' cid %}" } Images Metadata (.csv)
                   - if delete_permission
                       .float-right-wrapper
                        %a.btn.btn-danger{href: "{% url 'delete_collection' cid %}", id:"delete_collection"} Delete collection

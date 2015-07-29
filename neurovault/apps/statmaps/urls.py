@@ -7,8 +7,8 @@ from .views import edit_collection, edit_images, view_image, delete_image, edit_
                 serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
                 papaya_js_embed, view_images_by_tag, \
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
-                view_nidm_results, find_similar, compare_images, import_metadata, \
-                edit_metadata, export_images_filenames, cognitive_atlas_task_datasource
+                view_nidm_results, find_similar, compare_images,  edit_metadata, \
+                export_images_filenames, cognitive_atlas_task_datasource
 from neurovault.apps.statmaps.models import KeyValueTag
 from django.db.models import Count
 from django.contrib.auth.decorators import login_required
