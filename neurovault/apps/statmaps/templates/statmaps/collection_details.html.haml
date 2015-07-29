@@ -99,8 +99,10 @@
               - if collection.image_set.all
                   %a.btn.btn-primary{href: "pycortex" } 3D View
               - if edit_permission
+                  %a.btn.btn-primary{href: "{% url 'add_image' cid %}" } Add image
+
                   .btn-group
-                    %a.btn.btn-primary.dropdown-toggle{href: "#", data-toggle: "dropdown", style: "margin-left: 5px"} Edit
+                    %a.btn.btn-primary.dropdown-toggle{href: "#", data-toggle: "dropdown"} Edit
                       %span.caret
                     %ul.dropdown-menu
                       %li
@@ -111,7 +113,6 @@
                       %li
                         %a{href: "{% url 'edit_metadata' cid %}" } Images Metadata
 
-                  -#%a.btn.btn-primary{href: "{% url 'add_image' cid %}" } Add image
                  - if collection.image_set.all
                   .btn-group
                     %a.btn.btn-primary.dropdown-toggle{href: "#", data-toggle: "dropdown"} Upload
