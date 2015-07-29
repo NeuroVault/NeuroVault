@@ -2,12 +2,14 @@ import os
 import re
 from collections import defaultdict
 import json
+import functools
 
 from django.core.exceptions import ValidationError
 from django.db.models.fields import FieldDoesNotExist
 from django.contrib import messages
 from django.db.models.fields.related import ForeignKey
 from django.db.models import Model
+from django.core.urlresolvers import reverse
 
 from .models import StatisticMap
 
@@ -182,9 +184,50 @@ def get_all_metadata_keys(image_obj_list):
                for key in image.data)
 
 
+def get_field_by_name(model, field_name):
+    return model._meta.get_field_by_name(field_name)[0]
+
+
+def get_fixed_fields(model):
+    return map(functools.partial(get_field_by_name, model),
+               model.get_fixed_fields())
+
+
+def get_data_headers(image_obj_list):
+    index_header = [{'name': 'Filename'}]
+    metadata_keys = list(get_all_metadata_keys(image_obj_list))
+
+    def get_data_source(field):
+        if field.choices:
+            return {'choices': field.name}
+        elif isinstance(field, ForeignKey):
+            return {'url': reverse('cognitive_atlas_task_datasource')}
+        else:
+            return None
+
+    def to_fixed_header(field):
+        return {
+            'name': field.name,
+            'required': not field.blank,
+            'datasource': get_data_source(field),
+        }
+
+    def to_extra_field_header(header):
+        return {
+            'name': header
+        }
+
+    fixed_field_headers = map(to_fixed_header,
+                              get_fixed_fields(StatisticMap))
+
+    extra_field_headers = map(to_extra_field_header, metadata_keys)
+
+    return index_header + fixed_field_headers + extra_field_headers
+
+
 def get_images_metadata(image_obj_list):
     metadata_keys = list(get_all_metadata_keys(image_obj_list))
-    fixed_fields = list(StatisticMap.get_fixed_fields())
+    fixed_fields = get_fixed_fields(StatisticMap)
 
     def serialize(obj, field):
         value = getattr(obj, field)
@@ -201,11 +244,10 @@ def get_images_metadata(image_obj_list):
         data = image.data
 
         return ([os.path.basename(image.file.name)] +
-                [serialize(image, field) for field in fixed_fields] +
+                [serialize(image, field.name) for field in fixed_fields] +
                 [data.get(key, '') for key in metadata_keys])
 
-    return [['Filename'] + fixed_fields + metadata_keys] + map(list_metadata,
-                                                               image_obj_list)
+    return map(list_metadata, image_obj_list)
 
 
 def get_images_filenames(collection):

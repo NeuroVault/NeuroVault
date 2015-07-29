@@ -54,13 +54,6 @@
     }
   }
 
-  var boldRenderer = function (instance, td, row, col, prop,
-    value, cellProperties) {
-
-    Handsontable.renderers.TextRenderer.apply(this, arguments);
-    td.style.fontWeight = 'bold';
-  };
-
   function genAutocompleteRenderer(fieldName) {
     return function (instance, td, row, col, prop,
       value, cellProperties) {
@@ -71,28 +64,90 @@
     };
   }
 
+  function headerNames(headers) {
+    return headers.map(function(x) {
+      if (x.required) {
+        return x.name + '*';
+      }
+      return x.name;
+    });
+  }
+
+  function guessFieldType(field) {
+    if (field.datasource) {
+      return 'autocomplete';
+    } else {
+      return 'text';
+    }
+  }
+
+  function getDataSource(field) {
+    var datasource = field.datasource;
+
+    if (datasource) {
+      if (datasource.choices) {
+        return NVMetadata.datasources[datasource.choices];
+      }
+      else if (datasource.url) {
+        return cachedAjaxSource(datasource.url);
+      }
+    } else {
+      return undefined;
+    }
+  }
+
+  function stringRequiredValidator (value, callback) {
+    if (value && /\S/.test(value)) {
+      return callback(true);
+    } else {
+      return callback(false);
+    }
+  }
+
+  function getFieldValidator(field) {
+    if (field.required && !field.datasource) {
+      return stringRequiredValidator;
+    } else {
+      return undefined;
+    }
+  }
+
+  function columnSettings(headers) {
+    return headers.map(function(x) {
+      return {
+        type: guessFieldType(x),
+        source: getDataSource(x),
+        strict: x.required,
+        validator: getFieldValidator(x)
+      }
+    });
+  }
+
+  function getDefaultHeight(data) {
+    var minHeight = 400,
+      rowHeight = 24;
+
+    if ((data.length + 1) * rowHeight < minHeight) {
+      return minHeight;
+    } else {
+      return undefined;
+    }
+  }
+
   $(document).ready(function () {
 
     var container = document.getElementById('hot'),
       hot = new Handsontable(container, {
         data: window.NVMetadata.data,
         stretchH: 'all',
-        colHeaders: true,
+        colHeaders: headerNames(window.NVMetadata.dataHeaders),
+        columns: columnSettings(window.NVMetadata.dataHeaders),
         rowHeaders: true,
         contextMenu: true,
+        height: getDefaultHeight(window.NVMetadata.data),
         cells: function (r, c, prop) {
-          if (r === 0) {
-            this.renderer = boldRenderer;
-          }
           if (c === 0) {
             return {readOnly: true};
-          }
-
-          if (r !== 0) {
-            var fieldName = this.instance.getDataAtCell(0, c);
-            if (hasChoices(fieldName)) {
-              this.renderer = genAutocompleteRenderer(fieldName);
-            }
           }
         }
       });

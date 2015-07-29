@@ -180,12 +180,9 @@ def edit_collection(request, cid=None):
     return render(request, "statmaps/edit_collection.html.haml", context)
 
 
-def get_field_by_name(model, field_name):
-    return model._meta.get_field_by_name(field_name)[0]
-
-
 def choice_datasources(model):
-    statmap_field_obj = functools.partial(get_field_by_name, model)
+    statmap_field_obj = functools.partial(image_metadata.get_field_by_name,
+                                          model)
     pick_second_item = functools.partial(map, lambda x: x[1])
 
     fixed_fields = list(model.get_fixed_fields())
@@ -204,13 +201,7 @@ def cognitive_atlas_task_datasource(request):
 
 
 def get_field_datasources():
-    datasources = choice_datasources(StatisticMap)
-
-    # Bigger dataset. Will be lazy-load via ajax
-    datasources['cognitive_paradigm_cogatlas'] = reverse(
-        cognitive_atlas_task_datasource)
-
-    return datasources
+    return choice_datasources(StatisticMap)
 
 
 @csrf_exempt
@@ -227,12 +218,14 @@ def edit_metadata(request, collection_cid):
                 request, collection, 'Images metadata have been saved.'))
 
     collection_images = collection.image_set.all()
+    data_headers = image_metadata.get_data_headers(collection_images)
     metadata = image_metadata.get_images_metadata(collection_images)
     datasources = get_field_datasources()
 
     return render(request, "statmaps/edit_metadata.html", {
         'collection': collection,
         'datasources': json.dumps(datasources),
+        'data_headers': json.dumps(data_headers),
         'metadata': json.dumps(metadata)})
 
 
