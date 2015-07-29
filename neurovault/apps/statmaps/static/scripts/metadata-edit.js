@@ -134,14 +134,20 @@
     }
   }
 
+  function serializeTable(hotInstance) {
+      return [window.NVMetadata.headers.map(function(x) {
+          return x.name
+      })].concat(hotInstance.getData());
+  }
+
   $(document).ready(function () {
 
     var container = document.getElementById('hot'),
       hot = new Handsontable(container, {
         data: window.NVMetadata.data,
         stretchH: 'all',
-        colHeaders: headerNames(window.NVMetadata.dataHeaders),
-        columns: columnSettings(window.NVMetadata.dataHeaders),
+        colHeaders: headerNames(window.NVMetadata.headers),
+        columns: columnSettings(window.NVMetadata.headers),
         rowHeaders: true,
         contextMenu: true,
         height: getDefaultHeight(window.NVMetadata.data),
@@ -155,7 +161,7 @@
     $('.btn-save-metadata').click(function () {
       $.ajax({
         type: 'POST',
-        data: JSON.stringify(hot.getData()),
+        data: JSON.stringify(serializeTable(hot)),
         contentType: 'application/json; charset=utf-8'
       })
         .done(function () {
