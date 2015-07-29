@@ -199,7 +199,7 @@ class CollectionMetaDataTest(TestCase):
                 'fMRI-BOLD', cognitive_paradigms[1]]
         ]
 
-        url = reverse('import_metadata',
+        url = reverse('edit_metadata',
                       kwargs={'collection_cid': self.coll.pk})
 
         resp = self.client.post(url,
@@ -230,7 +230,7 @@ class CollectionMetaDataTest(TestCase):
             ['file3.nii.gz', '14', '3']
         ]
 
-        url = reverse('import_metadata',
+        url = reverse('edit_metadata',
                       kwargs={'collection_cid': self.coll.pk})
 
         resp = self.client.post(url,
@@ -254,7 +254,7 @@ class CollectionMetaDataTest(TestCase):
                 '-*NOT-EXISTING-MOD*-', 'Cambridge Gambling Task']
         ]
 
-        url = reverse('import_metadata',
+        url = reverse('edit_metadata',
                       kwargs={'collection_cid': self.coll.pk})
 
         resp = self.client.post(url,
@@ -279,7 +279,7 @@ class CollectionMetaDataTest(TestCase):
                 "fMRI-BOLD", 'Cambridge Gambling Task']
         ]
 
-        url = reverse('import_metadata',
+        url = reverse('edit_metadata',
                       kwargs={'collection_cid': self.coll.pk})
 
         resp = self.client.post(url,
