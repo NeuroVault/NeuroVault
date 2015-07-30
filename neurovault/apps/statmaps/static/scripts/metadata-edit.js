@@ -161,10 +161,26 @@
     return NVMetadata.headers[index].fixed
   }
 
+  function hasAnyValues(arr) {
+    var i, len;
+    for (i = 0, len = arr.length; i < len; i += 1) {
+      if (!emptyOrSpaced(arr[i])) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function filterEmptyRows(array) {
+    return array.filter(function(x) {
+      return hasAnyValues(x);
+    });
+  }
+
   function serializeTable(hotInstance) {
     return [window.NVMetadata.headers.map(function (x) {
       return x.name
-    })].concat(hotInstance.getData());
+    })].concat(filterEmptyRows(hotInstance.getData()));
   }
 
   function validateInput(value, success, failure) {
@@ -288,6 +304,9 @@
         columns: columnSettings(window.NVMetadata.headers),
         rowHeaders: true,
         height: getDefaultHeight(window.NVMetadata.data),
+        allowInsertRow: false,
+        minSpareRows: 0,
+        maxRows: window.NVMetadata.data.length,
         contextMenu: {
           callback: function (key) {
             if (key === 'insert_column_left' ||
@@ -298,9 +317,6 @@
             }
           },
           items: {
-            'row_above': {},
-            'row_below': {},
-            'hsep1': '---------',
             'insert_column_left': {
               name: 'Insert column on the left',
               disabled: function () {
@@ -311,7 +327,6 @@
               name: 'Insert column on the right'
             },
             'hsep2': '---------',
-            'remove_row': {},
             'remove_this_column': {
               name: 'Remove column',
               disabled: function () {

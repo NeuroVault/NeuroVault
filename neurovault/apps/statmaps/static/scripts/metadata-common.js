@@ -35,7 +35,7 @@
 
     for (item in messages) {
       if (messages.hasOwnProperty(item)) {
-        result.push({msg: '<em>' + item + '</em> — some fields contain errors:' +
+        result.push({msg: 'Error in metadata for <em>' + item + '</em>' +
           formatItemMessages(messages[item])
         });
       }
