@@ -27,6 +27,30 @@
 
 {% endblock %}
 {% block content %}
+<div class="modal fade" id="columnNameModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Insert New Column</h4>
+      </div>
+      <form class="js-name-form">
+        <div class="modal-body">
+          <div class="form-group js-input-wrapper">
+            <label class="control-label" for="column-name"></label>
+            <input type="text" placeholder="Enter a new column name" class="form-control" id="column-name">
+            <span class="help-block"></span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Column</button>
+        </div>
+      </form>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
 <div class="row">
 	<div class="col-md-12">
 		<h2><a href="{{collection.get_absolute_url}}">{{ collection.name }}</a> / Edit&nbsp;Images&nbsp;Metadata</h2>
