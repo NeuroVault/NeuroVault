@@ -364,11 +364,10 @@
           window.location.replace('/collections/' + collectionId);
         })
         .fail(function (jqXHR, textStatus, errorThrown) {
+          $this.prop('disabled', false);
+
           NVMetadata.displayErrors($('.errors'),
             NVMetadata.getErrors(jqXHR, textStatus, errorThrown));
-        })
-        .always(function () {
-          $this.prop('disabled', false);
         });
     });
 
