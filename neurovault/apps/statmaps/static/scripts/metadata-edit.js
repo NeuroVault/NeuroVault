@@ -18,6 +18,31 @@
     }
   }
 
+  function debounce(func, wait, immediate) {
+    var timeout;
+    return function () {
+      var context = this,
+        args = arguments;
+      var later = function () {
+        timeout = null;
+        if (!immediate) func.apply(context, args);
+      };
+      var callNow = immediate && !timeout;
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+      if (callNow) func.apply(context, args);
+    };
+  }
+
+  var requestData = debounce(function (source, success) {
+    console.log('call');
+    $.ajax({
+      url: source,
+      dataType: 'json',
+      success: success
+    });
+  }, 250, true);
+
   var cache = cache();
 
   function cachedAjaxSource(source) {
@@ -26,13 +51,9 @@
       if (data) {
         process(data);
       } else {
-        $.ajax({
-          url: source,
-          dataType: 'json',
-          success: function (response) {
-            cache.set(source, response.data);
-            process(response.data);
-          }
+        requestData(source, function (response) {
+          cache.set(source, response.data);
+          process(response.data);
         });
       }
     }
@@ -169,13 +190,15 @@
         });
       });
 
-      $('.js-name-form', $modalEl).submit(function () {
-        var name = $columnNameEl.val().trim();
-        callback(name);
-        $modalEl.modal('hide');
-        $columnNameEl.val('');
-        return false;
-      });
+      $('.js-name-form', $modalEl)
+        .off('submit.modal')
+        .on('submit.modal', function () {
+          var name = $columnNameEl.val().trim();
+          callback(name);
+          $modalEl.modal('hide');
+          $columnNameEl.val('');
+          return false;
+        });
     });
 
     $modalEl.on('hide.bs.modal', function () {
@@ -186,16 +209,35 @@
     $modalEl.modal();
   }
 
-  function insertColumn(hotInstance, selection) {
+  function insertDataColumn(index, name) {
+    NVMetadata.headers.splice(index, 0, {
+      name: name
+    });
+    NVMetadata.data.map(function (x) {
+      x.splice(index, 0, '');
+    });
+  }
+
+  function insertLocation(selection, key) {
+    if (key === 'insert_column_left') {
+      return selection[1];
+    } else {
+      return selection[3] + 1;
+    }
+  }
+
+  function handleInsertColumn(hotInstance, selection, key) {
     hotInstance.deselectCell();
+
     getNewColumnName(function (name) {
-      NVMetadata.headers.push({
-        name: name
-      });
+      var index = insertLocation(selection, key);
+
+      insertDataColumn(index, name);
+
       hotInstance.updateSettings({
         data: window.NVMetadata.data,
         colHeaders: headerNames(window.NVMetadata.headers),
-        columns: columnSettings(NVMetadata.headers)
+        columns: columnSettings(window.NVMetadata.headers)
       });
       hotInstance.render();
     });
@@ -214,7 +256,7 @@
           callback: function (key) {
             if (key === 'insert_column_left' ||
               key === 'insert_column_right') {
-              insertColumn(hot, hot.getSelected());
+              handleInsertColumn(hot, hot.getSelected(), key);
             }
           },
           items: {
@@ -222,7 +264,10 @@
             'row_below': {},
             'hsep1': '---------',
             'insert_column_left': {
-              name: 'Insert column on the left'
+              name: 'Insert column on the left',
+              disabled: function () {
+                return hot.getSelected()[1] === 0
+              }
             },
             'insert_column_right': {
               name: 'Insert column on the right'
@@ -253,6 +298,7 @@
           var collectionId = NVMetadata.getCollectionIdFromURL(
             window.location.href
           );
+          window.onbeforeunload = undefined;
           window.location.replace('/collections/' + collectionId);
         })
         .fail(function (jqXHR, textStatus, errorThrown) {
