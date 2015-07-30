@@ -360,6 +360,9 @@ def upload_files(request, collection_cid):
                         elif fnmatch(f.name,'*.zip'):
                             request.FILES['file'] = f
                             upload_zip(request.FILES['file'],collection,tmp_directory,request)
+                        elif fnmatch(f.name,'*.tar.gz'):
+                            request.FILES['file'] = f
+                            upload_zip(request.FILES['file'],collection,tmp_directory,request)
                         new_path, _ = os.path.split(os.path.join(tmp_directory, path))
                         mkdir_p(new_path)
                         filename = os.path.join(new_path,f.name)
