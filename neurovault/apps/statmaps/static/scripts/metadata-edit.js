@@ -6,10 +6,6 @@
     return (typeof val === 'string' || val instanceof String);
   }
 
-  function hasChoices(fieldName) {
-    return NVMetadata.datasources && (NVMetadata.datasources[fieldName] !== undefined);
-  }
-
   function cache() {
     var storage = {};
     return {
@@ -40,26 +36,6 @@
         });
       }
     }
-  }
-
-  function getSource(fieldName) {
-    var source = NVMetadata.datasources[fieldName];
-
-    if (isString(source)) {
-      return cachedAjaxSource(source);
-    } else {
-      return NVMetadata.datasources[fieldName];
-    }
-  }
-
-  function genAutocompleteRenderer(fieldName) {
-    return function (instance, td, row, col, prop,
-      value, cellProperties) {
-
-      Handsontable.renderers.AutocompleteRenderer.apply(this, arguments);
-      cellProperties.source = getSource(fieldName);
-      cellProperties.editor = Handsontable.editors.DropdownEditor;
-    };
   }
 
   function headerNames(headers) {
