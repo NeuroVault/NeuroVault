@@ -78,7 +78,7 @@ collection_fieldsets = [
                                     'field_of_view',
                                     'matrix_size',
                                     'slice_thickness',
-                                    'skip_factor',
+                                    'skip_distance',
                                     'acquisition_orientation',
                                     'order_of_acquisition',
                                     'repetition_time',
@@ -217,7 +217,7 @@ collection_row_attrs = {
     'subject_age_mean': {'priority': 1},
     'used_motion_susceptibiity_correction': {'priority': 3},
     'group_statistic_type': {'priority': 2},
-    'skip_factor': {'priority': 2},
+    'skip_distance': {'priority': 2},
     'used_reaction_time_regressor': {'priority': 2},
     'group_modeling_software': {'priority': 2},
     'parallel_imaging': {'priority': 3},
@@ -274,7 +274,7 @@ class ContributorCommaField(ModelMultipleChoiceField):
         return self.queryset.filter(username__in=split_vals)
 
 class CollectionForm(ModelForm):
-
+    
     class Meta:
         exclude = ('owner','private_token','contributors','private')
         model = Collection
@@ -318,7 +318,7 @@ class CollectionForm(ModelForm):
 
 
 class OwnerCollectionForm(CollectionForm):
-    contributors = ContributorCommaField(queryset=None,required=False)
+    contributors = ContributorCommaField(queryset=None,required=False, help_text="Select other NeuroVault users to add as contributes to the collection.  Contributors can add, edit and delete images in the collection.")
 
     class Meta():
         exclude = ('owner','private_token')
@@ -334,7 +334,7 @@ class OwnerCollectionForm(CollectionForm):
 
 class ImageForm(ModelForm):
     hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)', widget=AdminResubmitFileWidget)
-    
+
     def __init__(self, *args, **kwargs):
         super(ImageForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
@@ -369,7 +369,7 @@ class ImageForm(ModelForm):
                 fileobj = GzipFile(filename=file.name, mode='rb', fileobj=file.file)
             else:
                 fileobj=file.file
-            
+
             file_map = {'image': nb.FileHolder(file.name, fileobj)}
             try:
                 tmp_dir = tempfile.mkdtemp()
@@ -404,37 +404,37 @@ class ImageForm(ModelForm):
                     self._errors["file"] = self.error_class([str(e)])
                     del cleaned_data["file"]
                     return cleaned_data
-                
+
                 # detect AFNI 4D files and prepare 3D slices
                 if nii is not None and detect_afni4D(nii):
                     self.afni_subbricks = split_afni4D_to_3D(nii)
                 else:
                     squeezable_dimensions = len(filter(lambda a: a not in [0,1], nii.shape))
-                    
+
                     if squeezable_dimensions != 3:
                         self._errors["file"] = self.error_class(["4D files are not supported.\n If it's multiple maps in one file please split them and upload separately"])
                         del cleaned_data["file"]
                         return cleaned_data
-                        
-    
+
+
                     # convert to nii.gz if needed
                     if ext.lower() != ".nii.gz" or squeezable_dimensions < len(nii.shape):
-                        
+
                         #convert pseudo 4D to 3D
                         if squeezable_dimensions < len(nii.shape):
                             new_data = np.squeeze(nii.get_data())
                             nii = nb.Nifti1Image(new_data, nii.get_affine(), nii.get_header())
-    
+
                         #Papaya does not handle float64, but by converting files we loose precision
                         #if nii.get_data_dtype() == np.float64:
                         #ii.set_data_dtype(np.float32)
                         new_name = fname + ".nii.gz"
                         nii_tmp = os.path.join(tmp_dir, new_name)
                         nb.save(nii, nii_tmp)
-    
+
                         cleaned_data['file'] = memory_uploadfile(nii_tmp, new_name,
                                                                  cleaned_data['file'])
-                
+
 
             finally:
                 try:
@@ -450,12 +450,12 @@ class ImageForm(ModelForm):
         return cleaned_data
 
 class StatisticMapForm(ImageForm):
-    
+
     def __init__(self, *args, **kwargs):
         super(StatisticMapForm, self).__init__(*args, **kwargs)
         self.helper.form_tag = False
         self.helper.add_input(Submit('submit', 'Submit'))
-            
+
     def clean(self, **kwargs):
         cleaned_data = super(StatisticMapForm, self).clean()
         django_file = cleaned_data.get("file")
@@ -466,7 +466,7 @@ class StatisticMapForm(ImageForm):
             nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(django_file.name, gzfileobj)})
             cleaned_data["is_thresholded"], ratio_bad = is_thresholded(nii)
             cleaned_data["perc_bad_voxels"] = ratio_bad*100.0
-            
+
             if cleaned_data["is_thresholded"] and not cleaned_data.get("ignore_file_warning"):
                 self._errors["file"] = self.error_class(["This map seems to be thresholded (%.4g%% of voxels are zeros). Please use an unthresholded version of the map if possible."%(cleaned_data["perc_bad_voxels"])])
                 if cleaned_data.get("hdr_file"):
@@ -481,8 +481,8 @@ class StatisticMapForm(ImageForm):
                     self.fields["ignore_file_warning"].widget = forms.CheckboxInput()
 
         return cleaned_data
-            
-            
+
+
     class Meta(ImageForm.Meta):
         model = StatisticMap
         fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas','analysis_level', 'contrast_definition', 'figure',
@@ -512,7 +512,7 @@ class PolymorphicImageForm(ImageForm):
         super(PolymorphicImageForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
-        self.helper.label_class = 'col-lg-2' 
+        self.helper.label_class = 'col-lg-2'
         self.helper.field_class = 'col-lg-8'
         if self.instance.polymorphic_ctype is not None:
             if self.instance.polymorphic_ctype.model == 'atlas':
@@ -522,7 +522,7 @@ class PolymorphicImageForm(ImageForm):
                                                          instance=self.instance).fields
             else:
                 self.fields = StatisticMapForm.base_fields
-     
+
 
     def clean(self, **kwargs):
         if "label_description_file" in self.fields.keys():
@@ -531,8 +531,8 @@ class PolymorphicImageForm(ImageForm):
             use_form = StatisticMapForm
         else:
             raise Exception("unknown image type! %s"%str(self.fields.keys()))
-            
-        new_instance = use_form(self) 
+
+        new_instance = use_form(self)
         new_instance.cleaned_data = self.cleaned_data
         new_instance._errors = self._errors
         self.fields = new_instance.fields
@@ -549,14 +549,14 @@ class EditStatisticMapForm(StatisticMapForm):
             self.fields['collection'].queryset = Collection.objects.all()
         else:
             self.fields['collection'].queryset = Collection.objects.filter(owner=user)
-            
+
 class AddStatisticMapForm(StatisticMapForm):
 
     class Meta(StatisticMapForm.Meta):
         fields = ('name', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas', 'contrast_definition', 'figure',
                   'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels')
-            
+
 
 
 class EditAtlasForm(AtlasForm):
