@@ -34,14 +34,25 @@
     };
   }
 
+  function emptyOrSpaced(value) {
+    return !(value && /\S/.test(value))
+  }
+
+  function stringRequiredValidator(value, callback) {
+    if (emptyOrSpaced(value)) {
+      return callback(false);
+    } else {
+      return callback(true);
+    }
+  }
+
   var requestData = debounce(function (source, success) {
-    console.log('call');
     $.ajax({
       url: source,
       dataType: 'json',
       success: success
     });
-  }, 250, true);
+  }, 500, true);
 
   var cache = cache();
 
@@ -90,18 +101,6 @@
     }
   }
 
-  function emptyOrSpaced(value) {
-    return !(value && /\S/.test(value))
-  }
-
-  function stringRequiredValidator(value, callback) {
-    if (emptyOrSpaced(value)) {
-      return callback(false);
-    } else {
-      return callback(true);
-    }
-  }
-
   function getFieldValidator(field) {
     if (field.required && !field.datasource) {
       return stringRequiredValidator;
@@ -139,6 +138,10 @@
       });
 
     return elems.length !== 0;
+  }
+
+  function isFixedColumn(index) {
+    return NVMetadata.headers[index].fixed
   }
 
   function serializeTable(hotInstance) {
@@ -218,12 +221,27 @@
     });
   }
 
+  function removeDataColumn(index) {
+    NVMetadata.headers.splice(index, 1);
+    NVMetadata.data.map(function (x) {
+      x.splice(index, 1);
+    });
+  }
+
   function insertLocation(selection, key) {
     if (key === 'insert_column_left') {
       return selection[1];
     } else {
       return selection[3] + 1;
     }
+  }
+
+  function updateSettings(hotInstance) {
+    hotInstance.updateSettings({
+      data: window.NVMetadata.data,
+      colHeaders: headerNames(window.NVMetadata.headers),
+      columns: columnSettings(window.NVMetadata.headers)
+    });
   }
 
   function handleInsertColumn(hotInstance, selection, key) {
@@ -233,14 +251,15 @@
       var index = insertLocation(selection, key);
 
       insertDataColumn(index, name);
-
-      hotInstance.updateSettings({
-        data: window.NVMetadata.data,
-        colHeaders: headerNames(window.NVMetadata.headers),
-        columns: columnSettings(window.NVMetadata.headers)
-      });
+      updateSettings(hotInstance);
       hotInstance.render();
     });
+  }
+
+  function handleRemoveColumn(hotInstance, selection) {
+    removeDataColumn(selection[1]);
+    updateSettings(hotInstance);
+    hotInstance.render();
   }
 
   $(document).ready(function () {
@@ -257,6 +276,8 @@
             if (key === 'insert_column_left' ||
               key === 'insert_column_right') {
               handleInsertColumn(hot, hot.getSelected(), key);
+            } else if (key === 'remove_this_column') {
+              handleRemoveColumn(hot, hot.getSelected());
             }
           },
           items: {
@@ -274,6 +295,12 @@
             },
             'hsep2': '---------',
             'remove_row': {},
+            'remove_this_column': {
+              name: 'Remove column',
+              disabled: function () {
+                return isFixedColumn(hot.getSelected()[1])
+              }
+            },
             'hsep3': '---------',
             'undo': {},
             'redo': {}

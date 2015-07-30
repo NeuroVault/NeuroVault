@@ -117,12 +117,11 @@ def set_object_attribute(obj, key, value):
 
 
 def set_data_attribute(obj, key, value):
-    if not obj.data:
-        obj.data = {}
     obj.data[key] = value
 
 
 def set_object_data(image_obj, data):
+    image_obj.data = {}
     for key in data:
         value = data[key]
 
@@ -194,7 +193,7 @@ def get_fixed_fields(model):
 
 
 def get_data_headers(image_obj_list):
-    index_header = [{'name': 'Filename'}]
+    index_header = [{'name': 'Filename', 'fixed': True}]
     metadata_keys = list(get_all_metadata_keys(image_obj_list))
 
     def get_data_source(field):
@@ -210,6 +209,7 @@ def get_data_headers(image_obj_list):
             'name': field.name,
             'required': not field.blank,
             'datasource': get_data_source(field),
+            'fixed': True
         }
 
     def to_extra_field_header(header):
