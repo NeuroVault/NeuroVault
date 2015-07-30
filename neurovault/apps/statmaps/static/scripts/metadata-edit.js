@@ -69,15 +69,15 @@
     }
   }
 
-  function notEmptyOrSpaced(value) {
-    return value && /\S/.test(value)
+  function emptyOrSpaced(value) {
+    return !(value && /\S/.test(value))
   }
 
   function stringRequiredValidator(value, callback) {
-    if (notEmptyOrSpaced(value)) {
-      return callback(true);
-    } else {
+    if (emptyOrSpaced(value)) {
       return callback(false);
+    } else {
+      return callback(true);
     }
   }
 
@@ -113,7 +113,7 @@
 
   function columnExist(columnName) {
     var value = columnName.trim(),
-      elems = NVMetadata.headers.filter(function(x) {
+      elems = NVMetadata.headers.filter(function (x) {
         return x.name === value;
       });
 
@@ -127,13 +127,11 @@
   }
 
   function validateInput(value, success, failure) {
-    if (!notEmptyOrSpaced(value)) {
+    if (emptyOrSpaced(value)) {
       failure();
-    }
-    else if (columnExist(value)) {
+    } else if (columnExist(value)) {
       failure("Column already exists");
-    }
-    else {
+    } else {
       success();
     }
   }
@@ -180,8 +178,9 @@
       });
     });
 
-    $modalEl.on('hide.bs.modal', function() {
+    $modalEl.on('hide.bs.modal', function () {
       $columnNameEl.val('');
+      clearError($inputWrapper);
     });
 
     $modalEl.modal();
