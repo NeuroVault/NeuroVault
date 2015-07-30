@@ -3,7 +3,7 @@ from django.conf.urls import patterns, url
 from django.views.generic import ListView
 from .models import Collection
 from .views import edit_collection, edit_images, view_image, delete_image, edit_image, \
-                view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
+                view_collection, delete_collection, upload_files, add_image_for_neurosynth, \
                 serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
                 papaya_js_embed, view_images_by_tag, \
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
@@ -55,9 +55,9 @@ urlpatterns = patterns('',
     url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/addimage',
         add_image,
         name="add_image"),
-    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/upload_folder$',
-        upload_folder,
-        name="upload_folder"),
+    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/upload_files$',
+        upload_files,
+        name="upload_files"),
     url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/images/(?P<pk>\d+)/$',
         view_image,
         name="private_image_details"),

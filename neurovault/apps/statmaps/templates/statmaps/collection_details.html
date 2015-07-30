@@ -61,11 +61,11 @@
     $('#delete_collection').click(function(e) {
       return confirm("Are you sure you want to delete this collection? This operation cannot be undone!");
     });
-    $('#upload_archive').click(function(e) {
-      return document.getElementById("id_file").click();
-    });
     $('#show_modal').click(function(e) {
-      showModal();
+      showModal("files");
+    });
+    $('#show_modal_zip').click(function(e) {
+      showModal("zip");
     });
     $('#show_folder_modal').click(function(e) {
       showFolderModal();
@@ -124,7 +124,7 @@
         }
         if (files.length != 0) {
             csrftoken = $.cookie('csrftoken');
-            xhr.open('POST', "upload_folder", true);
+            xhr.open('POST', "upload_files", true);
             xhr.setRequestHeader("X-CSRFToken", csrftoken);
             xhr.onloadstart = function(){
                 hideModal()
@@ -172,7 +172,8 @@ function hideFolderModal() {
     document.getElementById('upload_folder').style.display = 'none';
     document.getElementById('fade').style.display = 'none';
 }
-function showModal() {
+function showModal(upload_type) {
+    document.getElementById('upload_files_title').innerHTML = "Upload " + upload_type
     document.getElementById('upload_files').style.display = 'block';
     document.getElementById('fade').style.display = 'block';
 }
@@ -216,7 +217,7 @@ function hideModal() {
                             <!--[if !IE]> -->
                             <li><a id="show_modal">Add multiple images</a></li>
                             <!-- <![endif]-->
-                            <li><a id='upload_archive' href="#">Upload an archive (.zip)</a></li>
+                            <li><a id='show_modal_zip'>Upload an archive (.zip)</a></li>
                             <!--[if !IE]> -->
                             <li><a id='show_folder_modal'>Upload a folder</a>
                             <!-- <![endif]-->
@@ -318,7 +319,7 @@ function hideModal() {
                    <!--[if !IE]> -->
                    <a id='show_modal' class='btn btn-lg btn-primary'>Upload multiple images</a>
                    <!-- <![endif]-->
-                   <a id='upload_archive' class='btn btn-lg btn-primary'>Upload an archive with images (.zip or .tar.gz)</a>
+                   <a id='show_modal_zip' class='btn btn-lg btn-primary'>Upload an archive with images (.zip or .tar.gz)</a>
                    <!--[if !IE]> -->
                    <a id='show_folder_modal' class='btn btn-lg btn-primary'>Upload a folder</a>
                    <!-- <![endif]-->
@@ -350,12 +351,12 @@ function hideModal() {
               <div class='modal-content'>
                   <div class='modal-header'>
                       <button type="button" class="close" data-dismiss="modal" aria-hidden="true" onclick="hideModal()">&times;</button>
-                      <h4 class="modal-title">Add Images</h4>
+                      <h4 class="modal-title" id="upload_files_title">Add Images</h4>
                   </div>
                   <div class='modal-body' style="height:65px">
                    <form id="file_form" method="POST">
                         <div class="float-right-wrapper">
-                            <button type="submit" class="btn btn-primary" style="width:150px" id="upload_button">Upload images</button>
+                            <button type="submit" class="btn btn-primary" style="width:150px" id="upload_button">Upload</button>
                         </div>
                         <input type="file" id="file_select" name="brainmaps[]" multiple/>
                    </form>
