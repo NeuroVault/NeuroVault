@@ -196,7 +196,7 @@ def choice_datasources(model):
 
 
 def cognitive_atlas_task_datasource(request):
-    data = map(lambda x: x.name, CognitiveAtlasTask.objects.all())
+    data = [x.name for x in CognitiveAtlasTask.objects.all()]
     return JSONResponse({'data': data})
 
 
