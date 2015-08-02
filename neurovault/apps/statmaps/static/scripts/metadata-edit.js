@@ -2,11 +2,7 @@
 (function ($) {
   'use strict';
 
-  function isString(val) {
-    return (typeof val === 'string' || val instanceof String);
-  }
-
-  function cache() {
+  function simpleCache() {
     var storage = {};
     return {
       get: function (key) {
@@ -25,12 +21,16 @@
         args = arguments;
       var later = function () {
         timeout = null;
-        if (!immediate) func.apply(context, args);
+        if (!immediate) {
+          func.apply(context, args)
+        }
       };
       var callNow = immediate && !timeout;
       clearTimeout(timeout);
       timeout = setTimeout(later, wait);
-      if (callNow) func.apply(context, args);
+      if (callNow) {
+        func.apply(context, args)
+      }
     };
   }
 
@@ -54,7 +54,7 @@
     });
   }, 500, true);
 
-  var cache = cache();
+  var cache = simpleCache();
 
   function cachedAjaxSource(source) {
     return function (query, process) {
@@ -102,11 +102,11 @@
   }
 
   function choiceValidator(choices) {
-    return function(value, callback) {
+    return function (value, callback) {
       if (!value) {
         return callback(true);
       }
-      var elems = NVMetadata.datasources[choices].filter(function(x) {
+      var elems = NVMetadata.datasources[choices].filter(function (x) {
         return x === value;
       });
       if (elems.length === 0) {
@@ -172,7 +172,7 @@
   }
 
   function filterEmptyRows(array) {
-    return array.filter(function(x) {
+    return array.filter(function (x) {
       return hasAnyValues(x);
     });
   }
@@ -214,7 +214,7 @@
     $modalEl.on('shown.bs.modal', function () {
       $columnNameEl.focus().attr("autocomplete", "off");
 
-      $columnNameEl.keyup(function (e) {
+      $columnNameEl.keyup(function () {
         validateInput($columnNameEl.val(), function () {
           $submit.prop('disabled', false);
           clearError($inputWrapper);
@@ -338,7 +338,7 @@
             'redo': {}
           }
         },
-        cells: function (r, c, prop) {
+        cells: function (r, c) {
           if (c === 0) {
             return {
               readOnly: true
@@ -347,7 +347,7 @@
         }
       });
 
-    $('.btn-save-metadata').click(function (e) {
+    $('.btn-save-metadata').click(function () {
       var $this = $(this);
       $this.prop('disabled', true);
 
