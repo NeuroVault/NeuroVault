@@ -1,4 +1,4 @@
-import urllib, json, tarfile, requests
+import urllib, json, tarfile, requests, os
 from StringIO import StringIO
 import xml.etree.cElementTree as e
 from django.db import IntegrityError
@@ -42,7 +42,7 @@ for url in datasets:
             post_dict = {
                 'name': study_name,
                 'description': study_description,
-                'full_dataset_url': url
+                'full_dataset_url': "http://anima.modelgui.og/studies/" + os.path.split(url)[1].replace(".tar.gz", "")
             }
             if doi != None:
                 post_dict['DOI'] = doi.text.strip()
