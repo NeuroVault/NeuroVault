@@ -790,13 +790,11 @@ def find_similar(request,pk):
         # Count the number of comparisons that we have to determine max that we can return
         number_comparisons = count_existing_comparisons(pk)
 
-        max_results = 100
-        if number_comparisons < 100:
-            max_results = number_comparisons
-
         # Get only # max_results similarity calculations for this image, and ids of other images
-        comparisons = get_existing_comparisons(pk).extra(select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[0:max_results] # "-" indicates descending
-
+        comparisons = get_existing_comparisons(pk).extra(select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score") # "-" indicates descending
+        
+        max_results = len(comparisons)
+        
         images = [image1]
         scores = [1] # pearsonr
         for comp in comparisons:
