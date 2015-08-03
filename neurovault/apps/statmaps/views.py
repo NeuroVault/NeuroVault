@@ -231,9 +231,9 @@ def view_collection(request, cid):
         form = UploadFileForm()
         c = RequestContext(request)
         c.update(context)
-        return render_to_response('statmaps/collection_details.html.haml', {'form': form}, c)
+        return render_to_response('statmaps/collection_details.html', {"form": form}, c)
     else:
-        return render(request, 'statmaps/collection_details.html.haml', context)
+        return render(request, 'statmaps/collection_details.html', context)
 
 
 @login_required
@@ -341,51 +341,35 @@ def add_image(request, collection_cid):
 
 
 @login_required
-def upload_folder(request, collection_cid):
+def upload_files(request, collection_cid):
     collection = get_collection(collection_cid,request)
     allowed_extensions = ['.nii', '.img', '.nii.gz']
     niftiFiles = []
     if request.method == 'POST':
-        print request.POST
-        print request.FILES
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             tmp_directory = tempfile.mkdtemp()
-            print tmp_directory
             try:
-                # Save archive (.zip or .tar.gz) to disk
-                if "file" in request.FILES:
-                    archive_name = request.FILES['file'].name
-                    if fnmatch(archive_name,'*.nidm.zip'):
-                        populate_nidm_results(request,collection)
-                        return HttpResponseRedirect(collection.get_absolute_url())
-
-                    _, archive_ext = os.path.splitext(archive_name)
-                    if archive_ext == '.zip':
-                        compressed = zipfile.ZipFile(request.FILES['file'])
-                    elif archive_ext == '.gz':
-                        django_file = request.FILES['file']
-                        django_file.open()
-                        compressed = tarfile.TarFile(fileobj=gzip.GzipFile(fileobj=django_file.file, mode='r'), mode='r')
-                    else:
-                        raise Exception("Unsupported archive type %s."%archive_name)
-                    compressed.extractall(path=tmp_directory)
-
-                elif "file_input[]" in request.FILES:
-
-                    for f, path in zip(request.FILES.getlist(
-                                       "file_input[]"), request.POST.getlist("paths[]")):
+                if "file_input[]" in request.FILES:
+                    for f, path in zip(request.FILES.getlist("file_input[]"), 
+                                       request.POST.getlist("paths[]")):
                         if fnmatch(f.name,'*.nidm.zip'):
                             request.FILES['file'] = f
                             populate_nidm_results(request,collection)
                             continue
-
+                        elif fnmatch(f.name,'*.zip'):
+                            request.FILES['file'] = f
+                            upload_zip(request.FILES['file'],collection,tmp_directory,request)
+                        elif fnmatch(f.name,'*.tar.gz'):
+                            request.FILES['file'] = f
+                            upload_zip(request.FILES['file'],collection,tmp_directory,request)
                         new_path, _ = os.path.split(os.path.join(tmp_directory, path))
                         mkdir_p(new_path)
                         filename = os.path.join(new_path,f.name)
                         tmp_file = open(filename, 'w')
                         tmp_file.write(f.read())
                         tmp_file.close()
+
                 else:
                     raise Exception("Unable to find uploaded files.")
 
@@ -493,6 +477,21 @@ def upload_folder(request, collection_cid):
         form = UploadFileForm()
     return render_to_response("statmaps/upload_folder.html",
                               {'form': form},  RequestContext(request))
+
+
+# Save archive (.zip or .tar.gz) to disk
+def upload_zip(request_file,collection,tmp_directory,request):
+    archive_name = request.FILES['file'].name
+    _, archive_ext = os.path.splitext(archive_name)
+    if archive_ext == '.zip':
+        compressed = zipfile.ZipFile(request.FILES['file'])
+    elif archive_ext == '.gz':
+        django_file = request.FILES['file']
+        django_file.open()
+        compressed = tarfile.TarFile(fileobj=gzip.GzipFile(fileobj=django_file.file, mode='r'), mode='r')
+    else:
+        raise Exception("Unsupported archive type %s."%archive_name)
+    compressed.extractall(path=tmp_directory)
 
 
 @login_required
