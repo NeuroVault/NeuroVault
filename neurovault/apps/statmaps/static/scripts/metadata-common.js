@@ -12,7 +12,7 @@
 
     for (fieldName in messages) {
       if (messages.hasOwnProperty(fieldName)) {
-        result += '<dl><dt>' + fieldName + '</dt> <dd>' + messages[fieldName].join('</dd><dd>') + '</dd></dl>';
+        result += '<div class="row"><div class="col-md-3">' + fieldName + '</div> <div class="col-md-9">' + messages[fieldName].join('; ') + '</div></div>';
       }
     }
 
@@ -35,7 +35,7 @@
 
     for (item in messages) {
       if (messages.hasOwnProperty(item)) {
-        result.push({msg: 'Error in metadata for <em>' + item + '</em>' +
+        result.push({msg: '<strong>' + item + '</strong>' +
           formatItemMessages(messages[item])
         });
       }
@@ -79,7 +79,7 @@
     $el.empty();
 
     for (i = 0; i < len; i += 1) {
-      $el.append('<div>' + errors[i].msg + '</div>');
+      $el.append('<div class="row-error">' + errors[i].msg + '</div>');
     }
     $el.show();
   };

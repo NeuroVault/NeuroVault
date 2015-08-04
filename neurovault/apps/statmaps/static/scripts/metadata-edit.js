@@ -70,12 +70,16 @@
     }
   }
 
+  function columnName(header) {
+    return header.verboseName ? header.verboseName : header.name;
+  }
+
   function headerNames(headers) {
     return headers.map(function (x) {
       if (x.required) {
-        return x.name + '*';
+        return columnName(x) + '*';
       }
-      return x.name;
+      return columnName(x);
     });
   }
 
@@ -132,6 +136,7 @@
         type: guessFieldType(x),
         source: getDataSource(x),
         strict: x.required,
+        allowInvalid: !x.required,
         validator: getFieldValidator(x)
       }
     });
@@ -351,7 +356,8 @@
       var $this = $(this);
       $this.prop('disabled', true);
 
-      hot.validateCells();
+      // Passing empty func to fix 'onQueueEmpty is not a function' error in hot
+      hot.validateCells(function () {});
 
       $.ajax({
           type: 'POST',

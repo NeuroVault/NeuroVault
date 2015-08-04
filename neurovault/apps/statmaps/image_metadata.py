@@ -58,9 +58,13 @@ def clean_u_prefix(s):
     return re.sub(r'u(\'[^\']+?\')', '\\1', s)
 
 
-def clear_messages(message_dict):
-    return dict((k, map(clean_u_prefix, v))
-                for k, v in message_dict.items())
+def to_verbose_name(obj, field_name):
+    return obj._meta.get_field_by_name(field_name)[0].verbose_name.capitalize()
+
+
+def prepare_messages(obj, message_dict):
+    return dict((to_verbose_name(obj, field_name), map(clean_u_prefix, v))
+                for field_name, v in message_dict.items())
 
 
 def wrap_error(value):
@@ -154,7 +158,7 @@ def save_metadata(collection, metadata):
             image_obj.full_clean()
         except ValidationError as e:
             image_obj_errors[file_basename(image_obj)].append(
-                clear_messages(e.message_dict))
+                prepare_messages(image_obj, e.message_dict))
 
     if image_obj_errors:
         raise MetadataGridValidationError(image_obj_errors)
@@ -207,6 +211,7 @@ def get_data_headers(image_obj_list):
     def to_fixed_header(field):
         return {
             'name': field.name,
+            'verboseName': field.verbose_name.capitalize(),
             'required': not field.blank,
             'datasource': get_data_source(field),
             'fixed': True
