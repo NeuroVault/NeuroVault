@@ -469,7 +469,7 @@ class BaseStatisticMap(Image):
     @classmethod
     def get_fixed_fields(cls):
         return super(BaseStatisticMap, cls).get_fixed_fields() + (
-            'map_type', 'analysis_level', 'brain_coverage')
+            'map_type', 'analysis_level')
 
     class Meta:
         abstract = True
