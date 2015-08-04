@@ -195,13 +195,10 @@ def choice_datasources(model):
                 for field_name, choices in fields_with_choices)
 
 
-def cognitive_atlas_task_datasource(request):
-    data = [x.name for x in CognitiveAtlasTask.objects.all()]
-    return JSONResponse({'data': data})
-
-
 def get_field_datasources():
-    return choice_datasources(StatisticMap)
+    datasources = choice_datasources(StatisticMap)
+    datasources['cognitive_paradigm_cogatlas'] = [x.name for x in CognitiveAtlasTask.objects.all()]
+    return datasources
 
 
 @csrf_exempt

@@ -351,6 +351,8 @@
       var $this = $(this);
       $this.prop('disabled', true);
 
+      hot.validateCells();
+
       $.ajax({
           type: 'POST',
           data: JSON.stringify(serializeTable(hot)),

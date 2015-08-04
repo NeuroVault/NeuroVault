@@ -9,7 +9,6 @@ from django.db.models.fields import FieldDoesNotExist
 from django.contrib import messages
 from django.db.models.fields.related import ForeignKey
 from django.db.models import Model
-from django.core.urlresolvers import reverse
 
 from .models import StatisticMap
 
@@ -68,7 +67,6 @@ def wrap_error(value):
     return u"Value '%s' is not a valid choice." % value
 
 
-# TODO: add force flag
 def pair_data_and_objects(metadata_dict, image_obj_dict):
     extra_files = diff_dicts(image_obj_dict, metadata_dict)
 
@@ -101,11 +99,15 @@ def set_object_attribute(obj, key, value):
                                 "doesn't exist." % key)
 
     if isinstance(field_type, ForeignKey):
-        model = field_type.related_field.model
-        try:
-            value = model.objects.get(name=value)
-        except model.DoesNotExist:
-            raise ValidationError({key: wrap_error(value)})
+        if not value:
+            # explicit None for empty strings
+            value = None
+        else:
+            model = field_type.related_field.model
+            try:
+                value = model.objects.get(name=value)
+            except model.DoesNotExist:
+                raise ValidationError({key: wrap_error(value)})
 
     elif field_type.choices:
         try:
@@ -197,10 +199,8 @@ def get_data_headers(image_obj_list):
     metadata_keys = list(get_all_metadata_keys(image_obj_list))
 
     def get_data_source(field):
-        if field.choices:
+        if field.choices or isinstance(field, ForeignKey):
             return {'choices': field.name}
-        elif isinstance(field, ForeignKey):
-            return {'url': reverse('cognitive_atlas_task_datasource')}
         else:
             return None
 
