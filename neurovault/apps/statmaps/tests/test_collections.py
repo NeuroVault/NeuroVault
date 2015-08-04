@@ -266,7 +266,7 @@ class CollectionMetaDataTest(TestCase):
         resp_json = json.loads(resp.content)
 
         self.assertEqual(resp_json['messages'], {'beta_0001.nii.gz': [{
-            'modality': ["Value '-*NOT-EXISTING-MOD*-' is not a valid choice."]
+            'Modality & acquisition type': ["Value '-*NOT-EXISTING-MOD*-' is not a valid choice."]
         }]})
 
     def test_incorrect_value_in_fixed_foreign_field(self):
@@ -291,5 +291,5 @@ class CollectionMetaDataTest(TestCase):
         resp_json = json.loads(resp.content)
 
         self.assertEqual(resp_json['messages'], {'motor_lips.nii.gz': [{
-            'cognitive_paradigm_cogatlas': ["Value '-*NOT-EXISTING-PARADIGM*-' is not a valid choice."]
+            'Cognitive paradigm': ["Value '-*NOT-EXISTING-PARADIGM*-' is not a valid choice."]
         }]})
