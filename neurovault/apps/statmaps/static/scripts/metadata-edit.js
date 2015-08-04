@@ -2,40 +2,8 @@
 (function ($) {
   'use strict';
 
-  function simpleCache() {
-    var storage = {};
-    return {
-      get: function (key) {
-        return storage[key];
-      },
-      set: function (key, value) {
-        storage[key] = value;
-      }
-    }
-  }
-
-  function debounce(func, wait, immediate) {
-    var timeout;
-    return function () {
-      var context = this,
-        args = arguments;
-      var later = function () {
-        timeout = null;
-        if (!immediate) {
-          func.apply(context, args)
-        }
-      };
-      var callNow = immediate && !timeout;
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-      if (callNow) {
-        func.apply(context, args)
-      }
-    };
-  }
-
   function emptyOrSpaced(value) {
-    return !(value && /\S/.test(value))
+    return !(value && /\S/.test(value));
   }
 
   function stringRequiredValidator(value, callback) {
@@ -43,30 +11,6 @@
       return callback(false);
     } else {
       return callback(true);
-    }
-  }
-
-  var requestData = debounce(function (source, success) {
-    $.ajax({
-      url: source,
-      dataType: 'json',
-      success: success
-    });
-  }, 500, true);
-
-  var cache = simpleCache();
-
-  function cachedAjaxSource(source) {
-    return function (query, process) {
-      var data = cache.get(source);
-      if (data) {
-        process(data);
-      } else {
-        requestData(source, function (response) {
-          cache.set(source, response.data);
-          process(response.data);
-        });
-      }
     }
   }
 
@@ -94,12 +38,8 @@
   function getDataSource(field) {
     var datasource = field.datasource;
 
-    if (datasource) {
-      if (datasource.choices) {
-        return NVMetadata.datasources[datasource.choices];
-      } else if (datasource.url) {
-        return cachedAjaxSource(datasource.url);
-      }
+    if (datasource && datasource.choices) {
+      return NVMetadata.datasources[datasource.choices];
     } else {
       return undefined;
     }
@@ -138,7 +78,7 @@
         strict: x.required,
         allowInvalid: !x.required,
         validator: getFieldValidator(x)
-      }
+      };
     });
   }
 
@@ -153,8 +93,8 @@
     }
   }
 
-  function columnExist(columnName) {
-    var value = columnName.trim(),
+  function columnExist(name) {
+    var value = name.trim(),
       elems = NVMetadata.headers.filter(function (x) {
         return x.name === value;
       });
@@ -163,7 +103,7 @@
   }
 
   function isFixedColumn(index) {
-    return NVMetadata.headers[index].fixed
+    return NVMetadata.headers[index].fixed;
   }
 
   function hasAnyValues(arr) {
@@ -184,7 +124,7 @@
 
   function serializeTable(hotInstance) {
     return [window.NVMetadata.headers.map(function (x) {
-      return x.name
+      return x.name;
     })].concat(filterEmptyRows(hotInstance.getData()));
   }
 
@@ -325,7 +265,7 @@
             'insert_column_left': {
               name: 'Insert column on the left',
               disabled: function () {
-                return hot.getSelected()[1] === 0
+                return hot.getSelected()[1] === 0;
               }
             },
             'insert_column_right': {
@@ -335,7 +275,7 @@
             'remove_this_column': {
               name: 'Remove column',
               disabled: function () {
-                return isFixedColumn(hot.getSelected()[1])
+                return isFixedColumn(hot.getSelected()[1]);
               }
             },
             'hsep3': '---------',
