@@ -45,7 +45,7 @@
   }
 
   NVMetadata.getCollectionIdFromURL = function (url) {
-    var match = url.match(/collections\/(\d+)/);
+    var match = url.match(/collections\/(\w+)/);
     if (match[1]) {
       return match[1];
     }
