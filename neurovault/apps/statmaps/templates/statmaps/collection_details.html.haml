@@ -108,10 +108,12 @@
                       %li
                         %a{href: "{% url 'edit_collection' cid %}" } Collection Metadata
                      - if collection.image_set.all
-                      %li
-                        -#%a{href: "{% url 'edit_images' cid %}" } Images
-                      %li
-                        %a{href: "{% url 'edit_metadata' cid %}" } Images Metadata
+                        - if collection.is_statisticmap_set
+                          %li
+                            %a{href: "{% url 'edit_metadata' cid %}" } Images Metadata
+                        - else
+                          %li{class: "disabled"}
+                            %a{href: "#"} Images Metadata
 
                  - if collection.image_set.all
                   .btn-group

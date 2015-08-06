@@ -211,6 +211,11 @@ def edit_metadata(request, collection_cid):
     if not owner_or_contrib(request, collection):
         return HttpResponseForbidden()
 
+    if not collection.is_statisticmap_set:
+        return HttpResponseForbidden('Editing image metadata of collections '
+                                     'that include not only statistical '
+                                     'maps is forbidden.')
+
     if request.method == "POST":
         return JSONResponse(
             **image_metadata.handle_post_metadata(

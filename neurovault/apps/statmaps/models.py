@@ -127,6 +127,9 @@ class Collection(models.Model):
     group_repeated_measures = models.NullBooleanField(help_text="Was this a repeated measures design at the group level?", null=True, verbose_name="Repeated measures", blank=True)
     group_repeated_measures_method = models.CharField(help_text="If multiple measurements per subject, list method to account for within subject correlation, exact assumptions made about correlation/variance", verbose_name="Repeated measures method", max_length=200, null=True, blank=True)
 
+    @property
+    def is_statisticmap_set(self):
+        return all((isinstance(i, StatisticMap) for i in self.image_set.all()))
 
     def get_absolute_url(self):
         return_cid = self.id
