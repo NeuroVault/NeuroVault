@@ -89,8 +89,8 @@
                 %a{href:"{{ collection.url }}" } Link to the paper
         - if collection.full_dataset_url
             .lead
-                Full dataset available at: 
-                %a{href:"{{ collection.full_dataset_url }}" } 
+                Full dataset available at:
+                %a{href:"{{ collection.full_dataset_url }}" }
                   {{ collection.full_dataset_url }}
 
 
@@ -99,14 +99,33 @@
               - if collection.image_set.all
                   %a.btn.btn-primary{href: "pycortex" } 3D View
               - if edit_permission
-                  %a.btn.btn-primary{href: "{% url 'edit_collection' cid %}" } Edit collection
-                  - if collection.image_set.all
-	                  %a.btn.btn-primary{href: "{% url 'add_image' cid %}" } Add image
-	                  -#%a.btn.btn-primary{href: "{% url 'edit_images' cid %}" } Edit images
-	                  %a.btn.btn-primary{id:"upload_archive"} Upload archive (.zip)
-	                  <!--[if !IE]> -->
-	                  %a.btn.btn-primary{id:"upload_folder"} Upload folder
-	                  <!-- <![endif]-->
+                  %a.btn.btn-primary{href: "{% url 'add_image' cid %}" } Add image
+
+                  .btn-group
+                    %a.btn.btn-primary.dropdown-toggle{href: "#", data-toggle: "dropdown"} Edit
+                      %span.caret
+                    %ul.dropdown-menu
+                      %li
+                        %a{href: "{% url 'edit_collection' cid %}" } Collection Metadata
+                     - if collection.image_set.all
+                        - if collection.is_statisticmap_set
+                          %li
+                            %a{href: "{% url 'edit_metadata' cid %}" } Images Metadata
+                        - else
+                          %li{class: "disabled"}
+                            %a{href: "#"} Images Metadata
+
+                 - if collection.image_set.all
+                  .btn-group
+                    %a.btn.btn-primary.dropdown-toggle{href: "#", data-toggle: "dropdown"} Upload
+                      %span.caret
+                    %ul.dropdown-menu
+                      %li
+                        %a{id:"upload_archive", href: "#" } Archive (.zip)
+                      <!--[if !IE]> -->
+                      %li
+                        %a{id:"upload_folder", href: "#" } Folder
+                      <!-- <![endif]-->
                   - if delete_permission
                       .float-right-wrapper
                        %a.btn.btn-danger{href: "{% url 'delete_collection' cid %}", id:"delete_collection"} Delete collection
@@ -167,7 +186,7 @@
 	                                    - for tag in image.tags.all
 	                                        %a{ href: "/images/tags/{{tag.name}}" }= tag.name
 	                                        - if not forloop.last
-	
+
 	                                %td= image.polymorphic_ctype.name
 	                                %td
 	                                    - if image.zip_name

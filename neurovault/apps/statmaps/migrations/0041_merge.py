@@ -7,8 +7,8 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('statmaps', '0046_auto_20150428_0616'),
-        ('statmaps', '0040_auto_20150602_0312')
+        ('statmaps', '0038_image_data'),
+        ('statmaps', '0040_add_comparison_index'),
     ]
 
     operations = [

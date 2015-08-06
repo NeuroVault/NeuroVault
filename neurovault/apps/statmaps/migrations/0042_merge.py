@@ -7,8 +7,8 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('statmaps', '0046_auto_20150428_0616'),
-        ('statmaps', '0040_auto_20150602_0312')
+        ('statmaps', '0041_cognitive_atlas_ondelete_do_nothing'),
+        ('statmaps', '0041_merge'),
     ]
 
     operations = [

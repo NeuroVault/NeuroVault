@@ -1,14 +1,15 @@
 from django.test import TestCase, Client, override_settings, RequestFactory
 from django.core.urlresolvers import reverse
-from neurovault.apps.statmaps.models import Collection,User, Atlas
+from neurovault.apps.statmaps.models import Collection, User, Image, Atlas
 from django.core.files.uploadedfile import SimpleUploadedFile
+import json
 from uuid import uuid4
 import tempfile
 import os
 import shutil
 from neurovault.apps.statmaps.utils import detect_afni4D, split_afni4D_to_3D
 import nibabel
-from .utils import clearDB
+from .utils import clearDB, save_statmap_form
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 
 from neurovault.apps.statmaps.views import delete_collection
@@ -76,17 +77,17 @@ class DeleteCollectionsTest(TestCase):
         self.unorderedAtlas.file = SimpleUploadedFile('VentralFrontal_thr75_summaryimage_2mm.nii.gz', file(os.path.join(self.test_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz')).read())
         self.unorderedAtlas.label_description_file = SimpleUploadedFile('test_VentralFrontal_thr75_summaryimage_2mm.xml', file(os.path.join(self.test_path,'test_data/api/unordered_VentralFrontal_thr75_summaryimage_2mm.xml')).read())
         self.unorderedAtlas.save()
-        
+
         self.Collection2 = Collection(name='Collection2',owner=self.user)
         self.Collection2.save()
         self.orderedAtlas = Atlas(name='orderedAtlas', collection=self.Collection2, label_description_file='VentralFrontal_thr75_summaryimage_2mm.xml')
         self.orderedAtlas.file = SimpleUploadedFile('VentralFrontal_thr75_summaryimage_2mm.nii.gz', file(os.path.join(self.test_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz')).read())
         self.orderedAtlas.label_description_file = SimpleUploadedFile('test_VentralFrontal_thr75_summaryimage_2mm.xml', file(os.path.join(self.test_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.xml')).read())
         self.orderedAtlas.save()
-    
+
     def tearDown(self):
         clearDB()
-        
+
     def testDeleteCollection(self):
         self.client.login(username=self.user)
         pk1 = self.Collection1.pk
@@ -99,7 +100,7 @@ class DeleteCollectionsTest(TestCase):
         print dirList
         self.assertIn(str(self.Collection2.pk), dirList)
         self.assertNotIn(str(self.Collection1.pk), dirList)
-    
+
 
 
 class Afni4DTest(TestCase):
@@ -147,3 +148,148 @@ class Afni4DTest(TestCase):
         # check that sliced niftis exist at output location
         self.assertTrue(os.path.exists(bricks[0][1]))
         self.assertTrue(os.path.exists(bricks[1][1]))
+
+
+class CollectionMetaDataTest(TestCase):
+
+    def setUp(self):
+        base_username = 'owner'
+        password = 'pwd'
+        test_path = os.path.abspath(os.path.dirname(__file__))
+
+        self.user = User.objects.create_user("%s_%s" % (base_username,
+                                                        self.uniqid()), None, password)
+        self.user.save()
+
+        self.client = Client()
+        self.client.login(username=self.user.username, password=password)
+
+        self.coll = Collection(owner=self.user,
+                               name="Test %s" % self.uniqid())
+        self.coll.save()
+
+        def test_data_path(filename):
+            return os.path.join(test_path, 'test_data/statmaps/%s' % filename)
+
+        self.image1 = save_statmap_form(
+            image_path=test_data_path('motor_lips.nii.gz'),
+            collection=self.coll
+        )
+        self.image2 = save_statmap_form(
+            image_path=test_data_path('beta_0001.nii.gz'),
+            collection=self.coll
+        )
+
+    def tearDown(self):
+        clearDB()
+
+    def uniqid(self):
+        return str(uuid4())[:8]
+
+    def test_post_metadata(self):
+        cognitive_paradigms = ('Early Social and Communication Scales',
+                               'Cambridge Gambling Task')
+
+        test_data = [
+            ['Filename', 'Subject ID', 'Sex', 'modality',
+                'cognitive_paradigm_cogatlas'],
+            ['motor_lips.nii.gz', '12', '1',
+                'fMRI-BOLD', cognitive_paradigms[0]],
+            ['beta_0001.nii.gz', '13', '2',
+                'fMRI-BOLD', cognitive_paradigms[1]]
+        ]
+
+        url = reverse('edit_metadata',
+                      kwargs={'collection_cid': self.coll.pk})
+
+        resp = self.client.post(url,
+                                data=json.dumps(test_data),
+                                content_type='application/json; charset=utf-8')
+
+        self.assertEqual(resp.status_code, 200)
+
+        image1 = Image.objects.get(id=self.image1.id)
+
+        self.assertEqual(image1.data, {'Sex': '1',
+                                       'Subject ID': '12'})
+
+        self.assertEqual(image1.modality, 'fMRI-BOLD')
+        self.assertEqual(image1.cognitive_paradigm_cogatlas.name,
+                         cognitive_paradigms[0])
+
+        image2 = Image.objects.get(id=self.image2.id)
+
+        self.assertEqual(image2.cognitive_paradigm_cogatlas.name,
+                         cognitive_paradigms[1])
+
+    def test_metadata_for_files_missing_in_the_collection(self):
+        test_data = [
+            ['Filename', 'Subject ID', 'Sex'],
+            ['motor_lips.nii.gz', '12', '1'],
+            ['beta_0001.nii.gz', '13', '2'],
+            ['file3.nii.gz', '14', '3']
+        ]
+
+        url = reverse('edit_metadata',
+                      kwargs={'collection_cid': self.coll.pk})
+
+        resp = self.client.post(url,
+                                data=json.dumps(test_data),
+                                content_type='application/json; charset=utf-8')
+
+        self.assertEqual(resp.status_code, 400)
+
+        resp_json = json.loads(resp.content)
+
+        self.assertEqual(resp_json['message'],
+                         'File is not found in the collection: file3.nii.gz')
+
+    def test_incorrect_value_in_fixed_basic_field(self):
+        test_data = [
+            ['Filename', 'Subject ID', 'Sex', 'modality',
+                'cognitive_paradigm_cogatlas'],
+            ['motor_lips.nii.gz', '12', '1',
+                'fMRI-BOLD', 'Cambridge Gambling Task'],
+            ['beta_0001.nii.gz', '13', '2',
+                '-*NOT-EXISTING-MOD*-', 'Cambridge Gambling Task']
+        ]
+
+        url = reverse('edit_metadata',
+                      kwargs={'collection_cid': self.coll.pk})
+
+        resp = self.client.post(url,
+                                data=json.dumps(test_data),
+                                content_type='application/json; charset=utf-8')
+
+        self.assertEqual(resp.status_code, 400)
+
+        resp_json = json.loads(resp.content)
+
+        self.assertEqual(resp_json['messages'], {'beta_0001.nii.gz': [{
+            'Modality & acquisition type': ["Value '-*NOT-EXISTING-MOD*-' is not a valid choice."]
+        }]})
+
+    def test_incorrect_value_in_fixed_foreign_field(self):
+        test_data = [
+            ["Filename", "Subject ID", "Sex", "modality",
+                "cognitive_paradigm_cogatlas"],
+            ["motor_lips.nii.gz", "12", "1", "fMRI-BOLD",
+                '-*NOT-EXISTING-PARADIGM*-'],
+            ["beta_0001.nii.gz", "13", "2",
+                "fMRI-BOLD", 'Cambridge Gambling Task']
+        ]
+
+        url = reverse('edit_metadata',
+                      kwargs={'collection_cid': self.coll.pk})
+
+        resp = self.client.post(url,
+                                data=json.dumps(test_data),
+                                content_type='application/json; charset=utf-8')
+
+        self.assertEqual(resp.status_code, 400)
+
+        resp_json = json.loads(resp.content)
+
+        self.assertEqual(resp_json['messages'], {'motor_lips.nii.gz': [{
+            'Cognitive paradigm': ["Value '-*NOT-EXISTING-PARADIGM*-' is not a valid choice."]
+        }]})
