@@ -90,6 +90,7 @@
       xhr.open('POST', "upload_folder", true);
       xhr.setRequestHeader("X-CSRFToken", csrftoken);
       xhr.onloadstart = function(e){
+                $('.modal-backdrop').removeClass("modal-backdrop"); 
                 showLoader();
       };
       
@@ -257,11 +258,11 @@
             #viewer.tab-pane
                 {% include 'statmaps/_neurosynth_viewer_content.html.haml' %}
 
-            #upload_process.modal{data-backdrop: 'static', data-keyboard:'false', style: 'margin-top: 175px;'}
+            #upload_process.modal{data-keyboard:'false', style: 'margin-top: 175px;'}
                 
 
 
-      <div id='spinny' class='modal neuron_loader' data-backdrop='static' style='margin-top: 175px; left:45%; top:15%' data-keyboard='false'>
+      <div id='spinny' class='modal neuron_loader' style='margin-top: 175px; left:45%; top:15%' data-keyboard='false'>
           <img src="{% static "images/spinner.gif"%}"/>
       </div><!-- close spinner-->
 
