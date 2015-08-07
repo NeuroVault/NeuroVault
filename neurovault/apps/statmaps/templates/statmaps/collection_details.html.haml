@@ -1,30 +1,17 @@
 {% extends "base.html" %}
 {% block head %}
+
 <title>{% block title %}NeuroVault: {{collection.name}}{% endblock %}</title>
-<style>
-#fade {
-    display: none;
-    position:absolute;
-    top: 0%;
-    left: 0%;
-    width: 100%;
-    height: 100%;
-    background-color: #ffffff;
-    z-index: 1001;
-    -moz-opacity: 0.8;
-    opacity: .90;
-    filter: alpha(opacity=80);
-}
-</style>
+
 <script type='text/javascript'>
 
  function showLoader() {   
-    console.log("SHOWING");
+    document.getElementById('spinny').style.display = 'block';
     document.getElementById('fade').style.display = 'block';
   }
 
   function hideLoader() {
-    console.log("HIDING");
+    document.getElementById('spinny').style.display = 'none';
     document.getElementById('fade').style.display = 'none';
   }
 
@@ -44,7 +31,7 @@
     })(this));
     $("table[class*=collection-details-datatable]").dataTable({
       sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>",
-      sAjaxSource: "/api/collections/" + "1" + "/datatable/?format=json",
+      sAjaxSource: "/api/collections/" + "{{ cid }}" + "/datatable/?format=json",
       iDisplayLength: 10
     });
     $("table[class*=collection-images-datatable]").dataTable({
@@ -72,11 +59,9 @@
       return confirm("Are you sure you want to delete this collection? This operation cannot be undone!");
     });
     $('#upload_archive').click(function(e) {
-      showLoader();
       return document.getElementById("id_file").click();
     });
     $('#upload_folder').click(function(e) {
-      showLoader();
       return document.getElementById("folder_input").click();
     });
     $('#id_file').change(function(e) {
@@ -100,14 +85,16 @@
           }
         }
       }
+      
       csrftoken = $.cookie('csrftoken');
-      xhr.open('POST', "upload_folder", false);
+      xhr.open('POST', "upload_folder", true);
       xhr.setRequestHeader("X-CSRFToken", csrftoken);
-      xhr.onloadstart = function(){
+      xhr.onloadstart = function(e){
                 showLoader();
       };
+      
       // We need to know when the request finishes.
-      xhr.onload = function () {
+      xhr.onload = function (e) {
       if (xhr.status === 200) {
             hideLoader();
             return document.location = '';
@@ -127,7 +114,7 @@
 {% endblock %}
 
 {% block content %}
-.fade
+%fade
 .row
     .span11
         %h2 {{ collection.name }}
@@ -271,10 +258,12 @@
                 {% include 'statmaps/_neurosynth_viewer_content.html.haml' %}
 
             #upload_process.modal{data-backdrop: 'static', data-keyboard:'false', style: 'margin-top: 175px;'}
-                .modal-dialog
-                    .modal-content
-                        .modal-body
-                            .h1 complete
+                
+
+
+      <div id='spinny' class='modal neuron_loader' data-backdrop='static' style='margin-top: 175px; left:45%; top:15%' data-keyboard='false'>
+          <img src="{% static "images/spinner.gif"%}"/>
+      </div><!-- close spinner-->
 
 {% comment %}
 {% for image in collection.image_set.all %}
