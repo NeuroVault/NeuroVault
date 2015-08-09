@@ -14,7 +14,7 @@ for t in range(0,len(tasks.json)):
     if tasks.json[t]["name"]:
         task, _ = CognitiveAtlasTask.objects.update_or_create(cog_atlas_id=task["id"], defaults={"name":task["name"]})
         task.save()
-        if tasks.json[t]["id"]
+        if tasks.json[t]["id"]:
             task_details = get_task(id=tasks.json[t]["id"])
             if task_details.json[0]["contrasts"]:
                 print "Found %s contrasts!" %(len(task_details.json[0]["contrasts"]))
