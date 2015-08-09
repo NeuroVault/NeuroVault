@@ -247,6 +247,8 @@
         data: window.NVMetadata.data,
         colHeaders: headerNames(window.NVMetadata.headers),
         columns: columnSettings(window.NVMetadata.headers),
+        columnSorting: true,
+        sortIndicator: true,
         rowHeaders: true,
         height: getDefaultHeight(window.NVMetadata.data),
         allowInsertRow: false,
