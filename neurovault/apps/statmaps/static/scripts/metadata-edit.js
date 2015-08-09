@@ -84,12 +84,13 @@
 
   function getDefaultHeight(data) {
     var minHeight = 400,
+      maxHeight = 500,
       rowHeight = 24;
 
     if ((data.length + 1) * rowHeight < minHeight) {
       return minHeight;
     } else {
-      return undefined;
+      return maxHeight;
     }
   }
 
