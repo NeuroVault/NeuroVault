@@ -1,20 +1,22 @@
 from __future__ import absolute_import
-import os
-import numpy
-import pylab as plt
-import nibabel as nib
-from django.db.models import Q
-from celery import shared_task 
-from sklearn.externals import joblib
-from nilearn.image import resample_img
-from nilearn.plotting import plot_glass_brain
-from django.shortcuts import get_object_or_404
-from neurovault.celery import nvcelery as celery_app
-from pybraincompare.compare.mrutils import resample_images_ref, make_binary_deletion_mask, make_binary_deletion_vector
 from pybraincompare.compare.maths import calculate_correlation, calculate_pairwise_correlation
+from pybraincompare.compare.mrutils import resample_images_ref, make_binary_deletion_mask, make_binary_deletion_vector
+from pybraincompare.mr.transformation import make_resampled_transformation_vector
 from pybraincompare.mr.datasets import get_data_directory
-from six import BytesIO
+from neurovault.celery import nvcelery as celery_app
+from django.shortcuts import get_object_or_404
 from django.core.files.base import ContentFile
+from nilearn.plotting import plot_glass_brain
+from nilearn.image import resample_img
+from sklearn.externals import joblib
+from django.db.models import Q
+from celery import shared_task
+from six import BytesIO
+import nibabel as nib
+import pylab as plt
+import numpy
+import os
+
 
 # THUMBNAIL IMAGE GENERATION ###########################################################################
 
@@ -51,37 +53,14 @@ def generate_glassbrain_image(image_pk):
 @shared_task
 def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
     from neurovault.apps.statmaps.models import Image
-    from nilearn.image import resample_img
-    import numpy as np
     from six import BytesIO
+    import numpy as np
     import neurovault
+
     img = get_object_or_404(Image, pk=pk1)
-    nii_obj = nib.load(img.file.path)
-    
-    # If a standard already exists with the voxel dimension, we use that to save time
-    this_path = os.path.abspath(os.path.dirname(__file__))
-    standard = os.path.abspath(os.path.join(this_path,
-                                            "static","anatomical",
-                                            "MNI152_%smm.nii.gz" % resample_dim[0]))
-    if not os.path.exists(standard):
-        standard = os.path.abspath(os.path.join(this_path,"static","anatomical","MNI152.nii.gz"))
-    standard_brain = nib.load(standard)
-    reference = resample_img(standard_brain, target_affine=numpy.diag(resample_dim))
+    nii_obj = nib.load(img.file.path)   # standard_mask=True is default
+    image_vector = make_resampled_transformation_vector(nii_obj,resample_dim)
 
-    # To set 0s to nan, we need to have float64 data type
-    true_zeros = numpy.zeros(nii_obj.shape) # default data_type is float64
-    true_zeros[:] = nii_obj.get_data()
-    true_zeros[true_zeros==0] = numpy.nan
-
-    # Resample image to 4mm voxel, nans are preserved
-    true_zeros = nib.nifti1.Nifti1Image(true_zeros,affine=nii_obj.get_affine())
-    true_zeros = resample_img(true_zeros,target_affine=reference.get_affine(), 
-                             target_shape=reference.shape)
-      
-    # Mask the image, and save pickle image folder 
-    # (this is the same procedure used to produce the atlas vector that will be used for scatterplot)
-    image_vector = true_zeros.get_data()[reference.get_data()!=0]
-    
     f = BytesIO()
     np.save(f, image_vector)
     f.seek(0)
