@@ -1,16 +1,24 @@
 import os
 import json
-from neurovault.apps.statmaps.models import CognitiveAtlasTask,\
-    CognitiveAtlasContrast
-    
-dir = os.path.abspath(os.path.dirname(__file__))
+from neurovault.apps.statmaps.models import CognitiveAtlasTask, CognitiveAtlasContrast
 
-json_content = open(os.path.join(dir, "../neurovault/apps/statmaps/migrations/cognitiveatlas_tasks.json")).read()
-json_content = json_content.decode("utf-8").replace('\t', '').replace("&#39;", "'")
-data = json.loads(json_content)
-for item in data:
-    task, _ = CognitiveAtlasTask.objects.update_or_create(cog_atlas_id=item["id"], defaults={"name":item["name"]})
-    task.save()
-    for contrast in item["contrasts"]:
-        contrast, _ = CognitiveAtlasContrast.objects.update_or_create(cog_atlas_id=contrast["conid"], defaults={"name":contrast["conname"], "task":task})
-        contrast.save()
+# not required, will be: pip install cognitiveatlas 
+# https://cogat-python.readthedocs.org
+from cognitiveatlas.api import get_task
+tasks = get_task()
+
+# Update tasks
+for t in range(0,len(tasks.json)):
+    task = tasks.json[t]
+    print "%s of %s" %(t,len(tasks.json)) 
+    if tasks.json[t]["name"]:
+        task, _ = CognitiveAtlasTask.objects.update_or_create(cog_atlas_id=task["id"], defaults={"name":task["name"]})
+        task.save()
+        if tasks.json[t]["id"]
+            task_details = get_task(id=tasks.json[t]["id"])
+            if task_details.json[0]["contrasts"]:
+                print "Found %s contrasts!" %(len(task_details.json[0]["contrasts"]))
+                for contrast in task_details.json[0]["contrasts"]:
+                   contrast, _ = CognitiveAtlasContrast.objects.update_or_create(cog_atlas_id=contrast["id"], defaults={"name":contrast["contrast_text"], "task":task})
+                   contrast.save() 
+
