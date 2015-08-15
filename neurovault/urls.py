@@ -1,7 +1,7 @@
 from neurovault.apps.statmaps.voxel_query_functions import voxelToRegion, getSynonyms, toAtlas, getAtlasVoxels
 from rest_framework.relations import StringRelatedField, PrimaryKeyRelatedField
 from neurovault.apps.statmaps.models import Image, Collection, StatisticMap,\
-    Atlas, NIDMResults, NIDMResultStatisticMap, CognitiveAtlasTask
+    Atlas, NIDMResults, NIDMResultStatisticMap, CognitiveAtlasTask, BaseStatisticMap
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from neurovault.apps.statmaps.urls import StandardResultPagination
 from rest_framework.filters import DjangoFilterBackend
@@ -108,7 +108,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
     file = HyperlinkedFileField()
     collection = HyperlinkedRelatedURL(read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
-
+    
     class Meta:
         model = Image
         exclude = ['polymorphic_ctype']
@@ -118,30 +118,52 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
         Because GalleryItem is Polymorphic
         """
         if isinstance(obj, StatisticMap):
-            return StatisticMapSerializer(obj, context={
+            orderedDict = StatisticMapSerializer(obj, context={
                                 'request': self.context['request']}).to_representation(obj)
+            orderedDict['image_type'] = 'statistic map'
+            return orderedDict
         if isinstance(obj, Atlas):
-            return AtlasSerializer(obj, context={
+            orderedDict = AtlasSerializer(obj, context={
                                 'request': self.context['request']}).to_representation(obj)
+            orderedDict['image_type'] = 'atlas'
+            return orderedDict
 
         if isinstance(obj, NIDMResultStatisticMap):
-            return NIDMResultStatisticMapSerializer(obj, context={
+            orderedDict = NIDMResultStatisticMapSerializer(obj, context={
                                 'request': self.context['request']}).to_representation(obj)
+            orderedDict['image_type'] = 'NIDM results statistic map'
+            return orderedDict
 
         return super(ImageSerializer, self).to_representation(obj)
-    
+
 
 class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
+
 
     file = HyperlinkedFileField()
     collection = HyperlinkedRelatedURL(read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
     cognitive_paradigm_cogatlas = StringRelatedField(read_only=True)
     cognitive_paradigm_cogatlas_id = PrimaryKeyRelatedField(read_only=True, source="cognitive_paradigm_cogatlas")
+    map_type = serializers.SerializerMethodField()
+    analysis_level = serializers.SerializerMethodField()
+    
+    def get_map_type(self,obj):
+        return obj.get_map_type_display()
+    
+    def get_analysis_level(self,obj):
+        return obj.get_analysis_level_display()
 
     class Meta:
         model = StatisticMap
-        exclude = ['polymorphic_ctype', 'ignore_file_warning']
+        exclude = ['polymorphic_ctype', 'ignore_file_warning', 'data']
+
+    def to_representation(self, obj):
+        ret = super(StatisticMapSerializer, self).to_representation(obj)
+        for field_name, value in obj.data.items():
+            if field_name not in ret:
+                ret[field_name] = value
+        return ret
 
 
 class NIDMResultStatisticMapSerializer(serializers.HyperlinkedModelSerializer):
@@ -150,6 +172,15 @@ class NIDMResultStatisticMapSerializer(serializers.HyperlinkedModelSerializer):
     url = HyperlinkedImageURL(source='get_absolute_url')
     nidm_results = HyperlinkedRelatedURL(read_only=True)
     description = NIDMDescriptionSerializedField(source='get_absolute_url')
+    map_type = serializers.SerializerMethodField()
+    analysis_level = serializers.SerializerMethodField()
+    
+    def get_map_type(self,obj):
+        return obj.get_map_type_display()
+    
+    def get_analysis_level(self,obj):
+        return obj.get_analysis_level_display()
+
 
     class Meta:
         model = NIDMResultStatisticMap
@@ -179,7 +210,7 @@ class NIDMResultsSerializer(serializers.ModelSerializer):
         model = NIDMResults
         exclude = ['id']
 
-    
+
 class CollectionSerializer(serializers.ModelSerializer):
     images = ImageSerializer(many=True, source='image_set')
     nidm_results = NIDMResultsSerializer(many=True, source='nidmresults_set')
@@ -248,10 +279,10 @@ class AtlasViewSet(ImageViewSet):
         regions = [line.text.split('(')[0].replace("'",'').rstrip(' ').lower() for line in lines]
         return Response(
             {'aaData': zip(indices, regions)})
-        
+
     @list_route()
     def atlas_query_region(self, request, pk=None):
-        ''' Returns a dictionary containing a list of voxels that match the searched term (or related searches) in the specified atlas.\n 
+        ''' Returns a dictionary containing a list of voxels that match the searched term (or related searches) in the specified atlas.\n
         Parameters: region, collection, atlas \n
         Example: '/api/atlases/atlas_query_region/?region=middle frontal gyrus&collection=Harvard-Oxford cortical and subcortical structural atlases&atlas=HarvardOxford cort maxprob thr25 1mm' '''
         search = request.GET.get('region','')
@@ -291,12 +322,12 @@ class AtlasViewSet(ImageViewSet):
                 data = {'voxels':getAtlasVoxels(searchList, atlas_image, atlas_xml)}
             except ValueError:
                 return Response('error: region not in atlas', status=400)
-    
+
             return Response(data)
-        
+
     @list_route()
     def atlas_query_voxel(self, request, pk=None):
-        ''' Returns the region name that matches specified coordinates in the specified atlas.\n 
+        ''' Returns the region name that matches specified coordinates in the specified atlas.\n
         Parameters: x, y, z, collection, atlas \n
         Example: '/api/atlases/atlas_query_voxel/?x=30&y=30&z=30&collection=Harvard-Oxford cortical and subcortical structural atlases&atlas=HarvardOxford cort maxprob thr25 1mm' '''
         X = request.GET.get('x','')
@@ -348,7 +379,7 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
         page = paginator.paginate_queryset(queryset, request)
         serializer = ImageSerializer(page, context={'request': request}, many=True)
         return paginator.get_paginated_response(serializer.data)
-        
+
 
     def retrieve(self, request, pk=None):
         collection = get_collection(pk,request,mode='api')

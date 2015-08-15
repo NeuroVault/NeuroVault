@@ -1,5 +1,5 @@
 Django>=1.7.1,<1.8
-python-social-auth>=0.1.23
+python-social-auth==0.2.7
 djangorestframework
 markdown
 django-filter
@@ -24,7 +24,7 @@ scipy
 numexpr
 lxml
 shapely
-git+https://github.com/gallantlab/pycortex.git
+git+https://github.com/gallantlab/pycortex.git#egg=pycortex
 Pillow
 requests
 requests-oauthlib
@@ -44,3 +44,4 @@ git+https://github.com/sinnwerkstatt/django-file-resubmit.git#egg=file_resubmit
 nidmfsl
 opbeat
 djrill
+django-hstore==1.3.5

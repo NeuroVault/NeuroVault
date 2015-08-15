@@ -7,7 +7,8 @@ from .views import edit_collection, edit_images, view_image, delete_image, edit_
                 serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
                 papaya_js_embed, view_images_by_tag, \
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
-                view_nidm_results, find_similar, compare_images
+                view_nidm_results, find_similar, compare_images,  edit_metadata, \
+                export_images_filenames
 from neurovault.apps.statmaps.models import KeyValueTag
 from django.db.models import Count
 from django.contrib.auth.decorators import login_required
@@ -64,7 +65,12 @@ urlpatterns = patterns('',
     url(r'^collections/(?P<cid>\d+|[A-Z]{8})/pycortex$',
         view_collection_with_pycortex,
         name='view_collection_pycortex'),
-
+    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/export/imagesfilenames$',
+        export_images_filenames,
+        name="export_images_filenames"),
+    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/editmetadata$',
+        edit_metadata,
+        name="edit_metadata"),
     url(r'^images/tags/$',
         ListView.as_view(
             queryset=KeyValueTag.objects.all(),
@@ -95,7 +101,7 @@ urlpatterns = patterns('',
     url(r'^images/(?P<pk>\d+)/js/embed$',
         papaya_js_embed,
         name='papaya_js_embed'),
-    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidm_name>[A-Za-z0-9\.\+\-\_\s\[\]]+\.nidm\_?[0-9]*)/?$',
+    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidm_name>[A-Za-z0-9\.\+\-\_\s\[\]\(\)]+\.nidm\_?[0-9]*)/?$',
         view_nidm_results,
         name='view_nidm_results'),
 
@@ -103,7 +109,7 @@ urlpatterns = patterns('',
         papaya_js_embed,
         {'iframe':True},name='papaya_iframe_embed'),
 
-    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<img_name>[A-Za-z0-9\.\+\-\_\s\[\]]+)$',
+    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<img_name>[A-Za-z0-9\.\+\-\_\s\[\]\(\)]+)$',
         serve_image,
         name='serve_image'),
 
@@ -125,11 +131,11 @@ urlpatterns = patterns('',
         serve_pycortex,
         name='serve_pycortex_collection'),
 
-    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[A-Za-z0-9\.\+\-\_\s\[\]]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
+    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[A-Za-z0-9\.\+\-\_\s\[\]\(\)]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
         serve_nidm,
         name='serve_nidm_files'),
 
-    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[A-Za-z0-9\.\+\-\_\s\[\]]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
+    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[A-Za-z0-9\.\+\-\_\s\[\]\(\)]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
         serve_nidm_image,
         name='serve_nidm_images'),
 

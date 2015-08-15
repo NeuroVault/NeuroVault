@@ -4,6 +4,7 @@ import sys
 from datetime import timedelta
 import matplotlib
 import tempfile
+from kombu import Exchange, Queue
 matplotlib.use('Agg')
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -13,8 +14,7 @@ DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
-    (('Chris', 'krzysztof.gorgolewski@gmail.com'),
-     ('Gabriel', 'rivera@infocortex.com'))
+    (('Chris', 'krzysztof.gorgolewski@gmail.com'))
 )
 
 MANAGERS = ADMINS
@@ -22,12 +22,11 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'neurovault',
+        'NAME': 'postgres',
         # The following settings are not used with sqlite3:
-        'USER': 'neurovault',
-        'PASSWORD': 'neurovault',
-        'HOST': '127.0.0.1',                      # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
-        #'PORT': '',        # Set to empty string for default.
+        'USER': 'postgres',
+        'HOST': 'db',                      # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
+        'PORT': '5432',        # Set to empty string for default.
     }
 }
 
@@ -64,11 +63,15 @@ USE_TZ = True
 MEDIA_ROOT = os.path.join(BASE_DIR,'media')
 MEDIA_URL = '/public/media/'
 
+PRIVATE_MEDIA_ROOT = '/var/www/image_data'
+PRIVATE_MEDIA_URL = '/media/images'
+
+
 # Absolute path to the directory static files should be collected to.
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/var/www/example.com/static/"
-STATIC_ROOT = os.path.join(BASE_DIR,'static')
+STATIC_ROOT = '/var/www/static'
 
 # URL prefix for static files.
 # Example: "http://example.com/static/", "http://static.example.com/"
@@ -153,7 +156,8 @@ INSTALLED_APPS = (
     'djcelery',
     'django_cleanup',
     'file_resubmit',
-    'djrill'
+    'djrill',
+    'django_hstore'
 )
 
 # A sample logging configuration. The only tangible logging
@@ -215,9 +219,9 @@ REST_FRAMEWORK = {
     'DEFAULT_MODEL_SERIALIZER_CLASS':
         'rest_framework.serializers.HyperlinkedModelSerializer',
 
-    # LimitOffsetPagination will allow to set a ?limit= and ?offset= 
+    # LimitOffsetPagination will allow to set a ?limit= and ?offset=
     # variable in the URL.
-    'DEFAULT_PAGINATION_CLASS': 
+    'DEFAULT_PAGINATION_CLASS':
          'neurovault.apps.statmaps.urls.StandardResultPagination',
 
     # Use Django's standard `django.contrib.auth` permissions,
@@ -238,17 +242,11 @@ CORS_ORIGIN_REGEX_WHITELIST = (
 #LOGIN_REDIRECT_URL = '/logged-in/'
 #LOGIN_ERROR_URL    = '/login-error/'
 
-CRISPY_TEMPLATE_PACK = 'bootstrap'
+CRISPY_TEMPLATE_PACK = 'bootstrap3'
 
 DBBACKUP_STORAGE = 'dbbackup.storage.dropbox_storage'
 DBBACKUP_TOKENS_FILEPATH = '/home/filo/dbtokens'
 DBBACKUP_POSTGRES_BACKUP_COMMAND = 'export PGPASSWORD=neurovault\n pg_dump --username={adminuser} --host={host} --port={port} {databasename} >'
-
-# the the original image paths are retained to support old links.
-# Nginx will serve the PRIVATE_MEDIA_URL with private/ prepended to the path
-# e.g. for PRIVATE_MEDIA_URL 'media/images', configure internal location '/private/media/images'
-PRIVATE_MEDIA_ROOT = os.path.join(BASE_DIR,'private_media')
-PRIVATE_MEDIA_URL = '/media/images'
 
 # For Apache, use 'sendfile.backends.xsendfile'
 # For Nginx, use 'sendfile.backends.nginx'
@@ -268,10 +266,27 @@ CACHES = {
                 "LOCATION": '/tmp/file_resubmit/'
             }
           }
-          
+
 # Mandrill config
 MANDRILL_API_KEY = "z2O_vfFUJB4L2yeF4Be9Tg" # this is a test key replace wit ha different one in production
 EMAIL_BACKEND = "djrill.mail.backends.djrill.DjrillBackend"
+
+if os.path.exists('/usr/local/share/pycortex/db/fsaverage'):
+    STATICFILES_DIRS = (
+                        ('pycortex-resources', '/usr/local/lib/python2.7/site-packages/cortex/webgl/resources'),
+                        ('pycortex-ctmcache', '/usr/local/share/pycortex/db/fsaverage/cache')
+                        )
+
+# Celery config
+BROKER_URL = 'redis://redis:6379/0'
+CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_DEFAULT_QUEUE = 'default'
+CELERY_QUEUES = (
+    Queue('default', Exchange('default'), routing_key='default'),
+)
 
 # Bogus secret key.
 try:
@@ -292,13 +307,6 @@ os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
 
 # provToolbox path
 os.environ["PATH"] += os.pathsep + '/path/to/lib/provToolbox/bin'
-
-# Celery config
-BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
 
 #CELERYBEAT_SCHEDULE = {
 #    'run_make_correlation_df': {

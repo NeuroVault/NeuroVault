@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load coffeescript %}
 {% block content %}
+<title>{% block title %}NeuroVault: API Documentation{% endblock %}</title>
 
 <style>
 
@@ -14,20 +15,17 @@
 
 </style>
 
-<!-- Page Content -->
-    <div class="container">
-
         <div class="row">
-            <div class = "col-lg-12">
-            <img class="img-responsive" src="http://placehold.it/940x75&text=API+Documentation" alt="">
+            <div class = "col-lg-13">
+            <img class="img-responsive" src="http://placehold.it/1200x75&text=API+Documentation" alt="">
            </div>
          </div>
 
         <div class="row apibar">
         <a href="#collapseAtlas" data-toggle="collapse" aria-expanded="false" aria-controls="collapseAtlas">
-        <img class="img-responsive" src="http://placehold.it/940x75/0088cc/ffffff&text=Atlases" alt=""></a>
+        <img class="img-responsive" src="http://placehold.it/1200x75/0088cc/ffffff&text=Atlases" alt=""></a>
         <div class="collapse in" id="collapseAtlas">
-        <div class="well" style="margin-left: 5px; margin-right: 25px">
+        <div class="well">
            
         <!--Atlases-->
         <h4>Atlases:</h4>
@@ -51,10 +49,10 @@
       
 <div class="row apibar">
         <a href="#collapseCollections" data-toggle="collapse" aria-expanded="false" aria-controls="collapseCollections">
-        <img class="img-responsive" src="http://placehold.it/940x75/0088cc/ffffff&text=Collections" alt="">
+        <img class="img-responsive" src="http://placehold.it/1200x75/0088cc/ffffff&text=Collections" alt="">
         </a>
         <div class="collapse in" id="collapseCollections">
-        <div class="well" style="margin-left: 0px; margin-right: 45px;">
+        <div class="well">
         <h4> Collections: </h4>
         <h5> /api/collections/</h5>
         <p class="indented"> Returns a json file containing a list of dictionaries with information corresponding to each collection stored in NeuroVault.  Results can be filtered by specifying the name, DOI or owner of the collection.</p>
@@ -68,14 +66,13 @@
         <p class="indented"> example: <a href='http://neurovault.org/api/collections/287/images'>neurovault.org/api/collections/20/images</a></p>
         </div>            
         </div>
-        </div>
 </div>
 
 <div class="row apibar">
         <a href="#collapseImages" data-toggle="collapse" aria-expanded="false" aria-controls="collapseImages">
-        <img class="img-responsive" src="http://placehold.it/940x75/0088cc/ffffff&text=Images" alt=""></a>
+        <img class="img-responsive" src="http://placehold.it/1200x75/0088cc/ffffff&text=Images" alt=""></a>
         <div class="collapse in" id="collapseImages">
-        <div class="well" style="margin-left: 5px; margin-right: 25px;">
+        <div class="well">
         <h4> Images: </h4>
 
         <h5> /api/images/</h5>
@@ -90,10 +87,10 @@
 
 <div class="row apibar" style="margin-bottom: 20px">
         <a href="#collapseNIDM" data-toggle="collapse" aria-expanded="false" aria-controls="collapseNIDM">
-        <img class="img-responsive" src="http://placehold.it/940x75/0088cc/ffffff&text=NIDM-Results" alt="">
+        <img class="img-responsive" src="http://placehold.it/1200x75/0088cc/ffffff&text=NIDM-Results" alt="">
         </a>
         <div class="collapse in" id="collapseNIDM">
-        <div class="well" style="margin-left: 5px; margin-right: 25px;">
+        <div class="well">
        
         <h4> NIDM Results:</h4> 
  
@@ -104,6 +101,5 @@
         </div>
         </div>
 
-</div>
 
 {% endblock %}

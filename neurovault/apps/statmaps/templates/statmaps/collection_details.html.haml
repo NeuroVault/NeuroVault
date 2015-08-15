@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load coffeescript %}
 {% block head %}
-
+<title>{% block title %}NeuroVault: {{collection.name}}{% endblock %}</title>
     :javascript
         {% inlinecoffeescript %}
             uldata = undefined
@@ -16,13 +16,11 @@
 
                 $("table[class*=collection-details-datatable]").dataTable
                     sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
-                    sPaginationType: "bootstrap"
                     sAjaxSource: "/api/collections/" + "{{cid}}" + "/datatable/?format=json"
                     iDisplayLength: 10
 
                 $("table[class*=collection-images-datatable]").dataTable
                     sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
-                    sPaginationType: "bootstrap"
                     iDisplayLength: 10
                     aoColumns: [ { sWidth: '7%'}, { sWidth: '43%'}, { sWidth: '12%' }, { sWidth: '15%'}, { sWidth: '23%'}]
                     fnRowCallback: (nRow, aData, iDisplayIndex) ->
@@ -52,7 +50,7 @@
                     $('#upload_process').modal 'show'
                 )
 
-                $("#upload_process").on "shown", (e) ->
+                $("#upload_process").on "shown.bs.modal", (e) ->
 
                     paths = ""
                     files = uldata
@@ -69,7 +67,7 @@
                     xhr.open 'POST', "upload_folder", false
                     xhr.setRequestHeader "X-CSRFToken", csrftoken
                     xhr.send(data)
-                    $('#upload_process').modal 'hide'
+                    $('#upload_process').modal
                     document.location = ""
 
 
@@ -91,8 +89,8 @@
                 %a{href:"{{ collection.url }}" } Link to the paper
         - if collection.full_dataset_url
             .lead
-                Full dataset available at: 
-                %a{href:"{{ collection.full_dataset_url }}" } 
+                Full dataset available at:
+                %a{href:"{{ collection.full_dataset_url }}" }
                   {{ collection.full_dataset_url }}
 
 
@@ -101,14 +99,33 @@
               - if collection.image_set.all
                   %a.btn.btn-primary{href: "pycortex" } 3D View
               - if edit_permission
-                  %a.btn.btn-primary{href: "{% url 'edit_collection' cid %}" } Edit collection
-                  - if collection.image_set.all
-	                  -#%a.btn.btn-primary{href: "{% url 'add_image' cid %}" } Add image
-	                  %a.btn.btn-primary{href: "{% url 'edit_images' cid %}" } Edit images
-	                  %a.btn.btn-primary{id:"upload_archive"} Upload archive (.zip)
-	                  <!--[if !IE]> -->
-	                  %a.btn.btn-primary{id:"upload_folder"} Upload folder
-	                  <!-- <![endif]-->
+                  %a.btn.btn-primary{href: "{% url 'add_image' cid %}" } Add image
+
+                  .btn-group
+                    %a.btn.btn-primary.dropdown-toggle{href: "#", data-toggle: "dropdown"} Edit
+                      %span.caret
+                    %ul.dropdown-menu
+                      %li
+                        %a{href: "{% url 'edit_collection' cid %}" } Collection Metadata
+                     - if collection.image_set.all
+                        - if collection.is_statisticmap_set
+                          %li
+                            %a{href: "{% url 'edit_metadata' cid %}" } Images Metadata
+                        - else
+                          %li{class: "disabled"}
+                            %a{href: "#"} Images Metadata
+
+                 - if collection.image_set.all
+                  .btn-group
+                    %a.btn.btn-primary.dropdown-toggle{href: "#", data-toggle: "dropdown"} Upload
+                      %span.caret
+                    %ul.dropdown-menu
+                      %li
+                        %a{id:"upload_archive", href: "#" } Archive (.zip)
+                      <!--[if !IE]> -->
+                      %li
+                        %a{id:"upload_folder", href: "#" } Folder
+                      <!-- <![endif]-->
                   - if delete_permission
                       .float-right-wrapper
                        %a.btn.btn-danger{href: "{% url 'delete_collection' cid %}", id:"delete_collection"} Delete collection
@@ -169,7 +186,7 @@
 	                                    - for tag in image.tags.all
 	                                        %a{ href: "/images/tags/{{tag.name}}" }= tag.name
 	                                        - if not forloop.last
-	
+
 	                                %td= image.polymorphic_ctype.name
 	                                %td
 	                                    - if image.zip_name
@@ -181,11 +198,16 @@
                 - else
                     .light-head.center-text
                         This collection is empty. You can:
-                        <br \>
-                        %a.btn.btn-lg{href: "{% url 'edit_images' cid %}" } Add images one by one
-	                    %a.btn.btn-lg{id:"upload_archive"} Upload an archive with images (.zip or .tar.gz)
+                        <br><br>
+                        {% csrf_token %}
+                        %div{style: "height: 0px;width: 0px; overflow:hidden;"}
+                            {{ form.file }}
+                            %input{type: "file", name: "file_input[]", id: "folder_input", multiple:"", directory:"", mozdirectory:"", webkitdirectory:""}
+                            %input{type: "hidden", name: "paths", id: "paths"}
+                        %a.btn.btn-lg.btn-primary{href: "{% url 'add_image' cid %}" } Add images one by one
+	                    %a.btn.btn-lg.btn-primary{id:"upload_archive"} Upload an archive with images (.zip or .tar.gz)
 	                    <!--[if !IE]> -->
-	                    %a.btn.btn-lg{id:"upload_folder"} Upload a folder with images
+	                    %a.btn.btn-lg.btn-primary{id:"upload_folder"} Upload a folder with images
 	                    <!-- <![endif]-->
 
             #details.tab-pane
@@ -198,12 +220,15 @@
             #viewer.tab-pane
                 {% include 'statmaps/_neurosynth_viewer_content.html.haml' %}
 
-            #upload_process.modal.fade.hide{data-backdrop: 'static', data-keyboard:'false', style: 'margin-top: 175px;'}
-                .modal-header
-                    %h4 Processing upload...
-                .modal-body
-                    .progress.progress-striped.active
-                        .bar{"style":"width: 100%;"}
+            #upload_process.modal{data-backdrop: 'static', data-keyboard:'false', style: 'margin-top: 175px;'}
+                .modal-dialog
+                    .modal-content
+                        .modal-header
+                            %h4 Processing upload...
+                        .modal-body
+                            .progress
+                                .progress-bar.active{"style":"width: 100%;"}
+                                .progress-bar{"style":"width: 100%;"}
 
 {% comment %}
 {% for image in collection.image_set.all %}

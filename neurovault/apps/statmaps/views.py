@@ -1,8 +1,8 @@
 from neurovault.apps.statmaps.models import Collection, Image, Atlas, Comparison, StatisticMap, NIDMResults, NIDMResultStatisticMap,\
-    BaseStatisticMap
+    BaseStatisticMap, CognitiveAtlasTask
 from neurovault.apps.statmaps.forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
-    EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm
+    EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
@@ -23,6 +23,7 @@ from rest_framework.renderers import JSONRenderer
 from django.core.files.base import ContentFile
 from django.db.models.aggregates import Count
 from django.http import Http404, HttpResponse
+from django.core.urlresolvers import reverse
 from django.db.models import Q, Count
 from sklearn.externals import joblib
 from collections import OrderedDict
@@ -42,9 +43,15 @@ import tarfile
 import shutil
 import pandas
 import gzip
+import csv
 import re
 import os
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
+from django.views.decorators.cache import never_cache
+import json
+import functools
+from . import image_metadata
+
 
 def owner_or_contrib(request,collection):
     if collection.owner == request.user or request.user in collection.contributors.all() or request.user.is_superuser:
@@ -88,6 +95,7 @@ def get_image(pk,collection_cid,request,mode=None):
 
 
 @login_required
+@never_cache
 def edit_images(request, collection_cid):
     collection = get_collection(collection_cid,request)
     if not owner_or_contrib(request,collection):
@@ -172,11 +180,80 @@ def edit_collection(request, cid=None):
     return render(request, "statmaps/edit_collection.html.haml", context)
 
 
+def choice_datasources(model):
+    statmap_field_obj = functools.partial(image_metadata.get_field_by_name,
+                                          model)
+    pick_second_item = functools.partial(map, lambda x: x[1])
+
+    fixed_fields = list(model.get_fixed_fields())
+
+    field_choices = ((f, statmap_field_obj(f).choices) for f in fixed_fields)
+
+    fields_with_choices = (t for t in field_choices if t[1])
+
+    return dict((field_name, pick_second_item(choices))
+                for field_name, choices in fields_with_choices)
+
+
+def get_field_datasources():
+    ds = choice_datasources(StatisticMap)
+    ds['cognitive_paradigm_cogatlas'] = [x.name for x in (CognitiveAtlasTask
+                                                          .objects
+                                                          .all())]
+    return ds
+
+
+@csrf_exempt
+@login_required
+def edit_metadata(request, collection_cid):
+    collection = get_collection(collection_cid, request)
+
+    if not owner_or_contrib(request, collection):
+        return HttpResponseForbidden()
+
+    if not collection.is_statisticmap_set:
+        return HttpResponseForbidden('Editing image metadata of collections '
+                                     'that include not only statistical '
+                                     'maps is forbidden.')
+
+    if request.method == "POST":
+        return JSONResponse(
+            **image_metadata.handle_post_metadata(
+                request, collection, 'Images metadata have been saved.'))
+
+    collection_images = collection.image_set.all()
+    data_headers = image_metadata.get_data_headers(collection_images)
+    metadata = image_metadata.get_images_metadata(collection_images)
+    datasources = get_field_datasources()
+
+    return render(request, "statmaps/edit_metadata.html", {
+        'collection': collection,
+        'datasources': json.dumps(datasources),
+        'data_headers': json.dumps(data_headers),
+        'metadata': json.dumps(metadata)})
+
+
+@login_required
+def export_images_filenames(request, collection_cid):
+    collection = get_collection(collection_cid, request)
+    images_filenames = image_metadata.get_images_filenames(collection)
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; ' \
+                                      'filename="collection_%s.csv"' % (
+                                          collection.id)
+
+    writer = csv.writer(response)
+    writer.writerows([['Filename']] + [[name] for name in images_filenames])
+
+    return response
+
+
 def view_image(request, pk, collection_cid=None):
     image = get_image(pk,collection_cid,request)
     user_owns_image = owner_or_contrib(request,image.collection)
     api_cid = pk
-    
+
     comparison_is_possible = (image.collection.private == False and isinstance(image, BaseStatisticMap) and \
                               image.is_thresholded == False)
 
@@ -327,12 +404,12 @@ def add_image(request, collection_cid):
     collection = get_collection(collection_cid,request)
     image = StatisticMap(collection=collection)
     if request.method == "POST":
-        form = StatisticMapForm(request.POST, request.FILES, instance=image)
+        form = AddStatisticMapForm(request.POST, request.FILES, instance=image)
         if form.is_valid():
             image = form.save()
             return HttpResponseRedirect(image.get_absolute_url())
     else:
-        form = StatisticMapForm(instance=image)
+        form = AddStatisticMapForm(instance=image)
 
     context = {"form": form}
     return render(request, "statmaps/add_image.html.haml", context)
@@ -403,7 +480,7 @@ def upload_folder(request, collection_cid):
                     for fname in sorted(filenames):
                         name, ext = splitext_nii_gz(fname)
                         nii_path = os.path.join(root, fname)
-                        
+
                         if ext == '.xml':
                             print "found xml"
                             dom = minidom.parse(os.path.join(root, fname))
@@ -419,12 +496,12 @@ def upload_folder(request, collection_cid):
                                 niftiFiles.extend(split_afni4D_to_3D(nii))
                             else:
                                 niftiFiles.append((fname,nii_path))
-                
+
                 for label,fpath in niftiFiles:
                     # Read nifti file information
                     nii = nib.load(fpath)
                     if len(nii.get_shape()) > 3 and nii.get_shape()[3] > 1:
-                        print "skipping wrong size"
+                        messages.warning(request, "Skipping %s - not a 3D file."%label)
                         continue
                     hdr = nii.get_header()
                     raw_hdr = hdr.structarr
@@ -484,7 +561,8 @@ def upload_folder(request, collection_cid):
 
             finally:
                 shutil.rmtree(tmp_directory)
-
+            if not niftiFiles:
+                messages.warning(request, "No NIFTI files (.nii, .nii.gz, .img/.hdr) found in the upload.")
             return HttpResponseRedirect(collection.get_absolute_url())
     else:
         form = UploadFileForm()
@@ -502,11 +580,15 @@ def delete_image(request, pk):
     return redirect('collection_details', cid=cid)
 
 
-@login_required
+
 def view_images_by_tag(request, tag):
-    images = Image.objects.filter(tags__name__in=[tag]).filter(
+    if request.user.is_authenticated():
+        images = Image.objects.filter(tags__name__in=[tag]).filter(
                                         Q(collection__private=False) |
                                         Q(collection__owner=request.user))
+    else:
+        images = Image.objects.filter(tags__name__in=[tag]).filter(
+                                        collection__private=False)
     context = {'images': images, 'tag': tag}
     return render(request, 'statmaps/images_by_tag.html.haml', context)
 
@@ -534,7 +616,7 @@ def view_collection_with_pycortex(request, cid):
         return redirect(collection)
     else:
 
-        basedir = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',cid)
+        basedir = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',str(collection.id))
         baseurl = os.path.join(settings.PRIVATE_MEDIA_URL,cid)
 
         output_dir = os.path.join(basedir, "pycortex_all")
@@ -558,7 +640,7 @@ def view_collection_with_pycortex(request, cid):
 def serve_image(request, collection_cid, img_name):
     collection = get_collection(collection_cid,request,mode='file')
     path = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',str(collection.id),img_name)
-    return sendfile(request, path)
+    return sendfile(request, path, encoding="utf-8")
 
 
 def serve_pycortex(request, collection_cid, path, pycortex_dir='pycortex_all'):
@@ -729,21 +811,21 @@ def compare_images(request,pk1,pk2):
         image1 = save_resampled_transformation_single(image1.id) # cannot run this async
     if not image2.reduced_representation:
         image2 = save_resampled_transformation_single(image1.id) # cannot run this async
-    
+
     # Load image vectors from npy files
     image_vector1 = np.load(image1.reduced_representation.file)
     image_vector2 = np.load(image2.reduced_representation.file)
 
     # Load atlas pickle, containing vectors of atlas labels, colors, and values for same voxel dimension (4mm)
-    neurovault_root = os.path.dirname(os.path.dirname(os.path.realpath(neurovault.__file__)))        
-    atlas_pkl_path = os.path.join(neurovault_root, 'neurovault/static/atlas/atlas_mni_4mm.pkl')
+    this_path = os.path.abspath(os.path.dirname(__file__))
+    atlas_pkl_path = os.path.join(this_path, 'static/atlas/atlas_mni_4mm.pkl')
     atlas = joblib.load(atlas_pkl_path)
 
     # Load the atlas svg, so we don't need to dynamically generate it
-    atlas_svg = os.path.join(neurovault_root,'neurovault/static/atlas/atlas_mni_2mm_svg.pkl')
+    atlas_svg = os.path.join(this_path, 'static/atlas/atlas_mni_2mm_svg.pkl')
     atlas_svg = joblib.load(atlas_svg)
 
-    # Generate html for similarity search, do not specify atlas    
+    # Generate html for similarity search, do not specify atlas
     html_snippet, _ = scatterplot.scatterplot_compare_vector(image_vector1=image_vector1,
                                                                  image_vector2=image_vector2,
                                                                  image_names=image_names,
@@ -753,7 +835,8 @@ def compare_images(request,pk1,pk2):
                                                                  corr_type="pearson",
                                                                  subsample_every=10, # subsample every 10th voxel
                                                                  custom=custom,
-                                                                 remove_scripts="D3_MIN_JS") 
+                                                                 remove_scripts="D3_MIN_JS",
+                                                                 width=1000)
 
     # Add atlas svg to the image, and prepare html for rendering
     html = [h.replace("[coronal]",atlas_svg) for h in html_snippet]
@@ -797,12 +880,12 @@ def find_similar(request,pk):
             if hasattr(image, "map_type") and image.thumbnail:
                 images.append(image)
                 scores.append(comp.similarity_score)
-    
+
         # We will need lists of image ids, png paths, query id, query path, tags, names, scores
         image_ids = [image.pk for image in images]
         png_img_paths = [image.get_thumbnail_url() for image in images]
         tags = [[str(image.map_type)] for image in images]
-    
+
         # The top text will be the collection name, the bottom text the image name
         bottom_text = ["%s" % (image.name) for image in images]
         top_text = ["%s" % (image.collection.name) for image in images]
@@ -811,7 +894,7 @@ def find_similar(request,pk):
         image_title = format_image_collection_names(image_name=image1.name,
                                                     collection_name=image1.collection.name,
                                                     map_type=image1.map_type,total_length=50)
-    
+
         # Here is the query image
         query_png = image1.thumbnail.url
 
@@ -819,10 +902,11 @@ def find_similar(request,pk):
         html_snippet = search.similarity_search(image_scores=scores,tags=tags,png_paths=png_img_paths,
                                     button_url=compare_url,image_url=image_url,query_png=query_png,
                                     query_id=pk,top_text=top_text,image_ids=image_ids,
-                                    bottom_text=bottom_text,max_results=max_results,absolute_value=True)
+                                    bottom_text=bottom_text,max_results=max_results,absolute_value=True,
+                                    remove_scripts=["BOOTSTRAP","BOOTSTRAP_MIN"],container_width=1200)
 
         html = [h.strip("\n") for h in html_snippet]
-    
+
         # Get the number of images still processing
         images_processing = count_processing_comparisons(pk)
 
@@ -830,9 +914,10 @@ def find_similar(request,pk):
                    'image_title':image_title, 'image_url': '/images/%s' % (image1.pk) }
         return render(request, 'statmaps/compare_search.html', context)
     else:
-        error_message = "Image comparison is not enabled for thresholded images." 
+        error_message = "Image comparison is not enabled for thresholded images."
         context = {'error_message': error_message}
         return render(request, 'statmaps/error_message.html', context)
+
 
 class JSONResponse(HttpResponse):
     """
