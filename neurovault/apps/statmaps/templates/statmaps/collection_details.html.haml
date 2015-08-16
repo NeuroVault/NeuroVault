@@ -154,6 +154,7 @@
                             %a{href: "#"} Images Metadata
 
                  - if collection.image_set.all
+                  
                   .btn-group
                     %a.btn.btn-primary.dropdown-toggle{href: "#", data-toggle: "dropdown"} Upload
                       %span.caret
@@ -167,11 +168,6 @@
                   - if delete_permission
                       .float-right-wrapper
                        %a.btn.btn-danger{href: "{% url 'delete_collection' cid %}", id:"delete_collection"} Delete collection
-                  {% csrf_token %}
-                  %div{style: "height: 0px;width: 0px; overflow:hidden;"}
-                     {{ form.file }}
-                     %input{type: "file", name: "file_input[]", id: "folder_input", multiple:"", directory:"", mozdirectory:"", webkitdirectory:""}
-                     %input{type: "hidden", name: "paths", id: "paths"}
 
                  - if collection.private
                     .lead
@@ -179,6 +175,11 @@
                             <em>Private Collection</em>: To share the link to this collection, please use the private url:
                                     %a{href: "{{ request.path }}" }
                                         {{ request.path }}
+              {% csrf_token %}
+              %div{style: "height: 0px;width: 0px; overflow:hidden;"}
+                {{ form.file }}
+                %input{type: "file", name: "file_input[]", id: "folder_input", multiple:"", directory:"", mozdirectory:"", webkitdirectory:""}
+                %input{type: "hidden", name: "paths", id: "paths"}
 
         {% if messages %}
         %ul.messages
@@ -237,16 +238,12 @@
                     .light-head.center-text
                         This collection is empty. You can:
                         <br><br>
-                        {% csrf_token %}
-                        %div{style: "height: 0px;width: 0px; overflow:hidden;"}
-                            {{ form.file }}
-                            %input{type: "file", name: "file_input[]", id: "folder_input", multiple:"", directory:"", mozdirectory:"", webkitdirectory:""}
-                            %input{type: "hidden", name: "paths", id: "paths"}
+
                         %a.btn.btn-lg.btn-primary{href: "{% url 'add_image' cid %}" } Add images one by one
-	                    %a.btn.btn-lg.btn-primary{id:"upload_archive"} Upload an archive with images (.zip or .tar.gz)
-	                    <!--[if !IE]> -->
-	                    %a.btn.btn-lg.btn-primary{id:"upload_folder"} Upload a folder with images
-	                    <!-- <![endif]-->
+                        %a.btn.btn-lg.btn-primary{id:"upload_archive", href: "#" } Upload an archive with images (.zip or .tar.gz)
+                        <!--[if !IE]> -->
+                        %a.btn.btn-lg.btn-primary{id:"upload_folder", href: "#" } Upload a folder with images
+                        <!-- <![endif]-->
 
             #details.tab-pane
                 %table.table.table-condensed.table-striped.table-hover.collection-details-datatable
