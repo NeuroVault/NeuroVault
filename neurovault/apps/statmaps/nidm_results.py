@@ -175,7 +175,8 @@ class NIDMUpload:
     @staticmethod
     def parse_statmap_type(stattype_url):
         stato_dict = {"http://purl.obolibrary.org/obo/STATO_0000376": "Z",
-                      "http://purl.obolibrary.org/obo/STATO_0000176": "T"}
+                      "http://purl.obolibrary.org/obo/STATO_0000176": "T",
+                      "http://purl.obolibrary.org/obo/STATO_0000282": "F"}
         return stato_dict[stattype_url]
 
     @staticmethod

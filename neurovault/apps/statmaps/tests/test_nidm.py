@@ -14,31 +14,30 @@ class NIDMResultsTest(TestCase):
     def setUp(self):
         testpath = os.path.abspath(os.path.dirname(__file__))
         self.files = {
-            'fsl_nidm': {
-                'file': os.path.join(testpath,'test_data/nidm/fsl.nidm.zip'),
-                'output_row': {'type': u'TStatistic','name': u'Statistic Map: Generation',},
-                'num_statmaps': 2,
+            'fsl_course_av': {
+                'file': os.path.join(testpath,'test_data/nidm/fsl_course_av.nidm.zip'),
+                'output_row': {'type': u'T','name': u'Statistic Map: Visual',},
+                'num_statmaps': 4,
             },
-            'two_contrasts': {
-                'file': os.path.join(testpath,'test_data/nidm/two_contrasts.nidm.zip'),
-                'output_row': {'type': u'FStatistic', 'name': 'Statistic Map: Generation FStatistic',},
-                'num_statmaps': 6,
+            'fsl_course_fluency2': {
+                'file': os.path.join(testpath,'test_data/nidm/fsl_course_fluency2.nidm.zip'),
+                'output_row': {'type': u'F','name': u'Statistic Map: Generation F',},
+                'num_statmaps': 12,
             },
             'spm_example': {
                 'file': os.path.join(testpath,'test_data/nidm/spm_example.nidm.zip'),
-                'output_row': {'type': u'TStatistic', 'name': u'Statistic Map: passive listening > rest', },
+                'output_row': {'type': u'T', 'name': u'Statistic Map: passive listening > rest', },
                 'num_statmaps': 1,
             },
-            # case for a zip with no enclosed directory
-            'spm_nosubdir': {
-                'file': os.path.join(testpath,'test_data/nidm/spm_nosubdir.nidm.zip'),
-                'output_row': {'type': u'FStatistic', 'name': u'Statistic Map: Generation FStatistic',},
-                'num_statmaps': 6,
+            'fsl_course_ptt_ac_left': {
+                'file': os.path.join(testpath,'test_data/nidm/fsl_course_ptt_ac_left.nidm.zip'),
+                'output_row': {'type': u'F','name': u'Statistic Map: index F',},
+                'num_statmaps': 12,
             },
         }
 
         self.failing_files = {
-            'spm_bad_ttl':   os.path.join(testpath,'test_data/nidm/spm_bad_ttl.nidm.zip'),
+             'spm_bad_ttl':   os.path.join(testpath,'test_data/nidm/spm_bad_ttl.nidm.zip'),
         }
 
         self.tmpdir = tempfile.mkdtemp()
@@ -46,7 +45,8 @@ class NIDMResultsTest(TestCase):
         self.user.save()
         self.client = Client()
         self.client.login(username=self.user)
-        self.coll = Collection(owner=self.user, name="Test Collection")
+        #we us private collection to avoid running the comparisons
+        self.coll = Collection(owner=self.user, name="Test Collection", private=True, private_token="XBOLFOFU")
         self.coll.save()
 
     def tearDown(self):
@@ -68,8 +68,9 @@ class NIDMResultsTest(TestCase):
         """
         assert known bad file throws parsing error
         """
-        with self.assertRaises(NIDMUpload.ParseException):
-            print NIDMUpload(self.failing_files['spm_bad_ttl'])
+        for key in self.failing_files:
+            with self.assertRaises(NIDMUpload.ParseException):
+                print NIDMUpload(self.failing_files[key])
 
         """
         assert output matches expected output
