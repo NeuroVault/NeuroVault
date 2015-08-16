@@ -184,7 +184,7 @@
         {% if messages %}
         %ul.messages
         {% for message in messages %}
-            .alert.fade.in{class:"{{ message.tags }}"}
+            .alert.alert-dismissible.alert-danger
                 %button.close{"data-dismiss" => "alert", :type => "button"} ×
                 {{ message }}
         {% endfor %}
