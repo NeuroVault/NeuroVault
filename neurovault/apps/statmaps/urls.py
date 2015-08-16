@@ -8,7 +8,7 @@ from .views import edit_collection, edit_images, view_image, delete_image, edit_
                 papaya_js_embed, view_images_by_tag, \
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
                 view_nidm_results, find_similar, compare_images,  edit_metadata, \
-                export_images_filenames
+                export_images_filenames, delete_nidm_results
 from neurovault.apps.statmaps.models import KeyValueTag
 from django.db.models import Count
 from django.contrib.auth.decorators import login_required
@@ -104,6 +104,9 @@ urlpatterns = patterns('',
     url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidm_name>[A-Za-z0-9\.\+\-\_\s\[\]\(\)]+\.nidm\_?[0-9]*)/?$',
         view_nidm_results,
         name='view_nidm_results'),
+    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidm_name>[A-Za-z0-9\.\+\-\_\s\[\]\(\)]+\.nidm\_?[0-9]*)/delete$',
+        delete_nidm_results,
+        name='delete_nidm_results'),
 
     url(r'^images/(?P<pk>\d+)/papaya/embedview$',
         papaya_js_embed,

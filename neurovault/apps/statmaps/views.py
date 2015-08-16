@@ -370,6 +370,19 @@ def view_nidm_results(request, collection_cid, nidm_name):
     context = {"form": form}
     return render(request, "statmaps/edit_nidm_results.html.haml", context)
 
+@login_required
+def delete_nidm_results(request, collection_cid, nidm_name):
+    collection = get_collection(collection_cid,request)
+    try:
+        nidmr = NIDMResults.objects.get(collection=collection,name=nidm_name)
+    except NIDMResults.DoesNotExist:
+        return Http404("This NIDM Result was not found.")
+    
+    if owner_or_contrib(request,collection):
+        nidmr.delete()
+        return redirect('collection_details', cid=collection_cid)
+    else:
+        return HttpResponseForbidden()
 
 @login_required
 def add_image_for_neurosynth(request):

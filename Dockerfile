@@ -11,7 +11,7 @@ RUN pip install numpy \
 RUN pip install -v scipy
 RUN pip install scikit-learn pandas h5py matplotlib
 
-RUN pip install git+https://github.com/gallantlab/pycortex.git#egg=pycortex --egg
+RUN pip install https://github.com/gallantlab/pycortex/archive/master.zip --egg
 
 RUN wget -O /tmp/toolbox-0.6.1-release.zip http://search.maven.org/remotecontent?filepath=org/openprovenance/prov/toolbox/0.6.1/toolbox-0.6.1-release.zip
 RUN apt-get install -y unzip
