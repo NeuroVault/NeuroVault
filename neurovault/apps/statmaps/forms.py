@@ -686,6 +686,7 @@ class NIDMResultsForm(forms.ModelForm):
         self.helper.form_class = 'form-horizontal'
         self.helper.form_tag = True
         self.helper.add_input(Submit('submit', 'Submit'))
+        self.helper.add_input(Button('delete', 'Delete', onclick='window.location.href="{}"'.format('delete')))
         self.nidm = None
         self.new_statmaps = []
 
