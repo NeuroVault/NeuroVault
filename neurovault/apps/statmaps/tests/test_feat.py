@@ -57,22 +57,20 @@ class FeatDirectoryTest(TestCase):
                 try:
                     urllib.urlretrieve(furl, self.testfiles[fname]['file'])
                 except:
-                    raise Exception('Unable to download test data {}'.format(fname))
+                    os.remove(os.path.join(testpath,fname))
+                    raise
 
             self.testfiles[fname]['sourcedir'] = self.testfiles[fname]['file'][:-4]
             self.testfiles[fname]['dir'] = os.path.join(self.tmpdir,fname[:-4])
 
             if not os.path.exists(self.testfiles[fname]['sourcedir']):
-                try:
-                    fh = open(os.path.join(testpath,fname), 'rb')
-                    z = zipfile.ZipFile(fh)
-                    for name in [v for v in z.namelist() if not v.startswith('.') and
-                                 '/.files' not in v]:
-                        outpath = self.testfiles[fname]['sourcedir']
-                        z.extract(name, outpath)
-                    fh.close()
-                except:
-                    raise Exception('Unable to unzip test data {}'.format(fname))
+                fh = open(os.path.join(testpath,fname), 'rb')
+                z = zipfile.ZipFile(fh)
+                for name in [v for v in z.namelist() if not v.startswith('.') and
+                             '/.files' not in v]:
+                    outpath = self.testfiles[fname]['sourcedir']
+                    z.extract(name, outpath)
+                fh.close()
 
             shutil.copytree(self.testfiles[fname]['sourcedir'], self.testfiles[fname]['dir'])
 
