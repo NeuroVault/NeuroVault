@@ -445,7 +445,9 @@ def upload_folder(request, collection_cid):
                 if "file" in request.FILES:
                     archive_name = request.FILES['file'].name
                     if fnmatch(archive_name,'*.nidm.zip'):
-                        populate_nidm_results(request,collection)
+                        form = populate_nidm_results(request,collection)
+                        if not form:
+                            messages.warning(request, "Invalid NIDM-Results file.")  
                         return HttpResponseRedirect(collection.get_absolute_url())
 
                     _, archive_ext = os.path.splitext(archive_name)
@@ -566,12 +568,10 @@ def upload_folder(request, collection_cid):
                     new_image.save()
 
             except:
-                raise
                 error = traceback.format_exc().splitlines()[-1]
                 msg = "An error occurred with this upload: {}".format(error)
                 messages.warning(request, msg)
                 return HttpResponseRedirect(collection.get_absolute_url())
-
             finally:
                 shutil.rmtree(tmp_directory)
             if not niftiFiles:
@@ -686,7 +686,7 @@ def serve_nidm(request, collection_cid, nidmdir, sep, path):
 def serve_nidm_image(request, collection_cid, nidmdir, sep, path):
     collection = get_collection(collection_cid,request,mode='file')
     path = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',str(collection.id),nidmdir,path)
-    return sendfile(request, path)
+    return sendfile(request, path, encoding="utf-8")
 
 
 def stats_view(request):
