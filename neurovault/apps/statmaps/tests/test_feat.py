@@ -7,6 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from neurovault.apps.statmaps.forms import NIDMResultsForm
 from neurovault.apps.statmaps.utils import detect_feat_directory, get_traceback
 from nidmfsl.fsl_exporter.fsl_exporter import FSLtoNIDMExporter
+from neurovault.apps.statmaps.nidm_results import NIDMUpload
 import urllib
 import zipfile
 from .utils import clearDB
@@ -23,7 +24,7 @@ class FeatDirectoryTest(TestCase):
                 'fileuri':'ds105.feat.zip?raw=true',
                 'num_statmaps':2,
                 'export_dir':'ds105.feat/cope1.feat/nidm',
-                'ttl_fsize': 37872,
+                'ttl_fsize': 30000,
                 'map_types': ['T','Z'],
                 'names':['Statistic Map: group mean', 'Z-Statistic Map: group mean'],
 
@@ -56,22 +57,20 @@ class FeatDirectoryTest(TestCase):
                 try:
                     urllib.urlretrieve(furl, self.testfiles[fname]['file'])
                 except:
-                    raise Exception('Unable to download test data {}'.format(fname))
+                    os.remove(os.path.join(testpath,fname))
+                    raise
 
             self.testfiles[fname]['sourcedir'] = self.testfiles[fname]['file'][:-4]
             self.testfiles[fname]['dir'] = os.path.join(self.tmpdir,fname[:-4])
 
             if not os.path.exists(self.testfiles[fname]['sourcedir']):
-                try:
-                    fh = open(os.path.join(testpath,fname), 'rb')
-                    z = zipfile.ZipFile(fh)
-                    for name in [v for v in z.namelist() if not v.startswith('.') and
-                                 '/.files' not in v]:
-                        outpath = self.testfiles[fname]['sourcedir']
-                        z.extract(name, outpath)
-                    fh.close()
-                except:
-                    raise Exception('Unable to unzip test data {}'.format(fname))
+                fh = open(os.path.join(testpath,fname), 'rb')
+                z = zipfile.ZipFile(fh)
+                for name in [v for v in z.namelist() if not v.startswith('.') and
+                             '/.files' not in v]:
+                    outpath = self.testfiles[fname]['sourcedir']
+                    z.extract(name, outpath)
+                fh.close()
 
             shutil.copytree(self.testfiles[fname]['sourcedir'], self.testfiles[fname]['dir'])
 
@@ -101,7 +100,7 @@ class FeatDirectoryTest(TestCase):
                     self.assertEquals(os.path.join(info['dir'],info['export_dir']),export_dir)
 
                     # incomplete ttl = failure in processing
-                    self.assertEquals(os.path.getsize(ttl_file),info['ttl_fsize'])
+                    self.assertGreaterEqual(os.path.getsize(ttl_file),info['ttl_fsize'])
 
         # test upload nidm
         for fname, info in self.testfiles.items():
@@ -120,12 +119,13 @@ class FeatDirectoryTest(TestCase):
                 'description':'{0} upload test'.format(zname),
                 'collection':self.coll.pk,
             }
+            
 
             file_dict = {'zip_file': SimpleUploadedFile(zname, open(nidm_zpath,'r').read())}
             form = NIDMResultsForm(post_dict, file_dict)
 
             # validate NIDM Results
-            self.assertTrue(form.is_valid())
+            self.assertEqual(form.errors, {})
             nidm = form.save()
 
             statmaps = nidm.nidmresultstatisticmap_set.all()

@@ -137,7 +137,7 @@ def save_voxelwise_pearson_similarity_reduced_representation(pk1, pk2):
                                                 similarity_score=pearson_score)
             return image1.pk,image2.pk,pearson_score
         else:
-            raise Exception("Comparison returned NaN.")
+            print "Comparison returned NaN."
     else:
         raise Exception("You are trying to compare an image with itself!")
 

@@ -686,6 +686,7 @@ class NIDMResultsForm(forms.ModelForm):
         self.helper.form_class = 'form-horizontal'
         self.helper.form_tag = True
         self.helper.add_input(Submit('submit', 'Submit'))
+        self.helper.add_input(Button('delete', 'Delete', onclick='window.location.href="{}"'.format('delete')))
         self.nidm = None
         self.new_statmaps = []
 
@@ -776,7 +777,7 @@ class NIDMResultsForm(forms.ModelForm):
                 s['statmap'] = NIDMResultStatisticMap(name=s['name'])
                 s['statmap'].collection = self.cleaned_data['collection']
                 s['statmap'].description = self.cleaned_data['description']
-                s['statmap'].map_type = s['type'][0]  # strip the first char
+                s['statmap'].map_type = s['type']
                 s['statmap'].nidm_results = self.instance
                 s['statmap'].file = 'images/1/foo/bar/'
 
