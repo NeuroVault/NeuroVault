@@ -542,7 +542,7 @@ class NIDMResults(BaseCollectionItem):
         return_args = [str(self.collection_id),self.name]
         url_name = 'view_nidm_results'
         if self.collection.private:
-            return_args.insert(0,str(self.collection.private_token))
+            return_args[0] = str(self.collection.private_token)
         return reverse(url_name, args=return_args)
 
     @staticmethod
