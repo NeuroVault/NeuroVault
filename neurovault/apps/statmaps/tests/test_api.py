@@ -126,8 +126,8 @@ class Test_Atlas_APIs(TestCase):
         url = '/api/atlases/%d/datatable/' % self.unorderedAtlas.pk
         response = json.loads(self.client.get(url, follow=True).content)
         data = dict(response['aaData'])
-        self.assertEqual(data['label_description_file'], 
-                         'http://testserver/media/images/2/unordered_VentralFrontal_thr75_summaryimage_2mm.xml')
+        self.assertEqual(data['label_description_file'].split("/")[-1], 
+                         'unordered_VentralFrontal_thr75_summaryimage_2mm.xml')
 
     def test_atlases_regions_table(self):
         print "\nTesting atlas regions table query...."
