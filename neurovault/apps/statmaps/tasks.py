@@ -189,6 +189,36 @@ def save_voxelwise_pearson_similarity_resample(pk1, pk2,resample_dim=[4,4,4]):
             raise Exception("You are trying to compare an image with itself!")
 
 
+# COGNITIVE ATLAS
+###########################################################################
+def repopulate_cognitive_atlas(CognitiveAtlasTask=None,CognitiveAtlasContrast=None):
+    if CognitiveAtlasTask==None:
+        from neurovault.apps.statmaps.models import CognitiveAtlasTask
+    if CognitiveAtlasContrast==None:
+        from neurovault.apps.statmaps.models import CognitiveAtlasContrast
+    
+    import json, os
+    from cognitiveatlas.api import get_task
+    tasks = get_task()
+
+    # Update tasks
+    for t in range(0,len(tasks.json)):
+        task = tasks.json[t]
+        print "%s of %s" %(t,len(tasks.json)) 
+        if tasks.json[t]["name"]:
+            task, _ = CognitiveAtlasTask.objects.update_or_create(cog_atlas_id=task["id"],defaults={"name":task["name"]})
+            task.save()
+            if tasks.json[t]["id"]:
+                task_details = get_task(id=tasks.json[t]["id"])
+                if task_details.json[0]["contrasts"]:
+                    print "Found %s contrasts!" %(len(task_details.json[0]["contrasts"]))
+                    for contrast in task_details.json[0]["contrasts"]:
+                        contrast, _ = CognitiveAtlasContrast.objects.update_or_create(cog_atlas_id=contrast["id"], 
+                                                                                      defaults={"name":contrast["contrast_text"],
+                                                                                      "task":task})
+                        contrast.save() 
+
+
 
 # HELPER FUNCTIONS ####################################################################################
 
