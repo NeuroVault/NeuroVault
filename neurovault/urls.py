@@ -104,7 +104,8 @@ class APIHelper:
 
 
 class ImageSerializer(serializers.HyperlinkedModelSerializer):
-
+    
+    id = serializers.ReadOnlyField()
     file = HyperlinkedFileField()
     collection = HyperlinkedRelatedURL(read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
@@ -139,7 +140,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
 
 class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
 
-
+    id = serializers.ReadOnlyField()
     file = HyperlinkedFileField()
     collection = HyperlinkedRelatedURL(read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
@@ -167,6 +168,8 @@ class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class NIDMResultStatisticMapSerializer(serializers.HyperlinkedModelSerializer):
+    
+    id = serializers.ReadOnlyField()
     file = HyperlinkedFileField()
     collection = HyperlinkedRelatedURL(read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
@@ -188,7 +191,8 @@ class NIDMResultStatisticMapSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class AtlasSerializer(serializers.HyperlinkedModelSerializer):
-
+    
+    id = serializers.ReadOnlyField()
     label_description_file = HyperlinkedFileField()
     collection = HyperlinkedRelatedURL(read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
