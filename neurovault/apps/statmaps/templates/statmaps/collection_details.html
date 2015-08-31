@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+{% block head %}
+<script type="text/javascript" src="{% static "scripts/papaya.js"%}"/>
+<script src="{% static "scripts/jquery-1.10.2.min.js"%}" type="text/javascript"></script>
+<script src="{% static "scripts/bootstrap.min.js"%}" type="text/javascript"></script>
+<link href="http://netdna.bootstrapcdn.com/font-awesome/3.1.1/css/font-awesome.css" rel="stylesheet">
+
+<title>{% block title %}NeuroVault: {{collection.name}}{% endblock %}</title>
+
+<script type="text/javascript">
+     var params = [];
+     params["worldSpace"] = true;
+     params["expandable"] = true;
+     params["images"] = ["{% static "images/MNI152.nii.gz"%}"];
+     params["{% static "images/MNI152.nii.gz"%}"] = {"parametric": true,  "lut":"Spectrum", "min":0,  "alpha":"0.75"};
+
+    {% if collection.image_set.all %}
+        {% for image in images %}
+            var tmpname = "{{ image.file.url }}".replace(/^.*[\\\/]/, '')
+            params[tmpname] = {"parametric": true,  "lut":"Spectrum", "min":0,  "alpha":"0.25"};
+        {% endfor %}
+    {% endif %}
+</script>
+
+{% include 'statmaps/_papaya_viewer_head.html.haml' %}
+
+<!-- Fix for dropdown menus -->
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+<script src="{% static "scripts/jquery.cookie.js"%}" type="text/javascript"></script>
+<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+<script src="//cdn.datatables.net/1.10.7/js/jquery.dataTables.min.js" type="text/javascript"></script>
+<script src="//cdn.datatables.net/plug-ins/1.10.7/integration/bootstrap/3/dataTables.bootstrap.js" type="text/javascript"></script>
+<link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+<link rel="stylesheet" href="{% static "css/style.css" %}" />
+
+<script type='text/javascript'>
+
+ function showLoader() {   
+    document.getElementById('spinny').style.display = 'block';
+    document.getElementById('fade').style.display = 'block';
+  }
+
+  function hideLoader() {
+    document.getElementById('spinny').style.display = 'none';
+    document.getElementById('fade').style.display = 'none';
+  }
+
+  // Function to add / remove image from viewer
+  function viewimage(mrimage) {
+
+      // Get current images
+      var papayaimages = params["images"];
+      var contenderimage = $(mrimage).attr("filename");
+
+      // Remove selection
+      papayaimages = jQuery.grep(papayaimages, function(value) {
+          return value != contenderimage;
+      });
+
+      if ($(mrimage).hasClass("active")){
+          $(mrimage).removeClass("active")  
+      
+      // Add image filename to list
+      } else {
+          $(mrimage).addClass("active")
+          papayaimages.push(contenderimage);
+      }
+
+     // Reset viewer and load new images
+     papayaContainers[0].viewer.resetViewer();
+     papayaContainers[0].toolbar.updateImageButtons();
+     for (i = 0; i < papayaimages.length; i++) { 
+        console.log("Adding image " + papayaimages[i]);
+        papayaContainers[0].viewer.loadImage([papayaimages[i]], true)
+     }
+
+       $("#papaya-main-swap0").addClass("hidden")
+   }
+
+
+(function() {
+  var uldata;
+
+  uldata = void 0;
+
+  $(document).ready(function() {
+    $('#show-viewer').click((function(_this) {
+      return function() {
+        window.viewer.paint();
+        return setTimeout(function() {
+          return window.viewer.paint();
+        }, 1);
+      };
+    })(this));
+    $('#delete_collection').click(function(e) {
+      return confirm("Are you sure you want to delete this collection? This operation cannot be undone!");
+    });
+    $('#upload_archive').click(function(e) {
+      return document.getElementById("id_file").click();
+    });
+    $('#upload_folder').click(function(e) {
+      return document.getElementById("folder_input").click();
+    });
+    $('#id_file').change(function(e) {
+      return document.upload_folder_form.submit();
+    });
+    $('#folder_input').change(function(e) {
+      uldata = e.target.files;
+      return $('#upload_process').modal('show');
+    });
+    $("#upload_process").on("shown.bs.modal", function(e) {
+      var csrftoken, data, files, i, paths, xhr;
+      paths = "";
+      files = uldata;
+      xhr = new XMLHttpRequest();
+      data = new FormData();
+      for (i in files) {
+        if (files[i].name !== void 0 && files[i].webkitRelativePath !== void 0) {
+          if (files[i].name.indexOf(".") !== 0 && files[i].webkitRelativePath.indexOf('.files') === -1) {
+            data.append('paths[]', files[i].webkitRelativePath);
+            data.append('file_input[]', files[i]);
+          }
+        }
+      }
+      
+      csrftoken = $.cookie('csrftoken');
+      xhr.open('POST', "upload_folder", true);
+      xhr.setRequestHeader("X-CSRFToken", csrftoken);
+      xhr.onloadstart = function(e){
+                $('.modal-backdrop').removeClass("modal-backdrop"); 
+                showLoader();
+      };
+      
+      // We need to know when the request finishes.
+      xhr.onload = function (e) {
+      if (xhr.status === 200) {
+            hideLoader();
+            return document.location = '';
+          };
+      }
+      xhr.send(data);
+      //return document.location = "";
+    });
+    if (navigator.userAgent.indexOf("Safari") > -1 && navigator.userAgent.indexOf("Chrome") === -1) {
+      return $('a[href="pycortex"]').hide();
+    }
+  });
+
+}).call(this);
+
+$("#papaya-main-swap0").addClass("hidden")
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="fade"></div>
+<div class="row">
+
+    <!-- Meta data and header row-->
+    <div class="col-md-12">
+        <h2>{{ collection.name }}</h2>
+        <p>Contributed by {{ collection.owner }}</p>
+        {% if collection.authors %}
+        <div class="lead">{{collection.authors}}</div>
+        {% endif %}
+        {% if collection.DOI %}
+        <div class="lead"><a href="{{ collection.url }}">Link to the paper</a></div>
+        {% endif %}
+        {% if collection.full_dataset_url %}
+        <div class="lead">Full dataset available at:<a href="{{ collection.full_dataset_url }}">
+            {{ collection.full_dataset_url }}</a>
+        </div>
+        {% endif %}
+
+        <div class="management-options">
+             <form action="upload_folder" enctype="multipart/form-data" method= "POST" name="upload_folder_form">
+
+            {% if collection.image_set.all %}
+            <a class="btn btn-primary" href="pycortex">3D View</a>
+            {% endif %}
+
+            {% if edit_permission %}
+
+                {% if collection.image_set.all %}
+                <a class="btn btn-primary" href="{% url 'add_image' cid %}">Add image</a>
+
+                <div class="btn-group">
+                    <a class="btn btn-primary dropdown-toggle" href= "#" data-toggle="dropdown">Edit <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="{% url 'edit_collection' cid %}">Collection Metadata</a></li>
+                        {% if collection.is_statisticmap_set %}
+                        <li><a href="{% url 'edit_metadata' cid %}">Images Metadata</a></li>
+                        {% else %}
+                        <li class="disabled"><a href="#">Images Metadata</a></li>
+                        {% endif %}
+                    </ul>
+               </div>
+                <div class="btn-group">
+                    <a class="btn btn-primary dropdown-toggle" href="#" data-toggle="dropdown">Upload<span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        <li><a id="upload_archive" href="#">Archive (.zip)</a></li>
+                        <!--[if !IE]> -->                               
+                        <li><a id="upload_folder" href="#">Folder</a></li>
+                        <!-- <![endif]-->
+                    </ul>                      
+                </div>
+                {% endif %}<!-- close if images -->
+
+                {% if delete_permission %}
+                <div class="float-right-wrapper">
+                    <a class="btn btn-danger" href="{% url 'delete_collection' cid %}" id="delete_collection"> Delete collection</a>
+                </div>
+                {% endif %}<!--close delete permission-->
+
+                <!-- Hidden file upload fields -->
+                {% csrf_token %}
+                <div style="height: 0px;width: 0px; overflow:hidden;">
+                     {{ form.file }}
+                     <input type="file" name="file_input[]" id="folder_input" multiple="" directory="" mozdirectory="" webkitdirectory=""></input>
+                     <input type=hidden" name="paths" id="paths"></input>
+                </div>
+
+                {% if collection.private %}
+                <div class="lead">
+                    <div style="font-size:16px; margin-top:20px;">
+                        <em>Private Collection</em>: To share the link to this collection, please use the private url:
+                                    <a href="{{ request.path }}">{{ request.path }}</a>
+                    </div>
+                </div>
+                {% endif %}
+                {% endif %}<!-- close edit permissions-->
+        </div><!-- close management options-->
+
+
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+            <div class="alert alert-dismissible alert-danger">
+                <button class="close data-dismiss alert" type="button">× {{ message }}</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div><!--column-->
+</div><!-- close meta data and header row-->
+<div class="row">
+    <div class="col-md-6" id="NeuroVaultPapayaHolder">        
+        <div class="papaya" data-params="params"></div>
+    </div>
+
+    <div class="col-md-6">
+
+        {% if collection.image_set.all %}
+        <!-- COLLECTION TABS -->
+        <ul id='collection-tabs' class='nav nav-tabs'>
+              <li><a data-toggle='tab' href='#images'>Images</a></li>
+              <li><a data-toggle='tab' href='#details'>Details</a></li>
+        </ul>
+        {% endif %}
+
+        <div class='tab-content'>
+               <div id='images' class='tab-pane active'>
+               {% if collection.image_set.all or not edit_permission %}
+               <table class='table table-striped table-hover collection-images-datatable'>
+               <thead>
+                      <tr>
+                          <th>View</th>
+                          <th>ID</th>
+                          <th>Name</th>
+                          <th>Tags</th>
+                          <th>Type</th>
+                          <th>Description</th>
+                      </tr>
+               </thead>
+               <tbody>
+               {% for image in images %}
+                   <tr>
+                       <td><a class="btn btn-default" onclick="viewimage(this)" filename="{{ image.file.url }}">View</a></td>
+                       <td>{{image.id}}</td>
+                       <td>{% if image.zip_name %}
+                           <a href="{{image.nidm_results.get_absolute_url}}">{{image.nidm_results.name}}</a>
+                           &nbsp;<i class="icon-double-angle-right"></i>&nbsp;
+                           <a href="{{image.get_absolute_url}}">{{ image.name }}</a>
+                           {% else %}
+                           <a href="{{image.get_absolute_url}}">{{ image.name }}</a>
+                           {% endif %}
+                       </td>
+                       <td>
+                           {% for tag in image.tags.all %}
+                           <a href="/images/tags/{{tag.name}}">{% if not forloop.last %}{{ tag.name }}{% endif %}</a>
+                           {% endfor %}
+                       </td>
+                       <td>
+                           {{ image.polymorphic_ctype.name }}
+                       </td>
+                       <td>{% if image.zip_name %}NIDMResults:
+                           <a href="{{image.nidm_results.zip_file.url}}">
+                               {{image.nidm_results.name}}.zip</a>
+                           {% else %}
+	                   {{ image.description }}
+                           {% endif %}
+                       </td>	
+                  </tr>
+               {% endfor %}
+               </tbody>
+               </table>
+               {% else %}
+               <div class="center-text" style="margin-top:60px;">
+                    <div style="font-size:34px;" style="margin-bottom:30px">
+                        This collection is empty. You can:
+                    </div>
+                    <br><br>
+                    <ul class="list-group">
+                    <li class="list-group-item"><a href="{% url 'add_image' cid %}">Add images one by one</a></li>
+                    <li class="list-group-item"><a id="upload_archive" href="#">Upload an archive with images (.zip or .tar.gz)</a></li>
+                    <!--[if !IE]> -->
+                    <li class="list-group-item"><a  id="upload_folder" href="#">Upload a folder with images</a></li>
+                    <!-- <![endif]-->
+                    </div>
+              {% endif %} <!-- close if collection.image_set.all -->
+              </form>
+
+              </div><!-- Close images tab-->  
+              
+              {% if collection.image_set.all %}
+              <div id="details" class="tab-pane">
+                  <table class='table table-condensed table-striped table-hover collection-details-datatable'>
+                  <thead>
+                      <tr>
+                          <th>Field</th>
+                          <th>Value</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      <tr><td>Authors</td><td>{{ collection.authors }}</td></tr>
+                      <tr><td>Description</td><td>{{ collection.description }}</td></tr>
+                      <tr><td>Journal</td><td>{{ collection.journal_name }}</td></tr>
+                      <tr><td>Contributors</td><td>{{ collection.contributor }}</td></tr>
+                      <tr><td>DOI</td><td>{{ collection.DOI }}</td></tr>
+                      <tr><td>Field Strength</td><td>{{ collection.field_strength }}</td></tr>
+                      <tr><td>id</td><td>{{ collection.id }}</td></tr>
+                      <tr><td>Add Date</td><td>{{ collection.add_date }}</td></tr>
+                  </tbody>
+                  </table>
+              </div><!-- close details tab-->
+              {% endif %}
+              <div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false"></div>               
+         </div><!-- close tab content-->
+    </div><!-- column-->
+</div><!--row-->
+
+<div id='spinny' class='modal neuron_loader' style='margin-top: 175px; left:45%; top:15%' data-keyboard='false'>
+     <img src="{% static "images/spinner.gif"%}"/>
+</div><!-- close spinner-->
+
+{% comment %}
+{% for image in collection.image_set.all %}
+    <li><a href="{% url 'image_details' image.id %}">{{ image.name }}</a></li>
+{% endfor %}
+<a href="{{collection.url}}">{{collection.name}}</a> by {{collection.authors}}
+<a href="{% url 'edit_images' cid %}">Add/edit files</a>
+{% endcomment %}
+{% endblock %}
