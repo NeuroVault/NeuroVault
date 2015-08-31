@@ -115,162 +115,171 @@
 {% endblock %}
 
 {% block content %}
-%fade
-.row
-    .span11
-        %h2 {{ collection.name }}
-        %p Contributed by {{ collection.owner }}
-        - if collection.authors
-            .lead {{collection.authors}}
-        - if collection.DOI
-            .lead
-                %a{href:"{{ collection.url }}" } Link to the paper
-        - if collection.full_dataset_url
-            .lead
-                Full dataset available at:
-                %a{href:"{{ collection.full_dataset_url }}" }
-                  {{ collection.full_dataset_url }}
-
-
-        .management-options
-            %form{action: "upload_folder", enctype: "multipart/form-data", method: "POST", name: "upload_folder_form"}
-              - if collection.image_set.all
-                  %a.btn.btn-primary{href: "pycortex" } 3D View
-              - if edit_permission
-                  %a.btn.btn-primary{href: "{% url 'add_image' cid %}" } Add image
-
-                  .btn-group
-                    %a.btn.btn-primary.dropdown-toggle{href: "#", data-toggle: "dropdown"} Edit
-                      %span.caret
-                    %ul.dropdown-menu
-                      %li
-                        %a{href: "{% url 'edit_collection' cid %}" } Collection Metadata
-                     - if collection.image_set.all
-                        - if collection.is_statisticmap_set
-                          %li
-                            %a{href: "{% url 'edit_metadata' cid %}" } Images Metadata
-                        - else
-                          %li{class: "disabled"}
-                            %a{href: "#"} Images Metadata
-
-                 - if collection.image_set.all
-                  
-                  .btn-group
-                    %a.btn.btn-primary.dropdown-toggle{href: "#", data-toggle: "dropdown"} Upload
-                      %span.caret
-                    %ul.dropdown-menu
-                      %li
-                        %a{id:"upload_archive", href: "#" } Archive (.zip)
-                      <!--[if !IE]> -->
-                      %li
-                        %a{id:"upload_folder", href: "#" } Folder
-                      <!-- <![endif]-->
-                  - if delete_permission
-                      .float-right-wrapper
-                       %a.btn.btn-danger{href: "{% url 'delete_collection' cid %}", id:"delete_collection"} Delete collection
-
-                 - if collection.private
-                    .lead
-                        %div{style: "font-size:16px; margin-top:20px;"}
-                            <em>Private Collection</em>: To share the link to this collection, please use the private url:
-                                    %a{href: "{{ request.path }}" }
-                                        {{ request.path }}
-              {% csrf_token %}
-              %div{style: "height: 0px;width: 0px; overflow:hidden;"}
-                {{ form.file }}
-                %input{type: "file", name: "file_input[]", id: "folder_input", multiple:"", directory:"", mozdirectory:"", webkitdirectory:""}
-                %input{type: "hidden", name: "paths", id: "paths"}
-
-        {% if messages %}
-        %ul.messages
-        {% for message in messages %}
-            .alert.alert-dismissible.alert-danger
-                %button.close{"data-dismiss" => "alert", :type => "button"} ×
-                {{ message }}
-        {% endfor %}
+<div class="fade"></div>
+<div class="row">
+    <div class="col-md-12">
+        <h2>{{ collection.name }}</h2>
+        <p>Contributed by {{ collection.owner }}</p>
+        {% if collection.authors %}
+        <div class="lead">{{collection.authors}}</div>
         {% endif %}
-
-
-        %ul#collection-tabs.nav.nav-tabs
-            %li
-                %a{href:'#images', data-toggle:'tab'} Images
-            %li
-                %a{href:'#details', data-toggle:'tab'} Details
-
-        .tab-content
-            #images.tab-pane.active
-                - if collection.image_set.all or not edit_permission
-	                %table.table.table-striped.table-hover.collection-images-datatable
-	                    %thead
-	                        %tr
-	                            %th ID
-	                            %th Name
-	                            %th Tags
-	                            %th Type
-	                            %th Description
-	                    %tbody
-	                        - for image in images
-	                            %tr
-	                                %td= image.id
-	                                %td
-	                                     - if image.zip_name
-	                                        %a{ href: "{{image.nidm_results.get_absolute_url}}" }
-	                                            {{image.nidm_results.name}}
-	                                        &nbsp;<i class="icon-double-angle-right"></i>&nbsp;
-	                                        %a{ href: "{{image.get_absolute_url}}" }
-	                                            {{ image.name }}
-	                                     - else
-	                                        %a{ href: "{{image.get_absolute_url}}" }= image.name
-	                                %td
-	                                    - for tag in image.tags.all
-	                                        %a{ href: "/images/tags/{{tag.name}}" }= tag.name
-	                                        - if not forloop.last
-
-	                                %td= image.polymorphic_ctype.name
-	                                %td
-	                                    - if image.zip_name
-	                                        NIDMResults:
-	                                        %a{href: "{{image.nidm_results.zip_file.url}}" }
-	                                            {{image.nidm_results.name}}.zip
-	                                    - else
-	                                        {{image.description}}
-                - else
-                    .light-head.center-text
-                        This collection is empty. You can:
-                        <br><br>
-
-                        %a.btn.btn-lg.btn-primary{href: "{% url 'add_image' cid %}" } Add images one by one
-                        %a.btn.btn-lg.btn-primary{id:"upload_archive", href: "#" } Upload an archive with images (.zip or .tar.gz)
-                        <!--[if !IE]> -->
-                        %a.btn.btn-lg.btn-primary{id:"upload_folder", href: "#" } Upload a folder with images
+        {% if collection.DOI %}
+        <div class="lead"><a href="{{ collection.url }}">Link to the paper</a></div>
+        {% endif %}
+        {% if collection.full_dataset_url %}
+        <div class="lead">Full dataset available at:<a href="{{ collection.full_dataset_url }}">
+            {{ collection.full_dataset_url }}</a>
+        </div>
+        {% endif %}
+        <div class="management-options">
+            <form action="upload_folder" enctype="multipart/form-data" method= "POST" name="upload_folder_form">
+            {% if collection.image_set.all %}
+                <a class="btn.btn-primary" href="pycortex">3D View</a>
+                {% if edit_permission %}
+                <a class="btn.btn-primary" href="{% url 'add_image' cid %}">Add image</a>
+                <div class="btn-group">
+                    <a class="btn.btn-primary.dropdown-toggle" href= "#" data-toggle="dropdown">Edit</a>
+                    <span class="caret"></span>
+                    <ul class=dropdown-menu">
+                        <a href="{% url 'edit_collection' cid %}">Collection Metadata</a>
+                        {% if collection.image_set.all %}
+                            {% if collection.is_statisticmap_set %}
+                            <li><a href="{% url 'edit_metadata' cid %}">Images Metadata</a></li>
+                            {% else %}
+                            <li class="disabled"><a href="#">Images Metadata</a></li>
+                            {% endif %}                  
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="btn-group">
+                    <a href="btn.btn-primary.dropdown-toggle" href="#" data-toggle="dropdown">Upload</a>
+                    <span class="caret"></span>
+                    <ul clas="dropdown-menu">
+                        <li><a id="upload_archive" href="#">Archive (.zip)</a></li>
+                        <!--[if !IE]> -->                               
+                        <li><a id="upload_folder" href="#">Folder</a></li>
                         <!-- <![endif]-->
+                    </ul>                      
+                </div>
+                {% endif %}<!-- close edit permission -->
+                {% if delete_permission %}
+                <div class="float-right-wrapper">
+                    <a class="btn.btn-danger" href="{% url 'delete_collection' cid %}" id="delete_collection"> Delete collection</a>
+                </div>
+                {% endif %}<!--close delete permission-->
+                {% endif %}<!--close edit permission-->
+                {% if collection.private %}
+                <div class="lead">
+                    <div style="font-size:16px; margin-top:20px;">
+                        <em>Private Collection</em>: To share the link to this collection, please use the private url:
+                                    <a href="{{ request.path }}">{{ request.path }}</a>
+                                    {% csrf_token %}
+                    </div>
+                </div>
+                {% endif %}
+                <div style="height: 0px;width: 0px; overflow:hidden;">
+                     {{ form.file }}
+                     <input type="file" name="file_input[]" id="folder_input" multiple="" directory="" mozdirectory="" webkitdirectory=""></input>
+                     <input type=hidden" name="paths" id="paths"></input>
+                </div>
+        </div><!-- close management options-->
+          {% if messages %}
+          <ul class="messages">
+              {% for message in messages %}
+              <div class="alert.alert-dismissible.alert-danger">
+                <button class="close data-dismiss alert" type="button">× {{ message }}</button>
+              </div>
+              {% endfor %}
+          </div>
+          {% endif %}
+          <ul id='collection-tabs' class='nav nav-tabs'>
+              <li><a data-toggle='tab' href='#images'>Images</a></li>
+              <li><a data-toggle='tab' href='#details'>Details</a></li>
+          </ul>
+          <div class='tab-content'>
+              <div id='images' class='tab-pane active'>
+              {% if collection.image_set.all or not edit_permission %}
+                  <table class='table table-striped table-hover collection-images-datatable'>
+                  <thead>
+                      <tr>
+                          <th>ID</th>
+                          <th>Name</th>
+                          <th>Tags</th>
+                          <th>Type</th>
+                          <th>Description</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                  {% for image in images %}
+	              <tr>
+	                  <td>{{image.id}}</td>
+	                  <td>{% if image.zip_name %}
+                              <a href="{{image.nidm_results.get_absolute_url}}">
+                                  {{image.nidm_results.name}}&nbsp;<i class="icon-double-angle-right"></i>&nbsp;
+	                      <a href="{{image.get_absolute_url}}">{{ image.name }}
+	                          {% else %}
+                                  <a href="{{image.get_absolute_url}}">{{ image.name }}</a>
+                                  {% endif %}
+	                  </td>
+                          <td>
+	                  {% for tag in image.tags.all %}
+                              <a href="/images/tags/{{tag.name}}">{{ tag.name }}
+	                      {% if not forloop.last %}
+	                          {{ image.polymorphic_ctype.name }}
+	                      {% endif %}
+	                      {% if image.zip_name %}
+                              NIDMResults:
+	                      <a href="{{image.nidm_results.zip_file.url}}">{{image.nidm_results.name}}.zip</a>
+	                      {% else %}
+	                      {{image.description}}
+                              {% endif %}
+                          {% endfor %}
+                          </td>
+                     </tr>
+                   {% endfor %}
+                   </tbody>
+                </table>
+                {% else %}
+                <div class="light-head center-text">
+                    This collection is empty. You can:
+                    <br><br>
+                        <a class="btn btn-lg btn-primary" href="{% url 'add_image' cid %}">Add images one by one</a>
+                        <a id="upload_archive" class="btn btn-lg btn-primary" href="#">Upload an archive with images (.zip or .tar.gz)</a>
+                        <!--[if !IE]> -->
+                        <a id="upload_folder" class="btn btn-lg btn-primary" href="#">Upload a folder with images</a>
+                        <!-- <![endif]-->
+                    </div>
+              {% endif %}
+              </div><!-- Close images tab-->  
+              <div id="details" class="tab-pane">
+                  {% if  collection.image_set.all %}
+                  <table class='table table-condensed table-striped table-hover collection-details-datatable'>
+                  <thead>
+                      <tr>
+                          <th>Field</th>
+                          <th>Value</th>
+                      </tr>
+                  </thead>
+                  <tbody> <!-- NEED TO REDO THIS-->
+                  {% endif %}
+              </div><!-- close details tab-->
+              <div id="viewer" class="tab-pane">
+                     {% include 'statmaps/_neurosynth_viewer_content.html.haml' %}
+              </div>
+              <div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false"></div>               
+         </div><!-- close tab content-->
+    </div><!-- column-->
+</div><!--row-->
 
-            #details.tab-pane
-                %table.table.table-condensed.table-striped.table-hover.collection-details-datatable
-                    %thead
-                        %tr
-                            %th Field
-                            %th Value
-                    %tbody
-            #viewer.tab-pane
-                {% include 'statmaps/_neurosynth_viewer_content.html.haml' %}
-
-            #upload_process.modal{data-keyboard:'false', style: 'margin-top: 175px;'}
-                
-
-
-      <div id='spinny' class='modal neuron_loader' style='margin-top: 175px; left:45%; top:15%' data-keyboard='false'>
-          <img src="{% static "images/spinner.gif"%}"/>
-      </div><!-- close spinner-->
+<div id='spinny' class='modal neuron_loader' style='margin-top: 175px; left:45%; top:15%' data-keyboard='false'>
+     <img src="{% static "images/spinner.gif"%}"/>
+</div><!-- close spinner-->
 
 {% comment %}
 {% for image in collection.image_set.all %}
     <li><a href="{% url 'image_details' image.id %}">{{ image.name }}</a></li>
 {% endfor %}
-
-
 <a href="{{collection.url}}">{{collection.name}}</a> by {{collection.authors}}
-
 <a href="{% url 'edit_images' cid %}">Add/edit files</a>
 {% endcomment %}
 {% endblock %}
