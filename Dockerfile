@@ -3,7 +3,8 @@ ENV PYTHONUNBUFFERED 1
 RUN apt-get update && apt-get install -y \
     libopenblas-dev \
     gfortran \
-    libhdf5-dev
+    libhdf5-dev \
+    libgeos-dev
 
 RUN pip install numpy \
     cython
