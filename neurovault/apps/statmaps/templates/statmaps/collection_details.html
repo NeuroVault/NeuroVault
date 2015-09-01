@@ -11,18 +11,24 @@
      var params = [];
      params["worldSpace"] = true;
      params["expandable"] = true;
+     params["showControls"] = false;
+     params["luts"] = [{"name":"PuBu", "data":[[0,1,0.968627,0.984314],[0.125,0.92549,0.905882,0.94902],[0.25,0.815686,0.819608,0.901961],[0.375,0.65098,0.741176,0.858824],[0.5,0.454902,0.662745,0.811765],[0.625,0.211765,0.564706,0.752941],[0.75,0.0196078,0.439216,0.690196],[0.875,0.0156863,0.352941,0.552941],[1,0.00784314,0.219608,0.345098]]},
+     {"name":"OrRd", "data":[[0,1,0.968627,0.92549],[0.125,0.996078,0.909804,0.784314],[0.25,0.992157,0.831373,0.619608],[0.375,0.992157,0.733333,0.517647],[0.5,0.988235,0.552941,0.34902],[0.625,0.937255,0.396078,0.282353],[0.75,0.843137,0.188235,0.121569],[0.875,0.701961,0,0],[1,0.498039,0,0]]}];
      params["images"] = ["{% static "images/MNI152.nii.gz"%}"];
      params["{% static "images/MNI152.nii.gz"%}"] = {"parametric": true,  "lut":"Spectrum", "min":0,  "alpha":"0.75"};
 
     {% if collection.image_set.all %}
         {% for image in images %}
             var tmpname = "{{ image.file.url }}".replace(/^.*[\\\/]/, '')
-            params[tmpname] = {"parametric": true,  "lut":"Spectrum", "min":0,  "alpha":"0.25"};
+            {% if image.polymorphic_ctype.model == "atlas" %}
+                params[tmpname] = {"parametric": true,  "lut":"Spectrum", "min":0,  "alpha":"0.25"};
+            {% else %}
+                params[tmpname] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75"};
+            {% endif %}
         {% endfor %}
     {% endif %}
-</script>
 
-{% include 'statmaps/_papaya_viewer_head.html.haml' %}
+</script>
 
 <!-- Fix for dropdown menus -->
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
@@ -32,6 +38,7 @@
 <script src="//cdn.datatables.net/plug-ins/1.10.7/integration/bootstrap/3/dataTables.bootstrap.js" type="text/javascript"></script>
 <link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
 <link rel="stylesheet" href="{% static "css/style.css" %}" />
+<link rel="stylesheet" type="text/css" href="http://ric.uthscsa.edu/mango/papaya/papaya.css?version=0.8&build=895" />
 
 <script type='text/javascript'>
 
@@ -74,7 +81,6 @@
         papayaContainers[0].viewer.loadImage([papayaimages[i]], true)
      }
 
-       $("#papaya-main-swap0").addClass("hidden")
    }
 
 
@@ -148,16 +154,14 @@
 
 }).call(this);
 
-$("#papaya-main-swap0").addClass("hidden")
 </script>
 {% endblock %}
 
 {% block content %}
 <div class="fade"></div>
-<div class="row">
 
-    <!-- Meta data and header row-->
-    <div class="col-md-12">
+<!-- Meta data and header row-->
+<div class="row">
         <h2>{{ collection.name }}</h2>
         <p>Contributed by {{ collection.owner }}</p>
         {% if collection.authors %}
@@ -171,7 +175,10 @@ $("#papaya-main-swap0").addClass("hidden")
             {{ collection.full_dataset_url }}</a>
         </div>
         {% endif %}
+</div>
 
+<!-- Content-->
+<div class="row">
         <div class="management-options">
              <form action="upload_folder" enctype="multipart/form-data" method= "POST" name="upload_folder_form">
 
@@ -239,14 +246,15 @@ $("#papaya-main-swap0").addClass("hidden")
                 <button class="close data-dismiss alert" type="button">× {{ message }}</button>
             </div>
             {% endfor %}
-        </div>
+        </ul>
         {% endif %}
-    </div><!--column-->
-</div><!-- close meta data and header row-->
-<div class="row">
-    <div class="col-md-6" id="NeuroVaultPapayaHolder">        
+
+<div class="row">    
+
+    <div class="col-md-6" style="margin-top:22px">
         <div class="papaya" data-params="params"></div>
     </div>
+
 
     <div class="col-md-6">
 
@@ -261,13 +269,12 @@ $("#papaya-main-swap0").addClass("hidden")
         <div class='tab-content'>
                <div id='images' class='tab-pane active'>
                {% if collection.image_set.all or not edit_permission %}
-               <table class='table table-striped table-hover collection-images-datatable'>
+               <table id="collection-images-datatable" class="table table-condensed table-striped table-hover">
                <thead>
                       <tr>
                           <th>View</th>
                           <th>ID</th>
                           <th>Name</th>
-                          <th>Tags</th>
                           <th>Type</th>
                           <th>Description</th>
                       </tr>
@@ -284,11 +291,6 @@ $("#papaya-main-swap0").addClass("hidden")
                            {% else %}
                            <a href="{{image.get_absolute_url}}">{{ image.name }}</a>
                            {% endif %}
-                       </td>
-                       <td>
-                           {% for tag in image.tags.all %}
-                           <a href="/images/tags/{{tag.name}}">{% if not forloop.last %}{{ tag.name }}{% endif %}</a>
-                           {% endfor %}
                        </td>
                        <td>
                            {{ image.polymorphic_ctype.name }}
@@ -324,7 +326,7 @@ $("#papaya-main-swap0").addClass("hidden")
               
               {% if collection.image_set.all %}
               <div id="details" class="tab-pane">
-                  <table class='table table-condensed table-striped table-hover collection-details-datatable'>
+                  <table id="collection-details-datatable" class="table table-condensed table-striped table-hover">
                   <thead>
                       <tr>
                           <th>Field</th>
@@ -347,12 +349,25 @@ $("#papaya-main-swap0").addClass("hidden")
               <div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false"></div>               
          </div><!-- close tab content-->
     </div><!-- column-->
-</div><!--row-->
+
+</div>
+</div>
+
 
 <div id='spinny' class='modal neuron_loader' style='margin-top: 175px; left:45%; top:15%' data-keyboard='false'>
      <img src="{% static "images/spinner.gif"%}"/>
 </div><!-- close spinner-->
 
+<script>
+$(document).ready(function() {
+    $('#collection-details-datatable').dataTable({
+      responsive: true
+    });
+    $('#collection-images-datatable').dataTable({
+      responsive: true
+    });
+} );
+</script>
 {% comment %}
 {% for image in collection.image_set.all %}
     <li><a href="{% url 'image_details' image.id %}">{{ image.name }}</a></li>
