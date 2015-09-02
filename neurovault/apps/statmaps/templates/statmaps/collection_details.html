@@ -55,32 +55,18 @@
   // Function to add / remove image from viewer
   function viewimage(mrimage) {
 
-      // Get current images
-      var papayaimages = params["images"];
-      var contenderimage = $(mrimage).attr("filename");
-
-      // Remove selection
-      papayaimages = jQuery.grep(papayaimages, function(value) {
-          return value != contenderimage;
-      });
-
-      if ($(mrimage).hasClass("active")){
-          $(mrimage).removeClass("active")  
-      
-      // Add image filename to list
-      } else {
-          $(mrimage).addClass("active")
-          papayaimages.push(contenderimage);
-      }
-
+     $(".viewimage").removeClass("active")
      // Reset viewer and load new images
      papayaContainers[0].viewer.resetViewer();
      papayaContainers[0].toolbar.updateImageButtons();
-     for (i = 0; i < papayaimages.length; i++) { 
-        console.log("Adding image " + papayaimages[i]);
-        papayaContainers[0].viewer.loadImage([papayaimages[i]], true)
-     }
-
+     papayaContainers[0].viewer.loadBaseImage(["{% static "images/MNI152.nii.gz"%}"],true)
+     
+     if ($(mrimage).hasClass("active")){
+        $(mrimage).removeClass("active")  
+      } else {
+          $(mrimage).addClass("active")
+          papayaContainers[0].viewer.loadOverlay([$(mrimage).attr("filename")],true)
+      }
    }
 
 
@@ -282,7 +268,7 @@
                <tbody>
                {% for image in images %}
                    <tr>
-                       <td><a class="btn btn-default" onclick="viewimage(this)" filename="{{ image.file.url }}">View</a></td>
+                       <td><a class="btn btn-default viewimage" onclick="viewimage(this)" filename="{{ image.file.url }}">View</a></td>
                        <td>{{image.id}}</td>
                        <td>{% if image.zip_name %}
                            <a href="{{image.nidm_results.get_absolute_url}}">{{image.nidm_results.name}}</a>
