@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block head %}
+<link rel="stylesheet" media="screen" href="{% static "css/handsontable.full.min.css"%}">
+<style>
+    .errors {
+        display: none;
+    }
+
+    .btn-save-metadata {
+        margin-bottom: 20px;
+    }
+
+    .hot-wrapper {
+        min-height: 400px;
+    }
+
+    #hot {
+        overflow: auto;
+    }
+
+    .row-error:not(:first-child) {
+        margin-top: 15px;
+    }
+</style>
+<script type="text/javascript">
+    window.NVMetadata = window.NVMetadata || {};
+    window.NVMetadata.data = {{ metadata | safe }};
+    window.NVMetadata.headers = {{ data_headers | safe }};
+    window.NVMetadata.datasources = {{ datasources | safe }};
+</script>
+
+{% endblock %}
+{% block content %}
+<div class="modal fade" id="columnNameModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Insert New Column</h4>
+      </div>
+      <form class="js-name-form">
+        <div class="modal-body">
+          <div class="form-group js-input-wrapper">
+            <label class="control-label" for="column-name"></label>
+            <input type="text" placeholder="Enter a new column name" class="form-control" id="column-name">
+            <span class="help-block"></span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Column</button>
+        </div>
+      </form>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<div class="row">
+	<div class="col-md-12">
+		<h2><a href="{{collection.get_absolute_url}}">{{ collection.name }}</a> / Edit&nbsp;Images&nbsp;Metadata</h2>
+	</div>
+	<div class="col-md-12"><hr/></div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <button class="btn btn-primary pull-right btn-save-metadata">Save</button>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12 ">
+        <div class="alert alert-danger errors"></div>
+    </div>
+</div>
+
+<div class="row hot-wrapper">
+    <div class="col-md-12">
+        <div id="hot" class="handsontable"></div>
+    </div>
+</div>
+
+<script src="{% static "scripts/handsontable.full.min.js"%}" type="text/javascript"></script>
+<script src="{% static "scripts/metadata-common.js"%}" type="text/javascript"></script>
+<script src="{% static "scripts/metadata-edit.js"%}" type="text/javascript"></script>
+{% endblock %}

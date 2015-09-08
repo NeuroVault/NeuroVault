@@ -1,5 +1,7 @@
 db:
   image: postgres
+  volumes:
+    - ./create_hstore_extension.sh:/docker-entrypoint-initdb.d/create_hstore_extension.sh:ro
 
 data:
   image: cogniteev/echo
@@ -24,8 +26,8 @@ nginx:
   ports:
     - "80:80"
   volumes:
-    - nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    - uwsgi_params.par:/etc/nginx/uwsgi_params.par:ro
+    - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    - ./uwsgi_params.par:/etc/nginx/uwsgi_params.par:ro
   volumes_from:
     - uwsgi
     - data

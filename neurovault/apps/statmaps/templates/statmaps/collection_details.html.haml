@@ -1,83 +1,121 @@
 {% extends "base.html" %}
-{% load coffeescript %}
 {% block head %}
+
 <title>{% block title %}NeuroVault: {{collection.name}}{% endblock %}</title>
-    :javascript
-        {% inlinecoffeescript %}
-            uldata = undefined
-            $(document).ready ->
 
-                $('#show-viewer').click( () =>
-                    window.viewer.paint()
-                    setTimeout(() ->
-                        window.viewer.paint()
-                    , 1)
-                )
+<script type='text/javascript'>
 
-                $("table[class*=collection-details-datatable]").dataTable
-                    sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
-                    sAjaxSource: "/api/collections/" + "{{cid}}" + "/datatable/?format=json"
-                    iDisplayLength: 10
+ function showLoader() {   
+    document.getElementById('spinny').style.display = 'block';
+    document.getElementById('fade').style.display = 'block';
+  }
 
-                $("table[class*=collection-images-datatable]").dataTable
-                    sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
-                    iDisplayLength: 10
-                    aoColumns: [ { sWidth: '7%'}, { sWidth: '43%'}, { sWidth: '12%' }, { sWidth: '15%'}, { sWidth: '23%'}]
-                    fnRowCallback: (nRow, aData, iDisplayIndex) ->
-                        nRow
+  function hideLoader() {
+    document.getElementById('spinny').style.display = 'none';
+    document.getElementById('fade').style.display = 'none';
+  }
 
-                $('#collection-tabs a:first').tab('show')
+(function() {
+  var uldata;
 
-                # Confirm deletion dialog, to prevent accidents
-                $('#delete_collection').click((e) ->
-                    confirm("Are you sure you want to delete this collection? This operation cannot be undone!")
-                )
+  uldata = void 0;
 
-                $('#upload_archive').click((e) ->
-                    document.getElementById("{{form.file.auto_id}}").click()
-                )
+  $(document).ready(function() {
+    $('#show-viewer').click((function(_this) {
+      return function() {
+        window.viewer.paint();
+        return setTimeout(function() {
+          return window.viewer.paint();
+        }, 1);
+      };
+    })(this));
+    $("table[class*=collection-details-datatable]").dataTable({
+      sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>",
+      sAjaxSource: "/api/collections/" + "{{ cid }}" + "/datatable/?format=json",
+      iDisplayLength: 10
+    });
+    $("table[class*=collection-images-datatable]").dataTable({
+      sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>",
+      iDisplayLength: 10,
+      aoColumns: [
+        {
+          sWidth: '7%'
+        }, {
+          sWidth: '43%'
+        }, {
+          sWidth: '12%'
+        }, {
+          sWidth: '15%'
+        }, {
+          sWidth: '23%'
+        }
+      ],
+      fnRowCallback: function(nRow, aData, iDisplayIndex) {
+        return nRow;
+      }
+    });
+    $('#collection-tabs a:first').tab('show');
+    $('#delete_collection').click(function(e) {
+      return confirm("Are you sure you want to delete this collection? This operation cannot be undone!");
+    });
+    $('#upload_archive').click(function(e) {
+      return document.getElementById("id_file").click();
+    });
+    $('#upload_folder').click(function(e) {
+      return document.getElementById("folder_input").click();
+    });
+    $('#id_file').change(function(e) {
+      return document.upload_folder_form.submit();
+    });
+    $('#folder_input').change(function(e) {
+      uldata = e.target.files;
+      return $('#upload_process').modal('show');
+    });
+    $("#upload_process").on("shown.bs.modal", function(e) {
+      var csrftoken, data, files, i, paths, xhr;
+      paths = "";
+      files = uldata;
+      xhr = new XMLHttpRequest();
+      data = new FormData();
+      for (i in files) {
+        if (files[i].name !== void 0 && files[i].webkitRelativePath !== void 0) {
+          if (files[i].name.indexOf(".") !== 0 && files[i].webkitRelativePath.indexOf('.files') === -1) {
+            data.append('paths[]', files[i].webkitRelativePath);
+            data.append('file_input[]', files[i]);
+          }
+        }
+      }
+      
+      csrftoken = $.cookie('csrftoken');
+      xhr.open('POST', "upload_folder", true);
+      xhr.setRequestHeader("X-CSRFToken", csrftoken);
+      xhr.onloadstart = function(e){
+                $('.modal-backdrop').removeClass("modal-backdrop"); 
+                showLoader();
+      };
+      
+      // We need to know when the request finishes.
+      xhr.onload = function (e) {
+      if (xhr.status === 200) {
+            hideLoader();
+            return document.location = '';
+          };
+      }
+      xhr.send(data);
+      //return document.location = "";
+    });
+    if (navigator.userAgent.indexOf("Safari") > -1 && navigator.userAgent.indexOf("Chrome") === -1) {
+      return $('a[href="pycortex"]').hide();
+    }
+  });
 
-                $('#upload_folder').click((e) ->
-                    document.getElementById("folder_input").click()
-                )
+}).call(this);
 
-                $('#{{form.file.auto_id}}').change((e) ->
-                    document.upload_folder_form.submit();
-                )
-
-                $('#folder_input').change((e) ->
-                    uldata = e.target.files
-                    $('#upload_process').modal 'show'
-                )
-
-                $("#upload_process").on "shown.bs.modal", (e) ->
-
-                    paths = ""
-                    files = uldata
-                    xhr = new XMLHttpRequest()
-                    data = new FormData()
-
-                    for i of files
-                        if files[i].name != undefined && files[i].webkitRelativePath != undefined
-                            if files[i].name.indexOf(".") != 0  && files[i].webkitRelativePath.indexOf('.files') == -1
-                                data.append('paths[]', files[i].webkitRelativePath)
-                                data.append('file_input[]', files[i])
-
-                    csrftoken = $.cookie('csrftoken')
-                    xhr.open 'POST', "upload_folder", false
-                    xhr.setRequestHeader "X-CSRFToken", csrftoken
-                    xhr.send(data)
-                    $('#upload_process').modal
-                    document.location = ""
-
-
-                if navigator.userAgent.indexOf("Safari") > -1 and navigator.userAgent.indexOf("Chrome") == -1
-                    $('a[href="pycortex"]').hide()
-
-        {% endinlinecoffeescript %}
+</script>
 {% endblock %}
 
 {% block content %}
+%fade
 .row
     .span11
         %h2 {{ collection.name }}
@@ -89,8 +127,8 @@
                 %a{href:"{{ collection.url }}" } Link to the paper
         - if collection.full_dataset_url
             .lead
-                Full dataset available at: 
-                %a{href:"{{ collection.full_dataset_url }}" } 
+                Full dataset available at:
+                %a{href:"{{ collection.full_dataset_url }}" }
                   {{ collection.full_dataset_url }}
 
 
@@ -99,22 +137,37 @@
               - if collection.image_set.all
                   %a.btn.btn-primary{href: "pycortex" } 3D View
               - if edit_permission
-                  %a.btn.btn-primary{href: "{% url 'edit_collection' cid %}" } Edit collection
-                  - if collection.image_set.all
-	                  %a.btn.btn-primary{href: "{% url 'add_image' cid %}" } Add image
-	                  -#%a.btn.btn-primary{href: "{% url 'edit_images' cid %}" } Edit images
-	                  %a.btn.btn-primary{id:"upload_archive"} Upload archive (.zip)
-	                  <!--[if !IE]> -->
-	                  %a.btn.btn-primary{id:"upload_folder"} Upload folder
-	                  <!-- <![endif]-->
+                  %a.btn.btn-primary{href: "{% url 'add_image' cid %}" } Add image
+
+                  .btn-group
+                    %a.btn.btn-primary.dropdown-toggle{href: "#", data-toggle: "dropdown"} Edit
+                      %span.caret
+                    %ul.dropdown-menu
+                      %li
+                        %a{href: "{% url 'edit_collection' cid %}" } Collection Metadata
+                     - if collection.image_set.all
+                        - if collection.is_statisticmap_set
+                          %li
+                            %a{href: "{% url 'edit_metadata' cid %}" } Images Metadata
+                        - else
+                          %li{class: "disabled"}
+                            %a{href: "#"} Images Metadata
+
+                 - if collection.image_set.all
+                  
+                  .btn-group
+                    %a.btn.btn-primary.dropdown-toggle{href: "#", data-toggle: "dropdown"} Upload
+                      %span.caret
+                    %ul.dropdown-menu
+                      %li
+                        %a{id:"upload_archive", href: "#" } Archive (.zip)
+                      <!--[if !IE]> -->
+                      %li
+                        %a{id:"upload_folder", href: "#" } Folder
+                      <!-- <![endif]-->
                   - if delete_permission
                       .float-right-wrapper
                        %a.btn.btn-danger{href: "{% url 'delete_collection' cid %}", id:"delete_collection"} Delete collection
-                  {% csrf_token %}
-                  %div{style: "height: 0px;width: 0px; overflow:hidden;"}
-                     {{ form.file }}
-                     %input{type: "file", name: "file_input[]", id: "folder_input", multiple:"", directory:"", mozdirectory:"", webkitdirectory:""}
-                     %input{type: "hidden", name: "paths", id: "paths"}
 
                  - if collection.private
                     .lead
@@ -122,11 +175,16 @@
                             <em>Private Collection</em>: To share the link to this collection, please use the private url:
                                     %a{href: "{{ request.path }}" }
                                         {{ request.path }}
+              {% csrf_token %}
+              %div{style: "height: 0px;width: 0px; overflow:hidden;"}
+                {{ form.file }}
+                %input{type: "file", name: "file_input[]", id: "folder_input", multiple:"", directory:"", mozdirectory:"", webkitdirectory:""}
+                %input{type: "hidden", name: "paths", id: "paths"}
 
         {% if messages %}
         %ul.messages
         {% for message in messages %}
-            .alert.fade.in{class:"{{ message.tags }}"}
+            .alert.alert-dismissible.alert-danger
                 %button.close{"data-dismiss" => "alert", :type => "button"} ×
                 {{ message }}
         {% endfor %}
@@ -167,7 +225,7 @@
 	                                    - for tag in image.tags.all
 	                                        %a{ href: "/images/tags/{{tag.name}}" }= tag.name
 	                                        - if not forloop.last
-	
+
 	                                %td= image.polymorphic_ctype.name
 	                                %td
 	                                    - if image.zip_name
@@ -180,16 +238,12 @@
                     .light-head.center-text
                         This collection is empty. You can:
                         <br><br>
-                        {% csrf_token %}
-                        %div{style: "height: 0px;width: 0px; overflow:hidden;"}
-                            {{ form.file }}
-                            %input{type: "file", name: "file_input[]", id: "folder_input", multiple:"", directory:"", mozdirectory:"", webkitdirectory:""}
-                            %input{type: "hidden", name: "paths", id: "paths"}
+
                         %a.btn.btn-lg.btn-primary{href: "{% url 'add_image' cid %}" } Add images one by one
-	                    %a.btn.btn-lg.btn-primary{id:"upload_archive"} Upload an archive with images (.zip or .tar.gz)
-	                    <!--[if !IE]> -->
-	                    %a.btn.btn-lg.btn-primary{id:"upload_folder"} Upload a folder with images
-	                    <!-- <![endif]-->
+                        %a.btn.btn-lg.btn-primary{id:"upload_archive", href: "#" } Upload an archive with images (.zip or .tar.gz)
+                        <!--[if !IE]> -->
+                        %a.btn.btn-lg.btn-primary{id:"upload_folder", href: "#" } Upload a folder with images
+                        <!-- <![endif]-->
 
             #details.tab-pane
                 %table.table.table-condensed.table-striped.table-hover.collection-details-datatable
@@ -201,20 +255,19 @@
             #viewer.tab-pane
                 {% include 'statmaps/_neurosynth_viewer_content.html.haml' %}
 
-            #upload_process.modal{data-backdrop: 'static', data-keyboard:'false', style: 'margin-top: 175px;'}
-                .modal-dialog
-                    .modal-content
-                        .modal-header
-                            %h4 Processing upload...
-                        .modal-body
-                            .progress
-                                .progress-bar.active{"style":"width: 100%;"}
-                                .progress-bar{"style":"width: 100%;"}
+            #upload_process.modal{data-keyboard:'false', style: 'margin-top: 175px;'}
+                
+
+
+      <div id='spinny' class='modal neuron_loader' style='margin-top: 175px; left:45%; top:15%' data-keyboard='false'>
+          <img src="{% static "images/spinner.gif"%}"/>
+      </div><!-- close spinner-->
 
 {% comment %}
 {% for image in collection.image_set.all %}
     <li><a href="{% url 'image_details' image.id %}">{{ image.name }}</a></li>
 {% endfor %}
+
 
 <a href="{{collection.url}}">{{collection.name}}</a> by {{collection.authors}}
 

@@ -44,7 +44,7 @@ class Test_Atlas_APIs(TestCase):
   
         # Zip file with nidm results
         print "Adding nidm results..."
-        zip_file = os.path.join(self.test_path,'test_data/nidm/fsl.nidm.zip')  
+        zip_file = os.path.join(self.test_path,'test_data/nidm/spm_example.nidm.zip')  
         self.nidm = save_nidm_form(zip_file=zip_file,collection=self.Collection1)
             
 
@@ -125,7 +125,9 @@ class Test_Atlas_APIs(TestCase):
         print "\nTesting atlas datatable query...."
         url = '/api/atlases/%d/datatable/' % self.unorderedAtlas.pk
         response = json.loads(self.client.get(url, follow=True).content)
-        self.assertTrue('.xml' in response['aaData'][1][1])
+        data = dict(response['aaData'])
+        self.assertEqual(data['label_description_file'].split("/")[-1], 
+                         'unordered_VentralFrontal_thr75_summaryimage_2mm.xml')
 
     def test_atlases_regions_table(self):
         print "\nTesting atlas regions table query...."
@@ -162,7 +164,7 @@ class Test_Atlas_APIs(TestCase):
         response = json.loads(self.client.get(url, follow=True).content)
         names = [item[u'name'] for item in response['results']]
         self.assertTrue(u'unorderedAtlas' in names)
-        self.assertTrue(u'Z-Statistic Map: Generation' in names)
+        self.assertTrue(u'Statistic Map: passive listening > rest' in names)
 
     def test_images_pk(self):
         url = '/api/images/%d/' % self.Image1.pk
@@ -181,13 +183,12 @@ class Test_Atlas_APIs(TestCase):
         url = '/api/nidm_results/'
         response = json.loads(self.client.get(url, follow=True).content)
         descriptions = [item[u'description'] for item in response['results'][0][u'statmaps']]
-        self.assertTrue('NIDM Results: fsl.nidm.zip > TStatistic.nii.gz' in descriptions)
-        self.assertEqual(response['results'][0]['description'], u'fsl_nidm upload test')
+        self.assertTrue('NIDM Results: spm_example.nidm.zip > TStatistic.nii.gz' in descriptions)
 
     def test_nidm_results_pk(self):
         url = '/api/nidm_results/%d/' % self.nidm.pk
         response = json.loads(self.client.get(url, follow=True).content)
-        self.assertTrue('fsl.nidm.ttl' in response['ttl_file'])
+        self.assertTrue('spm_example.nidm.ttl' in response['ttl_file'])
         self.assertEqual(response['statmaps'][0][u'figure'], None)
 
 

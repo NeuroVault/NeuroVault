@@ -104,7 +104,8 @@ class APIHelper:
 
 
 class ImageSerializer(serializers.HyperlinkedModelSerializer):
-
+    
+    id = serializers.ReadOnlyField()
     file = HyperlinkedFileField()
     collection = HyperlinkedRelatedURL(read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
@@ -135,11 +136,11 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
             return orderedDict
 
         return super(ImageSerializer, self).to_representation(obj)
-    
+
 
 class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
 
-
+    id = serializers.ReadOnlyField()
     file = HyperlinkedFileField()
     collection = HyperlinkedRelatedURL(read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
@@ -156,10 +157,19 @@ class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = StatisticMap
-        exclude = ['polymorphic_ctype', 'ignore_file_warning']
+        exclude = ['polymorphic_ctype', 'ignore_file_warning', 'data']
+
+    def to_representation(self, obj):
+        ret = super(StatisticMapSerializer, self).to_representation(obj)
+        for field_name, value in obj.data.items():
+            if field_name not in ret:
+                ret[field_name] = value
+        return ret
 
 
 class NIDMResultStatisticMapSerializer(serializers.HyperlinkedModelSerializer):
+    
+    id = serializers.ReadOnlyField()
     file = HyperlinkedFileField()
     collection = HyperlinkedRelatedURL(read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
@@ -181,7 +191,8 @@ class NIDMResultStatisticMapSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class AtlasSerializer(serializers.HyperlinkedModelSerializer):
-
+    
+    id = serializers.ReadOnlyField()
     label_description_file = HyperlinkedFileField()
     collection = HyperlinkedRelatedURL(read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url')
@@ -203,7 +214,7 @@ class NIDMResultsSerializer(serializers.ModelSerializer):
         model = NIDMResults
         exclude = ['id']
 
-    
+
 class CollectionSerializer(serializers.ModelSerializer):
     images = ImageSerializer(many=True, source='image_set')
     nidm_results = NIDMResultsSerializer(many=True, source='nidmresults_set')
@@ -272,10 +283,10 @@ class AtlasViewSet(ImageViewSet):
         regions = [line.text.split('(')[0].replace("'",'').rstrip(' ').lower() for line in lines]
         return Response(
             {'aaData': zip(indices, regions)})
-        
+
     @list_route()
     def atlas_query_region(self, request, pk=None):
-        ''' Returns a dictionary containing a list of voxels that match the searched term (or related searches) in the specified atlas.\n 
+        ''' Returns a dictionary containing a list of voxels that match the searched term (or related searches) in the specified atlas.\n
         Parameters: region, collection, atlas \n
         Example: '/api/atlases/atlas_query_region/?region=middle frontal gyrus&collection=Harvard-Oxford cortical and subcortical structural atlases&atlas=HarvardOxford cort maxprob thr25 1mm' '''
         search = request.GET.get('region','')
@@ -315,12 +326,12 @@ class AtlasViewSet(ImageViewSet):
                 data = {'voxels':getAtlasVoxels(searchList, atlas_image, atlas_xml)}
             except ValueError:
                 return Response('error: region not in atlas', status=400)
-    
+
             return Response(data)
-        
+
     @list_route()
     def atlas_query_voxel(self, request, pk=None):
-        ''' Returns the region name that matches specified coordinates in the specified atlas.\n 
+        ''' Returns the region name that matches specified coordinates in the specified atlas.\n
         Parameters: x, y, z, collection, atlas \n
         Example: '/api/atlases/atlas_query_voxel/?x=30&y=30&z=30&collection=Harvard-Oxford cortical and subcortical structural atlases&atlas=HarvardOxford cort maxprob thr25 1mm' '''
         X = request.GET.get('x','')
@@ -372,7 +383,7 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
         page = paginator.paginate_queryset(queryset, request)
         serializer = ImageSerializer(page, context={'request': request}, many=True)
         return paginator.get_paginated_response(serializer.data)
-        
+
 
     def retrieve(self, request, pk=None):
         collection = get_collection(pk,request,mode='api')

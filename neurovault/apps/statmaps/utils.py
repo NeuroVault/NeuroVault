@@ -316,7 +316,9 @@ def populate_nidm_results(request,collection):
     form = nidmr_form(request.POST,request.FILES,instance=inst)
     if form.is_valid():
         form.save()
-    return form.instance
+        return form.instance
+    else:
+        return None
 
 
 def populate_feat_directory(request,collection,existing_dir=None):

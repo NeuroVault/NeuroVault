@@ -62,12 +62,16 @@ class Test_Counter(TestCase):
 
     # Adding a group of NIDM result images
     def test_adding_nidm(self):
-        zip_file = open(os.path.join(self.test_path,'test_data/nidm/fsl.nidm.zip'), 'rb')
+        Image2 = StatisticMap(name='Image2', collection=self.Collection1, file='beta_0001.nii.gz', map_type="Other")
+        Image2.file = SimpleUploadedFile('beta_0001.nii.gz', file(os.path.join(self.test_path,'test_data/statmaps/beta_0001.nii.gz')).read())
+        Image2.save()
+        
+        zip_file = open(os.path.join(self.test_path,'test_data/nidm/spm_example.nidm.zip'), 'rb')
         post_dict = {
-            'name': 'fsl_nidm',
-            'description':'{0} upload test'.format('fsl_nidm'),
+            'name': 'spm_nidm',
+            'description':'{0} upload test'.format('spm_example'),
             'collection':self.Collection1.pk}
-        fname = os.path.basename(os.path.join(self.test_path,'test_data/nidm/fsl.nidm.zip'))
+        fname = os.path.basename(os.path.join(self.test_path,'test_data/nidm/spm_example.nidm.zip'))
         file_dict = {'zip_file': SimpleUploadedFile(fname, zip_file.read())}
         zip_file.close()
         form = NIDMResultsForm(post_dict, file_dict)
@@ -85,5 +89,5 @@ class Test_Counter(TestCase):
 
         # Make sure comparisons were calculated
         number_comparisons = len(Comparison.objects.all())
-        print "\n %s comparisons exist after adding NIDM [should not be 0]" %(number_comparisons)
+        print "\n %s comparisons exist after adding NIDM `[should not be 0]" %(number_comparisons)
         self.assertEqual(number_comparisons>0,True)

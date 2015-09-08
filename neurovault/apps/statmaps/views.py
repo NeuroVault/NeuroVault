@@ -1,5 +1,5 @@
 from neurovault.apps.statmaps.models import Collection, Image, Atlas, Comparison, StatisticMap, NIDMResults, NIDMResultStatisticMap,\
-    BaseStatisticMap
+    BaseStatisticMap, CognitiveAtlasTask
 from neurovault.apps.statmaps.forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
@@ -23,6 +23,7 @@ from rest_framework.renderers import JSONRenderer
 from django.core.files.base import ContentFile
 from django.db.models.aggregates import Count
 from django.http import Http404, HttpResponse
+from django.core.urlresolvers import reverse
 from django.db.models import Q, Count
 from sklearn.externals import joblib
 from collections import OrderedDict
@@ -42,10 +43,15 @@ import tarfile
 import shutil
 import pandas
 import gzip
+import csv
 import re
 import os
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
 from django.views.decorators.cache import never_cache
+import json
+import functools
+from . import image_metadata
+
 
 def owner_or_contrib(request,collection):
     if collection.owner == request.user or request.user in collection.contributors.all() or request.user.is_superuser:
@@ -174,6 +180,75 @@ def edit_collection(request, cid=None):
     return render(request, "statmaps/edit_collection.html.haml", context)
 
 
+def choice_datasources(model):
+    statmap_field_obj = functools.partial(image_metadata.get_field_by_name,
+                                          model)
+    pick_second_item = functools.partial(map, lambda x: x[1])
+
+    fixed_fields = list(model.get_fixed_fields())
+
+    field_choices = ((f, statmap_field_obj(f).choices) for f in fixed_fields)
+
+    fields_with_choices = (t for t in field_choices if t[1])
+
+    return dict((field_name, pick_second_item(choices))
+                for field_name, choices in fields_with_choices)
+
+
+def get_field_datasources():
+    ds = choice_datasources(StatisticMap)
+    ds['cognitive_paradigm_cogatlas'] = [x.name for x in (CognitiveAtlasTask
+                                                          .objects
+                                                          .all())]
+    return ds
+
+
+@csrf_exempt
+@login_required
+def edit_metadata(request, collection_cid):
+    collection = get_collection(collection_cid, request)
+
+    if not owner_or_contrib(request, collection):
+        return HttpResponseForbidden()
+
+    if not collection.is_statisticmap_set:
+        return HttpResponseForbidden('Editing image metadata of collections '
+                                     'that include not only statistical '
+                                     'maps is forbidden.')
+
+    if request.method == "POST":
+        return JSONResponse(
+            **image_metadata.handle_post_metadata(
+                request, collection, 'Images metadata have been saved.'))
+
+    collection_images = collection.image_set.all()
+    data_headers = image_metadata.get_data_headers(collection_images)
+    metadata = image_metadata.get_images_metadata(collection_images)
+    datasources = get_field_datasources()
+
+    return render(request, "statmaps/edit_metadata.html", {
+        'collection': collection,
+        'datasources': json.dumps(datasources),
+        'data_headers': json.dumps(data_headers),
+        'metadata': json.dumps(metadata)})
+
+
+@login_required
+def export_images_filenames(request, collection_cid):
+    collection = get_collection(collection_cid, request)
+    images_filenames = image_metadata.get_images_filenames(collection)
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; ' \
+                                      'filename="collection_%s.csv"' % (
+                                          collection.id)
+
+    writer = csv.writer(response)
+    writer.writerows([['Filename']] + [[name] for name in images_filenames])
+
+    return response
+
+
 def view_image(request, pk, collection_cid=None):
     image = get_image(pk,collection_cid,request)
     user_owns_image = owner_or_contrib(request,image.collection)
@@ -295,6 +370,19 @@ def view_nidm_results(request, collection_cid, nidm_name):
     context = {"form": form}
     return render(request, "statmaps/edit_nidm_results.html.haml", context)
 
+@login_required
+def delete_nidm_results(request, collection_cid, nidm_name):
+    collection = get_collection(collection_cid,request)
+    try:
+        nidmr = NIDMResults.objects.get(collection=collection,name=nidm_name)
+    except NIDMResults.DoesNotExist:
+        return Http404("This NIDM Result was not found.")
+    
+    if owner_or_contrib(request,collection):
+        nidmr.delete()
+        return redirect('collection_details', cid=collection_cid)
+    else:
+        return HttpResponseForbidden()
 
 @login_required
 def add_image_for_neurosynth(request):
@@ -357,7 +445,9 @@ def upload_folder(request, collection_cid):
                 if "file" in request.FILES:
                     archive_name = request.FILES['file'].name
                     if fnmatch(archive_name,'*.nidm.zip'):
-                        populate_nidm_results(request,collection)
+                        form = populate_nidm_results(request,collection)
+                        if not form:
+                            messages.warning(request, "Invalid NIDM-Results file.")  
                         return HttpResponseRedirect(collection.get_absolute_url())
 
                     _, archive_ext = os.path.splitext(archive_name)
@@ -478,12 +568,10 @@ def upload_folder(request, collection_cid):
                     new_image.save()
 
             except:
-                raise
                 error = traceback.format_exc().splitlines()[-1]
                 msg = "An error occurred with this upload: {}".format(error)
                 messages.warning(request, msg)
                 return HttpResponseRedirect(collection.get_absolute_url())
-
             finally:
                 shutil.rmtree(tmp_directory)
             if not niftiFiles:
@@ -598,7 +686,7 @@ def serve_nidm(request, collection_cid, nidmdir, sep, path):
 def serve_nidm_image(request, collection_cid, nidmdir, sep, path):
     collection = get_collection(collection_cid,request,mode='file')
     path = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',str(collection.id),nidmdir,path)
-    return sendfile(request, path)
+    return sendfile(request, path, encoding="utf-8")
 
 
 def stats_view(request):
@@ -842,6 +930,7 @@ def find_similar(request,pk):
         error_message = "Image comparison is not enabled for thresholded images."
         context = {'error_message': error_message}
         return render(request, 'statmaps/error_message.html', context)
+
 
 class JSONResponse(HttpResponse):
     """

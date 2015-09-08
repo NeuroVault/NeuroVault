@@ -62,19 +62,21 @@ class NIDMUpload:
     def parse_contrasts(self):
         query = """
         prefix prov: <http://www.w3.org/ns/prov#>
-        prefix nidm: <http://www.incf.org/ns/nidash/nidm#>
-        prefix spm: <http://www.incf.org/ns/nidash/spm#>
-        prefix fsl: <http://www.incf.org/ns/nidash/fsl#>
-        prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        prefix nidm: <http://purl.org/nidash/nidm#>
 
-        SELECT ?rdfLabel ?contrastName ?statFile ?statType WHERE {
-         ?cid a nidm:ContrastMap ;
-              nidm:contrastName ?contrastName ;
-              prov:atLocation ?cfile .
-         ?cea a nidm:ContrastEstimation .
+        prefix contrast_estimation: <http://purl.org/nidash/nidm#NIDM_0000001>
+        prefix contrast_map: <http://purl.org/nidash/nidm#NIDM_0000002>
+        prefix contrast_name: <http://purl.org/nidash/nidm#NIDM_0000085>
+        prefix statistic_map: <http://purl.org/nidash/nidm#NIDM_0000076>
+        prefix statistic_type: <http://purl.org/nidash/nidm#NIDM_0000123>
+
+        SELECT ?rdfLabel ?contrastName ?statType ?statFile WHERE {
+         ?cid a contrast_map: ;
+              contrast_name: ?contrastName .
+         ?cea a contrast_estimation: .
          ?cid prov:wasGeneratedBy ?cea .
-         ?sid a nidm:StatisticMap ;
-              nidm:statisticType ?statType ;
+         ?sid a statistic_map: ;
+              statistic_type: ?statType ;
               rdfs:label ?rdfLabel ;
               prov:atLocation ?statFile .
         }
@@ -171,8 +173,11 @@ class NIDMUpload:
         return '{0} {1}'.format(contrast['rdfLabel'], type)
 
     @staticmethod
-    def parse_statmap_type(stattype):
-        return urlparse(stattype).fragment or stattype
+    def parse_statmap_type(stattype_url):
+        stato_dict = {"http://purl.obolibrary.org/obo/STATO_0000376": "Z",
+                      "http://purl.obolibrary.org/obo/STATO_0000176": "T",
+                      "http://purl.obolibrary.org/obo/STATO_0000282": "F"}
+        return stato_dict[stattype_url]
 
     @staticmethod
     def parse_ttl_relative_path(path):
