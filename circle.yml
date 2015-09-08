@@ -7,7 +7,6 @@ dependencies:
     - "~/docker"
 
   override:
-    - pip install docker-compose
     - if [[ -e ~/docker/image.tar ]]; then docker load -i ~/docker/image.tar; fi
     - ./scripts/git-set-file-times
     - docker build -t neurovault/neurovault .
