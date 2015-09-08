@@ -2,12 +2,13 @@ import urllib, json, tarfile, requests, os
 from StringIO import StringIO
 import xml.etree.cElementTree as e
 from django.db import IntegrityError
-from neurovault.apps.statmaps.models import Collection, StatisticMap, User
+from neurovault.apps.statmaps.models import Collection, User, BaseStatisticMap,\
+    StatisticMap
 from django.core.files.uploadedfile import SimpleUploadedFile
 from neurovault.apps.statmaps.forms import StatisticMapForm, CollectionForm
 
-username="ANIMA"
-email="a.reid@fz-juelich.de"
+username = "ANIMA"
+email = "a.reid@fz-juelich.de"
 try:
     anima_user = User.objects.create_user(username, email)
     anima_user.save()
@@ -16,17 +17,17 @@ except IntegrityError:
 
 Collection.objects.filter(owner=anima_user).delete()
 
-url = "http://anima.modelgui.org/api/studies"
+url = "http://anima.modelgui.org/api/archives"
 response = urllib.urlopen(url);
 datasets = json.loads(response.read())
 for url in datasets:
     print url
     response = requests.get(url)
-    results = tarfile.open(mode= "r:gz", fileobj = StringIO(response.content))
+    results = tarfile.open(mode="r:gz", fileobj=StringIO(response.content))
     for member in results.getmembers():
-        f=results.extractfile(member)
+        f = results.extractfile(member)
         if member.name.endswith(".study"):
-            content=f.read().replace("PubMed ID", "PubMedID")
+            content = f.read().replace("PubMed ID", "PubMedID")
             xml_obj = e.fromstring(content)
 
             study_description = xml_obj.find(".//Element[@name='Description']").text.strip()
@@ -42,13 +43,13 @@ for url in datasets:
             post_dict = {
                 'name': study_name,
                 'description': study_description,
-                'full_dataset_url': "http://anima.modelgui.og/studies/" + os.path.split(url)[1].replace(".tar.gz", "")
+                'full_dataset_url': "http://anima.modelgui.org/studies/" + os.path.split(url)[1].replace(".tar.gz", "")
             }
             if doi != None:
                 post_dict['DOI'] = doi.text.strip()
             elif pubmedid != None:
                 pubmedid = pubmedid.text.strip()
-                url = "http://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids=%s&format=json"%pubmedid
+                url = "http://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids=%s&format=json" % pubmedid
                 response = urllib.urlopen(url);
                 parsed = json.loads(response.read())
                 if 'doi' in parsed['records'][0]:
@@ -68,13 +69,13 @@ for url in datasets:
 
                 print image_name, image_filename, image_description, image_fileobject.size, "\n"
 
-                map_type = 'Other'
+                map_type = BaseStatisticMap.OTHER
 
-                quantity_dict = {"Mask": "R",
-                                 "F-statistic": "F",
-                                 "T-statistic": "T",
-                                 "Z-statistic": "Z",
-                                 "Beta": "U"}
+                quantity_dict = {"Mask": BaseStatisticMap.M,
+                                 "F-statistic": BaseStatisticMap.F,
+                                 "T-statistic": BaseStatisticMap.T,
+                                 "Z-statistic": BaseStatisticMap.Z,
+                                 "Beta": BaseStatisticMap.U}
 
                 quantity = study_element.find("./Metadata/Element[@name='Quantity']")
                 if quantity != None:
@@ -86,17 +87,19 @@ for url in datasets:
                 post_dict = {
                     'name': image_name,
                     'description': image_description,
-                    'modality':'fMRI-BOLD',
+                    'modality': StatisticMap.fMRI_BOLD,
                     'map_type': map_type,
-                    'analysis_level': 'M',
+                    'analysis_level': BaseStatisticMap.M,
                     'collection': collection.pk,
                     'ignore_file_warning': True,
                     'cognitive_paradigm_cogatlas': 'None',
-                    'tags': ",".join(tags)
+                    'tags': ", ".join(tags)
                 }
                 file_dict = {'file': SimpleUploadedFile(image_filename, image_fileobject.read())}
                 form = StatisticMapForm(post_dict, file_dict)
                 form.is_valid()
+                print post_dict
+                print form.errors.keys()
                 print form.errors
                 form.save()
 
