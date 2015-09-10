@@ -15,7 +15,12 @@
      params["showControls"] = false;
      params["luts"] = [{"name":"PuBu", "data":[[0,1,0.968627,0.984314],[0.125,0.92549,0.905882,0.94902],[0.25,0.815686,0.819608,0.901961],[0.375,0.65098,0.741176,0.858824],[0.5,0.454902,0.662745,0.811765],[0.625,0.211765,0.564706,0.752941],[0.75,0.0196078,0.439216,0.690196],[0.875,0.0156863,0.352941,0.552941],[1,0.00784314,0.219608,0.345098]]},
      {"name":"OrRd", "data":[[0,1,0.968627,0.92549],[0.125,0.996078,0.909804,0.784314],[0.25,0.992157,0.831373,0.619608],[0.375,0.992157,0.733333,0.517647],[0.5,0.988235,0.552941,0.34902],[0.625,0.937255,0.396078,0.282353],[0.75,0.843137,0.188235,0.121569],[0.875,0.701961,0,0],[1,0.498039,0,0]]}];
-     params["images"] = ["{% static "images/MNI152.nii.gz"%}"];
+    {% if collection.image_set.all %}
+        params["images"] = ["{% static "images/MNI152.nii.gz"%}","{{ images.0.file.url }}"];
+    {% else %}
+        params["images"] = ["{% static "images/MNI152.nii.gz"%}"];
+    {% endif %}
+
      params["{% static "images/MNI152.nii.gz"%}"] = {"parametric": true,  "lut":"Spectrum", "min":0,  "alpha":"0.75"};
 
     {% if collection.image_set.all %}
@@ -67,7 +72,6 @@
      papayaContainers[0].viewer.loadOverlay([$(mrimage).attr("filename")],true)
   
   }
-
 
 (function() {
   var uldata;
@@ -136,7 +140,6 @@
       return $('a[href="pycortex"]').hide();
     }
   });
-
 }).call(this);
 
 </script>
@@ -262,7 +265,7 @@
                <tbody>
                {% for image in images %}
                    <tr>
-                       <td><a class="btn btn-default viewimage" onclick="viewimage(this)" filename="{{ image.file.url }}">View</a></td>
+                       <td><a class="btn btn-default viewimage" onclick="viewimage(this)" filename="{{ image.file.url }}"><i class="fa fa-lg fa-eye"></i></a></td>
                        <td>{{image.id}}</td>
                        <td>{% if image.zip_name %}
                            <a href="{{image.nidm_results.get_absolute_url}}">{{image.nidm_results.name}}</a>
@@ -345,6 +348,10 @@ $(document).ready(function() {
     $('#collection-images-datatable').dataTable({
       responsive: true
     });
+    {% if collection.image_set.all %}
+        var collection_images = $(".viewimage")
+        $(collection_images[0]).addClass("active")
+    {% endif %}
 } );
 
 </script>
