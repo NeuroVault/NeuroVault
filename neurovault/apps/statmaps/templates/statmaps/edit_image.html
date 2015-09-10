@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block head %}
+    <link href="{% static 'css/studies.css' %}" media="screen" rel="stylesheet" type="text/css" />
+    <script src="{% static "scripts/select2.min.js"%}" type="text/javascript"></script>
+    <link rel="stylesheet" href="{% static "css/select2.min.css" %}" />
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-11" id="form_column">
+        {% if form.instance.nidm_results %}
+            <div class="alert alert-info">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                This statistic map is embedded in <strong><a href="{{form.instance.nidm_results.get_absolute_url}}">{{form.instance.nidm_results.name}}.zip</a></strong>.  Edit the NIDM zip file to modify this image's properties.
+            </div>
+        {% endif %}
+        <form  class="form-horizontal" method="post" enctype="multipart/form-data">
+    		{% crispy form %}
+        </form>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+var contrast_lookup = {{ contrasts | safe }};
+
+$(document).ready(function() {
+
+    // Reveal custom write in box on button push
+    reveal_custom = function() {
+        var contrast_div = $("#div_id_contrast_definition")
+        $(contrast_div).detach()
+        $("#div_id_cognitive_contrast_cogatlas").after(contrast_div)
+        $("#div_id_contrast_definition").show();        
+    };
+
+    $('#id_cognitive_paradigm_cogatlas').css("width", "600px");
+    $('#id_cognitive_paradigm_cogatlas').select2();
+  
+    // Hide the contrast field on page load
+    $("#div_id_cognitive_contrast_cogatlas").hide();
+
+    // When contrast changes, check if user has selected "other"
+    $("#id_cognitive_contrast_cogatlas").change(function(e) {
+        var selection = $("#id_cognitive_contrast_cogatlas").val()    
+        if (selection == "Other"){
+            reveal_custom();        
+        } else {
+            $("#div_id_contrast_definition").hide();
+        }
+    });
+
+    // When task is changed, update field for contrasts
+    $("#id_cognitive_paradigm_cogatlas").change(function(e) {
+
+    var termid = $("#id_cognitive_paradigm_cogatlas").val();
+    var contrasts = contrast_lookup[termid];
+
+    // If we have contrasts, hide the text fill in and show contrast options
+    if (contrasts.length) {
+
+        // Remove all old options
+        $("#id_cognitive_contrast_cogatlas").find('option').remove().end();
+  
+        // Build new select options with contrasts of interest
+        for(var key in contrasts) {
+            var option = $("<option>");
+            option.attr({ 'value': contrasts[key].value }).text(contrasts[key].name);
+            $('#id_cognitive_contrast_cogatlas').append(option);
+        }
+
+        // Add an "other" option to reveal write in
+        var option = $("<option>");
+        option.attr({ 'value': "Other" }).text("Other");
+        $('#id_cognitive_contrast_cogatlas').append(option);
+
+        $("#div_id_contrast_definition").hide();
+        $("#div_id_cognitive_contrast_cogatlas").show();
+
+    } else {
+        $("#div_id_contrast_definition").show();
+        $("#div_id_cognitive_contrast_cogatlas").hide();
+    }
+  });
+
+} );
+</script>
+{% endblock %}

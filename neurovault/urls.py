@@ -146,6 +146,8 @@ class StatisticMapSerializer(serializers.HyperlinkedModelSerializer):
     url = HyperlinkedImageURL(source='get_absolute_url')
     cognitive_paradigm_cogatlas = StringRelatedField(read_only=True)
     cognitive_paradigm_cogatlas_id = PrimaryKeyRelatedField(read_only=True, source="cognitive_paradigm_cogatlas")
+    cognitive_contrast_cogatlas = StringRelatedField(read_only=True)
+    cognitive_contrast_cogatlas_id = PrimaryKeyRelatedField(read_only=True, source="cognitive_contrast_cogatlas")
     map_type = serializers.SerializerMethodField()
     analysis_level = serializers.SerializerMethodField()
     
