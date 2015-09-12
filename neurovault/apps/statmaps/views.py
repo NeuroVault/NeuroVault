@@ -331,7 +331,7 @@ def edit_image(request, pk):
     elif isinstance(image, NIDMResultStatisticMap):
         form = EditNIDMResultStatisticMapForm
     else:
-        raise Exception("unsuported image type")
+        raise Exception("unsupported image type")
     if not owner_or_contrib(request,image.collection):
         return HttpResponseForbidden()
     if request.method == "POST":
@@ -410,8 +410,9 @@ def add_image_for_neurosynth(request):
     else:
         form = SimplifiedStatisticMapForm(user=request.user, instance=image)
 
-    context = {"form": form}
-    return render(request, "statmaps/add_image_for_neurosynth.html.haml", context)
+    contrasts = get_contrast_lookup()
+    context = {"form": form,"contrasts":json.dumps(contrasts)}
+    return render(request, "statmaps/add_image_for_neurosynth.html", context)
 
 
 @login_required
@@ -426,8 +427,9 @@ def add_image(request, collection_cid):
     else:
         form = AddStatisticMapForm(instance=image)
 
-    context = {"form": form}
-    return render(request, "statmaps/add_image.html.haml", context)
+    contrasts = get_contrast_lookup()
+    context = {"form": form,"contrasts": json.dumps(contrasts)}
+    return render(request, "statmaps/add_image.html", context)
 
 
 @login_required
