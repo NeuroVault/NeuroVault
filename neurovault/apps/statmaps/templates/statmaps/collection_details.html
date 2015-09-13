@@ -155,19 +155,19 @@
         {% if collection.authors %}
         <div class="lead">{{collection.authors}}</div>
         {% endif %}
-        {% if collection.DOI %}
-        <div class="lead"><a href="{{ collection.url }}">Link to the paper</a></div>
-        {% endif %}
-        {% if collection.full_dataset_url %}
-        <div class="lead">Full dataset available at:<a href="{{ collection.full_dataset_url }}">
-            {{ collection.full_dataset_url }}</a>
-        </div>
-        {% endif %}
-</div>
-
-<!-- Content-->
-<div class="row">
-        <div class="management-options">
+        <div class="row">
+            <div class="col-md-3">
+                {% if collection.DOI %}
+                <div class="lead"><a href="{{ collection.url }}">Link to the paper</a></div>
+                {% endif %}
+                {% if collection.full_dataset_url %}
+                <div class="lead">Full dataset available at:<a href="{{ collection.full_dataset_url }}">
+                {{ collection.full_dataset_url }}</a>
+                </div>
+                {% endif %}
+            </div>
+            <div class="col-md-9">
+        <div class="management-options float-right-wrapper">
              <form action="upload_folder" enctype="multipart/form-data" method= "POST" name="upload_folder_form">
 
             {% if collection.image_set.all %}
@@ -202,9 +202,7 @@
                 {% endif %}<!-- close if images -->
 
                 {% if delete_permission %}
-                <div class="float-right-wrapper">
-                    <a class="btn btn-danger" href="{% url 'delete_collection' cid %}" id="delete_collection"> Delete collection</a>
-                </div>
+                <a class="btn btn-danger" href="{% url 'delete_collection' cid %}" id="delete_collection"> Delete collection</a>
                 {% endif %}<!--close delete permission-->
 
                 <!-- Hidden file upload fields -->
@@ -226,7 +224,12 @@
                 {% endif %}<!-- close edit permissions-->
         </div><!-- close management options-->
 
+            </div>
+        </div>
+</div>
 
+<!-- Content-->
+<div class="row">
         {% if messages %}
         <ul class="messages">
             {% for message in messages %}
