@@ -12,11 +12,13 @@ def populate_cogatlas(apps, schema_editor):
     json_content = json_content.decode("utf-8").replace('\t', '')
     data = json.loads(json_content)
     for item in data:
-        task = CognitiveAtlasTask(name=item["name"], cog_atlas_id=item["id"])
+        task = CognitiveAtlasTask.update_or_create(cog_atlas_id=item["id"],defaults={"name":item["name"]})
         task.save()
         for contrast in item["contrasts"]:
-            contrast = CognitiveAtlasContrast(name=contrast["conname"], cog_atlas_id=contrast["conid"], task=task)
-            contrast.save()
+            conobj = CognitiveAtlasContrast.objects.update_or_create(cog_atlas_id=contrast["conid"], 
+                                                                     defaults={"name":contrast["conname"],
+                                                                               "task":task})
+            conobj.save()
 
 class Migration(migrations.Migration):
 
