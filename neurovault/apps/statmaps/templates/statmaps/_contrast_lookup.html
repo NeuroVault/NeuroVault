@@ -4,7 +4,64 @@ var contrast_lookup = {{ contrasts | safe }};
 
 $(document).ready(function() {
 
-    // Reveal custom write in box on button push
+   // Function to filter contrasts to selected task
+   filter_contrasts = function() {
+
+      var termid = $("#id_cognitive_paradigm_cogatlas").val();
+
+      // If there is a task specified:  
+      if (termid) {
+      
+        var contrasts = contrast_lookup[termid];
+
+        // If there is a current selection, remember it
+        var current_selection = $("#id_cognitive_contrast_cogatlas").val()
+
+        // If we have contrasts, hide the text fill in and show contrast options
+        if (contrasts.length) {
+
+            // Remove all old options
+            $("#id_cognitive_contrast_cogatlas").find('option').remove().end();
+
+           // If we have a selection, it must be first in list
+           if (current_selection){
+               var found_contrast = false;
+               for(var key in contrasts) {
+                   if (contrasts[key].value == current_selection) {
+                       selected_contrast = contrasts.splice(key, 1);
+                       found_contrast = true;
+                   }
+                }
+                if (found_contrast) {
+                    contrasts.unshift(selected_contrast[0]);
+                }
+            };
+
+            // Build new select options with contrasts of interest
+            for(var key in contrasts) {
+                var option = $("<option>");
+                option.attr({ 'value': contrasts[key].value }).text(contrasts[key].name);
+                $('#id_cognitive_contrast_cogatlas').append(option);
+            }
+
+            // Add an "other" option to reveal write in
+            var option = $("<option>");
+            option.attr({ 'value': "Other" }).text("Other");
+            $('#id_cognitive_contrast_cogatlas').append(option);
+            $("#div_id_contrast_definition").hide();
+            $("#div_id_cognitive_contrast_cogatlas").show();
+
+        } else {
+            $("#div_id_contrast_definition").show();
+            $("#div_id_cognitive_contrast_cogatlas").hide();
+        }
+      } else {
+         $("#div_id_cognitive_contrast_cogatlas").hide();
+     }
+
+   };
+
+    // Reveal custom write in box
     reveal_custom = function() {
         var contrast_div = $("#div_id_contrast_definition")
         $(contrast_div).detach()
@@ -15,9 +72,9 @@ $(document).ready(function() {
     $('#id_cognitive_paradigm_cogatlas').css("width", "600px");
     $('#id_cognitive_paradigm_cogatlas').select2();
   
-    // Hide the contrast field on page load
-    $("#div_id_cognitive_contrast_cogatlas").hide();
-
+    // Filter the contrasts to the selected task
+    filter_contrasts();
+    
     // When contrast changes, check if user has selected "other"
     $("#id_cognitive_contrast_cogatlas").change(function(e) {
         var selection = $("#id_cognitive_contrast_cogatlas").val()    
@@ -31,34 +88,8 @@ $(document).ready(function() {
     // When task is changed, update field for contrasts
     $("#id_cognitive_paradigm_cogatlas").change(function(e) {
 
-    var termid = $("#id_cognitive_paradigm_cogatlas").val();
-    var contrasts = contrast_lookup[termid];
+        filter_contrasts();
 
-    // If we have contrasts, hide the text fill in and show contrast options
-    if (contrasts.length) {
-
-        // Remove all old options
-        $("#id_cognitive_contrast_cogatlas").find('option').remove().end();
-  
-        // Build new select options with contrasts of interest
-        for(var key in contrasts) {
-            var option = $("<option>");
-            option.attr({ 'value': contrasts[key].value }).text(contrasts[key].name);
-            $('#id_cognitive_contrast_cogatlas').append(option);
-        }
-
-        // Add an "other" option to reveal write in
-        var option = $("<option>");
-        option.attr({ 'value': "Other" }).text("Other");
-        $('#id_cognitive_contrast_cogatlas').append(option);
-
-        $("#div_id_contrast_definition").hide();
-        $("#div_id_cognitive_contrast_cogatlas").show();
-
-    } else {
-        $("#div_id_contrast_definition").show();
-        $("#div_id_cognitive_contrast_cogatlas").hide();
-    }
   });
 
 } );
