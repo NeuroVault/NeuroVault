@@ -1,5 +1,5 @@
 from neurovault.apps.statmaps.models import Collection, Image, Atlas, Comparison, StatisticMap, NIDMResults, NIDMResultStatisticMap,\
-    BaseStatisticMap, CognitiveAtlasTask
+    BaseStatisticMap, CognitiveAtlasTask, CognitiveAtlasContrast
 from neurovault.apps.statmaps.forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
@@ -181,16 +181,11 @@ def edit_collection(request, cid=None):
 
 
 def choice_datasources(model):
-    statmap_field_obj = functools.partial(image_metadata.get_field_by_name,
-                                          model)
+    statmap_field_obj = functools.partial(image_metadata.get_field_by_name,model)
     pick_second_item = functools.partial(map, lambda x: x[1])
-
     fixed_fields = list(model.get_fixed_fields())
-
     field_choices = ((f, statmap_field_obj(f).choices) for f in fixed_fields)
-
     fields_with_choices = (t for t in field_choices if t[1])
-
     return dict((field_name, pick_second_item(choices))
                 for field_name, choices in fields_with_choices)
 
@@ -202,6 +197,12 @@ def get_field_datasources():
                                                           .all())]
     return ds
 
+def get_contrast_lookup():
+    contrasts = dict()
+    for task in CognitiveAtlasTask.objects.all():
+        task_contrasts = CognitiveAtlasContrast.objects.filter(task=task)
+        contrasts[task.pk] = [{"name":contrast.name,"value":contrast.pk} for contrast in task_contrasts]
+    return contrasts
 
 @csrf_exempt
 @login_required
@@ -330,7 +331,7 @@ def edit_image(request, pk):
     elif isinstance(image, NIDMResultStatisticMap):
         form = EditNIDMResultStatisticMapForm
     else:
-        raise Exception("unsuported image type")
+        raise Exception("unsupported image type")
     if not owner_or_contrib(request,image.collection):
         return HttpResponseForbidden()
     if request.method == "POST":
@@ -341,8 +342,9 @@ def edit_image(request, pk):
     else:
         form = form(instance=image, user=request.user)
 
-    context = {"form": form}
-    return render(request, "statmaps/edit_image.html.haml", context)
+    contrasts = get_contrast_lookup()
+    context = {"form": form, "contrasts": json.dumps(contrasts)}
+    return render(request, "statmaps/edit_image.html", context)
 
 
 def view_nidm_results(request, collection_cid, nidm_name):
@@ -408,8 +410,9 @@ def add_image_for_neurosynth(request):
     else:
         form = SimplifiedStatisticMapForm(user=request.user, instance=image)
 
-    context = {"form": form}
-    return render(request, "statmaps/add_image_for_neurosynth.html.haml", context)
+    contrasts = get_contrast_lookup()
+    context = {"form": form,"contrasts":json.dumps(contrasts)}
+    return render(request, "statmaps/add_image_for_neurosynth.html", context)
 
 
 @login_required
@@ -424,8 +427,9 @@ def add_image(request, collection_cid):
     else:
         form = AddStatisticMapForm(instance=image)
 
-    context = {"form": form}
-    return render(request, "statmaps/add_image.html.haml", context)
+    contrasts = get_contrast_lookup()
+    context = {"form": form,"contrasts": json.dumps(contrasts)}
+    return render(request, "statmaps/add_image.html", context)
 
 
 @login_required

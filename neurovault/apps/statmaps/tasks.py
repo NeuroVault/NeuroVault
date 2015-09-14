@@ -218,8 +218,12 @@ def repopulate_cognitive_atlas(CognitiveAtlasTask=None,CognitiveAtlasContrast=No
                                                                                       "task":task})
                         contrast.save() 
 
-
-
+    # Add an "Other" contrast
+    task = CognitiveAtlasTask.objects.filter(name="None / Other")[0]
+    contrast, _ = CognitiveAtlasContrast.objects.update_or_create(cog_atlas_id="Other", 
+                                                                  defaults={"name":"Other",
+                                                                  "task":task})
+                       
 # HELPER FUNCTIONS ####################################################################################
 
 '''Return list of Images sorted by the primary key'''
