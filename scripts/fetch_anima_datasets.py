@@ -46,7 +46,7 @@ for url in datasets:
     post_dict = {
         'name': study_name,
         'description': study_description,
-        'full_dataset_url': "http://anima.modelgui.org/studies/" + os.path.split(url)[1].replace(".tar.gz", "")
+        'full_dataset_url': "http://anima.modelgui.org/studies/" + os.path.split(url)[1].replace(".study", "")
     }
     if doi != None:
         post_dict['DOI'] = doi.text.strip()
