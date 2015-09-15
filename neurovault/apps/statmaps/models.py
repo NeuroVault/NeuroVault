@@ -44,6 +44,7 @@ class Collection(models.Model):
     private_token = models.CharField(max_length=8,blank=True,null=True,unique=True,db_index=True, default=None)
     add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
+    doi_add_date = models.DateTimeField('date the DOI was added', auto_now=True, editable=False, blank=True, null=True, db_index=True)
     type_of_design = models.CharField(choices=[('blocked', 'blocked'), ('eventrelated', 'event_related'), ('hybridblockevent', 'hybrid block/event'), ('other', 'other')], max_length=200, blank=True, help_text="Blocked, event-related, hybrid, or other", null=True, verbose_name="Type of design")
     number_of_imaging_runs = models.IntegerField(help_text="Number of imaging runs acquired", null=True, verbose_name="No. of imaging runs", blank=True)
     number_of_experimental_units = models.IntegerField(help_text="Number of blocks, trials or experimental units per imaging run", null=True, verbose_name="No. of experimental units", blank=True)
@@ -145,6 +146,9 @@ class Collection(models.Model):
             self.DOI = None
         if self.private_token is not None and self.private_token.strip() == "":
             self.private_token = None
+            
+        if self.DOI and not self.private and not self.doi_add_date:
+            self.doi_add_date = datetime.now()
 
         # run calculations when collection turns public
         privacy_changed = False
