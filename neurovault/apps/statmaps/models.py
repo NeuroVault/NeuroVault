@@ -44,6 +44,7 @@ class Collection(models.Model):
     private_token = models.CharField(max_length=8,blank=True,null=True,unique=True,db_index=True, default=None)
     add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
+    doi_add_date = models.DateTimeField('date the DOI was added', editable=False, blank=True, null=True, db_index=True)
     type_of_design = models.CharField(choices=[('blocked', 'blocked'), ('eventrelated', 'event_related'), ('hybridblockevent', 'hybrid block/event'), ('other', 'other')], max_length=200, blank=True, help_text="Blocked, event-related, hybrid, or other", null=True, verbose_name="Type of design")
     number_of_imaging_runs = models.IntegerField(help_text="Number of imaging runs acquired", null=True, verbose_name="No. of imaging runs", blank=True)
     number_of_experimental_units = models.IntegerField(help_text="Number of blocks, trials or experimental units per imaging run", null=True, verbose_name="No. of experimental units", blank=True)
@@ -145,6 +146,9 @@ class Collection(models.Model):
             self.DOI = None
         if self.private_token is not None and self.private_token.strip() == "":
             self.private_token = None
+            
+        if self.DOI and not self.private and not self.doi_add_date:
+            self.doi_add_date = datetime.now()
 
         # run calculations when collection turns public
         privacy_changed = False
@@ -512,6 +516,7 @@ class StatisticMap(BaseStatisticMap):
     contrast_definition = models.CharField(help_text="Exactly what terms are subtracted from what? Define these in terms of task or stimulus conditions (e.g., 'one-back task with objects versus zero-back task with objects') instead of underlying psychological concepts (e.g., 'working memory').", verbose_name="Contrast definition", max_length=200, null=True, blank=True)
     contrast_definition_cogatlas = models.CharField(help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast", verbose_name="Cognitive Atlas definition", max_length=200, null=True, blank=True)
     cognitive_paradigm_cogatlas = models.ForeignKey(CognitiveAtlasTask, help_text="Task (or lack of it) performed by the subjects in the scanner described using <a href='http://www.cognitiveatlas.org/' target='_blank'>Cognitive Atlas</a> terms", verbose_name="Cognitive Paradigm", null=True, blank=False)
+    cognitive_contrast_cogatlas = models.ForeignKey(CognitiveAtlasContrast, help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast", verbose_name="Cognitive Atlas Contrast", null=True, blank=True)
 
     @classmethod
     def get_fixed_fields(cls):
