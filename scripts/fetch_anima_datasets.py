@@ -82,9 +82,9 @@ for url in datasets:
             image_name = study_element.attrib['name'].strip()
             image_filename = study_element.attrib['file']
             image_fileobject = arch_results.extractfile(xml_obj.find(".").attrib['directory'] + "/" + image_filename)
-            image_description = study_element.find("./Metadata/Element[@name='Caption']").text.strip()
+            
     
-            print image_name, image_filename, image_description, image_fileobject.size, "\n"
+            print image_name, image_filename, image_fileobject.size, "\n"
     
             map_type = BaseStatisticMap.OTHER
     
@@ -103,7 +103,6 @@ for url in datasets:
     
             post_dict = {
                 'name': image_name,
-                'description': image_description,
                 'modality': StatisticMap.fMRI_BOLD,
                 'map_type': map_type,
                 'analysis_level': BaseStatisticMap.M,
@@ -112,6 +111,11 @@ for url in datasets:
                 'cognitive_paradigm_cogatlas': 'None',
                 'tags': ", ".join(tags)
             }
+            
+            image_description = study_element.find("./Metadata/Element[@name='Caption']").text
+            if image_description:
+                post_dict["description"] = image_description.strip()
+            
             file_dict = {'file': SimpleUploadedFile(image_filename, image_fileobject.read())}
             form = StatisticMapForm(post_dict, file_dict)
             form.is_valid()
