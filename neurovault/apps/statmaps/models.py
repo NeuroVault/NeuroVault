@@ -141,7 +141,7 @@ class Collection(models.Model):
     def __unicode__(self):
         return self.name
 
-    def save(self):
+    def save(self, *args, **kwargs):
         if self.DOI is not None and self.DOI.strip() == "":
             self.DOI = None
         if self.private_token is not None and self.private_token.strip() == "":
@@ -157,7 +157,7 @@ class Collection(models.Model):
             old_is_private = old_object.private
             privacy_changed = old_is_private != self.private
 
-        super(Collection, self).save()
+        super(Collection, self).save(*args, **kwargs)
 
         if privacy_changed and self.private == False:
             for image in self.image_set.all():
@@ -298,8 +298,8 @@ class Image(PolymorphicModel, BaseCollectionItem):
                                               null=True, blank=True, upload_to=upload_img_to,
                                               storage=OverwriteStorage())
     data = hstore.DictionaryField(blank=True, null=True)
-
     hstore_objects = hstore.HStoreManager()
+
 
     def get_absolute_url(self):
         return_args = [str(self.id)]
@@ -590,7 +590,7 @@ class Similarity(models.Model):
         unique_together = ("similarity_metric","transformation")
 
     def __unicode__(self):
-      return "<metric:%s><transformation:%s>" %(self.similarity_metric,self.transformation)
+        return "<metric:%s><transformation:%s>" %(self.similarity_metric,self.transformation)
 
 
 class Comparison(models.Model):
@@ -610,4 +610,3 @@ class Comparison(models.Model):
 
         verbose_name = "pairwise image comparison"
         verbose_name_plural = "pairwise image comparisons"
-
