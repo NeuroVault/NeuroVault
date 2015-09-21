@@ -356,13 +356,15 @@ $(document).ready(function() {
       responsive: true
     });
     $('#collection-images-datatable').dataTable({
-      responsive: true
+      responsive: true,
+      order: [[ 1, "asc" ]]
     });
     {% if collection.image_set.all %}
         var collection_images = $(".viewimage")
         $(collection_images[0]).addClass("active")
     {% endif %}
 } );
+
 
 </script>
 {% comment %}
