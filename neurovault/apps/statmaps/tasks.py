@@ -5,6 +5,7 @@ from pybraincompare.mr.transformation import make_resampled_transformation_vecto
 from pybraincompare.mr.datasets import get_data_directory
 from neurovault.celery import nvcelery as celery_app
 from django.shortcuts import get_object_or_404
+from django.http import Http404
 from django.core.files.base import ContentFile
 from nilearn.plotting import plot_glass_brain
 from nilearn.image import resample_img
@@ -105,7 +106,11 @@ def save_voxelwise_pearson_similarity_reduced_representation(pk1, pk2):
 
     # We will always calculate Comparison 1 vs 2, never 2 vs 1
     if pk1 != pk2:
-        sorted_images = get_images_by_ordered_id(pk1, pk2)
+        try:
+            sorted_images = get_images_by_ordered_id(pk1, pk2)
+        except Http404:
+            # files have been deleted in the meantime
+            return
         image1 = sorted_images[0]
         image2 = sorted_images[1]
         pearson_metric = Similarity.objects.get(similarity_metric="pearson product-moment correlation coefficient",
@@ -147,7 +152,11 @@ def save_voxelwise_pearson_similarity_resample(pk1, pk2,resample_dim=[4,4,4]):
 
     # We will always calculate Comparison 1 vs 2, never 2 vs 1
     if pk1 != pk2:
-        sorted_images = get_images_by_ordered_id(pk1, pk2)
+        try:
+            sorted_images = get_images_by_ordered_id(pk1, pk2)
+        except Http404:
+            # files have been deleted in the meantime
+            return
         image1 = sorted_images[0]
         image2 = sorted_images[1]
         pearson_metric = Similarity.objects.get(
