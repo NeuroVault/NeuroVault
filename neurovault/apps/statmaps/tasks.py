@@ -78,7 +78,7 @@ def run_voxelwise_pearson_similarity(pk1):
     
     image = Image.objects.get(pk=pk1)
     #added for improved performance
-    if not image.reduced_representation:
+    if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
         image = save_resampled_transformation_single(pk1)
 
     # Calculate comparisons for other images, and generate reduced_representation if needed
@@ -112,10 +112,10 @@ def save_voxelwise_pearson_similarity_reduced_representation(pk1, pk2):
                                                 transformation="voxelwise")
     
         # Make sure we have a transforms for pks in question
-        if not image1.reduced_representation:
+        if not image1.reduced_representation or not os.path.exists(image1.reduced_representation.path):
             image1 = save_resampled_transformation_single(pk1) # cannot run this async
 
-        if not image2.reduced_representation:
+        if not image2.reduced_representation or not os.path.exists(image1.reduced_representation.path):
             image2 = save_resampled_transformation_single(pk2) # cannot run this async
 
         # Load image pickles
