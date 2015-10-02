@@ -85,6 +85,8 @@ def run_voxelwise_pearson_similarity(pk1):
     # Calculate comparisons for other images, and generate reduced_representation if needed
     imgs = Image.objects.filter(collection__private=False).exclude(pk=pk1)
     comp_qs = imgs.exclude(polymorphic_ctype__model__in=['image','atlas']).order_by('id')
+    #exclude single subject maps from analysis
+    comp_qs = comp_qs.exclude(analysis_level='S')
     for comp_img in comp_qs:
         iargs = sorted([comp_img.pk,pk1]) 
         if comp_img.is_thresholded == False:

@@ -469,7 +469,7 @@ class BaseStatisticMap(Image):
 
         # Calculate comparisons if private collection, update or save, not thresholded
         if (do_update or new_image) and self.collection and self.collection.private == False:
-            if self.is_thresholded == False:
+            if self.is_thresholded == False and self.analysis_level != 'S':
                 # Default resample_dim is 4mm
                 run_voxelwise_pearson_similarity.apply_async([self.pk])
 
