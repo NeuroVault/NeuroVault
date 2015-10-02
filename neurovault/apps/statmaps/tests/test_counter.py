@@ -86,6 +86,13 @@ class Test_Counter(TestCase):
         # We should have 2 images total, so 1 comparison
         total_comparisons = count_existing_comparisons()
         self.assertEqual(total_comparisons,1)
+        
+        #Let's add a single subject map - this should not trigger a comparison
+        Image2ss = StatisticMap(name='Image2 - single subject', collection=self.Collection1, file='beta_0001.nii.gz', map_type="Other", analysis_level='S')
+        Image2ss.file = SimpleUploadedFile('beta_0001.nii.gz', file(os.path.join(self.test_path,'test_data/statmaps/beta_0001.nii.gz')).read())
+        Image2ss.save()
+        total_comparisons = count_existing_comparisons()
+        self.assertEqual(total_comparisons,1)
 
         # Make sure comparisons were calculated
         number_comparisons = len(Comparison.objects.all())
