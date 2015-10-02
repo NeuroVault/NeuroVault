@@ -476,14 +476,14 @@ def count_existing_comparisons(pk1=None):
 def count_possible_comparisons(pk1=None):
     if pk1!=None:
         # Comparisons possible for one pk is the number of other pks
-        count_statistic_maps = StatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(pk=pk1).count()
-        count_nidm_maps = NIDMResultStatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(pk=pk1).count()
+        count_statistic_maps = StatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(pk=pk1).exclude(analysis_level='S').count()
+        count_nidm_maps = NIDMResultStatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(pk=pk1).exclude(analysis_level='S').count()
         return count_statistic_maps + count_nidm_maps
 
     else:
         # Comparisons possible across entire database is N combinations of k=2 things
-        Nstat = StatisticMap.objects.filter(is_thresholded=False,collection__private=False).count()
-        Nnidm = NIDMResultStatisticMap.objects.filter(is_thresholded=False,collection__private=False).count()
+        Nstat = StatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(analysis_level='S').count()
+        Nnidm = NIDMResultStatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(analysis_level='S').count()
         N = Nstat+Nnidm
         k = 2
         return int(comb(N, k))
