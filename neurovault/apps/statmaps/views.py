@@ -7,7 +7,7 @@ from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
-    get_file_ctime, detect_afni4D, split_afni4D_to_3D, splitext_nii_gz, mkdir_p, \
+    get_file_ctime, detect_4D, split_4D_to_3D, splitext_nii_gz, mkdir_p, \
     send_email_notification, populate_nidm_results, get_server_url, populate_feat_directory, \
     detect_feat_directory, format_image_collection_names, count_existing_comparisons, \
     count_processing_comparisons, get_existing_comparisons
@@ -511,8 +511,8 @@ def upload_folder(request, collection_cid):
                                             nifti_name[1:]))] = os.path.join(root, fname)
                         if ext in allowed_extensions:
                             nii = nib.load(nii_path)
-                            if detect_afni4D(nii):
-                                niftiFiles.extend(split_afni4D_to_3D(nii))
+                            if detect_4D(nii):
+                                niftiFiles.extend(split_4D_to_3D(nii))
                             else:
                                 niftiFiles.append((fname,nii_path))
 

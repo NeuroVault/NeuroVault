@@ -2,7 +2,7 @@ from neurovault.apps.statmaps.tasks import save_voxelwise_pearson_similarity, ge
 from neurovault.apps.statmaps.tests.utils import clearDB, save_statmap_form
 from neurovault.apps.statmaps.models import Comparison, Similarity, User, Collection
 from numpy.testing import assert_almost_equal, assert_equal
-from neurovault.apps.statmaps.utils import split_afni4D_to_3D
+from neurovault.apps.statmaps.utils import split_4D_to_3D
 from django.test import TestCase
 import tempfile
 import nibabel
@@ -40,7 +40,7 @@ class ComparisonTestCase(TestCase):
         self.pk1_copy = image2.id
         
         # "Bricks" images
-        bricks = split_afni4D_to_3D(nibabel.load(os.path.join(app_path,'test_data/TTatlas.nii.gz')),tmp_dir=self.tmpdir)
+        bricks = split_4D_to_3D(nibabel.load(os.path.join(app_path,'test_data/TTatlas.nii.gz')),tmp_dir=self.tmpdir)
         image3 = save_statmap_form(image_path=bricks[0][1],collection=self.comparisonCollection,image_name="image2",ignore_file_warning=True)
         self.pk2 = image3.id     
         image4 = save_statmap_form(image_path=bricks[1][1],collection=self.comparisonCollection,image_name="image3",ignore_file_warning=True)

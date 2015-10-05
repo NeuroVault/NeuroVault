@@ -7,14 +7,14 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.settings")
 django.setup()
 
 from neurovault.apps.statmaps.models import Image,ValueTaggedItem
-from neurovault.apps.statmaps.utils import detect_afni4D, split_afni4D_to_3D,memory_uploadfile
+from neurovault.apps.statmaps.utils import detect_4D, split_4D_to_3D,memory_uploadfile
 
 
 def populate_afni(image):
     try:
         orig_name = image.name
         tmpdir = tempfile.mkdtemp()
-        bricks = split_afni4D_to_3D(image.file.path,tmp_dir=tmpdir)
+        bricks = split_4D_to_3D(image.file.path,tmp_dir=tmpdir)
 
         for label,brick in bricks:
             brick_fname = os.path.split(brick)[-1]
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     for n,image in enumerate(Image.objects.all()):
         if os.path.exists(image.file.path):
             try:
-                if detect_afni4D(image.file.path):
+                if detect_4D(image.file.path):
                     print 'found afni4d: %s' % image.file.path
                     populate_afni(image)
             except:
