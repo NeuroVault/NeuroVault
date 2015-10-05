@@ -222,7 +222,7 @@ def edit_metadata(request, collection_cid):
             **image_metadata.handle_post_metadata(
                 request, collection, 'Images metadata have been saved.'))
 
-    collection_images = collection.image_set.all()
+    collection_images = collection.image_set.all().order_by('pk')
     data_headers = image_metadata.get_data_headers(collection_images)
     metadata = image_metadata.get_images_metadata(collection_images)
     datasources = get_field_datasources()
