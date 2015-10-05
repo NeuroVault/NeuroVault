@@ -22,7 +22,7 @@ from django.forms.forms import Form
 from django.forms.fields import FileField
 import tempfile
 from neurovault.apps.statmaps.utils import split_filename, get_paper_properties, \
-                                        detect_afni4D, split_afni4D_to_3D, memory_uploadfile,\
+                                        detect_4D, split_4D_to_3D, memory_uploadfile,\
     is_thresholded, not_in_mni
 from neurovault.apps.statmaps.nidm_results import NIDMUpload
 from django import forms
@@ -406,8 +406,8 @@ class ImageForm(ModelForm):
                     return cleaned_data
 
                 # detect AFNI 4D files and prepare 3D slices
-                if nii is not None and detect_afni4D(nii):
-                    self.afni_subbricks = split_afni4D_to_3D(nii)
+                if nii is not None and detect_4D(nii):
+                    self.afni_subbricks = split_4D_to_3D(nii)
                 else:
                     squeezable_dimensions = len(filter(lambda a: a not in [0,1], nii.shape))
 

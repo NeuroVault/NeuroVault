@@ -6,7 +6,7 @@ from uuid import uuid4
 import tempfile
 import os
 import shutil
-from neurovault.apps.statmaps.utils import detect_afni4D, split_afni4D_to_3D
+from neurovault.apps.statmaps.utils import detect_4D, split_4D_to_3D
 import nibabel
 from .utils import clearDB
 from neurovault.settings import PRIVATE_MEDIA_ROOT

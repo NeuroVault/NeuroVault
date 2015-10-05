@@ -10,7 +10,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.settings")
 django.setup()
 
 from neurovault.apps.statmaps.models import Image,ValueTaggedItem
-from neurovault.apps.statmaps.utils import detect_afni4D, split_afni4D_to_3D,memory_uploadfile
+from neurovault.apps.statmaps.utils import detect_4D, split_4D_to_3D,memory_uploadfile
 
 
 from neurovault.apps.statmaps.models import Image

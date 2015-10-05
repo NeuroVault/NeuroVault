@@ -220,12 +220,9 @@ def send_email_notification(notif_type, subject, users, tpl_context=None):
         msg.send()
 
 
-def detect_afni4D(nii):
+def detect_4D(nii):
     shape = nii.shape
-    if not (len(shape) == 5 and shape[3] == 1):
-        return False 
-    # don't split afni files with no subbricks
-    return bool(len(get_afni_subbrick_labels(nii)) > 1)
+    return (len(shape) == 4 and shape[3] > 1 and shape[3] < 20) or (len(shape) == 5 and shape[3] == 1)
 
 
 def get_afni_subbrick_labels(nii):
@@ -255,7 +252,7 @@ def get_afni_subbrick_labels(nii):
     return retval
 
 
-def split_afni4D_to_3D(nii,with_labels=True,tmp_dir=None):
+def split_4D_to_3D(nii,with_labels=True,tmp_dir=None):
     outpaths = []
     ext = ".nii.gz"
     base_dir, name = os.path.split(nii.get_filename())
@@ -264,9 +261,9 @@ def split_afni4D_to_3D(nii,with_labels=True,tmp_dir=None):
 
     slices = np.split(nii.get_data(), nii.get_shape()[-1], len(nii.get_shape())-1)
     labels = get_afni_subbrick_labels(nii)
-    for n,slice in enumerate(slices):
+    for n, slice in enumerate(slices):
         nifti = nib.Nifti1Image(np.squeeze(slice),nii.get_header().get_best_affine())
-        layer_nm = labels[n] if n < len(labels) else 'slice_%s' % n
+        layer_nm = labels[n] if n < len(labels) else 'volume_%s' % n
         outpath = os.path.join(out_dir,'%s__%s%s' % (fname,layer_nm,ext))
         nib.save(nifti,outpath)
         if with_labels:

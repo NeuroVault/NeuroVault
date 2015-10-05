@@ -3,7 +3,7 @@ from neurovault.apps.statmaps.models import Image, Comparison, Similarity, User,
 from neurovault.apps.statmaps.tests.utils import save_statmap_form, save_atlas_form
 from numpy.testing import assert_array_equal, assert_almost_equal, assert_equal
 from django.core.files.uploadedfile import SimpleUploadedFile
-from neurovault.apps.statmaps.utils import split_afni4D_to_3D
+from neurovault.apps.statmaps.utils import split_4D_to_3D
 from neurovault.apps.statmaps.tests.utils import clearDB
 from django.shortcuts import get_object_or_404
 from django.db import IntegrityError
