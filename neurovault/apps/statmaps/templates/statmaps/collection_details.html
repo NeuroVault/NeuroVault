@@ -332,7 +332,14 @@ $(document).ready(function() {
     $('#collection-images-datatable').dataTable({
         "processing": true,
         "serverSide": true,
-        "ajax": "{% url 'collection_images_json' collection.id %}"{% if not is_empty %},
+        "columnDefs": [
+    		{ "orderable": false, "targets": 0 }
+  		],
+        "order": [[ 1, "asc" ]],
+        {% if collection.private %}
+        "ajax": "{% url 'collection_images_json' collection.private_token %}"
+        {% else %}
+        "ajax": "{% url 'collection_images_json' collection.id %}"{% endif %}{% if not is_empty %},
         "initComplete": function(settings, json) {
     		var collection_images = $(".viewimage")
         	$(collection_images[0]).addClass("active")

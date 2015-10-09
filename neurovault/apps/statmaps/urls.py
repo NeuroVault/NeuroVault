@@ -1,6 +1,6 @@
 from rest_framework.pagination import LimitOffsetPagination
 from django.conf.urls import patterns, url
-from django.views.generic import ListView
+from django.views.generic import ListView, TemplateView
 from .models import Collection
 from .views import edit_collection, edit_images, view_image, delete_image, edit_image, \
                 view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
@@ -15,7 +15,8 @@ from django.contrib.auth.decorators import login_required
 from neurovault import settings
 from django.views.generic.base import RedirectView
 from django.db.models import Q
-from neurovault.apps.statmaps.views import ImagesInCollectionJson
+from neurovault.apps.statmaps.views import ImagesInCollectionJson,\
+    PublicCollectionsJson
 
 
 class MyCollectionsListView(ListView):
@@ -31,11 +32,11 @@ urlpatterns = patterns('',
         login_required(MyCollectionsListView.as_view()),
         name='my_collections'),
     url(r'^collections/$',
-        ListView.as_view(
-            queryset=Collection.objects.filter(~Q(name__contains = "temporary collection"), private=False).annotate(n_images=Count('image')),
-            context_object_name='collections',
-            template_name='statmaps/collections_index.html.haml'),
+        TemplateView.as_view(template_name='statmaps/collections_index.html.haml'),
         name='collections_list'),
+    url(r'^collections/json$',
+        PublicCollectionsJson.as_view(),
+        name='collections_list_json'),
     url(r'^collections/stats$',
         stats_view,
         name='collections_stats'),

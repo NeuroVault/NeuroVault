@@ -302,7 +302,7 @@ def view_collection(request, cid):
             'cid':cid}
     
     if not is_empty:
-        context["first_image"] = collection.image_set.all()[0]
+        context["first_image"] = collection.image_set.all().order_by("pk")[0]
 
     if owner_or_contrib(request,collection):
         form = UploadFileForm()
@@ -949,7 +949,7 @@ class JSONResponse(HttpResponse):
     
 class ImagesInCollectionJson(BaseDatatableView):
     columns = ['file.url', 'pk', 'name', 'polymorphic_ctype.name', 'description']
-    order_columns = ['pk', 'name', 'description']
+    order_columns = ['','pk', 'name', 'polymorphic_ctype.name','description']
 
     def get_initial_queryset(self):
         # return queryset used as base for futher sorting/filtering
@@ -975,4 +975,32 @@ class ImagesInCollectionJson(BaseDatatableView):
             qs = qs.filter(Q(name__contains=search)| Q(description__contains=search))
         return qs
     
-    #<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="{{ image.file.url }}"><i class="fa fa-lg fa-eye"></i></a>
+class PublicCollectionsJson(BaseDatatableView):
+    columns = ['name', 'n_images', 'description', 'has_doi']
+    order_columns = ['name', 'n_images', 'description', 'has_doi']
+
+    def get_initial_queryset(self):
+        # return queryset used as base for futher sorting/filtering
+        # these are simply objects displayed in datatable
+        # You should not filter data returned here by any filter values entered by user. This is because
+        # we need some base queryset to count total number of records.
+        return Collection.objects.filter(~Q(name__contains = "temporary collection"), private=False).annotate(n_images=Count('image'))
+    
+    def render_column(self, row, column):
+        # We want to render user as a custom column
+        if column == 'has_doi':
+            if row.DOI:
+                return "Yes"
+            else:
+                return ""
+        else:
+            return super(PublicCollectionsJson, self).render_column(row, column)
+    
+    def filter_queryset(self, qs):
+        # use parameters passed in GET request to filter queryset
+
+        # simple example:
+        search = self.request.GET.get(u'search[value]', None)
+        if search:
+            qs = qs.filter(Q(name__contains=search)| Q(description__contains=search))
+        return qs
