@@ -984,7 +984,7 @@ class PublicCollectionsJson(BaseDatatableView):
         # these are simply objects displayed in datatable
         # You should not filter data returned here by any filter values entered by user. This is because
         # we need some base queryset to count total number of records.
-        return Collection.objects.filter(~Q(name__contains = "temporary collection"), private=False).annotate(n_images=Count('image'))
+        return Collection.objects.filter(~Q(name__endswith = "temporary collection"), private=False)
     
     def render_column(self, row, column):
         # We want to render user as a custom column
@@ -993,6 +993,8 @@ class PublicCollectionsJson(BaseDatatableView):
                 return "Yes"
             else:
                 return ""
+        elif column == 'n_images':
+            return row.image_set.count()
         else:
             return super(PublicCollectionsJson, self).render_column(row, column)
     
@@ -1011,4 +1013,4 @@ class MyCollectionsJson(PublicCollectionsJson):
     
     def get_initial_queryset(self):
         return Collection.objects.filter(Q(contributors=self.request.user)
-                            | Q(owner=self.request.user)).annotate(n_images=Count('image'))
+                            | Q(owner=self.request.user))
