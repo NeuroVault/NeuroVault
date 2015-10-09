@@ -59,7 +59,7 @@ var params = [];
      // Reset viewer and load new images
      $(".viewimage").removeClass("active")
 
-     {% if collection.image_set.all %}
+     {% if first_image %}
        var tmpname = $(mrimage).attr("filename").replace(/^.*[\\\/]/, '')
        params["images"] = ["{% static "images/MNI152.nii.gz"%}",$(mrimage).attr("filename")];
        params[tmpname] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
@@ -177,13 +177,13 @@ var params = [];
         <div class="management-options float-right-wrapper">
              <form action="upload_folder" enctype="multipart/form-data" method= "POST" name="upload_folder_form">
 
-            {% if collection.image_set.all %}
+            {% if not is_empty %}
             <a class="btn btn-primary" href="pycortex">3D View</a>
             {% endif %}
 
             {% if edit_permission %}
 
-                {% if collection.image_set.all %}
+                {% if not is_empty %}
                 <a class="btn btn-primary" href="{% url 'add_image' cid %}">Add image</a>
 
                 <div class="btn-group">
@@ -251,7 +251,7 @@ var params = [];
     <div class="papaya" data-params="params" style="width:560px; float:left"></div>
 </div>
 <div class="col-md-6">
-        {% if collection.image_set.all %}
+        {% if not is_empty %}
         <!-- COLLECTION TABS -->
         <ul id='collection-tabs' class='nav nav-tabs'>
               <li><a data-toggle='tab' href='#images'>Images</a></li>
@@ -286,12 +286,12 @@ var params = [];
                     <li class="list-group-item"><a  id="upload_folder" href="#">Upload a folder with images</a></li>
                     <!-- <![endif]-->
                     </div>
-              {% endif %} <!-- close if collection.image_set.all -->
+              {% endif %} <!-- close if not empty -->
               </form>
 
               </div><!-- Close images tab-->  
               
-              {% if collection.image_set.all %}
+              {% if not is_empty %}
               <div id="details" class="tab-pane">
                   <table id="collection-details-datatable" class="table table-condensed table-striped table-hover">
                   <thead>
