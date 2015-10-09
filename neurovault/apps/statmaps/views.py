@@ -48,6 +48,7 @@ import re
 import os
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
 from django.views.decorators.cache import never_cache
+from django_datatables_view.base_datatable_view import BaseDatatableView
 import json
 import functools
 from . import image_metadata
@@ -292,16 +293,16 @@ def view_collection(request, cid):
     collection = get_collection(cid,request)
     edit_permission = True if owner_or_contrib(request,collection) else False
     delete_permission = True if collection.owner == request.user else False
-    images = collection.image_set.all()
-    for image in images:
-        if hasattr(image,'nidm_results'):
-            image.zip_name = os.path.split(image.nidm_results.zip_file.path)[-1]
+    is_empty = not collection.image_set.exists()
     context = {'collection': collection,
-            'images': images,
+            'is_empty': is_empty,
             'user': request.user,
             'delete_permission': delete_permission,
             'edit_permission': edit_permission,
             'cid':cid}
+    
+    if not is_empty:
+        context["first_image"] = collection.image_set.all().order_by("pk")[0]
 
     if owner_or_contrib(request,collection):
         form = UploadFileForm()
@@ -944,3 +945,70 @@ class JSONResponse(HttpResponse):
         content = JSONRenderer().render(data)
         kwargs['content_type'] = 'application/json'
         super(JSONResponse, self).__init__(content, **kwargs)
+        
+    
+class ImagesInCollectionJson(BaseDatatableView):
+    columns = ['file.url', 'pk', 'name', 'polymorphic_ctype.name', 'description']
+    order_columns = ['','pk', 'name', 'polymorphic_ctype.name','description']
+
+    def get_initial_queryset(self):
+        # return queryset used as base for futher sorting/filtering
+        # these are simply objects displayed in datatable
+        # You should not filter data returned here by any filter values entered by user. This is because
+        # we need some base queryset to count total number of records.
+        collection = get_collection(self.kwargs['cid'], self.request)
+        return collection.image_set.all()
+    
+    def render_column(self, row, column):
+        # We want to render user as a custom column
+        if column == 'file.url':
+            return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s"><i class="fa fa-lg fa-eye"></i></a>'%row.file.url
+        else:
+            return super(ImagesInCollectionJson, self).render_column(row, column)
+    
+    def filter_queryset(self, qs):
+        # use parameters passed in GET request to filter queryset
+
+        # simple example:
+        search = self.request.GET.get(u'search[value]', None)
+        if search:
+            qs = qs.filter(Q(name__contains=search)| Q(description__contains=search))
+        return qs
+    
+class PublicCollectionsJson(BaseDatatableView):
+    columns = ['name', 'n_images', 'description', 'has_doi']
+    order_columns = ['name', 'n_images', 'description', 'has_doi']
+
+    def get_initial_queryset(self):
+        # return queryset used as base for futher sorting/filtering
+        # these are simply objects displayed in datatable
+        # You should not filter data returned here by any filter values entered by user. This is because
+        # we need some base queryset to count total number of records.
+        return Collection.objects.filter(~Q(name__contains = "temporary collection"), private=False).annotate(n_images=Count('image'))
+    
+    def render_column(self, row, column):
+        # We want to render user as a custom column
+        if column == 'has_doi':
+            if row.DOI:
+                return "Yes"
+            else:
+                return ""
+        else:
+            return super(PublicCollectionsJson, self).render_column(row, column)
+    
+    def filter_queryset(self, qs):
+        # use parameters passed in GET request to filter queryset
+
+        # simple example:
+        search = self.request.GET.get(u'search[value]', None)
+        if search:
+            qs = qs.filter(Q(name__contains=search)| Q(description__contains=search))
+        return qs
+
+
+
+class MyCollectionsJson(PublicCollectionsJson):
+    
+    def get_initial_queryset(self):
+        return Collection.objects.filter(Q(contributors=self.request.user)
+                            | Q(owner=self.request.user)).annotate(n_images=Count('image'))

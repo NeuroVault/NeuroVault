@@ -3,14 +3,20 @@
 
 {% block head %}
 <title>{% block title %}NeuroVault: Collections{% endblock %}</title>
-    :javascript
-        {% inlinecoffeescript %}
-            $(document).ready ->
-                $("#collections-table").dataTable
-                    sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
-                    iDisplayLength: 10
-                    aoColumns: [ { sWidth: '40%' }, { sWidth: '10%'}, { sWidth: '45%'}, { sWidth: '5%'}]
-        {% endinlinecoffeescript %}
+    <script>
+       $(document).ready(function() {
+          $('#collections-table').dataTable({
+                    sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>",
+                    iDisplayLength: 10,
+                    aoColumns: [ { sWidth: '40%' }, { sWidth: '10%'}, { sWidth: '45%'}, { sWidth: '5%'}],
+                    "processing": true,
+        			"serverSide": true,
+        			"order": [[ 0, "asc" ]],
+        			"ajax": "{% url 'collections_list_json' %}"
+           });
+       });
+    </script>
+
 {% endblock %}
 
 {% block content %}
@@ -29,14 +35,6 @@
 					%th Num. images
 					%th Description
 					%th Has DOI?
-			%tbody
-				- for collection in collections
-					%tr
-						%td
-							%a{ href: "/collections/{{collection.id}}" }= collection.name
-						%td {{collection.n_images}}
-						%td= collection.description
-						%td {% if collection.DOI %} Yes {% endif %}
 
 .row
 	%a.btn.btn-primary{href: "{% url 'new_collection' %}" } Add new collection

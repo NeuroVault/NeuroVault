@@ -1,6 +1,6 @@
 from rest_framework.pagination import LimitOffsetPagination
 from django.conf.urls import patterns, url
-from django.views.generic import ListView
+from django.views.generic import ListView, TemplateView
 from .models import Collection
 from .views import edit_collection, edit_images, view_image, delete_image, edit_image, \
                 view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
@@ -15,32 +15,31 @@ from django.contrib.auth.decorators import login_required
 from neurovault import settings
 from django.views.generic.base import RedirectView
 from django.db.models import Q
-
-
-class MyCollectionsListView(ListView):
-    template_name = 'statmaps/my_collections.html.haml'
-    context_object_name = 'collections'
-
-    def get_queryset(self):
-        return Collection.objects.filter(Q(contributors=self.request.user)
-                            | Q(owner=self.request.user)).annotate(n_images=Count('image'))
+from neurovault.apps.statmaps.views import ImagesInCollectionJson,\
+    PublicCollectionsJson, MyCollectionsJson
 
 urlpatterns = patterns('',
     url(r'^my_collections/$',
-        login_required(MyCollectionsListView.as_view()),
+        TemplateView.as_view(template_name='statmaps/my_collections.html.haml'),
         name='my_collections'),
+    url(r'^my_collections/json$',
+        login_required(MyCollectionsJson.as_view()),
+        name='my_collections_json'),
     url(r'^collections/$',
-        ListView.as_view(
-            queryset=Collection.objects.filter(~Q(name__contains = "temporary collection"), private=False).annotate(n_images=Count('image')),
-            context_object_name='collections',
-            template_name='statmaps/collections_index.html.haml'),
+        TemplateView.as_view(template_name='statmaps/collections_index.html.haml'),
         name='collections_list'),
+    url(r'^collections/json$',
+        PublicCollectionsJson.as_view(),
+        name='collections_list_json'),
     url(r'^collections/stats$',
         stats_view,
         name='collections_stats'),
     url(r'^collections/(?P<cid>\d+|[A-Z]{8})/$',
         view_collection,
         name='collection_details'),
+    url(r'^collections/(?P<cid>\d+|[A-Z]{8})/json$',
+        ImagesInCollectionJson.as_view(),
+        name='collection_images_json'),
     url(r'^collections/new$',
         edit_collection,
         name='new_collection'),
