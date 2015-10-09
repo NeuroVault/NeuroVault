@@ -16,21 +16,15 @@ from neurovault import settings
 from django.views.generic.base import RedirectView
 from django.db.models import Q
 from neurovault.apps.statmaps.views import ImagesInCollectionJson,\
-    PublicCollectionsJson
-
-
-class MyCollectionsListView(ListView):
-    template_name = 'statmaps/my_collections.html.haml'
-    context_object_name = 'collections'
-
-    def get_queryset(self):
-        return Collection.objects.filter(Q(contributors=self.request.user)
-                            | Q(owner=self.request.user)).annotate(n_images=Count('image'))
+    PublicCollectionsJson, MyCollectionsJson
 
 urlpatterns = patterns('',
     url(r'^my_collections/$',
-        login_required(MyCollectionsListView.as_view()),
+        TemplateView.as_view(template_name='statmaps/my_collections.html.haml'),
         name='my_collections'),
+    url(r'^my_collections/json$',
+        login_required(MyCollectionsJson.as_view()),
+        name='my_collections_json'),
     url(r'^collections/$',
         TemplateView.as_view(template_name='statmaps/collections_index.html.haml'),
         name='collections_list'),

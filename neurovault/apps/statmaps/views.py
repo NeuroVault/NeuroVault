@@ -1004,3 +1004,11 @@ class PublicCollectionsJson(BaseDatatableView):
         if search:
             qs = qs.filter(Q(name__contains=search)| Q(description__contains=search))
         return qs
+
+
+
+class MyCollectionsJson(PublicCollectionsJson):
+    
+    def get_initial_queryset(self):
+        return Collection.objects.filter(Q(contributors=self.request.user)
+                            | Q(owner=self.request.user)).annotate(n_images=Count('image'))
