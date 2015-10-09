@@ -15,6 +15,7 @@ from django.contrib.auth.decorators import login_required
 from neurovault import settings
 from django.views.generic.base import RedirectView
 from django.db.models import Q
+from neurovault.apps.statmaps.views import ImagesInCollectionJson
 
 
 class MyCollectionsListView(ListView):
@@ -41,6 +42,9 @@ urlpatterns = patterns('',
     url(r'^collections/(?P<cid>\d+|[A-Z]{8})/$',
         view_collection,
         name='collection_details'),
+    url(r'^collections/(?P<cid>\d+|[A-Z]{8})/json$',
+        ImagesInCollectionJson.as_view(),
+        name='collection_images_json'),
     url(r'^collections/new$',
         edit_collection,
         name='new_collection'),

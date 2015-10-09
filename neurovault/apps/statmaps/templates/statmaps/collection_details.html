@@ -11,9 +11,9 @@
 
 var params = [];
      
-{% if collection.image_set.all %}
-   params["images"] = ["{% static "images/MNI152.nii.gz"%}","{{ images.0.file.url }}".replace(" ","")];
-   var tmpname = "{{ images.0.file.url }}".replace(/^.*[\\\/]/, '')
+{% if first_image %}
+   params["images"] = ["{% static "images/MNI152.nii.gz"%}","{{ first_image.file.url }}".replace(" ","")];
+   var tmpname = "{{ first_image.file.url }}".replace(/^.*[\\\/]/, '')
    params[tmpname] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
 {% else %}
    params["images"] = ["{% static "images/MNI152.nii.gz"%}"];
@@ -261,7 +261,7 @@ var params = [];
 
         <div class='tab-content'>
                <div id='images' class='tab-pane active'>
-               {% if collection.image_set.all or not edit_permission %}
+               {% if not is_empty or not edit_permission %}
                <table id="collection-images-datatable" class="table table-condensed table-striped table-hover">
                <thead>
                       <tr>
@@ -272,32 +272,6 @@ var params = [];
                           <th>Description</th>
                       </tr>
                </thead>
-               <tbody>
-               {% for image in images %}
-                   <tr>
-                       <td><a class="btn btn-default viewimage" onclick="viewimage(this)" filename="{{ image.file.url }}"><i class="fa fa-lg fa-eye"></i></a></td>
-                       <td>{{image.id}}</td>
-                       <td>{% if image.zip_name %}
-                           <a href="{{image.nidm_results.get_absolute_url}}">{{image.nidm_results.name}}</a>
-                           &nbsp;<i class="icon-double-angle-right"></i>&nbsp;
-                           <a href="{{image.get_absolute_url}}">{{ image.name }}</a>
-                           {% else %}
-                           <a href="{{image.get_absolute_url}}">{{ image.name }}</a>
-                           {% endif %}
-                       </td>
-                       <td>
-                           {{ image.polymorphic_ctype.name }}
-                       </td>
-                       <td>{% if image.zip_name %}NIDMResults:
-                           <a href="{{image.nidm_results.zip_file.url}}">
-                               {{image.nidm_results.name}}.zip</a>
-                           {% else %}
-	                   {{ image.description }}
-                           {% endif %}
-                       </td>	
-                  </tr>
-               {% endfor %}
-               </tbody>
                </table>
                {% else %}
                <div class="center-text" style="margin-top:60px;">
@@ -356,21 +330,20 @@ $(document).ready(function() {
       responsive: true
     });
     $('#collection-images-datatable').dataTable({
-      responsive: true,
-      order: [[ 1, "asc" ]]
+        "processing": true,
+        "serverSide": true,
+        "ajax": "{% url 'collection_images_json' collection.id %}"{% if not is_empty %},
+        "initComplete": function(settings, json) {
+    		var collection_images = $(".viewimage")
+        	$(collection_images[0]).addClass("active")
+  		}
+  		{% endif %}
     });
-    {% if collection.image_set.all %}
-        var collection_images = $(".viewimage")
-        $(collection_images[0]).addClass("active")
-    {% endif %}
 } );
 
 
 </script>
 {% comment %}
-{% for image in collection.image_set.all %}
-    <li><a href="{% url 'image_details' image.id %}">{{ image.name }}</a></li>
-{% endfor %}
 <a href="{{collection.url}}">{{collection.name}}</a> by {{collection.authors}}
 <a href="{% url 'edit_images' cid %}">Add/edit files</a>
 {% endcomment %}
