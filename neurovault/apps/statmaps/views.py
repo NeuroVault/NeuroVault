@@ -977,7 +977,7 @@ class ImagesInCollectionJson(BaseDatatableView):
     
 class PublicCollectionsJson(BaseDatatableView):
     columns = ['name', 'n_images', 'description', 'has_doi']
-    order_columns = ['name', 'n_images', 'description', 'has_doi']
+    order_columns = ['name', '', 'description', '']
 
     def get_initial_queryset(self):
         # return queryset used as base for futher sorting/filtering

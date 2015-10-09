@@ -11,6 +11,10 @@
                     aoColumns: [ { sWidth: '40%' }, { sWidth: '10%'}, { sWidth: '45%'}, { sWidth: '5%'}],
                     "processing": true,
         			"serverSide": true,
+        			"columnDefs": [
+    					{ "orderable": false, "targets": 1 },
+    					{ "orderable": false, "targets": 3 },
+  					],
         			"order": [[ 0, "asc" ]],
         			"ajax": "{% url 'collections_list_json' %}"
            });
