@@ -20,7 +20,7 @@ from neurovault.apps.statmaps.views import ImagesInCollectionJson,\
 
 urlpatterns = patterns('',
     url(r'^my_collections/$',
-        TemplateView.as_view(template_name='statmaps/my_collections.html.haml'),
+        login_required(TemplateView.as_view(template_name='statmaps/my_collections.html.haml')),
         name='my_collections'),
     url(r'^my_collections/json$',
         login_required(MyCollectionsJson.as_view()),
