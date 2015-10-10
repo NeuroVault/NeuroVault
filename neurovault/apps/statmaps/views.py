@@ -972,7 +972,7 @@ class ImagesInCollectionJson(BaseDatatableView):
         # simple example:
         search = self.request.GET.get(u'search[value]', None)
         if search:
-            qs = qs.filter(Q(name__contains=search)| Q(description__contains=search))
+            qs = qs.filter(Q(name__icontains=search)| Q(description__icontains=search))
         return qs
     
 class PublicCollectionsJson(BaseDatatableView):
@@ -1004,7 +1004,7 @@ class PublicCollectionsJson(BaseDatatableView):
         # simple example:
         search = self.request.GET.get(u'search[value]', None)
         if search:
-            qs = qs.filter(Q(name__contains=search)| Q(description__contains=search))
+            qs = qs.filter(Q(name__icontains=search)| Q(description__icontains=search))
         return qs
 
 
