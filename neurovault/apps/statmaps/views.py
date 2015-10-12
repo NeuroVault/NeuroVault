@@ -24,6 +24,7 @@ from django.core.files.base import ContentFile
 from django.db.models.aggregates import Count
 from django.http import Http404, HttpResponse
 from django.core.urlresolvers import reverse
+from nidmviewer.viewer import generate
 from django.db.models import Q, Count
 from sklearn.externals import joblib
 from collections import OrderedDict
@@ -354,6 +355,7 @@ def view_nidm_results(request, collection_cid, nidm_name):
         nidmr = NIDMResults.objects.get(collection=collection,name=nidm_name)
     except NIDMResults.DoesNotExist:
         return Http404("This NIDM Result was not found.")
+
     if request.method == "POST":
         if not owner_or_contrib(request,collection):
             return HttpResponseForbidden()
@@ -370,8 +372,20 @@ def view_nidm_results(request, collection_cid, nidm_name):
         else:
             form = NIDMViewForm(instance=nidmr)
 
-    context = {"form": form}
-    return render(request, "statmaps/edit_nidm_results.html.haml", context)
+    # Find the corresponding images
+    nidm_collection = NIDMResultStatisticMap.objects.filter(nidm_results=nidmr)
+
+    # Fields to remove to clean up the viewer
+    columns_to_remove = ['type', 'atLocation', 'wasDerivedFrom', 'value', 'coordinateVector']
+
+    # Generate viewer for nidm result
+    nidm_files = [nidmr.ttl_file.path.encode("utf-8")]
+    standard_brain = "/static/images/MNI152.nii.gz"
+
+    html_snippet = generate(nidm_files,base_image=standard_brain,columns_to_remove=columns_to_remove)
+
+    context = {"form": form,"nidm_viewer":html_snippet}
+    return render(request, "statmaps/edit_nidm_results.html", context)
 
 @login_required
 def delete_nidm_results(request, collection_cid, nidm_name):

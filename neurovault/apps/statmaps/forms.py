@@ -761,7 +761,7 @@ class NIDMResultsForm(forms.ModelForm):
                               fname + ')(\"\^\^xsd\:anyURI\ \;)')
 
         hdr, urlprefix, nifti, ftr = re.search(ttl_regx,ttl_content).groups()
-        base_url = 'http://neurovault.org'
+        base_url = 'http://127.0.0.1'
         replace_path = base_url + os.path.join(self.instance.collection.get_absolute_url(),
                                     self.instance.name)+'/'
 
