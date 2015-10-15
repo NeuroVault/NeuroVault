@@ -95,7 +95,6 @@ TEMPLATE_LOADERS = (
 )
 
 MIDDLEWARE_CLASSES = (
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -150,7 +149,6 @@ INSTALLED_APPS = (
     'coffeescript',
     'taggit_templatetags',
     #'south',
-    'corsheaders',
     'dbbackup',
     'polymorphic',
     'djcelery',
@@ -231,9 +229,6 @@ REST_FRAMEWORK = {
     ],
 }
 
-# Allow cross-origin requests from approved sites
-CORS_ORIGIN_ALLOW_ALL = True
-CORS_ALLOW_CREDENTIALS = False
 
 #LOGIN_URL          = '/login-form/'
 #LOGIN_REDIRECT_URL = '/logged-in/'

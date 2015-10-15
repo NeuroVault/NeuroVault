@@ -10,7 +10,6 @@ django-crispy-forms
 django-coffeescript
 South
 django-taggit-templatetags
-django-cors-headers
 django-dirtyfields
 dropbox==1.6
 django-dbbackup<2.3
