@@ -233,7 +233,7 @@ REST_FRAMEWORK = {
 
 # Allow cross-origin requests from approved sites
 CORS_ORIGIN_ALLOW_ALL = True
-CORS_REPLACE_HTTPS_REFERER = True
+CORS_ALLOW_CREDENTIALS = False
 
 #LOGIN_URL          = '/login-form/'
 #LOGIN_REDIRECT_URL = '/logged-in/'
