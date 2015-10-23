@@ -25,4 +25,4 @@ deployment:
   hub:
     branch: master
     commands:
-      - [ -n "$DOCKER_PASS" ] && docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS && docker push $DOCKER_REPO
+      - if [[ -n "$DOCKER_PASS" ]]; then docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS && docker push $DOCKER_REPO; fi
