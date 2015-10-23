@@ -375,14 +375,15 @@ def view_nidm_results(request, collection_cid, nidm_name):
     # Find the corresponding images
     nidm_collection = NIDMResultStatisticMap.objects.filter(nidm_results=nidmr)
 
-    # Fields to remove to clean up the viewer
-    columns_to_remove = ['type', 'atLocation', 'wasDerivedFrom', 'value', 'coordinateVector']
-
     # Generate viewer for nidm result
     nidm_files = [nidmr.ttl_file.path.encode("utf-8")]
     standard_brain = "/static/images/MNI152.nii.gz"
 
-    html_snippet = generate(nidm_files,base_image=standard_brain,columns_to_remove=columns_to_remove)
+    # We will remove these scripts
+    remove_resources = ["BOOTSTRAPCSS"]
+
+    html_snippet = generate(nidm_files,base_image=standard_brain,
+                            remove_scripts=remove_resources,template_choice="embed")
 
     context = {"form": form,"nidm_viewer":html_snippet}
     return render(request, "statmaps/edit_nidm_results.html", context)
