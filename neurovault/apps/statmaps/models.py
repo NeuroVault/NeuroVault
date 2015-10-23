@@ -33,7 +33,7 @@ class Collection(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of collection")
     DOI = models.CharField(max_length=200, unique=True, blank=True, null=True, default=None, verbose_name="DOI of the corresponding paper")
     authors = models.CharField(max_length=5000, blank=True, null=True)
-    url = models.CharField(max_length=200, blank=True, null=True)
+    paper_url = models.CharField(max_length=200, blank=True, null=True)
     journal_name = models.CharField(max_length=200, blank=True, null=True, default=None)
     description = models.TextField(blank=True, null=True)
     full_dataset_url = models.URLField(max_length=200, blank=True, null=True, verbose_name="Full dataset URL", help_text="Link to an external dataset the maps in this collection have been generated from (for example: \"https://openfmri.org/dataset/ds000001\" or \"http://dx.doi.org/10.15387/fcp_indi.corr.mpg1\")")
