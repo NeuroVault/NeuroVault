@@ -218,9 +218,14 @@ class NIDMResultsSerializer(serializers.ModelSerializer):
 
 
 class CollectionSerializer(serializers.ModelSerializer):
+    url = HyperlinkedImageURL(source='get_absolute_url')
     images = ImageSerializer(many=True, source='image_set')
     nidm_results = NIDMResultsSerializer(many=True, source='nidmresults_set')
     contributors = SerializedContributors()
+    owner_name = serializers.SerializerMethodField()
+    
+    def get_owner_name(self,obj):
+        return obj.owner.username
 
     class Meta:
         model = Collection
