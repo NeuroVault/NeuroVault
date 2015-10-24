@@ -155,7 +155,8 @@ INSTALLED_APPS = (
     'django_cleanup',
     'file_resubmit',
     'djrill',
-    'django_hstore'
+    'django_hstore',
+    'guardian'
 )
 
 # A sample logging configuration. The only tangible logging
@@ -192,6 +193,7 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'social.backends.facebook.FacebookOAuth2',
     'social.backends.google.GoogleOAuth2',
+    'guardian.backends.ObjectPermissionBackend',
 )
 
 SOCIAL_AUTH_PIPELINE = (
@@ -279,6 +281,8 @@ CELERY_DEFAULT_QUEUE = 'default'
 CELERY_QUEUES = (
     Queue('default', Exchange('default'), routing_key='default'),
 )
+
+ANONYMOUS_USER_ID = -1
 
 # Bogus secret key.
 try:
