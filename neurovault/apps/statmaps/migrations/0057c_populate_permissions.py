@@ -17,6 +17,9 @@ def populate_permissions(apps, schema_editor):
             for image in collection.image_set.all():
                 assign_perm('statmaps.change_image', user, image)
                 assign_perm('statmaps.delete_image', user, image)
+            for nidmresult in collection.nidmresults_set.all():
+                assign_perm('statmaps.change_nidmresults', user, nidmresult)
+                assign_perm('statmaps.delete_nidmresults', user, nidmresult)
 
 class Migration(migrations.Migration):
 

@@ -167,6 +167,9 @@ class Collection(models.Model):
             for image in self.image_set.all():
                 assign_perm('change_image', contributor, image)
                 assign_perm('delete_image', contributor, image)
+            for nidmresult in self.nidmresults_set.all():
+                assign_perm('change_nidmresults', contributor, nidmresult)
+                assign_perm('delete_nidmresults', contributor, nidmresult)
 
         if privacy_changed and self.private == False:
             for image in self.image_set.all():
@@ -568,7 +571,12 @@ class NIDMResults(BaseCollectionItem):
     def get_form_class():
         from neurovault.apps.statmaps.forms import NIDMResultsForm
         return NIDMResultsForm
-
+    
+    def save(self):
+        BaseCollectionItem.save(self)
+        for user in [self.collection.owner,] + list(self.collection.contributors.all()):
+            assign_perm('change_nidmresults', user, self)
+            assign_perm('delete_nidmresults', user, self)
 
 @receiver(post_delete, sender=NIDMResults)
 def mymodel_delete(sender, instance, **kwargs):
