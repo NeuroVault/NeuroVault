@@ -350,12 +350,9 @@ def edit_image(request, pk):
 
 def view_nidm_results(request, collection_cid, nidm_name):
     collection = get_collection(collection_cid,request)
-    try:
-        nidmr = NIDMResults.objects.get(collection=collection,name=nidm_name)
-    except NIDMResults.DoesNotExist:
-        return Http404("This NIDM Result was not found.")
+    nidmr = get_object_or_404(NIDMResults, collection=collection,name=nidm_name)
     if request.method == "POST":
-        if not owner_or_contrib(request,collection):
+        if not request.user.has_perm("statmaps.change_nidmresults", nidmr):
             return HttpResponseForbidden()
         form = NIDMResultsForm(request.POST, request.FILES, instance=nidmr)
         if form.is_valid():
@@ -376,12 +373,9 @@ def view_nidm_results(request, collection_cid, nidm_name):
 @login_required
 def delete_nidm_results(request, collection_cid, nidm_name):
     collection = get_collection(collection_cid,request)
-    try:
-        nidmr = NIDMResults.objects.get(collection=collection,name=nidm_name)
-    except NIDMResults.DoesNotExist:
-        return Http404("This NIDM Result was not found.")
+    nidmr = get_object_or_404(NIDMResults, collection=collection, name=nidm_name)
     
-    if owner_or_contrib(request,collection):
+    if request.user.has_perm("statmaps.delete_nidmresults", nidmr):
         nidmr.delete()
         return redirect('collection_details', cid=collection_cid)
     else:
