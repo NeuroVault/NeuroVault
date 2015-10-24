@@ -592,7 +592,7 @@ def upload_folder(request, collection_cid):
 def delete_image(request, pk):
     image = get_object_or_404(Image,pk=pk)
     cid = image.collection.pk
-    if not owner_or_contrib(request,image.collection):
+    if not request.user.has_perm("statmaps.delete_image", image):
         return HttpResponseForbidden()
     image.delete()
     return redirect('collection_details', cid=cid)
