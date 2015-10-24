@@ -19,6 +19,7 @@ from rest_framework.renderers import JSONRenderer
 from django.http import Http404, HttpResponse
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework import permissions
 import xml.etree.ElementTree as ET
 from taggit.models import Tag
 import cPickle as pickle
@@ -223,6 +224,7 @@ class NIDMResultsSerializer(serializers.ModelSerializer):
 
 class CollectionSerializer(serializers.ModelSerializer):
     url = HyperlinkedImageURL(source='get_absolute_url', read_only=True)
+    owner = serializers.ReadOnlyField(source='owner.id')
     images = ImageSerializer(many=True, source='image_set')
     nidm_results = NIDMResultsSerializer(many=True, source='nidmresults_set')
     contributors = SerializedContributors()
@@ -377,6 +379,7 @@ class AtlasViewSet(ImageViewSet):
 
 
 class CollectionViewSet(mixins.RetrieveModelMixin,
+                        mixins.CreateModelMixin,
                         mixins.ListModelMixin,
                         viewsets.GenericViewSet):
 
@@ -384,6 +387,7 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
     filter_fields = ('name', 'DOI', 'owner')
     serializer_class = CollectionSerializer
     filter_backends = (DjangoFilterBackend,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
     @detail_route()
     def datatable(self, request, pk=None):
@@ -409,6 +413,9 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
         data = CollectionSerializer(
             collection, context={'request': request}).data
         return Response(data)
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 
 class NIDMResultsViewSet(mixins.RetrieveModelMixin,
