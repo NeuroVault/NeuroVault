@@ -227,7 +227,7 @@ class CollectionSerializer(serializers.ModelSerializer):
     owner = serializers.ReadOnlyField(source='owner.id')
     images = ImageSerializer(many=True, source='image_set')
     nidm_results = NIDMResultsSerializer(many=True, source='nidmresults_set')
-    contributors = SerializedContributors()
+    contributors = SerializedContributors(required=False)
     owner_name = serializers.SerializerMethodField()
 
     def get_owner_name(self, obj):
