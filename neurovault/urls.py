@@ -112,7 +112,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
 
     id = serializers.ReadOnlyField()
     file = HyperlinkedFileField()
-    collection_url = HyperlinkedRelatedURL(read_only=True, source='collection')
+    collection = HyperlinkedRelatedURL(read_only=True)
     collection_id = serializers.ReadOnlyField()
     url = HyperlinkedImageURL(source='get_absolute_url')
     file_size = serializers.SerializerMethodField()
