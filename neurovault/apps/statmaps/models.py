@@ -28,6 +28,7 @@ import os
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 from django.db.models.fields.files import FileField, FieldFile
 from django.core.validators import MaxValueValidator, MinValueValidator
+from guardian.shortcuts import assign_perm
 
 class Collection(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of collection")
@@ -159,6 +160,14 @@ class Collection(models.Model):
 
         super(Collection, self).save(*args, **kwargs)
 
+        assign_perm('delete_collection', self.owner, self)
+         
+        for contributor in [self.owner, ] + list(self.contributors.all()):
+            assign_perm('change_collection', contributor, self)
+            for image in self.image_set.all():
+                assign_perm('change_image', contributor, image)
+                assign_perm('delete_image', contributor, image)
+
         if privacy_changed and self.private == False:
             for image in self.image_set.all():
                 if image.pk:
@@ -260,6 +269,7 @@ class BaseCollectionItem(models.Model):
         self.collection.modify_date = datetime.now()
         self.collection.save()
         super(BaseCollectionItem, self).save()
+        
 
     def delete(self):
         self.collection.modify_date = datetime.now()
@@ -362,6 +372,10 @@ class Image(PolymorphicModel, BaseCollectionItem):
         do_update = True if file_changed else False
         new_image = True if self.pk is None else False
         super(Image, self).save()
+        
+        for user in [self.collection.owner,] + list(self.collection.contributors.all()):
+            assign_perm('change_image', user, self)
+            assign_perm('delete_image', user, self)
 
         if (do_update or new_image) and self.collection and self.collection.private == False:
             # Generate glass brain image
