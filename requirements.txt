@@ -47,6 +47,4 @@ djrill
 django-hstore==1.3.5
 cognitiveatlas
 django-datatables-view
-rdfextras
-rdflib-jsonld
 git+git://github.com/vsoch/nidmviewer.git

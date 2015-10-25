@@ -372,9 +372,6 @@ def view_nidm_results(request, collection_cid, nidm_name):
         else:
             form = NIDMViewForm(instance=nidmr)
 
-    # Find the corresponding images
-    nidm_collection = NIDMResultStatisticMap.objects.filter(nidm_results=nidmr)
-
     # Generate viewer for nidm result
     nidm_files = [nidmr.ttl_file.path.encode("utf-8")]
     standard_brain = "/static/images/MNI152.nii.gz"
