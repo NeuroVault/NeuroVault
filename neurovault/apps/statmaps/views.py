@@ -52,12 +52,12 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 import json
 import functools
 from . import image_metadata
+from guardian.shortcuts import get_objects_for_user
 
 
 def owner_or_contrib(request,collection):
-    if collection.owner == request.user or request.user in collection.contributors.all() or request.user.is_superuser:
-        return True
-    return False
+    
+    return request.user.has_perm('statmaps.change_collection', collection) or request.user.is_superuser
 
 
 def get_collection(cid,request,mode=None):
@@ -137,7 +137,7 @@ def edit_collection(request, cid=None):
     page_header = "Add new collection"
     if cid:
         collection = get_collection(cid,request)
-        is_owner = True if collection.owner == request.user else False
+        is_owner = collection.owner == request.user 
         page_header = 'Edit collection'
         if not owner_or_contrib(request,collection):
             return HttpResponseForbidden()
@@ -291,8 +291,8 @@ def view_image(request, pk, collection_cid=None):
 
 def view_collection(request, cid):
     collection = get_collection(cid,request)
-    edit_permission = True if owner_or_contrib(request,collection) else False
-    delete_permission = True if collection.owner == request.user else False
+    edit_permission = request.user.has_perm('statmaps.change_collection', collection)
+    delete_permission = request.user.has_perm('statmaps.delete_collection', collection)
     is_empty = not collection.image_set.exists()
     context = {'collection': collection,
             'is_empty': is_empty,
@@ -316,7 +316,7 @@ def view_collection(request, cid):
 @login_required
 def delete_collection(request, cid):
     collection = get_collection(cid,request)
-    if collection.owner != request.user:
+    if not request.user.has_perm('statmaps.delete_collection', collection):
         return HttpResponseForbidden()
     collection.delete()
     return redirect('my_collections')
@@ -350,12 +350,9 @@ def edit_image(request, pk):
 
 def view_nidm_results(request, collection_cid, nidm_name):
     collection = get_collection(collection_cid,request)
-    try:
-        nidmr = NIDMResults.objects.get(collection=collection,name=nidm_name)
-    except NIDMResults.DoesNotExist:
-        return Http404("This NIDM Result was not found.")
+    nidmr = get_object_or_404(NIDMResults, collection=collection,name=nidm_name)
     if request.method == "POST":
-        if not owner_or_contrib(request,collection):
+        if not request.user.has_perm("statmaps.change_nidmresults", nidmr):
             return HttpResponseForbidden()
         form = NIDMResultsForm(request.POST, request.FILES, instance=nidmr)
         if form.is_valid():
@@ -376,12 +373,9 @@ def view_nidm_results(request, collection_cid, nidm_name):
 @login_required
 def delete_nidm_results(request, collection_cid, nidm_name):
     collection = get_collection(collection_cid,request)
-    try:
-        nidmr = NIDMResults.objects.get(collection=collection,name=nidm_name)
-    except NIDMResults.DoesNotExist:
-        return Http404("This NIDM Result was not found.")
+    nidmr = get_object_or_404(NIDMResults, collection=collection, name=nidm_name)
     
-    if owner_or_contrib(request,collection):
+    if request.user.has_perm("statmaps.delete_nidmresults", nidmr):
         nidmr.delete()
         return redirect('collection_details', cid=collection_cid)
     else:
@@ -592,7 +586,7 @@ def upload_folder(request, collection_cid):
 def delete_image(request, pk):
     image = get_object_or_404(Image,pk=pk)
     cid = image.collection.pk
-    if not owner_or_contrib(request,image.collection):
+    if not request.user.has_perm("statmaps.delete_image", image):
         return HttpResponseForbidden()
     image.delete()
     return redirect('collection_details', cid=cid)
@@ -1012,5 +1006,4 @@ class PublicCollectionsJson(BaseDatatableView):
 class MyCollectionsJson(PublicCollectionsJson):
     
     def get_initial_queryset(self):
-        return Collection.objects.filter(Q(contributors=self.request.user)
-                            | Q(owner=self.request.user))
+        return get_objects_for_user(self.request.user, 'statmaps.change_collection')

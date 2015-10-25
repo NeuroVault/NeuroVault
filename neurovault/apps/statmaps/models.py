@@ -28,6 +28,9 @@ import os
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 from django.db.models.fields.files import FileField, FieldFile
 from django.core.validators import MaxValueValidator, MinValueValidator
+from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
+from django.db.models.signals import m2m_changed
+
 
 class Collection(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of collection")
@@ -159,6 +162,16 @@ class Collection(models.Model):
 
         super(Collection, self).save(*args, **kwargs)
 
+        assign_perm('delete_collection', self.owner, self)
+        assign_perm('change_collection', self.owner, self)
+        for image in self.image_set.all():
+            assign_perm('change_image', self.owner, image)
+            assign_perm('delete_image', self.owner, image)
+        for nidmresult in self.nidmresults_set.all():
+            assign_perm('change_nidmresults', self.owner, nidmresult)
+            assign_perm('delete_nidmresults', self.owner, nidmresult)
+        
+
         if privacy_changed and self.private == False:
             for image in self.image_set.all():
                 if image.pk:
@@ -181,6 +194,32 @@ class Collection(models.Model):
 
         return ret
 
+def contributors_changed(sender, instance, action, **kwargs):
+    if action in ["post_remove", "post_add", "post_clear"]:
+        current_contributors = set([user.pk for user in get_users_with_perms(instance)])
+        new_contributors = set([user.pk for user in [instance.owner, ] + list(instance.contributors.all())])
+         
+        for contributor in list(new_contributors - current_contributors):
+            contributor = User.objects.get(pk=contributor)
+            assign_perm('change_collection', contributor, instance)
+            for image in instance.image_set.all():
+                assign_perm('change_image', contributor, image)
+                assign_perm('delete_image', contributor, image)
+            for nidmresult in instance.nidmresults_set.all():
+                assign_perm('change_nidmresults', contributor, nidmresult)
+                assign_perm('delete_nidmresults', contributor, nidmresult)
+                
+        for contributor in (current_contributors - new_contributors):
+            contributor = User.objects.get(pk=contributor)
+            remove_perm('change_collection', contributor, instance)
+            for image in instance.image_set.all():
+                remove_perm('change_image', contributor, image)
+                remove_perm('delete_image', contributor, image)
+            for nidmresult in instance.nidmresults_set.all():
+                remove_perm('change_nidmresults', contributor, nidmresult)
+                remove_perm('delete_nidmresults', contributor, nidmresult)
+
+m2m_changed.connect(contributors_changed, sender=Collection.contributors.through)
 
 class CognitiveAtlasTask(models.Model):
     name = models.CharField(max_length=200, null=False, blank=False, db_index=True)
@@ -260,6 +299,7 @@ class BaseCollectionItem(models.Model):
         self.collection.modify_date = datetime.now()
         self.collection.save()
         super(BaseCollectionItem, self).save()
+        
 
     def delete(self):
         self.collection.modify_date = datetime.now()
@@ -362,6 +402,10 @@ class Image(PolymorphicModel, BaseCollectionItem):
         do_update = True if file_changed else False
         new_image = True if self.pk is None else False
         super(Image, self).save()
+        
+        for user in [self.collection.owner,] + list(self.collection.contributors.all()):
+            assign_perm('change_image', user, self)
+            assign_perm('delete_image', user, self)
 
         if (do_update or new_image) and self.collection and self.collection.private == False:
             # Generate glass brain image
@@ -554,7 +598,12 @@ class NIDMResults(BaseCollectionItem):
     def get_form_class():
         from neurovault.apps.statmaps.forms import NIDMResultsForm
         return NIDMResultsForm
-
+    
+    def save(self):
+        BaseCollectionItem.save(self)
+        for user in [self.collection.owner,] + list(self.collection.contributors.all()):
+            assign_perm('change_nidmresults', user, self)
+            assign_perm('delete_nidmresults', user, self)
 
 @receiver(post_delete, sender=NIDMResults)
 def mymodel_delete(sender, instance, **kwargs):
