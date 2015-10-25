@@ -86,9 +86,18 @@
                                 %span.muted [{{ provn_basename }}]
             - else
                 %a.btn.btn-primary.btn-lg{href: "{{ image.file.url }}" } Download
-            %a.btn.btn-primary.btn-lg{href: "http://neurosynth.org/decode/?neurovault={{ api_cid }}" } Decode with neurosynth
-            - if comparison_is_possible
-                %a.btn.btn-primary.btn-lg{href: "{% url 'find_similar' image.id %}" } Find similar
+            .btn-group
+                %a.btn.btn-primary.btn-lg.dropdown-toggle{"data-toggle" => "dropdown", :href => "#"}
+                    Analysis
+                    %span.caret
+                %ul.dropdown-menu
+                  %li
+                    %a{:href => "http://neurosynth.org/decode/?neurovault={{ api_cid }}"}
+                      Decode with neurosynth
+                  - if comparison_is_possible
+                    %li
+                      %a{:href => "{% url 'find_similar' image.id %}"}
+                        Find similar
             - if user_owns_image
                 %a.btn.btn-primary.btn-lg{href: "{% url 'edit_image' image.id %}" } Edit details
                 .float-right-wrapper
