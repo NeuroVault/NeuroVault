@@ -218,7 +218,7 @@ class NIDMResultsSerializer(serializers.ModelSerializer):
 
 
 class CollectionSerializer(serializers.ModelSerializer):
-    url = HyperlinkedImageURL(source='get_absolute_url')
+    url = HyperlinkedImageURL(source='get_absolute_url', read_only=True)
     images = ImageSerializer(many=True, source='image_set')
     nidm_results = NIDMResultsSerializer(many=True, source='nidmresults_set')
     contributors = SerializedContributors()
