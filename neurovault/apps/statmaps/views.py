@@ -942,8 +942,8 @@ class JSONResponse(HttpResponse):
         
     
 class ImagesInCollectionJson(BaseDatatableView):
-    columns = ['file.url', 'pk', 'name', 'polymorphic_ctype.name', 'description']
-    order_columns = ['','pk', 'name', 'polymorphic_ctype.name','description']
+    columns = ['file.url', 'pk', 'name', 'polymorphic_ctype.name']
+    order_columns = ['','pk', 'name', 'polymorphic_ctype.name']
 
     def get_initial_queryset(self):
         # return queryset used as base for futher sorting/filtering
