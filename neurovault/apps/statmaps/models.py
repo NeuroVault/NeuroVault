@@ -324,7 +324,7 @@ class BaseCollectionItem(models.Model):
 
     @classmethod
     def get_fixed_fields(cls):
-        return ('name', 'description')
+        return ('name', 'description', 'figure')
 
 class Image(PolymorphicModel, BaseCollectionItem):
     file = models.FileField(upload_to=upload_img_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='File with the unthresholded map (.img, .nii, .nii.gz)')
