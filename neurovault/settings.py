@@ -158,7 +158,8 @@ INSTALLED_APPS = (
     'file_resubmit',
     'djrill',
     'django_hstore',
-    'guardian'
+    'guardian',
+    'oauth2_provider'
 )
 
 # A sample logging configuration. The only tangible logging
