@@ -957,6 +957,11 @@ class ImagesInCollectionJson(BaseDatatableView):
         # We want to render user as a custom column
         if column == 'file.url':
             return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s"><i class="fa fa-lg fa-eye"></i></a>'%row.file.url
+        elif column == 'polymorphic_ctype.name':
+            if row.polymorphic_ctype.name == "statistic map":
+                return row.get_map_type_display()
+            else:
+                return row.polymorphic_ctype.name
         else:
             return super(ImagesInCollectionJson, self).render_column(row, column)
     
