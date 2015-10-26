@@ -98,6 +98,9 @@
                     %li
                       %a{:href => "{% url 'find_similar' image.id %}"}
                         Find similar
+                    %li
+                      %a{:href => "{% url 'spatial_regression_select' image.id %}"}
+                        Tal's wet dream
             - if user_owns_image
                 %a.btn.btn-primary.btn-lg{href: "{% url 'edit_image' image.id %}" } Edit details
                 .float-right-wrapper

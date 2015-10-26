@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+
+<select id="collection" name="collection_list" onchange="this.options[this.selectedIndex].value && (window.location = this.options[this.selectedIndex].value);">
+  <option  value="" selected="selected">Pick a collection...</option>
+  {% for collection in collections %}
+   <option value="{% url 'spatial_regression' map_pk collection.id %}">{{collection.name}}</option>
+  {% endfor %}
+</select>
+
+{% endblock %}

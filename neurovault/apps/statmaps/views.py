@@ -930,6 +930,12 @@ def find_similar(request,pk):
         context = {'error_message': error_message}
         return render(request, 'statmaps/error_message.html', context)
 
+def spatial_regression_select(request, pk):
+    public_collections = Collection.objects.exclude(private=False)
+    non_empty_public_collections = [col for col in public_collections if col.image_set.count() > 0]
+    context = {'collections': non_empty_public_collections,
+               'map_pk': pk}
+    return render(request, 'statmaps/spatial_regression_select.html', context)
 
 class JSONResponse(HttpResponse):
     """
