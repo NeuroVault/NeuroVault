@@ -269,3 +269,105 @@ class TestCollection(APITestCase):
         self.assertEqual(response.data, {
             'detail': 'Authentication credentials were not provided.'
         })
+
+
+class TestImageUpload(APITestCase):
+    def setUp(self):
+        self.user_password = 'apitest'
+        self.user = User.objects.create_user('NeuroGuy')
+        self.user.save()
+        self.coll = Collection(owner=self.user, name="Test Collection")
+        self.coll.save()
+
+    def tearDown(self):
+        clearDB()
+
+    def abs_file_path(self, rel_path):
+        return os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                            rel_path)
+
+    def test_upload_image(self):
+        self.client.force_authenticate(user=self.user)
+
+        url = '/api/collections/%s/addimage/' % self.coll.pk
+        fname = self.abs_file_path('test_data/statmaps/motor_lips.nii.gz')
+
+        post_dict = {
+            'name': 'test map',
+            'modality': 'fMRI-BOLD',
+            'map_type': 'T',
+            'file': SimpleUploadedFile(fname, open(fname).read())
+        }
+
+        response = self.client.post(url, post_dict, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.assertEqual(response.data['collection'], self.coll.id)
+        self.assertRegexpMatches(response.data['file'], r'\.nii\.gz$')
+
+        exclude_keys = ('file',)
+        test_keys = set(post_dict.keys()) - set(exclude_keys)
+
+        for key in test_keys:
+            self.assertEqual(response.data[key], post_dict[key])
+
+    def test_missing_required_fields(self):
+        self.client.force_authenticate(user=self.user)
+
+        url = '/api/collections/%s/addimage/' % self.coll.pk
+
+        post_dict = {
+            'name': 'test map',
+        }
+
+        response = self.client.post(url, post_dict, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        expect_dict = {'map_type': [u'This field is required.'],
+                       'modality': [u'This field is required.'],
+                       'file': [u'No file was submitted.']}
+
+        self.assertEqual(response.data, expect_dict)
+
+    def test_missing_required_authentication(self):
+        url = '/api/collections/%s/addimage/' % self.coll.pk
+        fname = self.abs_file_path('test_data/statmaps/motor_lips.nii.gz')
+
+        post_dict = {
+            'name': 'test map',
+            'modality': 'fMRI-BOLD',
+            'map_type': 'T',
+            'file': SimpleUploadedFile(fname, open(fname).read())
+        }
+
+        response = self.client.post(url, post_dict, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, {
+            'detail': 'Authentication credentials were not provided.'
+        })
+
+    def test_missing_required_permissions(self):
+        self.client.force_authenticate(user=self.user)
+
+        other_user = User.objects.create_user('OtherGuy')
+        other_user.save()
+
+        other_collection = Collection(owner=other_user,
+                                      name="Another Test Collection")
+        other_collection.save()
+
+        url = '/api/collections/%s/addimage/' % other_collection.pk
+        fname = self.abs_file_path('test_data/statmaps/motor_lips.nii.gz')
+
+        post_dict = {
+            'name': 'test map',
+            'modality': 'fMRI-BOLD',
+            'map_type': 'T',
+            'file': SimpleUploadedFile(fname, open(fname).read())
+        }
+
+        response = self.client.post(url, post_dict, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, {
+            'detail': 'You do not have permission to perform this action.'
+        })
