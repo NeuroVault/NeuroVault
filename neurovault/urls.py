@@ -19,7 +19,7 @@ from rest_framework.renderers import JSONRenderer
 from django.http import Http404, HttpResponse
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import permissions
+from rest_framework import permissions, status
 from oauth2_provider import views as oauth_views
 import xml.etree.ElementTree as ET
 from taggit.models import Tag
@@ -148,6 +148,11 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
             if pd.isnull(val):
                 orderedDict[key] = None;
         return orderedDict
+
+
+class EditableStatisticMapSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StatisticMap
 
 
 class StatisticMapSerializer(ImageSerializer):
@@ -408,6 +413,18 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
         serializer = ImageSerializer(
             page, context={'request': request}, many=True)
         return paginator.get_paginated_response(serializer.data)
+
+    @detail_route(methods=['post'], url_path='addimage')
+    def add_image(self, request, pk=None):
+        collection = get_collection(pk, request, mode='api')
+        image = StatisticMap(collection=collection)
+        serializer = EditableStatisticMapSerializer(data=request.data,
+                                                    instance=image)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data,
+                            status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def retrieve(self, request, pk=None):
         collection = get_collection(pk, request, mode='api')
