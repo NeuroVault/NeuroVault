@@ -13,6 +13,7 @@ from lxml.etree import xmlfile
 admin.autodiscover()
 from rest_framework import viewsets, routers, serializers, mixins, generics
 from neurovault.apps.statmaps.views import get_image, get_collection
+from neurovault.apps.statmaps.views import owner_or_contrib
 from rest_framework.decorators import detail_route, list_route
 from django.contrib.auth.models import User, Group
 from rest_framework.renderers import JSONRenderer
@@ -153,6 +154,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
 class EditableStatisticMapSerializer(serializers.ModelSerializer):
     class Meta:
         model = StatisticMap
+        read_only_fields = ('collection',)
 
 
 class StatisticMapSerializer(ImageSerializer):
@@ -417,6 +419,10 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
     @detail_route(methods=['post'], url_path='addimage')
     def add_image(self, request, pk=None):
         collection = get_collection(pk, request, mode='api')
+
+        if not owner_or_contrib(request, collection):
+            self.permission_denied(request)
+
         image = StatisticMap(collection=collection)
         serializer = EditableStatisticMapSerializer(data=request.data,
                                                     instance=image)
