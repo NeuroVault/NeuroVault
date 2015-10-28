@@ -21,8 +21,7 @@ import urllib, json, tarfile, requests, os
 from StringIO import StringIO
 import xml.etree.cElementTree as e
 from django.db import IntegrityError
-from neurovault.apps.statmaps.models import Collection, User, BaseStatisticMap,\
-    StatisticMap
+import neurovault.apps.statmaps.models as models
 from django.core.files.uploadedfile import SimpleUploadedFile
 from neurovault.apps.statmaps.forms import StatisticMapForm, CollectionForm
 import re
@@ -76,8 +75,8 @@ def crawl_anima():
             post_dict['DOI'] = parsed['records'][0]['doi']
         
         try:
-            col = Collection.objects.get(DOI=post_dict['DOI'])
-        except Collection.DoesNotExist:
+            col = models.Collection.objects.get(DOI=post_dict['DOI'])
+        except models.Collection.DoesNotExist:
             col = None
         
         if col and not col.description.endswith(version):
@@ -87,7 +86,7 @@ def crawl_anima():
             col.save()
         
         if not col or not col.description.endswith(version):
-            collection = Collection(owner=anima_user)
+            collection = models.Collection(owner=anima_user)
             form = CollectionForm(post_dict, instance=collection)
             form.is_valid()
             collection = form.save()
@@ -100,13 +99,13 @@ def crawl_anima():
                 image_filename = study_element.attrib['file']
                 image_fileobject = arch_results.extractfile(xml_obj.find(".").attrib['directory'] + "/" + image_filename)
         
-                map_type = BaseStatisticMap.OTHER
+                map_type = models.BaseStatisticMap.OTHER
         
-                quantity_dict = {"Mask": BaseStatisticMap.M,
-                                 "F-statistic": BaseStatisticMap.F,
-                                 "T-statistic": BaseStatisticMap.T,
-                                 "Z-statistic": BaseStatisticMap.Z,
-                                 "Beta": BaseStatisticMap.U}
+                quantity_dict = {"Mask": models.BaseStatisticMap.M,
+                                 "F-statistic": models.BaseStatisticMap.F,
+                                 "T-statistic": models.BaseStatisticMap.T,
+                                 "Z-statistic": models.BaseStatisticMap.Z,
+                                 "Beta": models.BaseStatisticMap.U}
         
                 quantity = study_element.find("./Metadata/Element[@name='Quantity']")
                 if quantity != None:
@@ -116,9 +115,9 @@ def crawl_anima():
         
                 post_dict = {
                     'name': image_name,
-                    'modality': StatisticMap.fMRI_BOLD,
+                    'modality': models.StatisticMap.fMRI_BOLD,
                     'map_type': map_type,
-                    'analysis_level': BaseStatisticMap.M,
+                    'analysis_level': models.BaseStatisticMap.M,
                     'collection': collection.pk,
                     'ignore_file_warning': True,
                     'cognitive_paradigm_cogatlas': 'None',
