@@ -284,8 +284,8 @@ CELERY_QUEUES = (
 CELERY_IMPORTS = ('neurovault.statmaps.tasks', )
 
 CELERYBEAT_SCHEDULE = {
-    'anima_crawl+every day': {
-        'task': 'neurovault.statmaps.tasks.crawl_anima',
+    'anima_crawl_every day': {
+        'task': 'crawl_anima',
         'schedule': timedelta(seconds=10)
     },
 }
