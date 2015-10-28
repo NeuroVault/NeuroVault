@@ -100,7 +100,6 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'neurovault.apps.statmaps.middleware.CollectionRedirectMiddleware',
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -150,14 +149,14 @@ INSTALLED_APPS = (
     'coffeescript',
     'taggit_templatetags',
     #'south',
-    'corsheaders',
     'dbbackup',
     'polymorphic',
     'djcelery',
     'django_cleanup',
     'file_resubmit',
     'djrill',
-    'django_hstore'
+    'django_hstore',
+    'guardian'
 )
 
 # A sample logging configuration. The only tangible logging
@@ -194,6 +193,7 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'social.backends.facebook.FacebookOAuth2',
     'social.backends.google.GoogleOAuth2',
+    'guardian.backends.ObjectPermissionBackend',
 )
 
 SOCIAL_AUTH_PIPELINE = (
@@ -231,12 +231,6 @@ REST_FRAMEWORK = {
     ],
 }
 
-# Allow cross-origin requests from approved sites
-CORS_ORIGIN_REGEX_WHITELIST = (
-    '.*neurosynth.org',
-    'pilab.colorado.edu'
-    '.*'
-)
 
 #LOGIN_URL          = '/login-form/'
 #LOGIN_REDIRECT_URL = '/logged-in/'
@@ -287,6 +281,8 @@ CELERY_DEFAULT_QUEUE = 'default'
 CELERY_QUEUES = (
     Queue('default', Exchange('default'), routing_key='default'),
 )
+
+ANONYMOUS_USER_ID = -1
 
 # Bogus secret key.
 try:

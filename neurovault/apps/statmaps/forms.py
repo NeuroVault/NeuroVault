@@ -38,7 +38,7 @@ from neurovault.apps.statmaps.models import CognitiveAtlasTask
 from chosen import forms as chosenforms
 from gzip import GzipFile
 from file_resubmit.admin import AdminResubmitFileWidget
-
+from guardian.shortcuts import get_objects_for_user
 
 # Create the form class.
 collection_fieldsets = [
@@ -548,7 +548,7 @@ class EditStatisticMapForm(StatisticMapForm):
         if user.is_superuser:
             self.fields['collection'].queryset = Collection.objects.all()
         else:
-            self.fields['collection'].queryset = Collection.objects.filter(owner=user)
+            self.fields['collection'].queryset = get_objects_for_user(user, 'statmaps.change_collection')
 
 class AddStatisticMapForm(StatisticMapForm):
 
@@ -570,7 +570,7 @@ class EditAtlasForm(AtlasForm):
         if user.is_superuser:
             self.fields['collection'].queryset = Collection.objects.all()
         else:
-            self.fields['collection'].queryset = Collection.objects.filter(owner=user)
+            self.fields['collection'].queryset = get_objects_for_user(user, 'statmaps.change_collection')
 
     class Meta(AtlasForm.Meta):
         exclude = ()

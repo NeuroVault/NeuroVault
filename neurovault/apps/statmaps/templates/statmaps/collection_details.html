@@ -173,8 +173,9 @@ var params = [];
                 </div>
                 {% endif %}
             </div>
+         </div>
+         <div class="row">
             <div class="col-md-9">
-        <div class="management-options float-right-wrapper">
              <form action="upload_folder" enctype="multipart/form-data" method= "POST" name="upload_folder_form">
 
             {% if not is_empty %}
@@ -229,10 +230,11 @@ var params = [];
                 </div>
                 {% endif %}
                 {% endif %}<!-- close edit permissions-->
-        </div><!-- close management options-->
 
             </div>
         </div>
+</div>
+<div class="row">
 </div>
 
 <!-- Content-->
@@ -247,8 +249,8 @@ var params = [];
         </ul>
         {% endif %}
 
-<div class="aside" style="width:560px">    
-    <div class="papaya" data-params="params" style="width:560px; float:left"></div>
+<div class="col-md-6" style="margin-top:20px">    
+    <div class="papaya" data-params="params" style="width:560px; float:left;"></div>
 </div>
 <div class="col-md-6">
         {% if not is_empty %}
@@ -269,7 +271,6 @@ var params = [];
                           <th>ID</th>
                           <th>Name</th>
                           <th>Type</th>
-                          <th>Description</th>
                       </tr>
                </thead>
                </table>
