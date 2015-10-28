@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import neurovault.apps.statmaps.tasks as tasks 
+from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, generate_glassbrain_image
 from neurovault.apps.statmaps.storage import NiftiGzStorage, NIDMStorage,\
     OverwriteStorage, NeuroVaultStorage
 from polymorphic.polymorphic_model import PolymorphicModel
@@ -175,8 +175,8 @@ class Collection(models.Model):
         if privacy_changed and self.private == False:
             for image in self.image_set.all():
                 if image.pk:
-                    tasks.generate_glassbrain_image.apply_async([image.pk])
-                    tasks.run_voxelwise_pearson_similarity.apply_async([image.pk])
+                    generate_glassbrain_image.apply_async([image.pk])
+                    run_voxelwise_pearson_similarity.apply_async([image.pk])
 
     class Meta:
         app_label = 'statmaps'
@@ -409,7 +409,7 @@ class Image(PolymorphicModel, BaseCollectionItem):
 
         if (do_update or new_image) and self.collection and self.collection.private == False:
             # Generate glass brain image
-            tasks.generate_glassbrain_image.apply_async([self.pk])
+            generate_glassbrain_image.apply_async([self.pk])
 
         if collection_changed:
             for field_name in self._meta.get_all_field_names():
@@ -515,7 +515,7 @@ class BaseStatisticMap(Image):
         if (do_update or new_image) and self.collection and self.collection.private == False:
             if self.is_thresholded == False and self.analysis_level != 'S':
                 # Default resample_dim is 4mm
-                tasks.run_voxelwise_pearson_similarity.apply_async([self.pk])
+                run_voxelwise_pearson_similarity.apply_async([self.pk])
 
     @classmethod
     def get_fixed_fields(cls):

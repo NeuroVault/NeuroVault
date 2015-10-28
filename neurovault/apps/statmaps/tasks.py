@@ -21,20 +21,20 @@ import urllib, json, tarfile, requests, os
 from StringIO import StringIO
 import xml.etree.cElementTree as e
 from django.db import IntegrityError
-import neurovault.apps.statmaps.models as models
 from django.core.files.uploadedfile import SimpleUploadedFile
 from neurovault.apps.statmaps.forms import StatisticMapForm, CollectionForm
 import re
 
 @shared_task
 def crawl_anima():
+    import neurovault.apps.statmaps.models as models
     username = "ANIMA"
     email = "a.reid@fz-juelich.de"
     try:
-        anima_user = User.objects.create_user(username, email)
+        anima_user = models.User.objects.create_user(username, email)
         anima_user.save()
     except IntegrityError:
-        anima_user = User.objects.get(username=username, email=email)
+        anima_user = models.User.objects.get(username=username, email=email)
     
     url = "http://anima.modelgui.org/api/studies"
     response = urllib.urlopen(url);
