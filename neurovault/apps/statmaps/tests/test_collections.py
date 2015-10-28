@@ -35,6 +35,7 @@ class CollectionSharingTest(TestCase):
         )
         self.coll.save()
         self.coll.contributors.add(self.user['contrib'])
+        self.coll.save()
 
     def uniqid(self):
         return str(uuid4())[:8]
