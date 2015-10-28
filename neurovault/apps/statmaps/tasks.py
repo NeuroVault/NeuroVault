@@ -22,12 +22,12 @@ from StringIO import StringIO
 import xml.etree.cElementTree as e
 from django.db import IntegrityError
 from django.core.files.uploadedfile import SimpleUploadedFile
-from neurovault.apps.statmaps.forms import StatisticMapForm, CollectionForm
 import re
 
 @shared_task
 def crawl_anima():
     import neurovault.apps.statmaps.models as models
+    from neurovault.apps.statmaps.forms import StatisticMapForm, CollectionForm
     username = "ANIMA"
     email = "a.reid@fz-juelich.de"
     try:
