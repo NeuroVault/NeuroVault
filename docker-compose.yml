@@ -40,7 +40,7 @@ redis:
 
 worker:
   image: neurovault/neurovault
-  command: celery worker -A neurovault.celery -Q default -n default@%h
+  command: celery worker -A neurovault.celery -Q default -n default@%h -B
   volumes:
     - .:/code
   volumes_from:

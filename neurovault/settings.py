@@ -281,12 +281,12 @@ CELERY_DEFAULT_QUEUE = 'default'
 CELERY_QUEUES = (
     Queue('default', Exchange('default'), routing_key='default'),
 )
-CELERY_IMPORTS = ('neurovault.statmaps.tasks', )
+CELERY_IMPORTS = ('neurovault.apps.statmaps.tasks', )
 
 CELERYBEAT_SCHEDULE = {
     'anima_crawl_every day': {
         'task': 'crawl_anima',
-        'schedule': timedelta(seconds=10)
+        'schedule': timedelta(days=1)
     },
 }
 
