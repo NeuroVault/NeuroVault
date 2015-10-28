@@ -17,7 +17,7 @@
          var filename = "{{ image.file.url }}".replace(/^.*[\\\/]/, '')
     - if image.map_type == "R" or image.map_type == "Pa"
       :javascript
-         params[filename] = {"parametric": true,  "lut":"Spectrum", "alpha":"0.75"};
+         params[filename] = {"parametric": true,  "lut":"Spectrum", "alpha":"0.75", minPercent: 0.0, maxPercent: 1.0};
     - else
       :javascript
          params[filename] = {"parametric": true,  "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric": true};
