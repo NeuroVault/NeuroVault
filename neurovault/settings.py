@@ -282,6 +282,15 @@ CELERY_QUEUES = (
     Queue('default', Exchange('default'), routing_key='default'),
 )
 
+CELERYBEAT_SCHEDULE = {
+    'anima_crawl+every day': {
+        'task': 'statmaps.tasks.crawl_anima',
+        'schedule': timedelta(days=1)
+    },
+}
+
+CELERY_TIMEZONE = 'UTC'
+
 ANONYMOUS_USER_ID = -1
 
 # Bogus secret key.
