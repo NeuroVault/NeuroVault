@@ -59,13 +59,13 @@ var params = [];
      // Reset viewer and load new images
      $(".viewimage").removeClass("active")
 
-     {% if first_image %}
-       var tmpname = $(mrimage).attr("filename").replace(/^.*[\\\/]/, '')
-       params["images"] = ["{% static "images/MNI152.nii.gz"%}",$(mrimage).attr("filename")];
-       params[tmpname] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
-     {% else %}
-       params["images"] = ["{% static "images/MNI152.nii.gz"%}"];
-     {% endif %}  
+      var tmpname = $(mrimage).attr("filename").replace(/^.*[\\\/]/, '')
+      params["images"] = ["{% static "images/MNI152.nii.gz"%}",$(mrimage).attr("filename")];
+      if ($(mrimage).attr("type") == "atlas" || $(mrimage).attr("type") == "parcellation" || $(mrimage).attr("type") == "ROI/mask") {
+      	params[tmpname] = {"parametric": true,  "lut":"Spectrum", "alpha":"0.75",  minPercent: 0.0, maxPercent: 1.0};
+      } else {
+      	params[tmpname] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
+      }
    
       params["{% static "images/MNI152.nii.gz"%}"] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
       params["worldSpace"] = true;
