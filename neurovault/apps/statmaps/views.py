@@ -690,7 +690,7 @@ def serve_nidm(request, collection_cid, nidmdir, sep, path):
         fpathbase = os.path.dirname(zipfile)
         fpath = ''.join([fpathbase,sep,path])
 
-    return sendfile(request, os.path.join(basepath,fpath))
+    return sendfile(request, os.path.join(basepath,fpath), encoding="utf-8")
 
 
 def serve_nidm_image(request, collection_cid, nidmdir, sep, path):

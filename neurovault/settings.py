@@ -11,6 +11,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DEBUG = True
 
+DOMAIN_NAME = "http://neurovault.org"
+
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
