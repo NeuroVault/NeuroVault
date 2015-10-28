@@ -11,7 +11,7 @@ from nilearn.plotting import plot_glass_brain
 from nilearn.image import resample_img
 from sklearn.externals import joblib
 from django.db.models import Q
-from celery import shared_task
+from celery import shared_task, Celery
 from six import BytesIO
 import nibabel as nib
 import pylab as plt
@@ -24,7 +24,10 @@ from django.db import IntegrityError
 from django.core.files.uploadedfile import SimpleUploadedFile
 import re
 
-@shared_task
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'neurovault.settings')
+app = Celery('neurovault')
+
+@app.task(name='crawl_anima')
 def crawl_anima():
     import neurovault.apps.statmaps.models as models
     from neurovault.apps.statmaps.forms import StatisticMapForm, CollectionForm
