@@ -23,9 +23,12 @@ import xml.etree.cElementTree as e
 from django.db import IntegrityError
 from django.core.files.uploadedfile import SimpleUploadedFile
 import re
+from django.conf import settings
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'neurovault.settings')
 app = Celery('neurovault')
+app.config_from_object('django.conf:settings')
+app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
 @app.task(name='crawl_anima')
 def crawl_anima():
