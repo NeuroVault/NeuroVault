@@ -165,7 +165,7 @@ var params = [];
         <div class="row">
             <div class="col-md-3">
                 {% if collection.DOI %}
-                <div class="lead"><a href="{{ collection.url }}">Link to the paper</a></div>
+                <div class="lead"><a href="{{ collection.paper_url }}">Link to the paper</a></div>
                 {% endif %}
                 {% if collection.full_dataset_url %}
                 <div class="lead">Full dataset available at:<a href="{{ collection.full_dataset_url }}">
