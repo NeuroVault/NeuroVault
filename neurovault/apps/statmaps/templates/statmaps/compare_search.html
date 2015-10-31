@@ -34,7 +34,8 @@ function setAttributes(el, attrs) {
 setAttributes(count_a, {"class": "btn btn-warning", "disabled": "true"});
 setAttributes(image_a,{"style": "float:right; margin-right:40px; font-weight:800;", "href": "{{ image_url }}"});
 
-count_a.appendChild(document.createTextNode(["{{ images_processing }} images still processing"]));
+// TODO: improve performance of this calculation
+// count_a.appendChild(document.createTextNode(["{{ images_processing }} images still processing"]));
 image_a.appendChild(document.createTextNode(["{{ image_title }}"]));
 portfolio_filter[0].appendChild(count_li.appendChild(count_a));
 portfolio_filter[0].appendChild(image_li.appendChild(image_a));

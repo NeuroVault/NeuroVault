@@ -920,9 +920,11 @@ def find_similar(request,pk):
         html = [h.strip("\n") for h in html_snippet]
 
         # Get the number of images still processing
-        images_processing = count_processing_comparisons(pk)
+        # TODO: improve performance of this calculation
+        # images_processing = count_processing_comparisons(pk)
 
-        context = {'html': html,'images_processing':images_processing,
+        context = {'html': html,
+                   #'images_processing':images_processing,
                    'image_title':image_title, 'image_url': '/images/%s' % (image1.pk) }
         return render(request, 'statmaps/compare_search.html', context)
     else:
