@@ -373,13 +373,16 @@ def view_nidm_results(request, collection_cid, nidm_name):
     standard_brain = "/static/images/MNI152.nii.gz"
 
     # We will remove these scripts
-    remove_resources = ["BOOTSTRAPCSS"]
+    remove_resources = ["BOOTSTRAPCSS","ROBOTOFONT"]
 
     # We will remove these columns
     columns_to_remove = ["statmap_location","statmap_filename","statmap_type"]
 
-    html_snippet = generate(nidm_files,base_image=standard_brain,
-                            remove_scripts=remove_resources,template_choice="embed")
+    html_snippet = generate(nidm_files,
+                            base_image=standard_brain,
+                            remove_scripts=remove_resources,
+                            columns_to_remove=columns_to_remove,
+                            template_choice="embed")
 
     context = {"form": form,"nidm_viewer":html_snippet}
     return render(request, "statmaps/edit_nidm_results.html", context)

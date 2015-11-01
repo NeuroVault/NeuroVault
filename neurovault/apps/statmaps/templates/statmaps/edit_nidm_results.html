@@ -20,6 +20,14 @@ $().ready(function(){
     $(".circle").css("padding","4px 4px 0px 4px");
     $(".fa-github").css("padding","8px 16px");
 });
+
+
+$("#nidm_images").click(function(){
+    $(".circle").attr("style","")
+    $(".circle").css("padding","4px 4px 0px 4px");
+    $(".fixed-table-container").css("max-height","400px")
+})
+
 </script>
 
 {% crispy form %}
