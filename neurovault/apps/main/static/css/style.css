@@ -21,8 +21,8 @@ body {
 }
 
 #navigation {
-       margin-bottom:0px; 
-       padding-right:10px; 
+       margin-bottom:0px;
+       padding-right:10px;
        padding-left:10px;
        width:1200px;
        border-radius: 6px 6px 0px 0px;
@@ -34,7 +34,7 @@ body {
 }
 
 .navigation-container {
-      padding-left:0px; 
+      padding-left:0px;
       /* background:white; */
       /* margin-bottom: 20px; */
       /* margin-top: 20px; */
@@ -224,4 +224,17 @@ ul.collection_nav li {
     -moz-opacity: 0.9;
     opacity: 0.9;
     filter: alpha(opacity=90);
+}
+
+.settings-tabs {
+    margin-top: 28px;
+    margin-bottom: 20px;
+}
+
+.settings-pane {
+    margin-bottom: 30px;
+}
+
+.settings-pane input[type='submit'] {
+    margin-top: 10px;
 }

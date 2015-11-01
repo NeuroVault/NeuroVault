@@ -7,6 +7,7 @@ from .forms import UserEditForm, UserCreateForm
 from django.contrib.auth.decorators import login_required
 from django.template.context import RequestContext
 
+
 def view_profile(request, username=None):
     if not username:
         if not request.user:
@@ -17,8 +18,8 @@ def view_profile(request, username=None):
         user = get_object_or_404(User, username=username)
     return render(request, 'registration/profile.html', {'user': user})
 
-def create_user(request):
 
+def create_user(request):
     if request.method == "POST":
         form = UserCreateForm(request.POST, request.FILES, instance=User())
         if form.is_valid():
@@ -33,10 +34,11 @@ def create_user(request):
                 return HttpResponseRedirect(reverse("my_profile"))
     else:
         form = UserCreateForm(instance=User())
-        
+
     context = {"form": form,
                "request": request}
     return render(request, "registration/edit_user.html", context)
+
 
 @login_required
 def edit_user(request):
@@ -45,10 +47,10 @@ def edit_user(request):
         if edit_form.is_valid():
             edit_form.save()
             return HttpResponseRedirect(reverse("my_profile"))
-    return render_to_response("registration/edit_user.html",
-                             {'form':edit_form},
-                             context_instance=RequestContext(request))
-    
+    return render_to_response("registration/edit_profile.html",
+                              {'form': edit_form},
+                              context_instance=RequestContext(request))
+
 # def login(request):
 #     return render_to_response('home.html', {
 #         'plus_id': getattr(settings, 'SOCIAL_AUTH_GOOGLE_PLUS_KEY', None)

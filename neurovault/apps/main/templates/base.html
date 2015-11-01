@@ -57,7 +57,7 @@
 	  </li>
 	 <li><a href="{% url 'FAQ' %}">FAQ</a></li>
 	 <li><a href="javascript:void(0)" data-uv-lightbox="classic_widget" data-uv-mode="full" data-uv-primary-color="#cc6d00" data-uv-link-color="#007dbf" data-uv-default-mode="feedback" data-uv-forum-id="210717">Give feedback</a>
-	</li>        
+	</li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
           {% if request.user.is_authenticated %}
@@ -68,8 +68,9 @@
 	  </a>
 	  <ul class="dropdown-menu">
 	      <li><a href="{% url 'my_collections' %}">My collections</a></li>
+          <li role="separator" class="divider"></li>
+          <li><a href="{% url 'edit_user' %}">Settings</a></li>
 	      <li><a href="{% url 'logout' %}">Logout</a></li>
-	      <li><a href="{% url 'edit_user' %}">Edit</a></li>
 	  </ul>
 	  </li>
 	  {% else %}
@@ -89,10 +90,10 @@
 {% block footer %}
 <footer style="text-align:center;padding-top:10px">
       <div class="container navigation-container">
-        <p class="text-muted"> 
+        <p class="text-muted">
             <a href="/api-docs">API</a>  &middot;
             <a href="https://github.com/NeuroVault/NeuroVault">Github </a> &middot;
-            <a href="http://www.cognitiveatlas.org">Cognitive Atlas </a> &middot; 
+            <a href="http://www.cognitiveatlas.org">Cognitive Atlas </a> &middot;
             <a href="http://www.neurosynth.org">NeuroSynth </a></p>
       </div>
 </footer>

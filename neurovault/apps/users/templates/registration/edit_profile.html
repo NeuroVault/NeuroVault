@@ -1,0 +1,7 @@
+{% extends "base_settings.html" %}
+
+{% block profiletab %}class="active"{% endblock%}
+
+{% block setting_content %}
+{% include "_simple_settings_form.html" with form=form submit_title="Update profile" %}
+{% endblock %}
