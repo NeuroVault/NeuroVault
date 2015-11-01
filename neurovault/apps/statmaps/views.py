@@ -379,6 +379,9 @@ def view_nidm_results(request, collection_cid, nidm_name):
     # We will remove these scripts
     remove_resources = ["BOOTSTRAPCSS"]
 
+    # We will remove these columns
+    columns_to_remove = ["statmap_location","statmap_filename","statmap_type"]
+
     html_snippet = generate(nidm_files,base_image=standard_brain,
                             remove_scripts=remove_resources,template_choice="embed")
 
