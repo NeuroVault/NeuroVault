@@ -3,7 +3,7 @@
 
 {% block head %}
     <title>{% block title %}NeuroVault: Edit nidm result{% endblock %}</title>
-    %link{ href:"{% static 'css/studies.css' %}", media:"screen", rel:"stylesheet", type:"text/css"}
+    <link href="{% static 'css/studies.css' %}" media="screen" rel="stylesheet" type="text/css"></link>
 {% endblock %}
 
 {% block content %}
@@ -19,6 +19,7 @@ $().ready(function(){
     $(".circle").attr("style","")
     $(".circle").css("padding","4px 4px 0px 4px");
     $(".fa-github").css("padding","8px 16px");
+    $(".fixed-table-container").css("max-height","400px")
 });
 
 
