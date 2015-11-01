@@ -38,7 +38,7 @@ from neurovault.apps.statmaps.models import CognitiveAtlasTask
 from chosen import forms as chosenforms
 from gzip import GzipFile
 from file_resubmit.admin import AdminResubmitFileWidget
-
+from guardian.shortcuts import get_objects_for_user
 
 # Create the form class.
 collection_fieldsets = [
@@ -548,7 +548,7 @@ class EditStatisticMapForm(StatisticMapForm):
         if user.is_superuser:
             self.fields['collection'].queryset = Collection.objects.all()
         else:
-            self.fields['collection'].queryset = Collection.objects.filter(owner=user)
+            self.fields['collection'].queryset = get_objects_for_user(user, 'statmaps.change_collection')
 
 class AddStatisticMapForm(StatisticMapForm):
 
@@ -570,7 +570,7 @@ class EditAtlasForm(AtlasForm):
         if user.is_superuser:
             self.fields['collection'].queryset = Collection.objects.all()
         else:
-            self.fields['collection'].queryset = Collection.objects.filter(owner=user)
+            self.fields['collection'].queryset = get_objects_for_user(user, 'statmaps.change_collection')
 
     class Meta(AtlasForm.Meta):
         exclude = ()
@@ -761,9 +761,9 @@ class NIDMResultsForm(forms.ModelForm):
                               fname + ')(\"\^\^xsd\:anyURI\ \;)')
 
         hdr, urlprefix, nifti, ftr = re.search(ttl_regx,ttl_content).groups()
-        base_url = 'http://neurovault.org'
-        base_dir = os.path.dirname(self.instance.nidmresultstatisticmap_set.first().file.url)
-        replace_path = "%s/%s/" %(base_url,base_dir)
+        base_url = settings.DOMAIN_NAME
+        replace_path = base_url + os.path.join(self.instance.collection.get_absolute_url(),
+                                               self.instance.name)+'/'
 
         updated_ttl = ttl_content.replace(urlprefix,replace_path)
         self.instance.ttl_file.file.close()
