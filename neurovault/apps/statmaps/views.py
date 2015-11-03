@@ -376,7 +376,8 @@ def view_nidm_results(request, collection_cid, nidm_name):
     remove_resources = ["BOOTSTRAPCSS","ROBOTOFONT"]
 
     # We will remove these columns
-    columns_to_remove = ["statmap_location","statmap_filename","statmap_type"]
+    columns_to_remove = ["statmap_location","statmap",
+                         "statmap_type","coordinate_id"]
 
     html_snippet = generate(nidm_files,
                             base_image=standard_brain,
