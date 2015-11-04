@@ -431,6 +431,8 @@ def add_image_for_neurosynth(request):
 @login_required
 def add_image(request, collection_cid):
     collection = get_collection(collection_cid,request)
+    if not owner_or_contrib(request,collection):
+        return HttpResponseForbidden()
     image = StatisticMap(collection=collection)
     if request.method == "POST":
         form = AddStatisticMapForm(request.POST, request.FILES, instance=image)
