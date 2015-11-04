@@ -24,6 +24,7 @@ from django.core.files.base import ContentFile
 from django.db.models.aggregates import Count
 from django.http import Http404, HttpResponse
 from django.core.urlresolvers import reverse
+from nidmviewer.viewer import generate
 from django.db.models import Q, Count
 from sklearn.externals import joblib
 from collections import OrderedDict
@@ -367,8 +368,25 @@ def view_nidm_results(request, collection_cid, nidm_name):
         else:
             form = NIDMViewForm(instance=nidmr)
 
-    context = {"form": form}
-    return render(request, "statmaps/edit_nidm_results.html.haml", context)
+    # Generate viewer for nidm result
+    nidm_files = [nidmr.ttl_file.path.encode("utf-8")]
+    standard_brain = "/static/images/MNI152.nii.gz"
+
+    # We will remove these scripts
+    remove_resources = ["BOOTSTRAPCSS","ROBOTOFONT"]
+
+    # We will remove these columns
+    columns_to_remove = ["statmap_location","statmap",
+                         "statmap_type","coordinate_id"]
+
+    html_snippet = generate(nidm_files,
+                            base_image=standard_brain,
+                            remove_scripts=remove_resources,
+                            columns_to_remove=columns_to_remove,
+                            template_choice="embed")
+
+    context = {"form": form,"nidm_viewer":html_snippet}
+    return render(request, "statmaps/edit_nidm_results.html", context)
 
 @login_required
 def delete_nidm_results(request, collection_cid, nidm_name):
@@ -681,7 +699,7 @@ def serve_nidm(request, collection_cid, nidmdir, sep, path):
         fpathbase = os.path.dirname(zipfile)
         fpath = ''.join([fpathbase,sep,path])
 
-    return sendfile(request, os.path.join(basepath,fpath))
+    return sendfile(request, os.path.join(basepath,fpath), encoding="utf-8")
 
 
 def serve_nidm_image(request, collection_cid, nidmdir, sep, path):

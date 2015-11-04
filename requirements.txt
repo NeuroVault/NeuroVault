@@ -46,4 +46,5 @@ djrill
 django-hstore==1.3.5
 cognitiveatlas
 django-datatables-view
+git+git://github.com/vsoch/nidmviewer.git
 https://github.com/benkonrath/django-guardian/archive/django-polymorphic.zip

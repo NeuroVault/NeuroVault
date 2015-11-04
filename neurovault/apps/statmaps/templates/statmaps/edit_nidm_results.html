@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block head %}
+    <title>{% block title %}NeuroVault: Edit nidm result{% endblock %}</title>
+    <link href="{% static 'css/studies.css' %}" media="screen" rel="stylesheet" type="text/css"></link>
+{% endblock %}
+
+{% block content %}
+
+<h2><a href="{{form.instance.collection.get_absolute_url}}">{{form.instance.collection.name}}</a> / {{ form.instance.name }}.zip</h2>
+
+{{ nidm_viewer | safe }}
+
+<script>
+$().ready(function(){
+    $("#button_zone").css("background-color","white");
+    $("#button_zone").css("border","none");
+    $(".circle").attr("style","")
+    $(".circle").css("padding","4px 4px 0px 4px");
+    $(".fa-github").css("padding","8px 16px");
+    $(".fixed-table-container").css("max-height","400px")
+});
+
+
+$("#nidm_images").click(function(){
+    $(".circle").attr("style","")
+    $(".circle").css("padding","4px 4px 0px 4px");
+    $(".fixed-table-container").css("max-height","400px")
+})
+
+</script>
+
+{% crispy form %}
+
+<link rel="stylesheet" href="/static/css/style.css">
+
+{% endblock %}
+
