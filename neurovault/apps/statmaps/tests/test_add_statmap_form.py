@@ -1,7 +1,10 @@
-from django.test import TestCase, Client
-from neurovault.apps.statmaps.models import Collection,User, StatisticMap
 import os
+
+from django.core.urlresolvers import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase, Client
+
+from neurovault.apps.statmaps.models import Collection,User, StatisticMap
 from neurovault.apps.statmaps.forms import StatisticMapForm
 from .utils import clearDB
 
@@ -75,3 +78,25 @@ class AddStatmapsTests(TestCase):
             form.save()
             
             self.assertEqual(StatisticMap.objects.filter(collection=self.coll.pk)[0].name, "test map")
+
+    def test_add_image_non_owner(self):
+        non_owner = User.objects.create_user('non_owner', password="test")
+        non_owner.save()
+        client = Client()
+        client.login(username=non_owner, password="test")
+        testpath = os.path.abspath(os.path.dirname(__file__))
+        fname_img = os.path.join(testpath,'test_data/statmaps/box_0b_vs_1b.img')
+        fname_hdr = os.path.join(testpath,'test_data/statmaps/box_0b_vs_1b.hdr')
+        post_dict = {
+                'name': "test map",
+                'cognitive_paradigm_cogatlas': 'trm_4f24126c22011',
+                'modality':'fMRI-BOLD',
+                'map_type': 'T',
+                'collection':self.coll.pk,
+                'ignore_file_warning': True,
+                'file': SimpleUploadedFile(fname_img, open(fname_img).read()),
+                'hdr_file': SimpleUploadedFile(fname_hdr, open(fname_hdr).read())
+        }
+        cid = self.coll.pk
+        response = client.post(reverse('add_image', kwargs={'collection_cid':cid}), post_dict)
+        self.assertEqual(response.status_code, 403) 
