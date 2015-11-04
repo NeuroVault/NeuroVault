@@ -372,18 +372,22 @@ def view_nidm_results(request, collection_cid, nidm_name):
     nidm_files = [nidmr.ttl_file.path.encode("utf-8")]
     standard_brain = "/static/images/MNI152.nii.gz"
 
-    # We will remove these scripts
-    remove_resources = ["BOOTSTRAPCSS","ROBOTOFONT"]
+    # We will remove these scripts and a button
+    remove_resources = ["BOOTSTRAPCSS","ROBOTOFONT","NIDMSELECTBUTTON"]
 
     # We will remove these columns
     columns_to_remove = ["statmap_location","statmap",
                          "statmap_type","coordinate_id"]
 
+    # Text for the "Select image" button
+    button_text = "Statistical Map"
+
     html_snippet = generate(nidm_files,
                             base_image=standard_brain,
                             remove_scripts=remove_resources,
                             columns_to_remove=columns_to_remove,
-                            template_choice="embed")
+                            template_choice="embed",
+                            button_text=button_text)
 
     context = {"form": form,"nidm_viewer":html_snippet}
     return render(request, "statmaps/edit_nidm_results.html", context)
