@@ -34,7 +34,7 @@ from django.db.models.signals import m2m_changed
 
 class Collection(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of collection")
-    DOI = models.CharField(max_length=200, unique=True, blank=True, null=True, default=None, verbose_name="DOI of the corresponding paper")
+    DOI = models.CharField(max_length=200, unique=True, blank=True, null=True, default=None, verbose_name="DOI of the corresponding paper (required if you want your maps to be archived in Stanford Digital Repository)")
     authors = models.CharField(max_length=5000, blank=True, null=True)
     paper_url = models.CharField(max_length=200, blank=True, null=True)
     journal_name = models.CharField(max_length=200, blank=True, null=True, default=None)
