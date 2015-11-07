@@ -25,8 +25,8 @@ RUN pip install django-coffeescript
 RUN pip install South
 RUN pip install django-taggit-templatetags
 RUN pip install django-dirtyfields
-RUN pip install dropbox==1.6
-RUN pip install django-dbbackup<2.3
+RUN pip install 'dropbox==1.6'
+RUN pip install 'django-dbbackup<2.3'
 RUN pip install numpy
 RUN pip install nibabel
 RUN pip install psycopg2
