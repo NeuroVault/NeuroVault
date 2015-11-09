@@ -373,7 +373,8 @@ def view_nidm_results(request, collection_cid, nidm_name):
     standard_brain = "/static/images/MNI152.nii.gz"
 
     # We will remove these scripts and a button
-    remove_resources = ["BOOTSTRAPCSS","ROBOTOFONT","NIDMSELECTBUTTON"]
+    remove_resources = ["BOOTSTRAPCSS","ROBOTOFONT","NIDMSELECTBUTTON",
+                       "PAPAYAJS","PAPAYACSS"]
 
     # We will remove these columns
     columns_to_remove = ["statmap_location","statmap",
