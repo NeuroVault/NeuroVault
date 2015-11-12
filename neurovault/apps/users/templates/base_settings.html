@@ -3,8 +3,10 @@
 {% block content %}
   <h2>Settings</h2>
   <ul class="nav nav-tabs settings-tabs">
-    <li {% block profiletab %}{% endblock%} ><a href="{% url 'edit_user' %}">Profile</a></li>
-    <li {% block passwordtab %}{% endblock%}><a href="{% url 'password_change' %}">Change password</a></li>
+    <li {% block profiletab %}{% endblock %} ><a href="{% url 'edit_user' %}">Profile</a></li>
+    <li {% block passwordtab %}{% endblock %}><a href="{% url 'password_change' %}">Change password</a></li>
+    <li {% block connectedappstab %}{% endblock %}><a href="{% url 'password_change' %}">Connected applications</a></li>
+    <li {% block developerappstab %}{% endblock %}><a href="{% url 'developerapps_list' %}">Developer applications</a></li>
   </ul>
   {% block setting_content %}{% endblock %}
 {% endblock %}

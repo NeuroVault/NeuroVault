@@ -238,3 +238,16 @@ ul.collection_nav li {
 .settings-pane input[type='submit'] {
     margin-top: 10px;
 }
+
+.settings-pane h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.settings-pane .table {
+    margin-top: -10px;
+}
+
+.settings-no-content {
+    padding-top: 20px;
+}

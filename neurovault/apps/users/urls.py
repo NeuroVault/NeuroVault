@@ -4,14 +4,17 @@ from django.contrib import admin
 from .views import view_profile, edit_user, create_user
 from django.contrib.auth.views import login
 from django.contrib.auth import views as auth_views
+from oauth2_provider.views.application import ApplicationList
+from .views import ApplicationUpdate
+
 admin.autodiscover()
 
 urlpatterns = patterns('',
     url(r'^login/$', login,
         {'extra_context': {'plus_id': getattr(settings, 'SOCIAL_AUTH_GOOGLE_PLUS_KEY', None),
-                           'plus_scope': 'profile email'}}, 
+                           'plus_scope': 'profile email'}},
         name="login"),
-    url(r'^logout/$', 'django.contrib.auth.views.logout', 
+    url(r'^logout/$', 'django.contrib.auth.views.logout',
         {'template_name': 'registration/logout.html', 'next_page': '/'}, name="logout"),
     url(r'^create/$',
         create_user,
@@ -41,11 +44,16 @@ urlpatterns = patterns('',
      url(r'^profile/.*$',
          view_profile,
          name="my_profile"
-         ),    
+         ),
+    url(r'^applications/$', ApplicationList.as_view(),
+        name="developerapps_list"),
+    url(r'^applications/(?P<pk>\d+)/$', ApplicationUpdate.as_view(),
+        name="developerapps_update"),
+
     url(r'^(?P<username>[A-Za-z0-9@/./+/-/_]+)/$',
         view_profile,
         name="profile"
-        )        
+        ),
 )
 
 
