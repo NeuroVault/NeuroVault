@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.utils.translation import ugettext_lazy as _
+from oauth2_provider.models import Application
 
 
 class UserCreateForm(UserCreationForm):
@@ -49,3 +50,9 @@ class UserEditForm(forms.ModelForm):
 
     def clean_password(self):
         return ""
+
+
+class ApplicationEditForm(forms.ModelForm):
+    class Meta:
+        model = Application
+        fields = ('name', 'client_id', 'client_secret', 'client_type', 'authorization_grant_type', 'redirect_uris')

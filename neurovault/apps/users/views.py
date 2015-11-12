@@ -1,9 +1,10 @@
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, render_to_response
 from django.contrib.auth.models import User
+from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.contrib.auth import authenticate, login
-from .forms import UserEditForm, UserCreateForm
+from .forms import UserEditForm, UserCreateForm, ApplicationEditForm
 from django.contrib.auth.decorators import login_required
 from django.template.context import RequestContext
 from oauth2_provider.views.application import ApplicationOwnerIsUserMixin
@@ -64,7 +65,13 @@ class ApplicationUpdate(ApplicationOwnerIsUserMixin, UpdateView):
     View used to update an application owned by the request.user
     """
     context_object_name = 'application'
+    form_class = ApplicationEditForm
     template_name = "oauth2_provider/application_form.html"
 
     def get_success_url(self):
         return reverse('developerapps_list')
+
+    def form_valid(self, form):
+        messages.success(self.request,
+                         'The application has been successfully updated.')
+        return super(ApplicationUpdate, self).form_valid(form)
