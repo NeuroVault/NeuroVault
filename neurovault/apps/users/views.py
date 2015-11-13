@@ -10,7 +10,6 @@ from django.template.context import RequestContext
 from oauth2_provider.views.application import ApplicationOwnerIsUserMixin
 from django.views.generic import CreateView, UpdateView, DeleteView
 from braces.views import LoginRequiredMixin
-from django.utils.html import escape
 
 
 def view_profile(request, username=None):
