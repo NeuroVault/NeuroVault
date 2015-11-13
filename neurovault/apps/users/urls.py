@@ -5,7 +5,8 @@ from .views import view_profile, edit_user, create_user
 from django.contrib.auth.views import login
 from django.contrib.auth import views as auth_views
 from oauth2_provider.views.application import ApplicationList
-from .views import ApplicationRegistration, ApplicationUpdate
+from .views import (ApplicationRegistration, ApplicationUpdate,
+                    ApplicationDelete)
 
 admin.autodiscover()
 
@@ -51,6 +52,8 @@ urlpatterns = patterns('',
         name="developerapps_register"),
     url(r'^applications/(?P<pk>\d+)/$', ApplicationUpdate.as_view(),
         name="developerapps_update"),
+    url(r'^applications/(?P<pk>\d+)/delete/$', ApplicationDelete.as_view(),
+        name="developerapps_delete"),
 
     url(r'^(?P<username>[A-Za-z0-9@/./+/-/_]+)/$',
         view_profile,

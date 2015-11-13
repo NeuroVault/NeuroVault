@@ -2,7 +2,7 @@ from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, render_to_response
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse, reverse_lazy
 from django.contrib.auth import authenticate, login
 from .forms import UserEditForm, UserCreateForm, ApplicationEditForm
 from django.contrib.auth.decorators import login_required
@@ -10,6 +10,7 @@ from django.template.context import RequestContext
 from oauth2_provider.views.application import ApplicationOwnerIsUserMixin
 from django.views.generic import CreateView, UpdateView, DeleteView
 from braces.views import LoginRequiredMixin
+from django.utils.html import escape
 
 
 def view_profile(request, username=None):
@@ -85,7 +86,7 @@ class ApplicationUpdate(ApplicationOwnerIsUserMixin, UpdateView):
     """
     context_object_name = 'application'
     form_class = ApplicationEditForm
-    template_name = "oauth2_provider/application_form.html"
+    template_name = 'oauth2_provider/application_form.html'
 
     def get_success_url(self):
         return reverse('developerapps_list')
@@ -94,3 +95,17 @@ class ApplicationUpdate(ApplicationOwnerIsUserMixin, UpdateView):
         messages.success(self.request,
                          'The application has been successfully updated.')
         return super(ApplicationUpdate, self).form_valid(form)
+
+
+class ApplicationDelete(ApplicationOwnerIsUserMixin, DeleteView):
+    """
+    View used to delete an application owned by the request.user
+    """
+    context_object_name = 'application'
+    success_url = reverse_lazy('developerapps_list')
+    template_name = "oauth2_provider/application_confirm_delete.html"
+    success_message = 'The application has been successfully deleted.'
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, self.success_message)
+        return super(ApplicationDelete, self).delete(request, *args, **kwargs)

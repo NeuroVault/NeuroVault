@@ -235,7 +235,7 @@ ul.collection_nav li {
     margin-bottom: 30px;
 }
 
-.settings-pane input[type='submit'] {
+.settings-pane input[type='submit'], .btn {
     margin-top: 10px;
 }
 
