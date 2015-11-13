@@ -39,12 +39,12 @@
           </tbody>
       </table>
 
-      <a class="btn btn-primary" href="{% url "oauth2_provider:register" %}">Register new application</a>
+      <a class="btn btn-primary" href="{% url 'developerapps_register' %}">Register new application</a>
     {% else %}
     <div class="text-center settings-no-content">
       <h3>{% trans "No Developer Applications" %}</h3>
       <p>Developer applications are used for enhanced access to the <a href="{% url 'api-docs' %}">NeuroVault API</a>.</p>
-      <p><a href="{% url 'oauth2_provider:register' %}">{% trans "Register an application" %}</a> {% trans "to get started." %}</p>
+      <p><a href="{% url 'developerapps_register' %}">{% trans "Register an application" %}</a> {% trans "to get started." %}</p>
     </div>
     {% endif %}
     </div>

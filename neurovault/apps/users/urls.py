@@ -5,7 +5,7 @@ from .views import view_profile, edit_user, create_user
 from django.contrib.auth.views import login
 from django.contrib.auth import views as auth_views
 from oauth2_provider.views.application import ApplicationList
-from .views import ApplicationUpdate
+from .views import ApplicationRegistration, ApplicationUpdate
 
 admin.autodiscover()
 
@@ -41,12 +41,14 @@ urlpatterns = patterns('',
         edit_user,
         name="edit_user"
         ),
-     url(r'^profile/.*$',
-         view_profile,
-         name="my_profile"
-         ),
+    url(r'^profile/.*$',
+        view_profile,
+        name="my_profile"
+        ),
     url(r'^applications/$', ApplicationList.as_view(),
         name="developerapps_list"),
+    url(r'^applications/register/$', ApplicationRegistration.as_view(),
+        name="developerapps_register"),
     url(r'^applications/(?P<pk>\d+)/$', ApplicationUpdate.as_view(),
         name="developerapps_update"),
 

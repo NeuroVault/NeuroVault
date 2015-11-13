@@ -53,6 +53,9 @@ class UserEditForm(forms.ModelForm):
 
 
 class ApplicationEditForm(forms.ModelForm):
+    name = forms.CharField(required=True)
+
     class Meta:
         model = Application
-        fields = ('name', 'client_id', 'client_secret', 'client_type', 'authorization_grant_type', 'redirect_uris')
+        fields = ('name', 'client_id', 'client_secret', 'client_type',
+                  'authorization_grant_type', 'redirect_uris')

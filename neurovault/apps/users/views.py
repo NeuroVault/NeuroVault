@@ -8,7 +8,8 @@ from .forms import UserEditForm, UserCreateForm, ApplicationEditForm
 from django.contrib.auth.decorators import login_required
 from django.template.context import RequestContext
 from oauth2_provider.views.application import ApplicationOwnerIsUserMixin
-from django.views.generic import UpdateView
+from django.views.generic import CreateView, UpdateView, DeleteView
+from braces.views import LoginRequiredMixin
 
 
 def view_profile(request, username=None):
@@ -58,6 +59,24 @@ def edit_user(request):
 #     return render_to_response('home.html', {
 #         'plus_id': getattr(settings, 'SOCIAL_AUTH_GOOGLE_PLUS_KEY', None)
 #     }, RequestContext(request))
+
+
+class ApplicationRegistration(LoginRequiredMixin, CreateView):
+    """
+    View used to register a new Application for the request.user
+    """
+    form_class = ApplicationEditForm
+    template_name = "oauth2_provider/application_registration_form.html"
+
+    def get_success_url(self):
+        return reverse('developerapps_list')
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        messages.success(self.request,
+                         'The application has been successfully registered.')
+
+        return super(ApplicationRegistration, self).form_valid(form)
 
 
 class ApplicationUpdate(ApplicationOwnerIsUserMixin, UpdateView):
