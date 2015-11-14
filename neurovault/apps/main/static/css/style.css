@@ -251,3 +251,8 @@ ul.collection_nav li {
 .settings-no-content {
     padding-top: 20px;
 }
+
+.oauth-connection-request {
+    width: 40%;
+    margin-bottom: 60px;
+}
