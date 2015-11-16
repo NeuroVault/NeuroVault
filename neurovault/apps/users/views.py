@@ -130,7 +130,8 @@ class ConnectionList(ConnectionUserIsRequestUserMixin, ListView):
 class ConnectionDelete(ConnectionUserIsRequestUserMixin, DeleteView):
     template_name = 'oauth2_provider/connection_confirm_delete.html'
     success_url = reverse_lazy('connection_list')
-    success_message = 'The application authorization has been successfully revoked.'
+    success_message = ('The application authorization has been successfully '
+                       'revoked.')
 
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
