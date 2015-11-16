@@ -8,7 +8,8 @@ from .forms import UserEditForm, UserCreateForm, ApplicationEditForm
 from django.contrib.auth.decorators import login_required
 from django.template.context import RequestContext
 from oauth2_provider.views.application import ApplicationOwnerIsUserMixin
-from django.views.generic import CreateView, UpdateView, DeleteView
+from oauth2_provider.models import RefreshToken
+from django.views.generic import CreateView, UpdateView, DeleteView, ListView
 from braces.views import LoginRequiredMixin
 
 
@@ -102,9 +103,39 @@ class ApplicationDelete(ApplicationOwnerIsUserMixin, DeleteView):
     """
     context_object_name = 'application'
     success_url = reverse_lazy('developerapps_list')
-    template_name = "oauth2_provider/application_confirm_delete.html"
+    template_name = 'oauth2_provider/application_confirm_delete.html'
     success_message = 'The application has been successfully deleted.'
 
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, self.success_message)
         return super(ApplicationDelete, self).delete(request, *args, **kwargs)
+
+
+class ConnectionUserIsRequestUserMixin(LoginRequiredMixin):
+    """
+    This mixin is used to provide an Connection queryset filtered by the
+    current request.user.
+    """
+    fields = '__all__'
+
+    def get_queryset(self):
+        return RefreshToken.objects.filter(user=self.request.user)
+
+
+class ConnectionList(ConnectionUserIsRequestUserMixin, ListView):
+    model = RefreshToken
+    template_name = 'oauth2_provider/connection_list.html'
+
+
+class ConnectionDelete(ConnectionUserIsRequestUserMixin, DeleteView):
+    template_name = 'oauth2_provider/connection_confirm_delete.html'
+    success_url = reverse_lazy('connection_list')
+    success_message = 'The application authorization has been successfully revoked.'
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        self.object.revoke()
+        messages.success(self.request, self.success_message)
+
+        return HttpResponseRedirect(success_url)

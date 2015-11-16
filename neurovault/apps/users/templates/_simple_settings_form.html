@@ -5,7 +5,9 @@
     <form action="" method="post">
       {% csrf_token %}
       {{ form | crispy }}
-      <input class="btn btn-primary" type="submit" value="{{ submit_title }}" />
+      <div class="form-controls">
+          <input class="btn btn-primary" type="submit" value="{{ submit_title }}" />
+      </div>
     </form>
   </div>
 </div>

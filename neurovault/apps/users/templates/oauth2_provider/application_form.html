@@ -16,15 +16,13 @@
         {% csrf_token %}
         {{ form | crispy }}
 
-        <div class="control-group">
-          <div class="controls">
-              <button type="submit" class="btn btn-primary">Save</button>
-              {% block app-form-delete-button %}<a class="btn btn-danger" href="{% url "developerapps_delete" application.id %}">{% trans "Delete" %}</a>{% endblock app-form-delete-button %}
+        <div class="form-controls">
+            <button type="submit" class="btn btn-primary">Save</button>
+            {% block app-form-delete-button %}<a class="btn btn-danger" href="{% url "developerapps_delete" application.id %}">{% trans "Delete" %}</a>{% endblock app-form-delete-button %}
 
-              <a class="btn" href="{% url "oauth2_provider:list" %}">
-                  {% trans "Cancel" %}
-              </a>
-          </div>
+            <a class="btn" href="{% url "oauth2_provider:list" %}">
+                {% trans "Cancel" %}
+            </a>
         </div>
       </form>
     </div>

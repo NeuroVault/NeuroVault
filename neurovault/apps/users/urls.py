@@ -6,7 +6,8 @@ from django.contrib.auth.views import login
 from django.contrib.auth import views as auth_views
 from oauth2_provider.views.application import ApplicationList
 from .views import (ApplicationRegistration, ApplicationUpdate,
-                    ApplicationDelete)
+                    ApplicationDelete, ConnectionList,
+                    ConnectionDelete)
 
 admin.autodiscover()
 
@@ -46,6 +47,12 @@ urlpatterns = patterns('',
         view_profile,
         name="my_profile"
         ),
+
+    url(r'^connections/$', ConnectionList.as_view(),
+        name="connection_list"),
+    url(r'^connections/(?P<pk>\d+)/revoke/$', ConnectionDelete.as_view(),
+        name="connection_revoke"),
+
     url(r'^applications/$', ApplicationList.as_view(),
         name="developerapps_list"),
     url(r'^applications/register/$', ApplicationRegistration.as_view(),
@@ -60,7 +67,6 @@ urlpatterns = patterns('',
         name="profile"
         ),
 )
-
 
 
 # if settings.DEBUG:
