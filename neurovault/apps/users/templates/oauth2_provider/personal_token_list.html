@@ -17,7 +17,6 @@
           <thead>
             <tr>
               <th class="col-md-5">Token</th>
-              <th class="col-md-6">Owner</th>
               <th class="col-md-1"></th>
             </tr>
           </thead>
@@ -25,12 +24,6 @@
           {% for token in object_list %}
               <tr>
                 <td>{{ token.token }}</td>
-                <td>
-                  id: {{ token.application.id }} /
-                  user: {{ token.application.user.username }} /
-                  app name: {{ token.application.name }} /
-                  expires: {{ token.expires }}
-                </td>
                 <td><a class="btn btn-danger btn-sm" href="{% url "token_delete" token.id %}">Delete</a>
                 </td>
               </tr>
