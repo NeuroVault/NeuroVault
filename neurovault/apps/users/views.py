@@ -1,4 +1,6 @@
+import datetime
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
+from django.utils.crypto import get_random_string
 from django.shortcuts import render, get_object_or_404, render_to_response
 from django.contrib.auth.models import User
 from django.contrib import messages
@@ -8,8 +10,8 @@ from .forms import UserEditForm, UserCreateForm, ApplicationEditForm
 from django.contrib.auth.decorators import login_required
 from django.template.context import RequestContext
 from oauth2_provider.views.application import ApplicationOwnerIsUserMixin
-from oauth2_provider.models import RefreshToken
-from django.views.generic import CreateView, UpdateView, DeleteView, ListView
+from oauth2_provider.models import RefreshToken, AccessToken, Application
+from django.views.generic import View, CreateView, UpdateView, DeleteView, ListView
 from braces.views import LoginRequiredMixin
 
 
@@ -60,6 +62,55 @@ def edit_user(request):
 #     return render_to_response('home.html', {
 #         'plus_id': getattr(settings, 'SOCIAL_AUTH_GOOGLE_PLUS_KEY', None)
 #     }, RequestContext(request))
+
+
+class PersonalTokenUserIsRequestUserMixin(LoginRequiredMixin):
+    """
+    This mixin is used to provide an Connection queryset filtered by the
+    current request.user.
+    """
+    fields = '__all__'
+
+    def get_queryset(self):
+        return AccessToken.objects.filter(user=self.request.user)
+
+
+class PersonalTokenList(PersonalTokenUserIsRequestUserMixin, ListView):
+    model = AccessToken
+    template_name = 'oauth2_provider/personal_token_list.html'
+
+
+class PersonalTokenCreate(LoginRequiredMixin, View):
+    oauth_token_length = 40
+    default_app_id = 42
+
+    def post(self, request, *args, **kwargs):
+        application = Application.objects.get(pk=self.default_app_id)
+        AccessToken.objects.create(user=self.request.user,
+                                   token=get_random_string(
+                                       length=self.oauth_token_length),
+                                   application=application,
+                                   expires=datetime.date(datetime.MAXYEAR,
+                                                         12, 30),
+                                   scope='read write')
+        messages.success(self.request,
+                         'The new token has been successfully generated.')
+
+        return HttpResponseRedirect(reverse('token_list'))
+
+
+class PersonalTokenDelete(PersonalTokenUserIsRequestUserMixin, DeleteView):
+    template_name = 'oauth2_provider/personal_token_confirm_delete.html'
+    success_url = reverse_lazy('token_list')
+    success_message = ('The token has been successfully deleted.')
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        self.object.revoke()
+        messages.success(self.request, self.success_message)
+
+        return HttpResponseRedirect(success_url)
 
 
 class ApplicationRegistration(LoginRequiredMixin, CreateView):

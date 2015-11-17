@@ -7,7 +7,8 @@ from django.contrib.auth import views as auth_views
 from oauth2_provider.views.application import ApplicationList
 from .views import (ApplicationRegistration, ApplicationUpdate,
                     ApplicationDelete, ConnectionList,
-                    ConnectionDelete)
+                    ConnectionDelete, PersonalTokenList,
+                    PersonalTokenCreate, PersonalTokenDelete)
 
 admin.autodiscover()
 
@@ -47,6 +48,13 @@ urlpatterns = patterns('',
         view_profile,
         name="my_profile"
         ),
+
+    url(r'^tokens/$', PersonalTokenList.as_view(),
+        name="token_list"),
+    url(r'^tokens/new$', PersonalTokenCreate.as_view(),
+        name="token_create"),
+    url(r'^tokens/(?P<pk>\d+)/delete/$', PersonalTokenDelete.as_view(),
+        name="token_delete"),
 
     url(r'^connections/$', ConnectionList.as_view(),
         name="connection_list"),

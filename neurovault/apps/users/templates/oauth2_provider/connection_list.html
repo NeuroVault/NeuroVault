@@ -8,14 +8,7 @@
     <div class="col-md-12">
 
     {% if messages %}
-    <div class="messages">
-        {% for message in messages %}
-        <div class="alert alert-{{ message.level_tag }} alert-dismissible" role="alert">
-          <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-          {{ message }}
-        </div>
-        {% endfor %}
-    </div>
+        {% include "_messages_block.html" with messages=messages %}
     {% endif %}
 
     {% if object_list %}
