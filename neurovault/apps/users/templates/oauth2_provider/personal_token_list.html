@@ -2,7 +2,6 @@
 
 {% block personalaccesstokenstab %}class="active"{% endblock%}
 
-{% load i18n %}
 {% block setting_content %}
   <div class="row settings-pane">
     <div class="col-md-12">
@@ -33,7 +32,7 @@
       {% include "_personal_token_form.html" %}
     {% else %}
     <div class="text-center settings-no-content">
-      <h3>{% trans "No personal access tokens" %}</h3>
+      <h3>No personal access tokens</h3>
       <p>Personal access tokens are used to access your account via the <a href="{% url 'api-docs' %}">NeuroVault API</a>.</p>
       <p>
         {% include "_personal_token_form.html" %}

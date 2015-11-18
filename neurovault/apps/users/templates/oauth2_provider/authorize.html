@@ -1,11 +1,10 @@
 {% extends "base.html" %}
 
-{% load i18n %}
 {% block content %}
     <div class="center-block oauth-connection-request">
         {% if not error %}
             <form id="authorizationForm" method="post">
-                <h1>{% trans "Authorize application" %}</h1>
+                <h1>Authorize application</h1>
                 {% csrf_token %}
 
                 {% for field in form %}
@@ -14,7 +13,7 @@
                     {% endif %}
                 {% endfor %}
 
-                <p class="lead"><strong>{{ application.name }}</strong> {% trans "requires following permissions to access your account" %}</p>
+                <p class="lead"><strong>{{ application.name }}</strong> requires following permissions to access your account</p>
                 <ul>
                     {% for scope in scopes_descriptions %}
                         <li>{{ scope }}</li>

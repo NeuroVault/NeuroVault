@@ -2,7 +2,6 @@
 
 {% block connectedappstab %}class="active"{% endblock%}
 
-{% load i18n %}
 {% block setting_content %}
   <div class="row settings-pane">
     <div class="col-md-12">
@@ -36,7 +35,7 @@
       </table>
     {% else %}
     <div class="text-center settings-no-content">
-      <h3>{% trans "No connected applications" %}</h3>
+      <h3>No connected applications</h3>
       <p>You have no applications authorized to access your account on your behalf via <a href="{% url 'api-docs' %}">NeuroVault API</a>.</p>
     </div>
     {% endif %}

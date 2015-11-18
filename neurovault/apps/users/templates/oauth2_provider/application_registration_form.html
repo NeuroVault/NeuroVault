@@ -1,8 +1,6 @@
 {% extends "oauth2_provider/application_form.html" %}
 
-{% load i18n %}
-
-{% block app-form-title %}{% trans "Register a new application" %}{% endblock app-form-title %}
+{% block app-form-title %}Register a new application{% endblock app-form-title %}
 
 {% block app-form-action-url %}{% url 'developerapps_register' %}{% endblock app-form-action-url %}
 
