@@ -25,6 +25,7 @@ import cPickle as pickle
 import urllib2
 import os
 import re
+import pandas as pd
 
 
 from django import template
@@ -141,6 +142,9 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
         orderedDict = serializer(obj, context={
             'request': self.context['request']}).to_representation(obj)
         orderedDict['image_type'] = image_type
+        for key, val in orderedDict.iteritems():
+            if pd.isnull(val):
+                orderedDict[key] = "null";
         return orderedDict
 
 

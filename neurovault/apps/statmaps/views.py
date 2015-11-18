@@ -54,6 +54,7 @@ import json
 import functools
 from . import image_metadata
 from guardian.shortcuts import get_objects_for_user
+import numpy as np
 
 
 def owner_or_contrib(request,collection):
@@ -278,7 +279,9 @@ def view_image(request, pk, collection_cid=None):
     if isinstance(image, Atlas):
         template = 'statmaps/atlas_details.html.haml'
     else:
-        if image.not_mni:
+        if np.isnan(image.perc_bad_voxels) or np.isnan(image.perc_voxels_outside):
+            context['warning'] = "Warning: This map seems to be empty!"
+        elif image.not_mni:
             context['warning'] = "Warning: This map seems not to be in the MNI space (%.4g%% of meaningful voxels are outside of the brain). "%image.perc_voxels_outside
             context['warning'] += "Please transform the map to MNI space. "
         elif image.is_thresholded:
