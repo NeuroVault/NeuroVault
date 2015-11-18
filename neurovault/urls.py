@@ -20,6 +20,7 @@ from django.http import Http404, HttpResponse
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import permissions
+from oauth2_provider import views as oauth_views
 import xml.etree.ElementTree as ET
 from taggit.models import Tag
 import cPickle as pickle
@@ -444,6 +445,16 @@ router.register(r'atlases', AtlasViewSet)
 router.register(r'collections', CollectionViewSet)
 router.register(r'nidm_results', NIDMResultsViewSet)
 
+
+oauth_urlpatterns = [
+    url(r'^authorize/$', oauth_views.AuthorizationView.as_view(),
+        name="authorize"),
+    url(r'^token/$', oauth_views.TokenView.as_view(),
+        name="token"),
+    url(r'^revoke_token/$', oauth_views.RevokeTokenView.as_view(),
+        name="revoke-token"),
+]
+
 urlpatterns = patterns('',
                        url('', include(
                            'social.apps.django_app.urls', namespace='social')),
@@ -455,8 +466,9 @@ urlpatterns = patterns('',
                        url(r'^api/', include(router.urls)),
                        url(r'^api-auth/', include(
                            'rest_framework.urls', namespace='rest_framework')),
-                       url(r'^o/', include('oauth2_provider.urls',
-                                           namespace='oauth2_provider')),
+                       url(r'^o/', include((oauth_urlpatterns,
+                                            'oauth2_provider',
+                                            'oauth2_provider'))),
                        )
 
 if settings.DEBUG:

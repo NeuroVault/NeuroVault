@@ -20,7 +20,7 @@
             <button type="submit" class="btn btn-primary">Save</button>
             {% block app-form-delete-button %}<a class="btn btn-danger" href="{% url "developerapps_delete" application.id %}">{% trans "Delete" %}</a>{% endblock app-form-delete-button %}
 
-            <a class="btn" href="{% url "oauth2_provider:list" %}">
+            <a class="btn" href="{% url 'developerapps_list' %}">
                 {% trans "Cancel" %}
             </a>
         </div>
