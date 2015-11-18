@@ -289,7 +289,7 @@ class CollectionForm(ModelForm):
 
         if self.cleaned_data['DOI']:
             try:
-                self.cleaned_data["name"], self.cleaned_data["authors"], self.cleaned_data["url"], _, self.cleaned_data["journal_name"] = get_paper_properties(self.cleaned_data['DOI'].strip())
+                self.cleaned_data["name"], self.cleaned_data["authors"], self.cleaned_data["paper_url"], _, self.cleaned_data["journal_name"] = get_paper_properties(self.cleaned_data['DOI'].strip())
             except:
                 self._errors["DOI"] = self.error_class(["Could not resolve DOI"])
             else:
