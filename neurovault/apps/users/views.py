@@ -1,4 +1,6 @@
 import datetime
+from django.conf import settings
+
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.utils.crypto import get_random_string
 from django.shortcuts import render, get_object_or_404, render_to_response
@@ -11,7 +13,8 @@ from django.contrib.auth.decorators import login_required
 from django.template.context import RequestContext
 from oauth2_provider.views.application import ApplicationOwnerIsUserMixin
 from oauth2_provider.models import RefreshToken, AccessToken, Application
-from django.views.generic import View, CreateView, UpdateView, DeleteView, ListView
+from django.views.generic import (View, CreateView, UpdateView, DeleteView,
+                                  ListView)
 from braces.views import LoginRequiredMixin
 
 
@@ -81,14 +84,13 @@ class PersonalTokenList(PersonalTokenUserIsRequestUserMixin, ListView):
 
 
 class PersonalTokenCreate(LoginRequiredMixin, View):
-    oauth_token_length = 40
-    default_app_id = 42
 
     def post(self, request, *args, **kwargs):
-        application = Application.objects.get(pk=self.default_app_id)
+        application = Application.objects.get(
+            pk=settings.DEFAULT_OAUTH_APPLICATION_ID)
         AccessToken.objects.create(user=self.request.user,
                                    token=get_random_string(
-                                       length=self.oauth_token_length),
+                                       length=settings.OAUTH_PERSONAL_TOKEN_LENGTH),
                                    application=application,
                                    expires=datetime.date(datetime.MAXYEAR,
                                                          12, 30),
