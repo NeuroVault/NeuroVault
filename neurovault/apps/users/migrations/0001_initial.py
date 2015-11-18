@@ -17,6 +17,7 @@ def get_or_create_user(user_id, username):
 
 
 def create_default_oauth_app(apps, schema_editor):
+    from oauth2_provider.models import AbstractApplication
     Application = apps.get_model('oauth2_provider', 'Application')
 
     default_user = get_or_create_user(
@@ -27,9 +28,9 @@ def create_default_oauth_app(apps, schema_editor):
         pk=settings.DEFAULT_OAUTH_APPLICATION_ID,
         name=settings.DEFAULT_OAUTH_APP_NAME,
         redirect_uris="http://localhost http://example.com",
-        user=default_user,
-        client_type=Application.CLIENT_CONFIDENTIAL,
-        authorization_grant_type=Application.GRANT_AUTHORIZATION_CODE
+        user_id=default_user.id,
+        client_type=AbstractApplication.CLIENT_CONFIDENTIAL,
+        authorization_grant_type=AbstractApplication.GRANT_AUTHORIZATION_CODE
     )
 
 
