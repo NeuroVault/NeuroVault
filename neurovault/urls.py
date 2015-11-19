@@ -144,7 +144,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
         orderedDict['image_type'] = image_type
         for key, val in orderedDict.iteritems():
             if pd.isnull(val):
-                orderedDict[key] = "null";
+                orderedDict[key] = None;
         return orderedDict
 
 
