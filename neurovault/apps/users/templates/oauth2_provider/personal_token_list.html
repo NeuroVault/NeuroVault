@@ -22,7 +22,7 @@
           <tbody>
           {% for token in object_list %}
               <tr>
-                <td>{{ token.token }}</td>
+                <td><samp>{{ token.token }}</samp></td>
                 <td><a class="btn btn-danger btn-sm" href="{% url "token_delete" token.id %}">Delete</a>
                 </td>
               </tr>
