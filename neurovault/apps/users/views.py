@@ -1,7 +1,8 @@
 import datetime
 from django.conf import settings
 
-from django.http.response import HttpResponseRedirect, HttpResponseForbidden
+from django.http.response import (HttpResponseRedirect, HttpResponseForbidden,
+                                  Http404)
 from django.utils.crypto import get_random_string
 from django.shortcuts import render, get_object_or_404, render_to_response
 from django.contrib.auth.models import User
@@ -68,6 +69,7 @@ def edit_user(request):
 
 
 class PersonalTokenUserIsRequestUserMixin(LoginRequiredMixin):
+
     """
     This mixin is used to provide an Connection queryset filtered by the
     current request.user.
@@ -116,6 +118,7 @@ class PersonalTokenDelete(PersonalTokenUserIsRequestUserMixin, DeleteView):
 
 
 class ApplicationRegistration(LoginRequiredMixin, CreateView):
+
     """
     View used to register a new Application for the request.user
     """
@@ -134,6 +137,7 @@ class ApplicationRegistration(LoginRequiredMixin, CreateView):
 
 
 class ApplicationUpdate(ApplicationOwnerIsUserMixin, UpdateView):
+
     """
     View used to update an application owned by the request.user
     """
@@ -151,6 +155,7 @@ class ApplicationUpdate(ApplicationOwnerIsUserMixin, UpdateView):
 
 
 class ApplicationDelete(ApplicationOwnerIsUserMixin, DeleteView):
+
     """
     View used to delete an application owned by the request.user
     """
@@ -164,32 +169,45 @@ class ApplicationDelete(ApplicationOwnerIsUserMixin, DeleteView):
         return super(ApplicationDelete, self).delete(request, *args, **kwargs)
 
 
-class ConnectionUserIsRequestUserMixin(LoginRequiredMixin):
-    """
-    This mixin is used to provide an Connection queryset filtered by the
-    current request.user.
-    """
-    fields = '__all__'
-
-    def get_queryset(self):
-        return RefreshToken.objects.filter(user=self.request.user)
-
-
-class ConnectionList(ConnectionUserIsRequestUserMixin, ListView):
-    model = RefreshToken
+class ConnectionList(ListView):
     template_name = 'oauth2_provider/connection_list.html'
 
+    def get_queryset(self):
+        return (RefreshToken.objects
+                .filter(user=self.request.user)
+                .distinct('application'))
 
-class ConnectionDelete(ConnectionUserIsRequestUserMixin, DeleteView):
+
+class ConnectionDelete(DeleteView):
     template_name = 'oauth2_provider/connection_confirm_delete.html'
     success_url = reverse_lazy('connection_list')
     success_message = ('The application authorization has been successfully '
                        'revoked.')
 
+    def _refresh_token_queryset(self, user, application_id):
+        return RefreshToken.objects.filter(user=user,
+                                           application_id=application_id)
+
+    def get_object(self):
+        pk = self.kwargs.get(self.pk_url_kwarg)
+
+        refresh_token = self._refresh_token_queryset(self.request.user,
+                                                     pk).first()
+        if not refresh_token:
+            raise Http404("No application connection found.")
+
+        return refresh_token.application
+
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
         success_url = self.get_success_url()
-        self.object.revoke()
+
+        token_list = self._refresh_token_queryset(self.request.user,
+                                                  self.object.id)
+
+        for refresh_token in token_list:
+            refresh_token.revoke()
+
         messages.success(self.request, self.success_message)
 
         return HttpResponseRedirect(success_url)

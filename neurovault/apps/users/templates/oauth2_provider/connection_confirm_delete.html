@@ -8,7 +8,7 @@
         <div class="text-center settings-no-content">
 
         <h3>Revoke the app authorization?</h3>
-        <p><strong>{{ object.application.name }}</strong> will no longer be able to access your account on your behalf.</p>
+        <p><strong>{{ object.name }}</strong> will no longer be able to access your account on your behalf.</p>
         <form method="post" action="{% url 'connection_revoke' object.pk %}">
             {% csrf_token %}
             <div class="form-controls">
