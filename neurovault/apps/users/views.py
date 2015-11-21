@@ -77,7 +77,10 @@ class PersonalTokenUserIsRequestUserMixin(LoginRequiredMixin):
     fields = '__all__'
 
     def get_queryset(self):
-        return AccessToken.objects.filter(user=self.request.user)
+        return AccessToken.objects.filter(
+            user=self.request.user,
+            application_id=settings.DEFAULT_OAUTH_APPLICATION_ID
+        )
 
 
 class PersonalTokenList(PersonalTokenUserIsRequestUserMixin, ListView):

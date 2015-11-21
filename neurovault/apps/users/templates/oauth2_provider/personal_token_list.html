@@ -34,9 +34,9 @@
     <div class="text-center settings-no-content">
       <h3>No personal access tokens</h3>
       <p>Personal access tokens are used to access your account via the <a href="{% url 'api-docs' %}">NeuroVault API</a>.</p>
-      <p>
+      <div class="form-controls">
         {% include "_personal_token_form.html" %}
-      </p>
+      </div>
     </div>
     {% endif %}
     </div>
