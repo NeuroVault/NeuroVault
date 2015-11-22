@@ -341,7 +341,7 @@ class TestImageUpload(APITestCase):
         }
 
         response = self.client.post(url, post_dict, format='multipart')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(response.data, {
             'detail': 'Authentication credentials were not provided.'
         })
