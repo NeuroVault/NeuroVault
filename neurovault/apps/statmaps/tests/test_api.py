@@ -4,6 +4,8 @@ from neurovault.apps.statmaps.urls import StandardResultPagination
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth.models import User
 from django.test import TestCase, Client
+from rest_framework.test import APITestCase
+from rest_framework import status
 import xml.etree.ElementTree as ET
 from operator import itemgetter
 import os.path
@@ -232,3 +234,38 @@ class Test_Atlas_APIs(TestCase):
         url = '/api/images/?limit=2'
         response = json.loads(self.client.get(url, follow=True).content)
         self.assertEqual(2, len(response['results']))
+
+
+class TestCollection(APITestCase):
+    def setUp(self):
+        self.user_password = 'apitest'
+        self.user = User.objects.create_user('NeuroGuy')
+        self.user.save()
+        self.coll = Collection(owner=self.user, name="Test Collection")
+        self.coll.save()
+
+    def test_fetch_collection(self):
+        response = self.client.get('/api/collections/%s/' % self.coll.id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], self.coll.id)
+        self.assertEqual(response.data['name'], self.coll.name)
+
+    def test_create_collection(self):
+        self.client.force_authenticate(user=self.user)
+
+        post_dict = {
+            'name': 'Test Create Collection',
+        }
+
+        response = self.client.post('/api/collections/', post_dict)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['name'], post_dict['name'])
+
+    def test_missing_required_authentication(self):
+        url = '/api/collections/%s/' % self.coll.id
+
+        response = self.client.post(url, {'name': 'failed test'})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data, {
+            'detail': 'Authentication credentials were not provided.'
+        })

@@ -158,7 +158,8 @@ INSTALLED_APPS = (
     'file_resubmit',
     'djrill',
     'django_hstore',
-    'guardian'
+    'guardian',
+    'oauth2_provider'
 )
 
 # A sample logging configuration. The only tangible logging
@@ -231,8 +232,15 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
     ],
+
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'oauth2_provider.ext.rest_framework.OAuth2Authentication',
+    )
 }
 
+OAUTH2_PROVIDER = {
+    'REQUEST_APPROVAL_PROMPT': 'auto'
+}
 
 #LOGIN_URL          = '/login-form/'
 #LOGIN_REDIRECT_URL = '/logged-in/'
@@ -295,6 +303,12 @@ CELERYBEAT_SCHEDULE = {
 CELERY_TIMEZONE = 'Europe/Berlin'
 
 ANONYMOUS_USER_ID = -1
+
+DEFAULT_OAUTH_APPLICATION_ID = -1
+DEFAULT_OAUTH_APP_NAME = 'DefaultOAuthApp'
+DEFAULT_OAUTH_APP_OWNER_ID = -2
+DEFAULT_OAUTH_APP_OWNER_USERNAME = 'DefaultAppOwner'
+OAUTH_PERSONAL_TOKEN_LENGTH = 40
 
 # Bogus secret key.
 try:

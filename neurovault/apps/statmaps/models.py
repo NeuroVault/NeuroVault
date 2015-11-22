@@ -149,7 +149,7 @@ class Collection(models.Model):
             self.DOI = None
         if self.private_token is not None and self.private_token.strip() == "":
             self.private_token = None
-            
+
         if self.DOI and not self.private and not self.doi_add_date:
             self.doi_add_date = datetime.now()
 

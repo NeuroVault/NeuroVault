@@ -235,6 +235,24 @@ ul.collection_nav li {
     margin-bottom: 30px;
 }
 
-.settings-pane input[type='submit'] {
-    margin-top: 10px;
+.settings-pane .form-controls {
+    margin-top: 20px;
+}
+
+.settings-pane h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.settings-pane .table {
+    margin-top: -10px;
+}
+
+.settings-no-content {
+    padding-top: 20px;
+}
+
+.oauth-connection-request {
+    width: 40%;
+    margin-bottom: 60px;
 }
