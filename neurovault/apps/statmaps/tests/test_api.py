@@ -289,7 +289,7 @@ class TestImageUpload(APITestCase):
     def test_upload_image(self):
         self.client.force_authenticate(user=self.user)
 
-        url = '/api/collections/%s/addimage/' % self.coll.pk
+        url = '/api/collections/%s/images/' % self.coll.pk
         fname = self.abs_file_path('test_data/statmaps/motor_lips.nii.gz')
 
         post_dict = {
@@ -307,14 +307,13 @@ class TestImageUpload(APITestCase):
 
         exclude_keys = ('file',)
         test_keys = set(post_dict.keys()) - set(exclude_keys)
-
         for key in test_keys:
             self.assertEqual(response.data[key], post_dict[key])
 
     def test_missing_required_fields(self):
         self.client.force_authenticate(user=self.user)
 
-        url = '/api/collections/%s/addimage/' % self.coll.pk
+        url = '/api/collections/%s/images/' % self.coll.pk
 
         post_dict = {
             'name': 'test map',
@@ -330,7 +329,7 @@ class TestImageUpload(APITestCase):
         self.assertEqual(response.data, expect_dict)
 
     def test_missing_required_authentication(self):
-        url = '/api/collections/%s/addimage/' % self.coll.pk
+        url = '/api/collections/%s/images/' % self.coll.pk
         fname = self.abs_file_path('test_data/statmaps/motor_lips.nii.gz')
 
         post_dict = {
@@ -356,7 +355,7 @@ class TestImageUpload(APITestCase):
                                       name="Another Test Collection")
         other_collection.save()
 
-        url = '/api/collections/%s/addimage/' % other_collection.pk
+        url = '/api/collections/%s/images/' % other_collection.pk
         fname = self.abs_file_path('test_data/statmaps/motor_lips.nii.gz')
 
         post_dict = {

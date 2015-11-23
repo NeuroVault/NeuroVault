@@ -406,8 +406,11 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
             data['description'] = data['description'].replace('\n', '<br />')
         return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date', 'images'])
 
-    @detail_route()
+    @detail_route(methods=['get', 'post'])
     def images(self, request, pk=None):
+        if request.method == 'POST':
+            return self.add_image(request, pk)
+
         collection = get_collection(pk, request, mode='api')
         queryset = Image.objects.filter(collection=collection)
         paginator = StandardResultPagination()
@@ -416,7 +419,6 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
             page, context={'request': request}, many=True)
         return paginator.get_paginated_response(serializer.data)
 
-    @detail_route(methods=['post'], url_path='addimage')
     def add_image(self, request, pk=None):
         collection = get_collection(pk, request, mode='api')
 
