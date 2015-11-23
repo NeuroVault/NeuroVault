@@ -273,7 +273,6 @@ class TestCollection(APITestCase):
 
 class TestImageUpload(APITestCase):
     def setUp(self):
-        self.user_password = 'apitest'
         self.user = User.objects.create_user('NeuroGuy')
         self.user.save()
         self.coll = Collection(owner=self.user, name="Test Collection")
