@@ -172,7 +172,7 @@ class ApplicationDelete(ApplicationOwnerIsUserMixin, DeleteView):
         return super(ApplicationDelete, self).delete(request, *args, **kwargs)
 
 
-class ConnectionList(ListView):
+class ConnectionList(LoginRequiredMixin, ListView):
     template_name = 'oauth2_provider/connection_list.html'
 
     def get_queryset(self):
@@ -181,7 +181,7 @@ class ConnectionList(ListView):
                 .distinct('application'))
 
 
-class ConnectionDelete(DeleteView):
+class ConnectionDelete(LoginRequiredMixin, DeleteView):
     template_name = 'oauth2_provider/connection_confirm_delete.html'
     success_url = reverse_lazy('connection_list')
     success_message = ('The application authorization has been successfully '
