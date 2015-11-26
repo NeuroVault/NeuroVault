@@ -309,6 +309,32 @@ class TestCollectionItemUpload(APITestCase):
         for key in test_keys:
             self.assertEqual(response.data[key], post_dict[key])
 
+    def test_upload_atlas(self):
+        self.client.force_authenticate(user=self.user)
+
+        url = '/api/collections/%s/atlases/' % self.coll.pk
+        nii_path = self.abs_file_path(
+            'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz')
+        xml_path = self.abs_file_path(
+            'test_data/api/VentralFrontal_thr75_summaryimage_2mm.xml')
+
+        post_dict = {
+            'name': 'test atlas',
+            'file': SimpleUploadedFile(nii_path, open(nii_path).read()),
+            'label_description_file': SimpleUploadedFile(xml_path,
+                                                         open(xml_path).read())
+        }
+
+        response = self.client.post(url, post_dict, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.assertEqual(response.data['collection'], self.coll.id)
+        self.assertRegexpMatches(response.data['file'], r'\.nii\.gz$')
+        self.assertRegexpMatches(response.data['label_description_file'],
+                                 r'\.xml$')
+
+        self.assertEqual(response.data['name'], post_dict['name'])
+
     def test_upload_nidm_results(self):
         self.client.force_authenticate(user=self.user)
 
