@@ -219,6 +219,12 @@ class AtlasSerializer(ImageSerializer):
         return super(ImageSerializer, self).to_representation(obj)
 
 
+class EditableAtlasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Atlas
+        read_only_fields = ('collection',)
+
+
 class NIDMResultsSerializer(serializers.ModelSerializer):
     zip_file = HyperlinkedFileField()
     ttl_file = HyperlinkedFileField()
@@ -228,6 +234,12 @@ class NIDMResultsSerializer(serializers.ModelSerializer):
     class Meta:
         model = NIDMResults
         exclude = ['id']
+
+
+class EditableNIDMResultsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NIDMResults
+        read_only_fields = ('collection',)
 
 
 class CollectionSerializer(serializers.ModelSerializer):
@@ -404,12 +416,13 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
             collection, context={'request': request}).data
         if data and 'description' in data and data['description']:
             data['description'] = data['description'].replace('\n', '<br />')
-        return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date', 'images'])
+        return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date',
+                                                    'images'])
 
     @detail_route(methods=['get', 'post'])
     def images(self, request, pk=None):
         if request.method == 'POST':
-            return self.add_image(request, pk)
+            return self.add_item(request, pk, EditableStatisticMapSerializer)
 
         collection = get_collection(pk, request, mode='api')
         queryset = Image.objects.filter(collection=collection)
@@ -419,15 +432,23 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
             page, context={'request': request}, many=True)
         return paginator.get_paginated_response(serializer.data)
 
-    def add_image(self, request, pk=None):
+    @detail_route(methods=['post'])
+    def atlases(self, request, pk):
+        return self.add_item(request, pk, EditableAtlasSerializer)
+
+    @detail_route(methods=['post'])
+    def nidm_results(self, request, pk):
+        return self.add_item(request, pk, EditableNIDMResultsSerializer)
+
+    def add_item(self, request, pk, obj_serializer):
         collection = get_collection(pk, request, mode='api')
 
         if not owner_or_contrib(request, collection):
             self.permission_denied(request)
 
-        image = StatisticMap(collection=collection)
-        serializer = EditableStatisticMapSerializer(data=request.data,
-                                                    instance=image)
+        obj = obj_serializer.Meta.model(collection=collection)
+        serializer = obj_serializer(data=request.data, instance=obj)
+
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data,

@@ -271,7 +271,7 @@ class TestCollection(APITestCase):
         })
 
 
-class TestImageUpload(APITestCase):
+class TestCollectionItemUpload(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user('NeuroGuy')
         self.user.save()
@@ -285,7 +285,7 @@ class TestImageUpload(APITestCase):
         return os.path.join(os.path.abspath(os.path.dirname(__file__)),
                             rel_path)
 
-    def test_upload_image(self):
+    def test_upload_statmap(self):
         self.client.force_authenticate(user=self.user)
 
         url = '/api/collections/%s/images/' % self.coll.pk
@@ -305,6 +305,28 @@ class TestImageUpload(APITestCase):
         self.assertRegexpMatches(response.data['file'], r'\.nii\.gz$')
 
         exclude_keys = ('file',)
+        test_keys = set(post_dict.keys()) - set(exclude_keys)
+        for key in test_keys:
+            self.assertEqual(response.data[key], post_dict[key])
+
+    def test_upload_nidm_results(self):
+        self.client.force_authenticate(user=self.user)
+
+        url = '/api/collections/%s/nidm_results/' % self.coll.pk
+        fname = self.abs_file_path('test_data/nidm/fsl_course_av.nidm.zip')
+
+        post_dict = {
+            'name': 'test nidm',
+            'zip_file': SimpleUploadedFile(fname, open(fname).read())
+        }
+
+        response = self.client.post(url, post_dict, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.assertEqual(response.data['collection'], self.coll.id)
+        self.assertRegexpMatches(response.data['zip_file'], r'\.nidm\.zip$')
+
+        exclude_keys = ('zip_file',)
         test_keys = set(post_dict.keys()) - set(exclude_keys)
         for key in test_keys:
             self.assertEqual(response.data[key], post_dict[key])
