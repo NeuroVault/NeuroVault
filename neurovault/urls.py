@@ -1,35 +1,35 @@
-from neurovault.apps.statmaps.voxel_query_functions import voxelToRegion, getSynonyms, toAtlas, getAtlasVoxels
+from neurovault.apps.statmaps.voxel_query_functions import (
+    voxelToRegion, getSynonyms, toAtlas, getAtlasVoxels
+)
 from rest_framework.relations import StringRelatedField, PrimaryKeyRelatedField
-from neurovault.apps.statmaps.models import Image, Collection, StatisticMap,\
-    Atlas, NIDMResults, NIDMResultStatisticMap, CognitiveAtlasTask, BaseStatisticMap
-from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from neurovault.apps.statmaps.models import (
+    Image, Collection, StatisticMap, Atlas, NIDMResults,
+    NIDMResultStatisticMap, CognitiveAtlasTask, BaseStatisticMap
+)
 from neurovault.apps.statmaps.urls import StandardResultPagination
 from rest_framework.filters import DjangoFilterBackend
 from django.conf.urls import patterns, include, url
-from django.conf.urls.static import static
 from django.conf import settings
 from django.contrib import admin
-from lxml.etree import xmlfile
 admin.autodiscover()
-from rest_framework import viewsets, routers, serializers, mixins, generics
+from rest_framework import viewsets, routers, serializers, mixins
 from neurovault.apps.statmaps.views import get_image, get_collection
 from neurovault.apps.statmaps.views import owner_or_contrib
 from rest_framework.decorators import detail_route, list_route
-from django.contrib.auth.models import User, Group
 from rest_framework.renderers import JSONRenderer
-from django.http import Http404, HttpResponse
+from django.http import HttpResponse
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework import permissions, status
 from oauth2_provider import views as oauth_views
 import xml.etree.ElementTree as ET
 from taggit.models import Tag
 import cPickle as pickle
-import urllib2
 import os
 import re
 import pandas as pd
-
+from neurovault.apps.statmaps.forms import (NIDMResultsValidationMixin,
+                                            save_nidm_statmaps,
+                                            handle_update_ttl_urls)
 
 from django import template
 template.add_to_builtins('django.templatetags.future')
@@ -147,11 +147,12 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
         orderedDict['image_type'] = image_type
         for key, val in orderedDict.iteritems():
             if pd.isnull(val):
-                orderedDict[key] = None;
+                orderedDict[key] = None
         return orderedDict
 
 
 class EditableStatisticMapSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = StatisticMap
         read_only_fields = ('collection',)
@@ -220,6 +221,7 @@ class AtlasSerializer(ImageSerializer):
 
 
 class EditableAtlasSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Atlas
         read_only_fields = ('collection',)
@@ -236,7 +238,20 @@ class NIDMResultsSerializer(serializers.ModelSerializer):
         exclude = ['id']
 
 
-class EditableNIDMResultsSerializer(serializers.ModelSerializer):
+class EditableNIDMResultsSerializer(serializers.ModelSerializer,
+                                    NIDMResultsValidationMixin):
+
+    def validate(self, data):
+        return self.clean_and_validate(data)
+
+    def save(self):
+        instance = super(EditableNIDMResultsSerializer, self).save()
+
+        save_nidm_statmaps(self.nidm, instance)
+        handle_update_ttl_urls(instance)
+
+        return instance
+
     class Meta:
         model = NIDMResults
         read_only_fields = ('collection',)

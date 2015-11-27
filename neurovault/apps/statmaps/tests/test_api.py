@@ -1,5 +1,8 @@
-from neurovault.apps.statmaps.tests.utils import clearDB, save_atlas_form, save_statmap_form, save_nidm_form
-from neurovault.apps.statmaps.models import Atlas, Collection, Image, StatisticMap
+from neurovault.apps.statmaps.tests.utils import (clearDB, save_atlas_form,
+                                                  save_statmap_form,
+                                                  save_nidm_form)
+from neurovault.apps.statmaps.models import (Atlas, Collection,
+                                             StatisticMap, NIDMResults)
 from neurovault.apps.statmaps.urls import StandardResultPagination
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth.models import User
@@ -10,6 +13,8 @@ import xml.etree.ElementTree as ET
 from operator import itemgetter
 import os.path
 import json
+
+from .test_nidm import NIMD_TEST_FILES
 
 
 class Test_Atlas_APIs(TestCase):
@@ -337,25 +342,35 @@ class TestCollectionItemUpload(APITestCase):
 
     def test_upload_nidm_results(self):
         self.client.force_authenticate(user=self.user)
-
         url = '/api/collections/%s/nidm_results/' % self.coll.pk
-        fname = self.abs_file_path('test_data/nidm/fsl_course_av.nidm.zip')
+
+        for name, data in NIMD_TEST_FILES.items():
+            self._test_upload_nidm_results(url, name, data)
+
+    def _test_upload_nidm_results(self, url, name, data):
+        fname = os.path.basename(data['file'])
 
         post_dict = {
-            'name': 'test nidm',
-            'zip_file': SimpleUploadedFile(fname, open(fname).read())
+            'name': name,
+            'description': '{0} upload test'.format(name),
+            'zip_file': SimpleUploadedFile(fname,
+                                           open(data['file'], 'rb').read())
         }
 
         response = self.client.post(url, post_dict, format='multipart')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
         self.assertEqual(response.data['collection'], self.coll.id)
         self.assertRegexpMatches(response.data['zip_file'], r'\.nidm\.zip$')
 
-        exclude_keys = ('zip_file',)
-        test_keys = set(post_dict.keys()) - set(exclude_keys)
-        for key in test_keys:
-            self.assertEqual(response.data[key], post_dict[key])
+        nidm = NIDMResults.objects.get(pk=response.data['id'])
+        self.assertEquals(len(nidm.nidmresultstatisticmap_set.all()),
+                          data['num_statmaps'])
+
+        map_type = data['output_row']['type'][0]
+        map_img = nidm.nidmresultstatisticmap_set.filter(
+            map_type=map_type).first()
+
+        self.assertEquals(map_img.name, data['output_row']['name'])
 
     def test_missing_required_fields(self):
         self.client.force_authenticate(user=self.user)

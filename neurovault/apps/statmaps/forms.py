@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 from tempfile import mkstemp, NamedTemporaryFile
 
@@ -579,7 +580,7 @@ class SimplifiedStatisticMapForm(EditStatisticMapForm):
 
     class Meta(EditStatisticMapForm.Meta):
         fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
-                  'cognitive_contrast_cogatlas', 'file', 'ignore_file_warning', 'hdr_file', 'tags', 'is_thresholded', 
+                  'cognitive_contrast_cogatlas', 'file', 'ignore_file_warning', 'hdr_file', 'tags', 'is_thresholded',
                   'perc_bad_voxels')
 
 
@@ -670,15 +671,125 @@ class MapTypeListWidget(forms.Widget):
         return mark_safe('%s<strong>%s</strong><br /><br />' % (input, map_type))
 
 
-class NIDMResultsForm(forms.ModelForm):
+class NIDMResultsValidationMixin(object):
+    def clean_and_validate(self, data):
+        try:
+            self.nidm = NIDMUpload(data.get('zip_file'))
+        except Exception, e:
+            raise ValidationError(
+                "The NIDM file was not readable: {0}".format(e)
+            )
+
+        try:
+            self.clean_nidm(data)
+        except Exception, e:
+            raise ValidationError(e)
+
+        # delete existing images and files when changing file
+        if self.instance.pk is not None:
+            for statmap in self.instance.nidmresultstatisticmap_set.all():
+                statmap.delete()
+            cdir = os.path.dirname(self.instance.zip_file.path)
+            if os.path.isdir(cdir):
+                shutil.rmtree(cdir)
+
+        base_subdir = os.path.split(data['zip_file'].name)[-1].replace('.zip',
+                                                                       '')
+        nres = NIDMResults.objects.filter(collection=data['collection'],
+                                          name__startswith=base_subdir).count()
+        # don't count current instance
+        if self.instance.pk is not None and nres != 0:
+            nres -= 1
+        safe_name = '{0}_{1}'.format(base_subdir, nres)
+        data['name'] = base_subdir if nres == 0 else safe_name
+
+        ttl_name = os.path.split(self.nidm.ttl.filename)[-1]
+        provn_name = os.path.split(self.nidm.provn.filename)[-1]
+
+        data['ttl_file'] = InMemoryUploadedFile(
+            # fix ttl for spm12
+            file=ContentFile(self.nidm.fix_spm12_ttl(
+                self.nidm.zip.read(self.nidm.ttl))),
+            field_name='file',
+            name=ttl_name,
+            content_type='text/turtle',
+            size=self.nidm.ttl.file_size,
+            charset='utf-8'
+        )
+
+        data['provn_file'] = InMemoryUploadedFile(
+            file=ContentFile(self.nidm.zip.read(self.nidm.provn)),
+            field_name='file',
+            name=provn_name,
+            content_type='text/provenance-notation',
+            size=self.nidm.provn.file_size,
+            charset='utf-8'
+        )
+
+        return data
+
+    def clean_nidm(self, cleaned_data):
+        for s in self.nidm.statmaps:
+            s['fname'] = os.path.split(s['file'])[-1]
+            s['statmap'] = NIDMResultStatisticMap(name=s['name'])
+            s['statmap'].collection = cleaned_data['collection']
+            s['statmap'].description = cleaned_data['description']
+            s['statmap'].map_type = s['type']
+            s['statmap'].nidm_results = self.instance
+            s['statmap'].file = 'images/1/foo/bar/'
+
+            try:
+                s['statmap'].clean_fields(exclude=('nidm_results', 'file'))
+                s['statmap'].validate_unique()
+            except Exception, e:
+                import traceback
+                raise ValidationError(
+                    "There was a problem validating the Statistic Maps " +
+                    "for this NIDM Result: \n{0}\n{1}".format(e, traceback.format_exc()))
+
+
+def save_nidm_statmaps(nidm, instance):
+    for s in nidm.statmaps:
+        s['statmap'].nidm_results = instance
+        s['statmap'].file = ContentFile(open(s['file']).read(),
+                                        name=os.path.split(s['file'])[-1])
+        s['statmap'].save()
+
+    dest = os.path.dirname(instance.zip_file.path)
+    nidm.copy_to_dest(dest)
+    nidm.cleanup()
+
+
+def handle_update_ttl_urls(instance):
+    ttl_content = instance.ttl_file.file.read()
+    fname = os.path.basename(
+        instance.nidmresultstatisticmap_set.first().file.name)
+
+    ttl_regx = re.compile(r'(prov:atLocation\ \")(file:\/.*\/)(' +
+                          fname + ')(\"\^\^xsd\:anyURI\ \;)')
+
+    hdr, urlprefix, nifti, ftr = re.search(ttl_regx, ttl_content).groups()
+    base_url = settings.DOMAIN_NAME
+    replace_path = base_url + os.path.join(
+        instance.collection.get_absolute_url(), instance.name) + '/'
+
+    updated_ttl = ttl_content.replace(urlprefix, replace_path)
+    instance.ttl_file.file.close()
+
+    with open(instance.ttl_file.path, 'w') as ttlf:
+        ttlf.write(updated_ttl)
+        ttlf.close()
+
+
+class NIDMResultsForm(forms.ModelForm, NIDMResultsValidationMixin):
     class Meta:
         model = NIDMResults
         exclude = []
 
-    def __init__(self,*args, **kwargs):
-        super(NIDMResultsForm,self).__init__(*args,**kwargs)
+    def __init__(self, *args, **kwargs):
+        super(NIDMResultsForm, self).__init__(*args, **kwargs)
 
-        for fld in ['ttl_file','provn_file']:
+        for fld in ['ttl_file', 'provn_file']:
             if self.instance.pk is None:
                 self.fields[fld].widget = HiddenInput()
             else:
@@ -688,7 +799,9 @@ class NIDMResultsForm(forms.ModelForm):
         self.helper.form_class = 'form-horizontal'
         self.helper.form_tag = True
         self.helper.add_input(Submit('submit', 'Submit'))
-        self.helper.add_input(Button('delete', 'Delete', onclick='window.location.href="{}"'.format('delete')))
+        self.helper.add_input(
+            Button('delete', 'Delete',
+                   onclick='window.location.href="{}"'.format('delete')))
         self.nidm = None
         self.new_statmaps = []
 
@@ -700,50 +813,10 @@ class NIDMResultsForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super(NIDMResultsForm, self).clean()
         # only process new uploads or replaced zips
-
         if self.instance.pk is None or 'zip_file' in self.changed_data:
+            self.cleaned_data = self.clean_and_validate(cleaned_data)
 
-            try:
-                self.nidm = NIDMUpload(cleaned_data.get('zip_file'))
-            except Exception,e:
-                raise ValidationError("The NIDM file was not readable: {0}".format(e))
-            try:
-                self.clean_nidm()
-            except Exception,e:
-                raise ValidationError(e)
-
-            # delete existing images and files when changing file
-            if self.instance.pk is not None:
-                for statmap in self.instance.nidmresultstatisticmap_set.all():
-                    statmap.delete()
-                cdir = os.path.dirname(self.instance.zip_file.path)
-                if os.path.isdir(cdir):
-                    shutil.rmtree(cdir)
-
-            base_subdir = os.path.split(self.cleaned_data['zip_file'].name)[-1].replace('.zip','')
-            nres = NIDMResults.objects.filter(collection=self.cleaned_data['collection'],
-                                              name__startswith=base_subdir).count()
-            if self.instance.pk is not None and nres != 0:  # don't count current instance
-                nres -= 1
-            safe_name = '{0}_{1}'.format(base_subdir,nres)
-            self.cleaned_data['name'] = base_subdir if nres == 0 else safe_name
-
-            ttl_name = os.path.split(self.nidm.ttl.filename)[-1]
-            provn_name = os.path.split(self.nidm.provn.filename)[-1]
-
-            self.cleaned_data['ttl_file'] = InMemoryUploadedFile(ContentFile(
-                                    # fix ttl for spm12
-                                    self.nidm.fix_spm12_ttl(self.nidm.zip.read(self.nidm.ttl))),
-                                    "file", ttl_name, "text/turtle",
-                                    self.nidm.ttl.file_size, "utf-8")
-
-            self.cleaned_data['provn_file'] = InMemoryUploadedFile(
-                                    ContentFile(self.nidm.zip.read(self.nidm.provn)),
-                                    "file", provn_name, "text/provenance-notation",
-                                    self.nidm.provn.file_size, "utf-8")
-
-    def save(self,commit=True):
-
+    def save(self, commit=True):
         if self.instance.pk is None or 'zip_file' in self.changed_data:
             do_update = True
 
@@ -754,54 +827,11 @@ class NIDMResultsForm(forms.ModelForm):
         return nidm_r
 
     def update_ttl_urls(self):
-        import re
-        ttl_content = self.instance.ttl_file.file.read()
-        fname = os.path.basename(self.instance.nidmresultstatisticmap_set.first().file.name)
-        ttl_regx = re.compile(r'(prov:atLocation\ \")(file:\/.*\/)(' +
-                              fname + ')(\"\^\^xsd\:anyURI\ \;)')
-
-        hdr, urlprefix, nifti, ftr = re.search(ttl_regx,ttl_content).groups()
-        base_url = settings.DOMAIN_NAME
-        replace_path = base_url + os.path.join(self.instance.collection.get_absolute_url(),
-                                               self.instance.name)+'/'
-
-        updated_ttl = ttl_content.replace(urlprefix,replace_path)
-        self.instance.ttl_file.file.close()
-        with open(self.instance.ttl_file.path,'w') as ttlf:
-            ttlf.write(updated_ttl)
-            ttlf.close()
-
-    def clean_nidm(self):
-        if self.nidm and 'zip_file' in self.changed_data:
-
-            for s in self.nidm.statmaps:
-                s['fname'] = os.path.split(s['file'])[-1]
-                s['statmap'] = NIDMResultStatisticMap(name=s['name'])
-                s['statmap'].collection = self.cleaned_data['collection']
-                s['statmap'].description = self.cleaned_data['description']
-                s['statmap'].map_type = s['type']
-                s['statmap'].nidm_results = self.instance
-                s['statmap'].file = 'images/1/foo/bar/'
-
-                try:
-                    s['statmap'].clean_fields(exclude=('nidm_results','file'))
-                    s['statmap'].validate_unique()
-                except Exception,e:
-                    import traceback
-                    raise ValidationError("There was a problem validating the Statistic Maps " +
-                            "for this NIDM Result: \n{0}\n{1}".format(e, traceback.format_exc()))
+        handle_update_ttl_urls(self.instance)
 
     def save_nidm(self):
         if self.nidm and 'zip_file' in self.changed_data:
-            for s in self.nidm.statmaps:
-                s['statmap'].nidm_results = self.instance
-                s['statmap'].file = ContentFile(open(s['file']).read(), name=os.path.split(s['file'])[-1])
-                s['statmap'].save()
-
-            dest = os.path.dirname(self.instance.zip_file.path)
-            self.nidm.copy_to_dest(dest)
-            self.nidm.cleanup()
-
+            save_nidm_statmaps(self.nidm, self.instance)
             # todo: rewrite ttl
 
 
