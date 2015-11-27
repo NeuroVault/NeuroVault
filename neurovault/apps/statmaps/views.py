@@ -58,7 +58,7 @@ import numpy as np
 
 
 def owner_or_contrib(request,collection):
-    
+
     return request.user.has_perm('statmaps.change_collection', collection) or request.user.is_superuser
 
 
@@ -139,7 +139,7 @@ def edit_collection(request, cid=None):
     page_header = "Add new collection"
     if cid:
         collection = get_collection(cid,request)
-        is_owner = collection.owner == request.user 
+        is_owner = collection.owner == request.user
         page_header = 'Edit collection'
         if not owner_or_contrib(request,collection):
             return HttpResponseForbidden()
@@ -304,7 +304,7 @@ def view_collection(request, cid):
             'delete_permission': delete_permission,
             'edit_permission': edit_permission,
             'cid':cid}
-    
+
     if not is_empty:
         context["first_image"] = collection.image_set.all().order_by("pk")[0]
 
@@ -400,7 +400,7 @@ def view_nidm_results(request, collection_cid, nidm_name):
 def delete_nidm_results(request, collection_cid, nidm_name):
     collection = get_collection(collection_cid,request)
     nidmr = get_object_or_404(NIDMResults, collection=collection, name=nidm_name)
-    
+
     if request.user.has_perm("statmaps.delete_nidmresults", nidmr):
         nidmr.delete()
         return redirect('collection_details', cid=collection_cid)
@@ -474,7 +474,7 @@ def upload_folder(request, collection_cid):
                     if fnmatch(archive_name,'*.nidm.zip'):
                         form = populate_nidm_results(request,collection)
                         if not form:
-                            messages.warning(request, "Invalid NIDM-Results file.")  
+                            messages.warning(request, "Invalid NIDM-Results file.")
                         return HttpResponseRedirect(collection.get_absolute_url())
 
                     _, archive_ext = os.path.splitext(archive_name)
@@ -970,8 +970,8 @@ class JSONResponse(HttpResponse):
         content = JSONRenderer().render(data)
         kwargs['content_type'] = 'application/json'
         super(JSONResponse, self).__init__(content, **kwargs)
-        
-    
+
+
 class ImagesInCollectionJson(BaseDatatableView):
     columns = ['file.url', 'pk', 'name', 'polymorphic_ctype.name']
     order_columns = ['','pk', 'name', 'polymorphic_ctype.name']
@@ -983,13 +983,13 @@ class ImagesInCollectionJson(BaseDatatableView):
         # we need some base queryset to count total number of records.
         collection = get_collection(self.kwargs['cid'], self.request)
         return collection.image_set.all()
-    
+
     def render_column(self, row, column):
         if row.polymorphic_ctype.name == "statistic map":
             type = row.get_map_type_display()
         else:
             type = row.polymorphic_ctype.name
-        
+
         # We want to render user as a custom column
         if column == 'file.url':
             return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>'%(row.file.url, type)
@@ -997,7 +997,7 @@ class ImagesInCollectionJson(BaseDatatableView):
             return type
         else:
             return super(ImagesInCollectionJson, self).render_column(row, column)
-    
+
     def filter_queryset(self, qs):
         # use parameters passed in GET request to filter queryset
 
@@ -1006,7 +1006,7 @@ class ImagesInCollectionJson(BaseDatatableView):
         if search:
             qs = qs.filter(Q(name__icontains=search)| Q(description__icontains=search))
         return qs
-    
+
 class PublicCollectionsJson(BaseDatatableView):
     columns = ['name', 'n_images', 'description', 'has_doi']
     order_columns = ['name', '', 'description', '']
@@ -1017,7 +1017,7 @@ class PublicCollectionsJson(BaseDatatableView):
         # You should not filter data returned here by any filter values entered by user. This is because
         # we need some base queryset to count total number of records.
         return Collection.objects.filter(~Q(name__endswith = "temporary collection"), private=False)
-    
+
     def render_column(self, row, column):
         # We want to render user as a custom column
         if column == 'has_doi':
@@ -1029,7 +1029,7 @@ class PublicCollectionsJson(BaseDatatableView):
             return row.image_set.count()
         else:
             return super(PublicCollectionsJson, self).render_column(row, column)
-    
+
     def filter_queryset(self, qs):
         # use parameters passed in GET request to filter queryset
 
@@ -1042,6 +1042,6 @@ class PublicCollectionsJson(BaseDatatableView):
 
 
 class MyCollectionsJson(PublicCollectionsJson):
-    
+
     def get_initial_queryset(self):
         return get_objects_for_user(self.request.user, 'statmaps.change_collection')
