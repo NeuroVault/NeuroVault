@@ -18,6 +18,7 @@ from neurovault.apps.statmaps.views import owner_or_contrib
 from rest_framework.decorators import detail_route, list_route
 from rest_framework.renderers import JSONRenderer
 from django.http import HttpResponse
+from django.forms.utils import ErrorDict, ErrorList
 from rest_framework.response import Response
 from rest_framework import permissions, status
 from oauth2_provider import views as oauth_views
@@ -28,6 +29,7 @@ import os
 import re
 import pandas as pd
 from neurovault.apps.statmaps.forms import (NIDMResultsValidationMixin,
+                                            ImageValidationMixin,
                                             save_nidm_statmaps,
                                             handle_update_ttl_urls)
 
@@ -151,7 +153,23 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
         return orderedDict
 
 
-class EditableStatisticMapSerializer(serializers.ModelSerializer):
+class EditableImageSerializer(serializers.ModelSerializer,
+                              ImageValidationMixin):
+    def validate(self, data):
+        self.afni_subbricks = []
+        self.afni_tmp = None
+        self._errors = ErrorDict()
+        self.error_class = ErrorList
+
+        cleaned_data = self.clean_and_validate(data)
+
+        if self.errors:
+            raise serializers.ValidationError(self.errors)
+
+        return cleaned_data
+
+
+class EditableStatisticMapSerializer(EditableImageSerializer):
 
     class Meta:
         model = StatisticMap
@@ -220,7 +238,7 @@ class AtlasSerializer(ImageSerializer):
         return super(ImageSerializer, self).to_representation(obj)
 
 
-class EditableAtlasSerializer(serializers.ModelSerializer):
+class EditableAtlasSerializer(EditableImageSerializer):
 
     class Meta:
         model = Atlas

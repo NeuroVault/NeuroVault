@@ -7,14 +7,16 @@ import nibabel as nb
 import numpy as np
 
 from django.forms import ModelForm
-from django.forms.models import inlineformset_factory, ModelMultipleChoiceField, BaseInlineFormSet,\
+from django.forms.models import (
+    inlineformset_factory, ModelMultipleChoiceField, BaseInlineFormSet,
     ModelChoiceField
+)
 from django.core.exceptions import ValidationError
 # from form_utils.forms import BetterModelForm
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Div, Submit, HTML, Button, Row, Field, Hidden
-from crispy_forms.bootstrap import AppendedText, PrependedText, FormActions, TabHolder, Tab
+from crispy_forms.bootstrap import TabHolder, Tab
 
 from .models import Collection, Image, ValueTaggedItem, User, StatisticMap, BaseStatisticMap, \
     Atlas, NIDMResults, NIDMResultStatisticMap
@@ -22,9 +24,11 @@ from .models import Collection, Image, ValueTaggedItem, User, StatisticMap, Base
 from django.forms.forms import Form
 from django.forms.fields import FileField
 import tempfile
-from neurovault.apps.statmaps.utils import split_filename, get_paper_properties, \
-                                        detect_4D, split_4D_to_3D, memory_uploadfile,\
+from neurovault.apps.statmaps.utils import (
+    split_filename, get_paper_properties,
+    detect_4D, split_4D_to_3D, memory_uploadfile,
     is_thresholded, not_in_mni
+)
 from neurovault.apps.statmaps.nidm_results import NIDMUpload
 from django import forms
 from django.utils.encoding import smart_str
@@ -34,9 +38,7 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.files.base import ContentFile
 from django.forms.widgets import HiddenInput
 from neurovault import settings
-from django.core.files import File
 from neurovault.apps.statmaps.models import CognitiveAtlasTask
-from chosen import forms as chosenforms
 from gzip import GzipFile
 from file_resubmit.admin import AdminResubmitFileWidget
 from guardian.shortcuts import get_objects_for_user
@@ -48,7 +50,7 @@ collection_fieldsets = [
                                'description',
                                'full_dataset_url',
                                'contributors',
-                               'private',],
+                               'private'],
                     'legend': 'Essentials'}),
     ('Participants', {'fields': ['number_of_subjects',
                                  'subject_age_mean',
@@ -237,6 +239,7 @@ collection_row_attrs = {
 
 
 class ContributorCommaSepInput(forms.Widget):
+
     def render(self, name, value, attrs=None):
         final_attrs = self.build_attrs(attrs, type='text', name=name)
         if not type(value) == unicode and value is not None:
@@ -257,7 +260,7 @@ class ContributorCommaSepInput(forms.Widget):
 class ContributorCommaField(ModelMultipleChoiceField):
     widget = ContributorCommaSepInput
 
-    def clean(self,value):
+    def clean(self, value):
         if self.required and not value:
             raise ValidationError(self.error_messages['required'])
         elif not self.required and not value:
@@ -274,10 +277,11 @@ class ContributorCommaField(ModelMultipleChoiceField):
 
         return self.queryset.filter(username__in=split_vals)
 
+
 class CollectionForm(ModelForm):
 
     class Meta:
-        exclude = ('owner','private_token','contributors','private')
+        exclude = ('owner', 'private_token', 'contributors', 'private')
         model = Collection
         # fieldsets = study_fieldsets
         # row_attrs = study_row_attrs
@@ -290,15 +294,19 @@ class CollectionForm(ModelForm):
 
         if self.cleaned_data['DOI']:
             try:
-                self.cleaned_data["name"], self.cleaned_data["authors"], self.cleaned_data["paper_url"], _, self.cleaned_data["journal_name"] = get_paper_properties(self.cleaned_data['DOI'].strip())
+                self.cleaned_data["name"], self.cleaned_data["authors"], self.cleaned_data[
+                    "paper_url"], _, self.cleaned_data["journal_name"] = get_paper_properties(self.cleaned_data['DOI'].strip())
             except:
-                self._errors["DOI"] = self.error_class(["Could not resolve DOI"])
+                self._errors["DOI"] = self.error_class(
+                    ["Could not resolve DOI"])
             else:
                 if "name" in self._errors:
                     del self._errors["name"]
         elif "name" not in cleaned_data or not cleaned_data["name"]:
-            self._errors["name"] = self.error_class(["You need to set the name or the DOI"])
-            self._errors["DOI"] = self.error_class(["You need to set the name or the DOI"])
+            self._errors["name"] = self.error_class(
+                ["You need to set the name or the DOI"])
+            self._errors["DOI"] = self.error_class(
+                ["You need to set the name or the DOI"])
 
         return cleaned_data
 
@@ -312,17 +320,19 @@ class CollectionForm(ModelForm):
         tab_holder = TabHolder()
         for fs in collection_fieldsets:
             # manually enforce field exclusion
-            fs[1]['fields'] = [v for v in fs[1]['fields'] if v not in self.Meta.exclude]
+            fs[1]['fields'] = [
+                v for v in fs[1]['fields'] if v not in self.Meta.exclude]
             tab_holder.append(Tab(fs[1]['legend'], *fs[1]['fields']))
         self.helper.layout.extend([tab_holder, Submit(
-                                  'submit','Save', css_class="btn-large offset2")])
+                                  'submit', 'Save', css_class="btn-large offset2")])
 
 
 class OwnerCollectionForm(CollectionForm):
-    contributors = ContributorCommaField(queryset=None,required=False, help_text="Select other NeuroVault users to add as contributes to the collection.  Contributors can add, edit and delete images in the collection.")
+    contributors = ContributorCommaField(
+        queryset=None, required=False, help_text="Select other NeuroVault users to add as contributes to the collection.  Contributors can add, edit and delete images in the collection.")
 
     class Meta():
-        exclude = ('owner','private_token')
+        exclude = ('owner', 'private_token')
         model = Collection
         widgets = {
             'private': forms.RadioSelect
@@ -330,46 +340,32 @@ class OwnerCollectionForm(CollectionForm):
 
     def __init__(self, *args, **kwargs):
         super(OwnerCollectionForm, self).__init__(*args, **kwargs)
-        self.fields['contributors'].queryset = User.objects.exclude(pk=self.instance.owner.pk)
+        self.fields['contributors'].queryset = User.objects.exclude(
+            pk=self.instance.owner.pk)
 
 
-class ImageForm(ModelForm):
-    hdr_file = FileField(required=False, label='.hdr part of the map (if applicable)', widget=AdminResubmitFileWidget)
+class ImageValidationMixin(object):
 
-    def __init__(self, *args, **kwargs):
-        super(ImageForm, self).__init__(*args, **kwargs)
-        self.helper = FormHelper(self)
-        self.helper.form_class = 'form-horizontal'
-        self.helper.form_tag = False
-        self.afni_subbricks = []
-        self.afni_tmp = None
-
-    class Meta:
-        model = Image
-        exclude = []
-        widgets = {
-            'file': AdminResubmitFileWidget,
-            'hdr_file': AdminResubmitFileWidget,
-        }
-
-    def clean(self, **kwargs):
-        cleaned_data = super(ImageForm, self).clean()
-        file = cleaned_data.get("file")
+    def clean_and_validate(self, cleaned_data):
+        file = cleaned_data.get('file')
 
         if file:
             # check extension of the data file
             _, fname, ext = split_filename(file.name)
             if not ext.lower() in [".nii.gz", ".nii", ".img"]:
-                self._errors["file"] = self.error_class(["Doesn't have proper extension"])
+                self._errors["file"] = self.error_class(
+                    ["Doesn't have proper extension"]
+                )
                 del cleaned_data["file"]
                 return cleaned_data
 
             # prepare file to loading into memory
             file.open()
             if file.name.lower().endswith(".gz"):
-                fileobj = GzipFile(filename=file.name, mode='rb', fileobj=file.file)
+                fileobj = GzipFile(filename=file.name, mode='rb',
+                                   fileobj=file.file)
             else:
-                fileobj=file.file
+                fileobj = file.file
 
             file_map = {'image': nb.FileHolder(file.name, fileobj)}
             try:
@@ -386,10 +382,12 @@ class ImageForm(ModelForm):
                             return cleaned_data
                         else:
                             hdr_file.open()
-                            file_map["header"] = nb.FileHolder(hdr_file.name, hdr_file.file)
+                            file_map["header"] = nb.FileHolder(hdr_file.name,
+                                                               hdr_file.file)
                     else:
                         self._errors["hdr_file"] = self.error_class(
-                                [".img file requires .hdr file"])
+                            [".img file requires .hdr file"]
+                        )
                         del cleaned_data["hdr_file"]
                         return cleaned_data
 
@@ -410,37 +408,44 @@ class ImageForm(ModelForm):
                 if nii is not None and detect_4D(nii):
                     self.afni_subbricks = split_4D_to_3D(nii)
                 else:
-                    squeezable_dimensions = len(filter(lambda a: a not in [0,1], nii.shape))
+                    squeezable_dimensions = len(
+                        filter(lambda a: a not in [0, 1], nii.shape)
+                    )
 
                     if squeezable_dimensions != 3:
-                        self._errors["file"] = self.error_class(["4D files are not supported.\n If it's multiple maps in one file please split them and upload separately"])
+                        self._errors["file"] = self.error_class(
+                            ["4D files are not supported.\n "
+                             "If it's multiple maps in one "
+                             "file please split them and "
+                             "upload separately"])
                         del cleaned_data["file"]
                         return cleaned_data
 
-
                     # convert to nii.gz if needed
-                    if ext.lower() != ".nii.gz" or squeezable_dimensions < len(nii.shape):
-
-                        #convert pseudo 4D to 3D
+                    if (ext.lower() != ".nii.gz"
+                            or squeezable_dimensions < len(nii.shape)):
+                        # convert pseudo 4D to 3D
                         if squeezable_dimensions < len(nii.shape):
                             new_data = np.squeeze(nii.get_data())
-                            nii = nb.Nifti1Image(new_data, nii.get_affine(), nii.get_header())
+                            nii = nb.Nifti1Image(new_data, nii.get_affine(),
+                                                 nii.get_header())
 
-                        #Papaya does not handle float64, but by converting files we loose precision
-                        #if nii.get_data_dtype() == np.float64:
-                        #ii.set_data_dtype(np.float32)
+                        # Papaya does not handle float64, but by converting
+                        # files we loose precision
+                        # if nii.get_data_dtype() == np.float64:
+                        # ii.set_data_dtype(np.float32)
                         new_name = fname + ".nii.gz"
                         nii_tmp = os.path.join(tmp_dir, new_name)
                         nb.save(nii, nii_tmp)
 
-                        cleaned_data['file'] = memory_uploadfile(nii_tmp, new_name,
-                                                                 cleaned_data['file'])
-
-
+                        cleaned_data['file'] = memory_uploadfile(
+                            nii_tmp, new_name, cleaned_data['file']
+                        )
             finally:
                 try:
                     if self.afni_subbricks:
-                        self.afni_tmp = tmp_dir  # keep temp dir for AFNI slicing
+                        # keep temp dir for AFNI slicing
+                        self.afni_tmp = tmp_dir
                     else:
                         shutil.rmtree(tmp_dir)
                 except OSError as exc:
@@ -449,6 +454,32 @@ class ImageForm(ModelForm):
         else:
             raise ValidationError("Couldn't read uploaded file")
         return cleaned_data
+
+
+class ImageForm(ModelForm, ImageValidationMixin):
+    hdr_file = FileField(
+        required=False, label='.hdr part of the map (if applicable)', widget=AdminResubmitFileWidget)
+
+    def __init__(self, *args, **kwargs):
+        super(ImageForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_class = 'form-horizontal'
+        self.helper.form_tag = False
+        self.afni_subbricks = []
+        self.afni_tmp = None
+
+    class Meta:
+        model = Image
+        exclude = []
+        widgets = {
+            'file': AdminResubmitFileWidget,
+            'hdr_file': AdminResubmitFileWidget,
+        }
+
+    def clean(self, **kwargs):
+        cleaned_data = super(ImageForm, self).clean()
+        return self.clean_and_validate(cleaned_data)
+
 
 class StatisticMapForm(ImageForm):
 
@@ -463,26 +494,34 @@ class StatisticMapForm(ImageForm):
 
         if django_file and "file" not in self._errors and "hdr_file" not in self._errors:
             django_file.open()
-            gzfileobj = GzipFile(filename=django_file.name, mode='rb', fileobj=django_file.file)
-            nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(django_file.name, gzfileobj)})
+            gzfileobj = GzipFile(
+                filename=django_file.name, mode='rb', fileobj=django_file.file)
+            nii = nb.Nifti1Image.from_file_map(
+                {'image': nb.FileHolder(django_file.name, gzfileobj)})
             cleaned_data["is_thresholded"], ratio_bad = is_thresholded(nii)
             cleaned_data["perc_bad_voxels"] = ratio_bad*100.0
 
             if cleaned_data["is_thresholded"] and not cleaned_data.get("ignore_file_warning"):
-                self._errors["file"] = self.error_class(["This map seems to be thresholded (%.4g%% of voxels are zeros). Please use an unthresholded version of the map if possible."%(cleaned_data["perc_bad_voxels"])])
+                self._errors["file"] = self.error_class(
+                    ["This map seems to be thresholded (%.4g%% of voxels are zeros). Please use an unthresholded version of the map if possible." % (cleaned_data["perc_bad_voxels"])])
                 if cleaned_data.get("hdr_file"):
-                    self._errors["hdr_file"] = self.error_class(["This map seems to be thresholded (%.4g%% of voxels are zeros). Please use an unthresholded version of the map if possible."%(cleaned_data["perc_bad_voxels"])])
-                self.fields["ignore_file_warning"].widget = forms.CheckboxInput()
+                    self._errors["hdr_file"] = self.error_class(
+                        ["This map seems to be thresholded (%.4g%% of voxels are zeros). Please use an unthresholded version of the map if possible." % (cleaned_data["perc_bad_voxels"])])
+                self.fields[
+                    "ignore_file_warning"].widget = forms.CheckboxInput()
             else:
-                cleaned_data["not_mni"], cleaned_data["brain_coverage"], cleaned_data["perc_voxels_outside"] = not_in_mni(nii)
+                cleaned_data["not_mni"], cleaned_data["brain_coverage"], cleaned_data[
+                    "perc_voxels_outside"] = not_in_mni(nii)
                 if cleaned_data["not_mni"] and not cleaned_data.get("ignore_file_warning"):
-                    self._errors["file"] = self.error_class(["This map seems not to be in the MNI space (%.4g%% of meaningful voxels are outside of the brain). Please use transform your data to MNI space."%(cleaned_data["perc_voxels_outside"])])
+                    self._errors["file"] = self.error_class(
+                        ["This map seems not to be in the MNI space (%.4g%% of meaningful voxels are outside of the brain). Please use transform your data to MNI space." % (cleaned_data["perc_voxels_outside"])])
                     if cleaned_data.get("hdr_file"):
-                        self._errors["hdr_file"] = self.error_class(["This map seems not to be in the MNI space (%.4g%% of meaningful voxels are outside of the brain). Please use transform your data to MNI space."%(cleaned_data["perc_voxels_outside"])])
-                    self.fields["ignore_file_warning"].widget = forms.CheckboxInput()
+                        self._errors["hdr_file"] = self.error_class(
+                            ["This map seems not to be in the MNI space (%.4g%% of meaningful voxels are outside of the brain). Please use transform your data to MNI space." % (cleaned_data["perc_voxels_outside"])])
+                    self.fields[
+                        "ignore_file_warning"].widget = forms.CheckboxInput()
 
         return cleaned_data
-
 
     class Meta(ImageForm.Meta):
         model = StatisticMap
@@ -503,6 +542,7 @@ class StatisticMapForm(ImageForm):
 
 
 class AtlasForm(ImageForm):
+
     class Meta(ImageForm.Meta):
         model = Atlas
         fields = ('name', 'collection', 'description', 'figure',
@@ -510,6 +550,7 @@ class AtlasForm(ImageForm):
 
 
 class PolymorphicImageForm(ImageForm):
+
     def __init__(self, *args, **kwargs):
         super(PolymorphicImageForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
@@ -531,7 +572,7 @@ class PolymorphicImageForm(ImageForm):
         elif "map_type" in self.fields.keys():
             use_form = StatisticMapForm
         else:
-            raise Exception("unknown image type! %s"%str(self.fields.keys()))
+            raise Exception("unknown image type! %s" % str(self.fields.keys()))
 
         new_instance = use_form(self)
         new_instance.cleaned_data = self.cleaned_data
@@ -549,15 +590,16 @@ class EditStatisticMapForm(StatisticMapForm):
         if user.is_superuser:
             self.fields['collection'].queryset = Collection.objects.all()
         else:
-            self.fields['collection'].queryset = get_objects_for_user(user, 'statmaps.change_collection')
+            self.fields['collection'].queryset = get_objects_for_user(
+                user, 'statmaps.change_collection')
+
 
 class AddStatisticMapForm(StatisticMapForm):
 
     class Meta(StatisticMapForm.Meta):
-        fields = ('name', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas','cognitive_contrast_cogatlas','contrast_definition', 'figure',
+        fields = ('name', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas', 'cognitive_contrast_cogatlas', 'contrast_definition', 'figure',
                   'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels')
-
 
 
 class EditAtlasForm(AtlasForm):
@@ -571,10 +613,12 @@ class EditAtlasForm(AtlasForm):
         if user.is_superuser:
             self.fields['collection'].queryset = Collection.objects.all()
         else:
-            self.fields['collection'].queryset = get_objects_for_user(user, 'statmaps.change_collection')
+            self.fields['collection'].queryset = get_objects_for_user(
+                user, 'statmaps.change_collection')
 
     class Meta(AtlasForm.Meta):
         exclude = ()
+
 
 class SimplifiedStatisticMapForm(EditStatisticMapForm):
 
@@ -589,18 +633,20 @@ class CollectionInlineFormset(BaseInlineFormSet):
     def add_fields(self, form, index):
         super(CollectionInlineFormset, self).add_fields(form, index)
 
-    def save_afni_slices(self,form,commit):
+    def save_afni_slices(self, form, commit):
         try:
             orig_img = form.instance
             first_img = None
 
-            for n,(label,brick) in enumerate(form.afni_subbricks):
+            for n, (label, brick) in enumerate(form.afni_subbricks):
                 brick_fname = os.path.split(brick)[-1]
                 mfile = memory_uploadfile(brick, brick_fname, orig_img.file)
-                brick_img = StatisticMap(name='%s - %s' % (orig_img.name, label), file=mfile)
-                for field in ['collection','description']:
+                brick_img = StatisticMap(
+                    name='%s - %s' % (orig_img.name, label), file=mfile)
+                for field in ['collection', 'description']:
                     setattr(brick_img, field, form.cleaned_data[field])
-                setattr(brick_img, 'map_type', form.data['%s-map_type' % form.prefix])
+                setattr(
+                    brick_img, 'map_type', form.data['%s-map_type' % form.prefix])
 
                 if n == 0:
                     form.instance = brick_img
@@ -608,27 +654,28 @@ class CollectionInlineFormset(BaseInlineFormSet):
                 else:
                     brick_img.save()
                     for tag in first_img.tags.all():
-                        tagobj = ValueTaggedItem(content_object=brick_img,tag=tag)
+                        tagobj = ValueTaggedItem(
+                            content_object=brick_img, tag=tag)
                         tagobj.save()
 
         finally:
             shutil.rmtree(form.afni_tmp)
         return form
 
-    def save_new(self,form,commit=True):
+    def save_new(self, form, commit=True):
         if form.afni_subbricks:
-            form = self.save_afni_slices(form,commit)
+            form = self.save_afni_slices(form, commit)
             return form.instance
         else:
-            return super(CollectionInlineFormset, self).save_new(form,commit=commit)
+            return super(CollectionInlineFormset, self).save_new(form, commit=commit)
 
-    def save_existing(self,form,instance,commit=True):
+    def save_existing(self, form, instance, commit=True):
         if form.afni_subbricks:
-            form = self.save_afni_slices(form,commit)
+            form = self.save_afni_slices(form, commit)
             return form.instance
         else:
             return super(CollectionInlineFormset, self).save_existing(
-                                                            form, instance, commit=commit)
+                form, instance, commit=commit)
 
 
 CollectionFormSet = inlineformset_factory(
@@ -660,18 +707,20 @@ class UploadFileForm(Form):
 class PathOnlyWidget(forms.Widget):
 
     def render(self, name, value, attrs=None):
-        return mark_safe('<a target="_blank" href="%s">%s</a><br /><br />' % (value.url,value.url))
+        return mark_safe('<a target="_blank" href="%s">%s</a><br /><br />' % (value.url, value.url))
 
 
 class MapTypeListWidget(forms.Widget):
 
     def render(self, name, value, attrs=None):
-        map_type = [v for k,v in BaseStatisticMap.MAP_TYPE_CHOICES if k == value].pop()
+        map_type = [
+            v for k, v in BaseStatisticMap.MAP_TYPE_CHOICES if k == value].pop()
         input = '<input type="hidden" name="%s" value="%s" />' % (name, value)
         return mark_safe('%s<strong>%s</strong><br /><br />' % (input, map_type))
 
 
 class NIDMResultsValidationMixin(object):
+
     def clean_and_validate(self, data):
         try:
             self.nidm = NIDMUpload(data.get('zip_file'))
@@ -782,6 +831,7 @@ def handle_update_ttl_urls(instance):
 
 
 class NIDMResultsForm(forms.ModelForm, NIDMResultsValidationMixin):
+
     class Meta:
         model = NIDMResults
         exclude = []
@@ -841,16 +891,16 @@ class NIDMViewForm(forms.ModelForm):
         model = NIDMResults
         exclude = []
 
-    def __init__(self,*args, **kwargs):
-        super(NIDMViewForm,self).__init__(*args,**kwargs)
+    def __init__(self, *args, **kwargs):
+        super(NIDMViewForm, self).__init__(*args, **kwargs)
 
-        for fld in ['ttl_file','provn_file','zip_file']:
+        for fld in ['ttl_file', 'provn_file', 'zip_file']:
             self.fields[fld].widget = PathOnlyWidget()
         for fld in self.fields:
             self.fields[fld].widget.attrs['readonly'] = 'readonly'
         self.fields['name'].widget = HiddenInput()
         if self.fields.get('collection'):
-                self.fields['collection'].widget = HiddenInput()
+            self.fields['collection'].widget = HiddenInput()
 
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
@@ -858,16 +908,18 @@ class NIDMViewForm(forms.ModelForm):
 
 
 class NIDMResultStatisticMapForm(ImageForm):
+
     class Meta():
         model = NIDMResultStatisticMap
         fields = ('name', 'collection', 'description', 'map_type', 'figure',
                   'file', 'tags', 'nidm_results')
 
     def __init__(self, *args, **kwargs):
-        super(NIDMResultStatisticMapForm,self).__init__(*args,**kwargs)
+        super(NIDMResultStatisticMapForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
-        self.fields['hdr_file'].widget = HiddenInput()  # problem with exclude() and fields()
+        # problem with exclude() and fields()
+        self.fields['hdr_file'].widget = HiddenInput()
         if self.instance.pk is None:
             self.fields['file'].widget = HiddenInput()
         else:
@@ -883,5 +935,6 @@ class NIDMResultStatisticMapForm(ImageForm):
 
 
 class EditNIDMResultStatisticMapForm(NIDMResultStatisticMapForm):
+
     def __init__(self, user, *args, **kwargs):
-        super(EditNIDMResultStatisticMapForm,self).__init__(*args,**kwargs)
+        super(EditNIDMResultStatisticMapForm, self).__init__(*args, **kwargs)
