@@ -1,34 +1,37 @@
-from neurovault.apps.statmaps.voxel_query_functions import voxelToRegion, getSynonyms, toAtlas, getAtlasVoxels
+from neurovault.apps.statmaps.voxel_query_functions import (
+    voxelToRegion, getSynonyms, toAtlas, getAtlasVoxels
+)
 from rest_framework.relations import StringRelatedField, PrimaryKeyRelatedField
-from neurovault.apps.statmaps.models import Image, Collection, StatisticMap,\
-    Atlas, NIDMResults, NIDMResultStatisticMap, CognitiveAtlasTask, BaseStatisticMap
-from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from neurovault.apps.statmaps.models import (
+    Image, Collection, StatisticMap, Atlas, NIDMResults,
+    NIDMResultStatisticMap, CognitiveAtlasTask, BaseStatisticMap
+)
 from neurovault.apps.statmaps.urls import StandardResultPagination
 from rest_framework.filters import DjangoFilterBackend
 from django.conf.urls import patterns, include, url
-from django.conf.urls.static import static
 from django.conf import settings
 from django.contrib import admin
-from lxml.etree import xmlfile
 admin.autodiscover()
-from rest_framework import viewsets, routers, serializers, mixins, generics
+from rest_framework import viewsets, routers, serializers, mixins
 from neurovault.apps.statmaps.views import get_image, get_collection
+from neurovault.apps.statmaps.views import owner_or_contrib
 from rest_framework.decorators import detail_route, list_route
-from django.contrib.auth.models import User, Group
 from rest_framework.renderers import JSONRenderer
-from django.http import Http404, HttpResponse
+from django.http import HttpResponse
+from django.forms.utils import ErrorDict, ErrorList
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework import permissions
+from rest_framework import permissions, status
 from oauth2_provider import views as oauth_views
 import xml.etree.ElementTree as ET
 from taggit.models import Tag
 import cPickle as pickle
-import urllib2
 import os
 import re
 import pandas as pd
-
+from neurovault.apps.statmaps.forms import (NIDMResultsValidationMixin,
+                                            ImageValidationMixin,
+                                            save_nidm_statmaps,
+                                            handle_update_ttl_urls)
 
 from django import template
 template.add_to_builtins('django.templatetags.future')
@@ -146,8 +149,31 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
         orderedDict['image_type'] = image_type
         for key, val in orderedDict.iteritems():
             if pd.isnull(val):
-                orderedDict[key] = None;
+                orderedDict[key] = None
         return orderedDict
+
+
+class EditableImageSerializer(serializers.ModelSerializer,
+                              ImageValidationMixin):
+    def validate(self, data):
+        self.afni_subbricks = []
+        self.afni_tmp = None
+        self._errors = ErrorDict()
+        self.error_class = ErrorList
+
+        cleaned_data = self.clean_and_validate(data)
+
+        if self.errors:
+            raise serializers.ValidationError(self.errors)
+
+        return cleaned_data
+
+
+class EditableStatisticMapSerializer(EditableImageSerializer):
+
+    class Meta:
+        model = StatisticMap
+        read_only_fields = ('collection',)
 
 
 class StatisticMapSerializer(ImageSerializer):
@@ -212,6 +238,13 @@ class AtlasSerializer(ImageSerializer):
         return super(ImageSerializer, self).to_representation(obj)
 
 
+class EditableAtlasSerializer(EditableImageSerializer):
+
+    class Meta:
+        model = Atlas
+        read_only_fields = ('collection',)
+
+
 class NIDMResultsSerializer(serializers.ModelSerializer):
     zip_file = HyperlinkedFileField()
     ttl_file = HyperlinkedFileField()
@@ -221,6 +254,25 @@ class NIDMResultsSerializer(serializers.ModelSerializer):
     class Meta:
         model = NIDMResults
         exclude = ['id']
+
+
+class EditableNIDMResultsSerializer(serializers.ModelSerializer,
+                                    NIDMResultsValidationMixin):
+
+    def validate(self, data):
+        return self.clean_and_validate(data)
+
+    def save(self):
+        instance = super(EditableNIDMResultsSerializer, self).save()
+
+        save_nidm_statmaps(self.nidm, instance)
+        handle_update_ttl_urls(instance)
+
+        return instance
+
+    class Meta:
+        model = NIDMResults
+        read_only_fields = ('collection',)
 
 
 class CollectionSerializer(serializers.ModelSerializer):
@@ -397,10 +449,14 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
             collection, context={'request': request}).data
         if data and 'description' in data and data['description']:
             data['description'] = data['description'].replace('\n', '<br />')
-        return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date', 'images'])
+        return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date',
+                                                    'images'])
 
-    @detail_route()
+    @detail_route(methods=['get', 'post'])
     def images(self, request, pk=None):
+        if request.method == 'POST':
+            return self.add_item(request, pk, EditableStatisticMapSerializer)
+
         collection = get_collection(pk, request, mode='api')
         queryset = Image.objects.filter(collection=collection)
         paginator = StandardResultPagination()
@@ -408,6 +464,29 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
         serializer = ImageSerializer(
             page, context={'request': request}, many=True)
         return paginator.get_paginated_response(serializer.data)
+
+    @detail_route(methods=['post'])
+    def atlases(self, request, pk):
+        return self.add_item(request, pk, EditableAtlasSerializer)
+
+    @detail_route(methods=['post'])
+    def nidm_results(self, request, pk):
+        return self.add_item(request, pk, EditableNIDMResultsSerializer)
+
+    def add_item(self, request, pk, obj_serializer):
+        collection = get_collection(pk, request, mode='api')
+
+        if not owner_or_contrib(request, collection):
+            self.permission_denied(request)
+
+        obj = obj_serializer.Meta.model(collection=collection)
+        serializer = obj_serializer(data=request.data, instance=obj)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data,
+                            status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def retrieve(self, request, pk=None):
         collection = get_collection(pk, request, mode='api')

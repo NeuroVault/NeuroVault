@@ -1,5 +1,8 @@
-from neurovault.apps.statmaps.tests.utils import clearDB, save_atlas_form, save_statmap_form, save_nidm_form
-from neurovault.apps.statmaps.models import Atlas, Collection, Image, StatisticMap
+from neurovault.apps.statmaps.tests.utils import (clearDB, save_atlas_form,
+                                                  save_statmap_form,
+                                                  save_nidm_form)
+from neurovault.apps.statmaps.models import (Atlas, Collection,
+                                             StatisticMap, NIDMResults)
 from neurovault.apps.statmaps.urls import StandardResultPagination
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth.models import User
@@ -10,6 +13,8 @@ import xml.etree.ElementTree as ET
 from operator import itemgetter
 import os.path
 import json
+
+from .test_nidm import NIMD_TEST_FILES
 
 
 class Test_Atlas_APIs(TestCase):
@@ -268,4 +273,162 @@ class TestCollection(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(response.data, {
             'detail': 'Authentication credentials were not provided.'
+        })
+
+
+class TestCollectionItemUpload(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user('NeuroGuy')
+        self.user.save()
+        self.coll = Collection(owner=self.user, name="Test Collection")
+        self.coll.save()
+
+    def tearDown(self):
+        clearDB()
+
+    def abs_file_path(self, rel_path):
+        return os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                            rel_path)
+
+    def test_upload_statmap(self):
+        self.client.force_authenticate(user=self.user)
+
+        url = '/api/collections/%s/images/' % self.coll.pk
+        fname = self.abs_file_path('test_data/statmaps/motor_lips.nii.gz')
+
+        post_dict = {
+            'name': 'test map',
+            'modality': 'fMRI-BOLD',
+            'map_type': 'T',
+            'file': SimpleUploadedFile(fname, open(fname).read())
+        }
+
+        response = self.client.post(url, post_dict, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.assertEqual(response.data['collection'], self.coll.id)
+        self.assertRegexpMatches(response.data['file'], r'\.nii\.gz$')
+
+        exclude_keys = ('file',)
+        test_keys = set(post_dict.keys()) - set(exclude_keys)
+        for key in test_keys:
+            self.assertEqual(response.data[key], post_dict[key])
+
+    def test_upload_atlas(self):
+        self.client.force_authenticate(user=self.user)
+
+        url = '/api/collections/%s/atlases/' % self.coll.pk
+        nii_path = self.abs_file_path(
+            'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz')
+        xml_path = self.abs_file_path(
+            'test_data/api/VentralFrontal_thr75_summaryimage_2mm.xml')
+
+        post_dict = {
+            'name': 'test atlas',
+            'file': SimpleUploadedFile(nii_path, open(nii_path).read()),
+            'label_description_file': SimpleUploadedFile(xml_path,
+                                                         open(xml_path).read())
+        }
+
+        response = self.client.post(url, post_dict, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.assertEqual(response.data['collection'], self.coll.id)
+        self.assertRegexpMatches(response.data['file'], r'\.nii\.gz$')
+        self.assertRegexpMatches(response.data['label_description_file'],
+                                 r'\.xml$')
+
+        self.assertEqual(response.data['name'], post_dict['name'])
+
+    def test_upload_nidm_results(self):
+        self.client.force_authenticate(user=self.user)
+        url = '/api/collections/%s/nidm_results/' % self.coll.pk
+
+        for name, data in NIMD_TEST_FILES.items():
+            self._test_upload_nidm_results(url, name, data)
+
+    def _test_upload_nidm_results(self, url, name, data):
+        fname = os.path.basename(data['file'])
+
+        post_dict = {
+            'name': name,
+            'description': '{0} upload test'.format(name),
+            'zip_file': SimpleUploadedFile(fname,
+                                           open(data['file'], 'rb').read())
+        }
+
+        response = self.client.post(url, post_dict, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['collection'], self.coll.id)
+        self.assertRegexpMatches(response.data['zip_file'], r'\.nidm\.zip$')
+
+        nidm = NIDMResults.objects.get(pk=response.data['id'])
+        self.assertEquals(len(nidm.nidmresultstatisticmap_set.all()),
+                          data['num_statmaps'])
+
+        map_type = data['output_row']['type'][0]
+        map_img = nidm.nidmresultstatisticmap_set.filter(
+            map_type=map_type).first()
+
+        self.assertEquals(map_img.name, data['output_row']['name'])
+
+    def test_missing_required_fields(self):
+        self.client.force_authenticate(user=self.user)
+
+        url = '/api/collections/%s/images/' % self.coll.pk
+
+        post_dict = {
+            'name': 'test map',
+        }
+
+        response = self.client.post(url, post_dict, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        expect_dict = {'map_type': [u'This field is required.'],
+                       'modality': [u'This field is required.'],
+                       'file': [u'No file was submitted.']}
+
+        self.assertEqual(response.data, expect_dict)
+
+    def test_missing_required_authentication(self):
+        url = '/api/collections/%s/images/' % self.coll.pk
+        fname = self.abs_file_path('test_data/statmaps/motor_lips.nii.gz')
+
+        post_dict = {
+            'name': 'test map',
+            'modality': 'fMRI-BOLD',
+            'map_type': 'T',
+            'file': SimpleUploadedFile(fname, open(fname).read())
+        }
+
+        response = self.client.post(url, post_dict, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data, {
+            'detail': 'Authentication credentials were not provided.'
+        })
+
+    def test_missing_required_permissions(self):
+        self.client.force_authenticate(user=self.user)
+
+        other_user = User.objects.create_user('OtherGuy')
+        other_user.save()
+
+        other_collection = Collection(owner=other_user,
+                                      name="Another Test Collection")
+        other_collection.save()
+
+        url = '/api/collections/%s/images/' % other_collection.pk
+        fname = self.abs_file_path('test_data/statmaps/motor_lips.nii.gz')
+
+        post_dict = {
+            'name': 'test map',
+            'modality': 'fMRI-BOLD',
+            'map_type': 'T',
+            'file': SimpleUploadedFile(fname, open(fname).read())
+        }
+
+        response = self.client.post(url, post_dict, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, {
+            'detail': 'You do not have permission to perform this action.'
         })
