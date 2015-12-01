@@ -1,31 +1,31 @@
-from neurovault.apps.statmaps.voxel_query_functions import (
-    voxelToRegion, getSynonyms, toAtlas, getAtlasVoxels
-)
-from neurovault.apps.statmaps.models import (
-    Image, Collection, StatisticMap, Atlas, NIDMResults,
-    NIDMResultStatisticMap, CognitiveAtlasTask, BaseStatisticMap
-)
-from neurovault.apps.statmaps.urls import StandardResultPagination
-from rest_framework.filters import DjangoFilterBackend
-from rest_framework import viewsets, mixins
-from neurovault.apps.statmaps.views import get_image, get_collection
-from neurovault.apps.statmaps.views import owner_or_contrib
-from rest_framework.decorators import detail_route, list_route
-from rest_framework.renderers import JSONRenderer
-from django.http import HttpResponse
-from rest_framework.response import Response
-from rest_framework import permissions, status
-import xml.etree.ElementTree as ET
-from taggit.models import Tag
 import cPickle as pickle
 import os
 import re
+import xml.etree.ElementTree as ET
 
-from .serializers import (ImageSerializer, EditableStatisticMapSerializer,
-                          AtlasSerializer, EditableAtlasSerializer,
-                          NIDMResultsSerializer,
+from django.http import HttpResponse
+from rest_framework import mixins, permissions, status, viewsets
+from rest_framework.decorators import detail_route, list_route
+from rest_framework.filters import DjangoFilterBackend
+from rest_framework.renderers import JSONRenderer
+from rest_framework.response import Response
+from taggit.models import Tag
+
+from neurovault.apps.statmaps.models import (Atlas, Collection, Image,
+                                             NIDMResults)
+from neurovault.apps.statmaps.urls import StandardResultPagination
+from neurovault.apps.statmaps.views import (get_collection, get_image,
+                                            owner_or_contrib)
+from neurovault.apps.statmaps.voxel_query_functions import (getAtlasVoxels,
+                                                            getSynonyms,
+                                                            toAtlas,
+                                                            voxelToRegion)
+
+from .serializers import (AtlasSerializer, CollectionSerializer,
+                          EditableAtlasSerializer,
                           EditableNIDMResultsSerializer,
-                          CollectionSerializer)
+                          EditableStatisticMapSerializer, ImageSerializer,
+                          NIDMResultsSerializer)
 
 
 class JSONResponse(HttpResponse):
@@ -42,8 +42,10 @@ class JSONResponse(HttpResponse):
 
 class APIHelper:
 
-    ''' Contains generic helper methods to call from various
-    serializers and viewsets. '''
+    """
+    Contains generic helper methods to call from various
+    serializers and viewsets.
+    """
     @staticmethod
     def wrap_for_datatables(data, fields_to_strip=[]):
         '''
@@ -56,8 +58,8 @@ class APIHelper:
         Returns:
             A dict with an aaData field containing all of the
             values (and no keys) in tabular format. '''
-        data = dict([(k, v)
-                     for k, v in data.items() if v and k not in fields_to_strip])
+        data = dict([(k, v) for k, v in data.items()
+                     if v and k not in fields_to_strip])
         return Response(
             {'aaData': zip(data.keys(), data.values())}
         )
@@ -100,8 +102,10 @@ class AtlasViewSet(ImageViewSet):
 
     @detail_route()
     def datatable(self, request, pk=None):
-        ''' A wrapper around standard retrieve() request that formats the
-        object for the Datatables plugin. '''
+        """
+        A wrapper around standard retrieve() request that formats
+        the object for the Datatables plugin.
+        """
         image = self._get_api_image(request, pk)
         data = AtlasSerializer(image, context={'request': request}).data
         return APIHelper.wrap_for_datatables(data, ['name', 'modify_date',
@@ -109,8 +113,10 @@ class AtlasViewSet(ImageViewSet):
 
     @detail_route()
     def regions_table(self, request, pk=None):
-        ''' A wrapper around standard retrieve() request that formats the
-        object for the regions_table plugin. '''
+        """
+        A wrapper around standard retrieve() request that formats
+        the object for the regions_table plugin.
+        """
         image = self._get_api_image(request, pk)
         xmlFile = image.label_description_file
         xmlFile.open()
@@ -125,18 +131,24 @@ class AtlasViewSet(ImageViewSet):
 
     @list_route()
     def atlas_query_region(self, request, pk=None):
-        ''' Returns a dictionary containing a list of voxels that match the searched term (or related searches) in the specified atlas.\n
+        """
+        Returns a dictionary containing a list of voxels that match
+        the searched term (or related searches) in the specified atlas.\n
         Parameters: region, collection, atlas \n
-        Example: '/api/atlases/atlas_query_region/?region=middle frontal gyrus&collection=Harvard-Oxford cortical and subcortical structural atlases&atlas=HarvardOxford cort maxprob thr25 1mm' '''
+        Example: '/api/atlases/atlas_query_region/?region=middle frontal gyrus&collection=Harvard-Oxford cortical and subcortical structural atlases&atlas=HarvardOxford cort maxprob thr25 1mm'
+        """
         search = request.GET.get('region', '')
         atlas = request.GET.get('atlas', '').replace('\'', '')
-        collection = name = request.GET.get('collection', '')
+        collection = request.GET.get('collection', '')
         neurovault_root = os.path.dirname(
             os.path.dirname(os.path.realpath(__file__)))
         try:
             collection_object = Collection.objects.filter(name=collection)[0]
         except IndexError:
-            return JSONResponse('error: could not find collection: %s' % collection, status=400)
+            return JSONResponse(
+                'error: could not find collection: %s' % collection,
+                status=400
+            )
         try:
             atlas_object = Atlas.objects.filter(
                 name=atlas, collection=collection_object)[0]
@@ -162,9 +174,15 @@ class AtlasViewSet(ImageViewSet):
                     searchList = toAtlas(
                         search, graph, atlasRegions, synonymsDict)
                 except ValueError:
-                    return Response('error: region not in atlas or ontology', status=400)
+                    return Response(
+                        'error: region not in atlas or ontology',
+                        status=400
+                    )
                 if searchList == 'none':
-                    return Response('error: could not map specified region to region in specified atlas', status=400)
+                    return Response(
+                        'error: could not map specified region to region in specified atlas',
+                        status=400
+                    )
             try:
                 data = {
                     'voxels': getAtlasVoxels(searchList, atlas_image, atlas_xml)}
@@ -175,31 +193,42 @@ class AtlasViewSet(ImageViewSet):
 
     @list_route()
     def atlas_query_voxel(self, request, pk=None):
-        ''' Returns the region name that matches specified coordinates in the specified atlas.\n
+        """
+        Returns the region name that matches specified coordinates
+        in the specified atlas.\n
         Parameters: x, y, z, collection, atlas \n
-        Example: '/api/atlases/atlas_query_voxel/?x=30&y=30&z=30&collection=Harvard-Oxford cortical and subcortical structural atlases&atlas=HarvardOxford cort maxprob thr25 1mm' '''
+        Example: '/api/atlases/atlas_query_voxel/?x=30&y=30&z=30&collection=Harvard-Oxford cortical and subcortical structural atlases&atlas=HarvardOxford cort maxprob thr25 1mm'
+        """
         X = request.GET.get('x', '')
         Y = request.GET.get('y', '')
         Z = request.GET.get('z', '')
-        collection = name = request.GET.get('collection', '')
+        collection = request.GET.get('collection', '')
         atlas = request.GET.get('atlas', '').replace('\'', '')
         try:
             collection_object = Collection.objects.filter(name=collection)[0]
         except IndexError:
-            return JSONResponse('error: could not find collection: %s' % collection, status=400)
+            return JSONResponse(
+                'error: could not find collection: %s' % collection,
+                status=400
+            )
         try:
             print atlas
-            print[x.name for x in Atlas.objects.filter(collection=collection_object)]
+            print[x.name
+                  for x in Atlas.objects.filter(collection=collection_object)]
             atlas_object = Atlas.objects.filter(
                 name=atlas, collection=collection_object)[0]
             atlas_image = atlas_object.file
             atlas_xml = atlas_object.label_description_file
         except IndexError:
-            return JSONResponse('error: could not find atlas: %s' % atlas, status=400)
+            return JSONResponse('error: could not find atlas: %s' % atlas,
+                                status=400)
         try:
             data = voxelToRegion(X, Y, Z, atlas_image, atlas_xml)
         except IndexError:
-            return JSONResponse('error: one or more coordinates are out of range', status=400)
+            return JSONResponse(
+                'error: one or more coordinates are out of range',
+                status=400
+            )
         return Response(data)
 
 

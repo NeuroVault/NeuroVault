@@ -1,14 +1,14 @@
 import os
 
 from django import template
-from django.conf.urls import patterns, include, url
 from django.conf import settings
+from django.conf.urls import include, patterns, url
 from django.contrib import admin
-admin.autodiscover()
-
 from oauth2_provider import views as oauth_views
 
 from neurovault.api.urls import router
+
+admin.autodiscover()
 
 template.add_to_builtins('django.templatetags.future')
 template.add_to_builtins('django.contrib.staticfiles.templatetags.staticfiles')
@@ -40,7 +40,8 @@ urlpatterns = patterns('',
                        )
 
 if settings.DEBUG:
-    urlpatterns += patterns('',
-                            url(r'^(?P<path>favicon\.ico)$', 'django.views.static.serve', {
-                                'document_root': os.path.join(settings.STATIC_ROOT, 'images')}),
-                            )
+    urlpatterns += patterns(
+        '',
+        url(r'^(?P<path>favicon\.ico)$', 'django.views.static.serve', {
+            'document_root': os.path.join(settings.STATIC_ROOT, 'images')}),
+    )

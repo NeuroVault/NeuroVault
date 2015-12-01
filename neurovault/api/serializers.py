@@ -1,16 +1,20 @@
-from rest_framework.relations import StringRelatedField, PrimaryKeyRelatedField
-from neurovault.apps.statmaps.models import (
-    Image, Collection, StatisticMap, Atlas, NIDMResults,
-    NIDMResultStatisticMap
-)
-from rest_framework import serializers
-from django.forms.utils import ErrorDict, ErrorList
 import os
+
 import pandas as pd
-from neurovault.apps.statmaps.forms import (NIDMResultsValidationMixin,
+
+from django.forms.utils import ErrorDict, ErrorList
+
+from rest_framework import serializers
+from rest_framework.relations import PrimaryKeyRelatedField, StringRelatedField
+
+from neurovault.apps.statmaps.forms import (handle_update_ttl_urls,
                                             ImageValidationMixin,
-                                            save_nidm_statmaps,
-                                            handle_update_ttl_urls)
+                                            NIDMResultsValidationMixin,
+                                            save_nidm_statmaps)
+from neurovault.apps.statmaps.models import (Atlas, Collection, Image,
+                                             NIDMResults,
+                                             NIDMResultStatisticMap,
+                                             StatisticMap)
 
 
 class HyperlinkedFileField(serializers.FileField):
@@ -95,6 +99,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
 
 class EditableImageSerializer(serializers.ModelSerializer,
                               ImageValidationMixin):
+
     def validate(self, data):
         self.afni_subbricks = []
         self.afni_tmp = None
