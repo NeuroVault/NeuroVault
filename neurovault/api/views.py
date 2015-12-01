@@ -1,41 +1,31 @@
 from neurovault.apps.statmaps.voxel_query_functions import (
     voxelToRegion, getSynonyms, toAtlas, getAtlasVoxels
 )
-from rest_framework.relations import StringRelatedField, PrimaryKeyRelatedField
 from neurovault.apps.statmaps.models import (
     Image, Collection, StatisticMap, Atlas, NIDMResults,
     NIDMResultStatisticMap, CognitiveAtlasTask, BaseStatisticMap
 )
 from neurovault.apps.statmaps.urls import StandardResultPagination
 from rest_framework.filters import DjangoFilterBackend
-from django.conf.urls import patterns, include, url
-from django.conf import settings
-from django.contrib import admin
-admin.autodiscover()
-from rest_framework import viewsets, routers, serializers, mixins
+from rest_framework import viewsets, mixins
 from neurovault.apps.statmaps.views import get_image, get_collection
 from neurovault.apps.statmaps.views import owner_or_contrib
 from rest_framework.decorators import detail_route, list_route
 from rest_framework.renderers import JSONRenderer
 from django.http import HttpResponse
-from django.forms.utils import ErrorDict, ErrorList
 from rest_framework.response import Response
 from rest_framework import permissions, status
-from oauth2_provider import views as oauth_views
 import xml.etree.ElementTree as ET
 from taggit.models import Tag
 import cPickle as pickle
 import os
 import re
-import pandas as pd
-from neurovault.apps.statmaps.forms import (NIDMResultsValidationMixin,
-                                            ImageValidationMixin,
-                                            save_nidm_statmaps,
-                                            handle_update_ttl_urls)
 
-from django import template
-template.add_to_builtins('django.templatetags.future')
-template.add_to_builtins('django.contrib.staticfiles.templatetags.staticfiles')
+from .serializers import (ImageSerializer, EditableStatisticMapSerializer,
+                          AtlasSerializer, EditableAtlasSerializer,
+                          NIDMResultsSerializer,
+                          EditableNIDMResultsSerializer,
+                          CollectionSerializer)
 
 
 class JSONResponse(HttpResponse):
@@ -48,47 +38,6 @@ class JSONResponse(HttpResponse):
         content = JSONRenderer().render(data)
         kwargs['content_type'] = 'application/json'
         super(JSONResponse, self).__init__(content, **kwargs)
-
-
-class HyperlinkedFileField(serializers.FileField):
-
-    def to_representation(self, value):
-        if value:
-            request = self.context.get('request', None)
-            return request.build_absolute_uri(value.url)
-
-
-class HyperlinkedRelatedURL(serializers.RelatedField):
-
-    def to_representation(self, value):
-        if value:
-            request = self.context.get('request', None)
-            return request.build_absolute_uri(value.get_absolute_url())
-
-
-class HyperlinkedImageURL(serializers.CharField):
-
-    def to_representation(self, value):
-        if value:
-            request = self.context.get('request', None)
-            return request.build_absolute_uri(value)
-
-
-class SerializedContributors(serializers.CharField):
-
-    def to_representation(self, value):
-        if value:
-            return ', '.join([v.username for v in value.all()])
-
-
-class NIDMDescriptionSerializedField(serializers.CharField):
-
-    def to_representation(self, value):
-        print self.parent.instance.nidm_results.name
-        if value and self.parent.instance is not None:
-            parent = self.parent.instance.nidm_results.name
-            fname = os.path.split(self.parent.instance.file.name)[-1]
-            return 'NIDM Results: {0}.zip > {1}'.format(parent, fname)
 
 
 class APIHelper:
@@ -112,183 +61,6 @@ class APIHelper:
         return Response(
             {'aaData': zip(data.keys(), data.values())}
         )
-
-
-class ImageSerializer(serializers.HyperlinkedModelSerializer):
-
-    id = serializers.ReadOnlyField()
-    file = HyperlinkedFileField()
-    collection = HyperlinkedRelatedURL(read_only=True)
-    collection_id = serializers.ReadOnlyField()
-    url = HyperlinkedImageURL(source='get_absolute_url')
-    file_size = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Image
-        exclude = ['polymorphic_ctype']
-
-    def get_file_size(self, obj):
-        return obj.file.size
-
-    def to_representation(self, obj):
-        """
-        Because Image is Polymorphic
-        """
-        if isinstance(obj, StatisticMap):
-            serializer = StatisticMapSerializer
-            image_type = 'statistic_map'
-        elif isinstance(obj, Atlas):
-            serializer = AtlasSerializer
-            image_type = 'atlas'
-        elif isinstance(obj, NIDMResultStatisticMap):
-            serializer = NIDMResultStatisticMapSerializer
-            image_type = 'NIDM results statistic map'
-
-        orderedDict = serializer(obj, context={
-            'request': self.context['request']}).to_representation(obj)
-        orderedDict['image_type'] = image_type
-        for key, val in orderedDict.iteritems():
-            if pd.isnull(val):
-                orderedDict[key] = None
-        return orderedDict
-
-
-class EditableImageSerializer(serializers.ModelSerializer,
-                              ImageValidationMixin):
-    def validate(self, data):
-        self.afni_subbricks = []
-        self.afni_tmp = None
-        self._errors = ErrorDict()
-        self.error_class = ErrorList
-
-        cleaned_data = self.clean_and_validate(data)
-
-        if self.errors:
-            raise serializers.ValidationError(self.errors)
-
-        return cleaned_data
-
-
-class EditableStatisticMapSerializer(EditableImageSerializer):
-
-    class Meta:
-        model = StatisticMap
-        read_only_fields = ('collection',)
-
-
-class StatisticMapSerializer(ImageSerializer):
-
-    cognitive_paradigm_cogatlas = StringRelatedField(read_only=True)
-    cognitive_paradigm_cogatlas_id = PrimaryKeyRelatedField(
-        read_only=True, source="cognitive_paradigm_cogatlas")
-    cognitive_contrast_cogatlas = StringRelatedField(read_only=True)
-    cognitive_contrast_cogatlas_id = PrimaryKeyRelatedField(
-        read_only=True, source="cognitive_contrast_cogatlas")
-    map_type = serializers.SerializerMethodField()
-    analysis_level = serializers.SerializerMethodField()
-
-    def get_map_type(self, obj):
-        return obj.get_map_type_display()
-
-    def get_analysis_level(self, obj):
-        return obj.get_analysis_level_display()
-
-    class Meta:
-        model = StatisticMap
-        exclude = ['polymorphic_ctype', 'ignore_file_warning', 'data']
-
-    def to_representation(self, obj):
-        ret = super(ImageSerializer, self).to_representation(obj)
-        for field_name, value in obj.data.items():
-            if field_name not in ret:
-                ret[field_name] = value
-        return ret
-
-
-class NIDMResultStatisticMapSerializer(ImageSerializer):
-
-    nidm_results = HyperlinkedRelatedURL(read_only=True)
-    description = NIDMDescriptionSerializedField(source='get_absolute_url')
-    map_type = serializers.SerializerMethodField()
-    analysis_level = serializers.SerializerMethodField()
-
-    def get_map_type(self, obj):
-        return obj.get_map_type_display()
-
-    def get_analysis_level(self, obj):
-        return obj.get_analysis_level_display()
-
-    class Meta:
-        model = NIDMResultStatisticMap
-        exclude = ['polymorphic_ctype']
-
-    def to_representation(self, obj):
-        return super(ImageSerializer, self).to_representation(obj)
-
-
-class AtlasSerializer(ImageSerializer):
-
-    label_description_file = HyperlinkedFileField()
-
-    class Meta:
-        model = Atlas
-        exclude = ['polymorphic_ctype']
-
-    def to_representation(self, obj):
-        return super(ImageSerializer, self).to_representation(obj)
-
-
-class EditableAtlasSerializer(EditableImageSerializer):
-
-    class Meta:
-        model = Atlas
-        read_only_fields = ('collection',)
-
-
-class NIDMResultsSerializer(serializers.ModelSerializer):
-    zip_file = HyperlinkedFileField()
-    ttl_file = HyperlinkedFileField()
-    provn_file = HyperlinkedFileField()
-    statmaps = ImageSerializer(many=True, source='nidmresultstatisticmap_set')
-
-    class Meta:
-        model = NIDMResults
-        exclude = ['id']
-
-
-class EditableNIDMResultsSerializer(serializers.ModelSerializer,
-                                    NIDMResultsValidationMixin):
-
-    def validate(self, data):
-        return self.clean_and_validate(data)
-
-    def save(self):
-        instance = super(EditableNIDMResultsSerializer, self).save()
-
-        save_nidm_statmaps(self.nidm, instance)
-        handle_update_ttl_urls(instance)
-
-        return instance
-
-    class Meta:
-        model = NIDMResults
-        read_only_fields = ('collection',)
-
-
-class CollectionSerializer(serializers.ModelSerializer):
-    url = HyperlinkedImageURL(source='get_absolute_url', read_only=True)
-    owner = serializers.ReadOnlyField(source='owner.id')
-    images = ImageSerializer(many=True, source='image_set')
-    nidm_results = NIDMResultsSerializer(many=True, source='nidmresults_set')
-    contributors = SerializedContributors(required=False)
-    owner_name = serializers.SerializerMethodField()
-
-    def get_owner_name(self, obj):
-        return obj.owner.username
-
-    class Meta:
-        model = Collection
-        exclude = ['private_token', 'private', 'images', 'nidm_results']
 
 
 class ImageViewSet(mixins.RetrieveModelMixin,
@@ -515,43 +287,3 @@ class TagViewSet(viewsets.ModelViewSet):
         from django.db.models import Count
         data = Tag.objects.annotate(action_count=Count('action'))
         return APIHelper.wrap_for_datatables(data)
-
-
-# Routers provide an easy way of automatically determining the URL conf
-router = routers.DefaultRouter()
-router.register(r'images', ImageViewSet)
-router.register(r'atlases', AtlasViewSet)
-router.register(r'collections', CollectionViewSet)
-router.register(r'nidm_results', NIDMResultsViewSet)
-
-
-oauth_urlpatterns = [
-    url(r'^authorize/$', oauth_views.AuthorizationView.as_view(),
-        name="authorize"),
-    url(r'^token/$', oauth_views.TokenView.as_view(),
-        name="token"),
-    url(r'^revoke_token/$', oauth_views.RevokeTokenView.as_view(),
-        name="revoke-token"),
-]
-
-urlpatterns = patterns('',
-                       url('', include(
-                           'social.apps.django_app.urls', namespace='social')),
-                       url(r'^', include('neurovault.apps.main.urls')),
-                       url(r'^', include('neurovault.apps.statmaps.urls')),
-                       url(r'^accounts/',
-                           include('neurovault.apps.users.urls')),
-                       url(r'^admin/', include(admin.site.urls)),
-                       url(r'^api/', include(router.urls)),
-                       url(r'^api-auth/', include(
-                           'rest_framework.urls', namespace='rest_framework')),
-                       url(r'^o/', include((oauth_urlpatterns,
-                                            'oauth2_provider',
-                                            'oauth2_provider'))),
-                       )
-
-if settings.DEBUG:
-    urlpatterns += patterns('',
-                            url(r'^(?P<path>favicon\.ico)$', 'django.views.static.serve', {
-                                'document_root': os.path.join(settings.STATIC_ROOT, 'images')}),
-                            )
