@@ -62,13 +62,15 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('id', 'username', 'email', 'first_name', 'last_name')
 
 
-class ImageSerializer(serializers.HyperlinkedModelSerializer):
+class ImageSerializer(serializers.HyperlinkedModelSerializer,
+                      ImageValidationMixin):
 
     id = serializers.ReadOnlyField()
     file = HyperlinkedFileField()
     collection = HyperlinkedRelatedURL(read_only=True)
     collection_id = serializers.ReadOnlyField()
-    url = HyperlinkedImageURL(source='get_absolute_url')
+    url = HyperlinkedImageURL(source='get_absolute_url',
+                              read_only=True)
     file_size = serializers.SerializerMethodField()
 
     class Meta:
@@ -102,6 +104,19 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
             if pd.isnull(val):
                 orderedDict[key] = None
         return orderedDict
+
+    def validate(self, data):
+        self.afni_subbricks = []
+        self.afni_tmp = None
+        self._errors = ErrorDict()
+        self.error_class = ErrorList
+
+        cleaned_data = self.clean_and_validate(data)
+
+        if self.errors:
+            raise serializers.ValidationError(self.errors)
+
+        return cleaned_data
 
 
 class EditableImageSerializer(serializers.ModelSerializer,

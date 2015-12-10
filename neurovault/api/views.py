@@ -74,10 +74,12 @@ class AuthUserView(APIView):
 
 class ImageViewSet(mixins.RetrieveModelMixin,
                    mixins.ListModelMixin,
+                   mixins.UpdateModelMixin,
                    viewsets.GenericViewSet):
 
     queryset = Image.objects.filter(collection__private=False)
     serializer_class = ImageSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
     def _get_api_image(self, request, pk=None):
         private_url = re.match(r'^[A-Z]{8}\-\d+$', pk)

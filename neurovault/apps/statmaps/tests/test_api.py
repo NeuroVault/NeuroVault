@@ -1,3 +1,5 @@
+import uuid
+
 from neurovault.apps.statmaps.tests.utils import (clearDB, save_atlas_form,
                                                   save_statmap_form,
                                                   save_nidm_form)
@@ -204,7 +206,6 @@ class Test_Atlas_APIs(TestCase):
         response = json.loads(self.client.get(url, follow=True).content)
         resp_dict = dict(response['aaData'])
         assert('http' in resp_dict['url'])
-
 
     def test_nidm_results(self):
         print "\nTesting NIDM results API...."
@@ -461,3 +462,56 @@ class TestCollectionItemUpload(APITestCase):
         self.assertEqual(response.data, {
             'detail': 'You do not have permission to perform this action.'
         })
+
+
+class TestCollectionItemChange(APITestCase):
+    def abs_file_path(self, rel_path):
+        return os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                            rel_path)
+
+    def simple_uploaded_file(self, rel_path):
+        fname = self.abs_file_path(rel_path)
+        return SimpleUploadedFile(rel_path, open(fname).read())
+
+    def setUp(self):
+        self.user = User.objects.create_user('NeuroGuy')
+        self.user.save()
+        self.coll = Collection(owner=self.user, name="Test Collection")
+        self.coll.save()
+
+        self.image = save_statmap_form(
+            image_path=self.abs_file_path(
+                'test_data/statmaps/motor_lips.nii.gz'
+            ),
+            collection=self.coll
+        )
+
+    def tearDown(self):
+        clearDB()
+
+    def test_statistic_map_update(self):
+        self.client.force_authenticate(user=self.user)
+
+        url = '/api/images/%s/' % self.image.pk
+
+        file = self.simple_uploaded_file(
+            'test_data/statmaps/motor_lips.nii.gz'
+        )
+
+        put_dict = {
+            'name': "renamed %s" % uuid.uuid4(),
+            'modality': 'fMRI-BOLD',
+            'map_type': 'T',
+            'file': file
+        }
+
+        response = self.client.put(url, put_dict)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_statistic_map_destroy(self):
+        self.client.force_authenticate(user=self.user)
+
+        url = '/api/images/%s/' % self.image.pk
+
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
