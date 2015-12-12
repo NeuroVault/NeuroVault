@@ -515,3 +515,6 @@ class TestCollectionItemChange(APITestCase):
 
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        with self.assertRaises(StatisticMap.DoesNotExist):
+            StatisticMap.objects.get(pk=self.image.pk)
