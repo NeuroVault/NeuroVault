@@ -141,13 +141,13 @@ urlpatterns = patterns('',
         serve_nidm_image,
         name='serve_nidm_images'),
 
-   # Compare images
-    url(r'^images/compare/(?P<pk1>\d+)/(?P<pk2>\d+)$',
-        compare_images,
-        name='compare_images'),
-    url(r'^images/(?P<pk>\d+)/find_similar$',
-        find_similar,
-        name='find_similar')
+#    # Compare images
+#     url(r'^images/compare/(?P<pk1>\d+)/(?P<pk2>\d+)$',
+#         compare_images,
+#         name='compare_images'),
+#     url(r'^images/(?P<pk>\d+)/find_similar$',
+#         find_similar,
+#         name='find_similar')
 
 )
 
