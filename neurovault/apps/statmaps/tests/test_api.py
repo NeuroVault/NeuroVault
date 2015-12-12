@@ -514,4 +514,4 @@ class TestCollectionItemChange(APITestCase):
         url = '/api/images/%s/' % self.image.pk
 
         response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)

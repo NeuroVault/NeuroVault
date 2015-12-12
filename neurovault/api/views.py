@@ -75,6 +75,7 @@ class AuthUserView(APIView):
 class ImageViewSet(mixins.RetrieveModelMixin,
                    mixins.ListModelMixin,
                    mixins.UpdateModelMixin,
+                   mixins.DestroyModelMixin,
                    viewsets.GenericViewSet):
 
     queryset = Image.objects.filter(collection__private=False)
