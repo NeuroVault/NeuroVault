@@ -18,7 +18,8 @@ test:
   override:
     - docker-compose --verbose up -d && sleep 50
     - curl --retry 10 --retry-delay 5 -vkf http://localhost
-    - docker-compose run uwsgi python manage.py test
+    - set -o pipefail && docker-compose run uwsgi python manage.py test
+    - if grep -q "OK\n\nDestroying" log.txt; then true; else false; fi
 
 deployment:
   hub:
