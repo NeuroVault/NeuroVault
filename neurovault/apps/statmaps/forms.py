@@ -447,8 +447,10 @@ class ImageValidationMixin(object):
                 except OSError as exc:
                     if exc.errno != 2:  # code 2 - no such file or directory
                         raise  # re-raise exception
-        else:
+        elif not getattr(self, 'partial', False):
+            # Skip validation error if this is a partial update from the API
             raise ValidationError("Couldn't read uploaded file")
+
         return cleaned_data
 
 

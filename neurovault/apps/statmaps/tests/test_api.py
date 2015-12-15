@@ -486,13 +486,13 @@ class TestCollectionItemChange(APITestCase):
             collection=self.coll
         )
 
+        self.item_url = '/api/images/%s/' % self.image.pk
+
     def tearDown(self):
         clearDB()
 
     def test_statistic_map_update(self):
         self.client.force_authenticate(user=self.user)
-
-        url = '/api/images/%s/' % self.image.pk
 
         file = self.simple_uploaded_file(
             'test_data/statmaps/motor_lips.nii.gz'
@@ -505,15 +505,26 @@ class TestCollectionItemChange(APITestCase):
             'file': file
         }
 
-        response = self.client.put(url, put_dict)
+        response = self.client.put(self.item_url, put_dict)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(response.data['name'], put_dict['name'])
+
+    def test_statistic_map_partial_update(self):
+        self.client.force_authenticate(user=self.user)
+
+        patch_dict = {
+            'name': "renamed %s" % uuid.uuid4(),
+        }
+
+        response = self.client.patch(self.item_url, patch_dict)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['name'], patch_dict['name'])
 
     def test_statistic_map_destroy(self):
         self.client.force_authenticate(user=self.user)
 
-        url = '/api/images/%s/' % self.image.pk
-
-        response = self.client.delete(url)
+        response = self.client.delete(self.item_url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
         with self.assertRaises(StatisticMap.DoesNotExist):
