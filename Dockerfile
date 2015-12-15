@@ -50,7 +50,7 @@ RUN pip install django-celery
 RUN pip install scikit-learn
 RUN pip install nilearn
 RUN pip install pybraincompare
-RUN pip install django-cleanup
+RUN pip install django-cleanup==0.4.1
 RUN pip install django-chosen
 RUN pip install 'git+https://github.com/sinnwerkstatt/django-file-resubmit.git#egg=file_resubmit'
 RUN pip install nidmfsl
