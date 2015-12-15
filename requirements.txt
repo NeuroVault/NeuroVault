@@ -37,7 +37,7 @@ django-celery
 scikit-learn
 nilearn
 pybraincompare
-django-cleanup
+django-cleanup==0.4.1
 django-chosen
 git+https://github.com/sinnwerkstatt/django-file-resubmit.git#egg=file_resubmit
 nidmfsl
