@@ -99,7 +99,7 @@ class AddStatmapsTests(TestCase):
         }
         cid = self.coll.pk
         response = client.post(reverse('add_image', kwargs={'collection_cid':cid}), post_dict)
-        self.assertEqual(response.status_code, 200) 
+        self.assertEqual(response.status_code, 403) 
 
 
     def test_add_image_owner(self):
@@ -118,6 +118,6 @@ class AddStatmapsTests(TestCase):
         }
         cid = self.coll.pk
         response = self.client.post(reverse('add_image', kwargs={'collection_cid':cid}), post_dict)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
         image_pk = StatisticMap.objects.order_by('-pk')[0].pk
         self.assertRedirects(response, reverse('image_details', kwargs={'pk':image_pk}))
