@@ -1,7 +1,6 @@
 FROM neurovault/neurovault
 
-RUN wget -N ftp://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/5.3.0/freesurfer-Linux-centos4_x86_64-stable-pub-v5.3.0.tar.gz
-RUN tar zxvf freesurfer-Linux-centos4_x86_64-stable-pub-v5.3.0.tar.gz -C /opt && rm -rf freesurfer-Linux-centos4_x86_64-stable-pub-v5.3.0.tar.gz
+RUN wget -qO- ftp://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/5.3.0/freesurfer-Linux-centos4_x86_64-stable-pub-v5.3.0.tar.gz | tar zxv -C /opt --exclude='freesurfer/subjects/bert' --exclude='freesurfer/trctrain' --exclude='freesurfer/subjects/fsaverage_sym' --exclude='freesurfer/subjects/fsaverage3' --exclude='freesurfer/subjects/fsaverage4' --exclude='freesurfer/subjects/fsaverage5' --exclude='freesurfer/subjects/fsaverage6' --exclude='freesurfer/subjects/cvs_avg35' --exclude='freesurfer/subjects/cvs_avg35_inMNI152' --exclude='freesurfer/subjects/lh.EC_average' --exclude='freesurfer/subjects/rh.EC_average' --exclude='freesurfer/average/mult-comp-cor' --exclude='freesurfer/subjects/V1_average'
 
 ENV FREESURFER_HOME /opt/freesurfer
 ENV FS_FREESURFERENV_NO_OUTPUT 1
