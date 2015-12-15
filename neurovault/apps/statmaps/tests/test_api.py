@@ -479,17 +479,42 @@ class TestCollectionItemChange(APITestCase):
         self.coll = Collection(owner=self.user, name="Test Collection")
         self.coll.save()
 
-        self.image = save_statmap_form(
+    def tearDown(self):
+        clearDB()
+
+    def test_collection_item_partial_update(self):
+        self.client.force_authenticate(user=self.user)
+
+        patch_dict = {
+            'name': "renamed %s" % uuid.uuid4(),
+        }
+
+        response = self.client.patch(self.item_url, patch_dict)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['name'], patch_dict['name'])
+
+    def test_collection_item_destroy(self):
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.delete(self.item_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        with self.assertRaises(StatisticMap.DoesNotExist):
+            StatisticMap.objects.get(pk=self.item.pk)
+
+
+class TestStatisticMapChange(TestCollectionItemChange):
+    def setUp(self):
+        super(TestStatisticMapChange, self).setUp()
+
+        self.item = save_statmap_form(
             image_path=self.abs_file_path(
                 'test_data/statmaps/motor_lips.nii.gz'
             ),
             collection=self.coll
         )
 
-        self.item_url = '/api/images/%s/' % self.image.pk
-
-    def tearDown(self):
-        clearDB()
+        self.item_url = '/api/images/%s/' % self.item.pk
 
     def test_statistic_map_update(self):
         self.client.force_authenticate(user=self.user)
@@ -510,22 +535,3 @@ class TestCollectionItemChange(APITestCase):
 
         self.assertEqual(response.data['name'], put_dict['name'])
 
-    def test_statistic_map_partial_update(self):
-        self.client.force_authenticate(user=self.user)
-
-        patch_dict = {
-            'name': "renamed %s" % uuid.uuid4(),
-        }
-
-        response = self.client.patch(self.item_url, patch_dict)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['name'], patch_dict['name'])
-
-    def test_statistic_map_destroy(self):
-        self.client.force_authenticate(user=self.user)
-
-        response = self.client.delete(self.item_url)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-
-        with self.assertRaises(StatisticMap.DoesNotExist):
-            StatisticMap.objects.get(pk=self.image.pk)
