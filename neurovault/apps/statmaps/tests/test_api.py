@@ -572,3 +572,39 @@ class TestNIDMResultsChange(TestCollectionItemChange):
         self.assertEqual(response.data['description'], put_dict['description'])
         self.assertRegexpMatches(response.data['ttl_file'],
                                  r'fsl_course_fluency2\.nidm\.ttl$')
+
+
+class TestAtlasChange(TestCollectionItemChange):
+    def setUp(self):
+        super(TestAtlasChange, self).setUp()
+
+        nii_path = self.abs_file_path(
+            'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz'
+        )
+        xml_path = self.abs_file_path(
+            'test_data/api/unordered_VentralFrontal_thr75_summaryimage_2mm.xml'
+        )
+        self.item = save_atlas_form(nii_path=nii_path,
+                                    xml_path=xml_path,
+                                    collection=self.coll,
+                                    name="unorderedAtlas")
+
+        self.item_url = '/api/atlases/%s/' % self.item.pk
+
+    def test_atlas_update(self):
+        self.client.force_authenticate(user=self.user)
+
+        nii_file = self.simple_uploaded_file(
+            'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz')
+        xml_file = self.simple_uploaded_file(
+            'test_data/api/VentralFrontal_thr75_summaryimage_2mm.xml')
+
+        put_dict = {
+            'name': "renamed %s" % uuid.uuid4(),
+            'file': nii_file,
+            'label_description_file': xml_file
+        }
+
+        response = self.client.put(self.item_url, put_dict)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['name'], put_dict['name'])
