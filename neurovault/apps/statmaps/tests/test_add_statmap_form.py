@@ -99,7 +99,7 @@ class AddStatmapsTests(TestCase):
         }
         cid = self.coll.pk
         response = client.post(reverse('add_image', kwargs={'collection_cid':cid}), post_dict)
-        self.assertEqual(response.status_code, 200) 
+        self.assertEqual(response.status_code, 403) 
 
 
     def test_add_image_owner(self):
