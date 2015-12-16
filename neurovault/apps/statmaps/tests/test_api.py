@@ -540,25 +540,14 @@ class TestStatisticMapChange(TestCollectionItemChange):
 
 
 class TestNIDMResultsChange(TestCollectionItemChange):
-    def save_nidm_results_form(self, name, filepath, collection):
-        post_dict = {
-            'name': name,
-            'description': '{0} upload test'.format(name),
-            'collection': collection.pk,
-        }
-        file_dict = {
-            'zip_file': self.simple_uploaded_file(filepath)
-        }
-
-        form = NIDMResultsForm(post_dict, file_dict)
-        return form.save()
-
     def setUp(self):
         super(TestNIDMResultsChange, self).setUp()
 
-        self.item = self.save_nidm_results_form(
+        self.item = save_nidm_form(
             name='fsl_course_av',
-            filepath='test_data/nidm/fsl_course_av.nidm.zip',
+            zip_file=self.abs_file_path(
+                'test_data/nidm/fsl_course_av.nidm.zip'
+            ),
             collection=self.coll
         )
 
