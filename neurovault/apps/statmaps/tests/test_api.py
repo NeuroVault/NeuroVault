@@ -279,6 +279,8 @@ class TestCollection(APITestCase):
         self.coll = Collection(owner=self.user, name="Test Collection")
         self.coll.save()
 
+        self.item_url = '/api/collections/%s/' % self.coll.id
+
     def test_fetch_collection(self):
         response = self.client.get('/api/collections/%s/' % self.coll.id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -304,6 +306,44 @@ class TestCollection(APITestCase):
         self.assertEqual(response.data, {
             'detail': 'Authentication credentials were not provided.'
         })
+
+    def test_partial_update_collection(self):
+        self.client.force_authenticate(user=self.user)
+
+        patch_dict = {
+            'description': "renamed %s" % uuid.uuid4(),
+        }
+
+        response = self.client.patch(self.item_url, patch_dict)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['description'],
+                         patch_dict['description'])
+
+    def test_update_collection(self):
+        self.client.force_authenticate(user=self.user)
+
+        put_dict = {
+            'name': "renamed %s" % uuid.uuid4(),
+            'description': "renamed %s" % uuid.uuid4(),
+        }
+
+        response = self.client.put(self.item_url, put_dict)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['description'],
+                         put_dict['description'])
+        self.assertEqual(response.data['name'],
+                         put_dict['name'])
+
+    def test_destroy_collection(self):
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.delete(self.item_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        with self.assertRaises(Collection.DoesNotExist):
+            Collection.objects.get(pk=self.coll.pk)
 
 
 class TestCollectionItemUpload(APITestCase):

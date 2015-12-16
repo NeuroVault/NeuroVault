@@ -252,6 +252,8 @@ class AtlasViewSet(ImageViewSet):
 class CollectionViewSet(mixins.RetrieveModelMixin,
                         mixins.CreateModelMixin,
                         mixins.ListModelMixin,
+                        mixins.UpdateModelMixin,
+                        mixins.DestroyModelMixin,
                         viewsets.GenericViewSet):
 
     queryset = Collection.objects.filter(private=False)
