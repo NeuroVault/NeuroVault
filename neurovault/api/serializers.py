@@ -212,15 +212,31 @@ class EditableAtlasSerializer(EditableImageSerializer):
         read_only_fields = ('collection',)
 
 
-class NIDMResultsSerializer(serializers.ModelSerializer):
+class NIDMResultsSerializer(serializers.ModelSerializer,
+                            NIDMResultsValidationMixin):
     zip_file = HyperlinkedFileField()
-    ttl_file = HyperlinkedFileField()
-    provn_file = HyperlinkedFileField()
+    ttl_file = HyperlinkedFileField(required=False)
+    provn_file = HyperlinkedFileField(required=False)
     statmaps = ImageSerializer(many=True, source='nidmresultstatisticmap_set')
+
+    def validate(self, data):
+        return self.clean_and_validate(data)
+
+    def save(self):
+        instance = super(NIDMResultsSerializer, self).save()
+        nidm = getattr(self, 'nidm', False)
+
+        if nidm:
+            # Handle file upload
+            save_nidm_statmaps(nidm, instance)
+            handle_update_ttl_urls(instance)
+
+        return instance
 
     class Meta:
         model = NIDMResults
         exclude = ['id']
+        read_only_fields = ('collection',)
 
 
 class EditableNIDMResultsSerializer(serializers.ModelSerializer,

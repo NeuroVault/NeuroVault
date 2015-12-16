@@ -720,8 +720,17 @@ class MapTypeListWidget(forms.Widget):
 class NIDMResultsValidationMixin(object):
 
     def clean_and_validate(self, data):
+        zip_file = data.get('zip_file')
+        partial = getattr(self, 'partial', False)
+
+        if (zip_file and partial) or (not partial):
+            return self.clean_and_validate_zip_file(data, zip_file)
+
+        return data
+
+    def clean_and_validate_zip_file(self, data, zip_file):
         try:
-            self.nidm = NIDMUpload(data.get('zip_file'))
+            self.nidm = NIDMUpload(zip_file)
         except Exception, e:
             raise ValidationError(
                 "The NIDM file was not readable: {0}".format(e)

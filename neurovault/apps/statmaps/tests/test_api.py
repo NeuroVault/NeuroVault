@@ -5,6 +5,7 @@ from neurovault.apps.statmaps.tests.utils import (clearDB, save_atlas_form,
                                                   save_nidm_form)
 from neurovault.apps.statmaps.models import (Atlas, Collection,
                                              StatisticMap, NIDMResults)
+from neurovault.apps.statmaps.forms import NIDMResultsForm
 from neurovault.apps.statmaps.urls import StandardResultPagination
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth.models import User
@@ -486,12 +487,14 @@ class TestCollectionItemChange(APITestCase):
         self.client.force_authenticate(user=self.user)
 
         patch_dict = {
-            'name': "renamed %s" % uuid.uuid4(),
+            'description': "renamed %s" % uuid.uuid4(),
         }
 
         response = self.client.patch(self.item_url, patch_dict)
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['name'], patch_dict['name'])
+        self.assertEqual(response.data['description'],
+                         patch_dict['description'])
 
     def test_collection_item_destroy(self):
         self.client.force_authenticate(user=self.user)
@@ -535,3 +538,48 @@ class TestStatisticMapChange(TestCollectionItemChange):
 
         self.assertEqual(response.data['name'], put_dict['name'])
 
+
+class TestNIDMResultsChange(TestCollectionItemChange):
+    def save_nidm_results_form(self, name, filepath, collection):
+        post_dict = {
+            'name': name,
+            'description': '{0} upload test'.format(name),
+            'collection': collection.pk,
+        }
+        file_dict = {
+            'zip_file': self.simple_uploaded_file(filepath)
+        }
+
+        form = NIDMResultsForm(post_dict, file_dict)
+        return form.save()
+
+    def setUp(self):
+        super(TestNIDMResultsChange, self).setUp()
+
+        self.item = self.save_nidm_results_form(
+            name='fsl_course_av',
+            filepath='test_data/nidm/fsl_course_av.nidm.zip',
+            collection=self.coll
+        )
+
+        self.item_url = '/api/nidm_results/%s/' % self.item.pk
+
+    def test_nidm_results_update(self):
+        self.client.force_authenticate(user=self.user)
+
+        file = self.simple_uploaded_file(
+            'test_data/nidm/fsl_course_fluency2.nidm.zip'
+        )
+
+        put_dict = {
+            'name': 'fsl_course_fluency2',
+            'description': "renamed %s" % uuid.uuid4(),
+            'zip_file': file
+        }
+
+        response = self.client.put(self.item_url, put_dict)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(response.data['description'], put_dict['description'])
+        self.assertRegexpMatches(response.data['ttl_file'],
+                                 r'fsl_course_fluency2\.nidm\.ttl$')

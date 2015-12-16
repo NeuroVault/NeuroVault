@@ -326,10 +326,13 @@ class MyCollectionsViewSet(CollectionViewSet):
 
 class NIDMResultsViewSet(mixins.RetrieveModelMixin,
                          mixins.ListModelMixin,
+                         mixins.UpdateModelMixin,
+                         mixins.DestroyModelMixin,
                          viewsets.GenericViewSet):
 
     queryset = NIDMResults.objects.filter(collection__private=False)
     serializer_class = NIDMResultsSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
 
 class TagViewSet(viewsets.ModelViewSet):
