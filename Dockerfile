@@ -78,8 +78,4 @@ RUN apt-get autoremove -y
 RUN apt-get clean
 RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-ADD . /code/
-
-CMD /code/run_uwsgi.sh
-
 EXPOSE 3031
