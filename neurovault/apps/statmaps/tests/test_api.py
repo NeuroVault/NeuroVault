@@ -5,7 +5,6 @@ from neurovault.apps.statmaps.tests.utils import (clearDB, save_atlas_form,
                                                   save_nidm_form)
 from neurovault.apps.statmaps.models import (Atlas, Collection,
                                              StatisticMap, NIDMResults)
-from neurovault.apps.statmaps.forms import NIDMResultsForm
 from neurovault.apps.statmaps.urls import StandardResultPagination
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth.models import User
@@ -465,48 +464,50 @@ class TestCollectionItemUpload(APITestCase):
         })
 
 
-class TestCollectionItemChange(APITestCase):
-    def abs_file_path(self, rel_path):
-        return os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                            rel_path)
+class BaseTestCases:
+    class TestCollectionItemChange(APITestCase):
 
-    def simple_uploaded_file(self, rel_path):
-        fname = self.abs_file_path(rel_path)
-        return SimpleUploadedFile(rel_path, open(fname).read())
+        def abs_file_path(self, rel_path):
+            return os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                                rel_path)
 
-    def setUp(self):
-        self.user = User.objects.create_user('NeuroGuy')
-        self.user.save()
-        self.coll = Collection(owner=self.user, name="Test Collection")
-        self.coll.save()
+        def simple_uploaded_file(self, rel_path):
+            fname = self.abs_file_path(rel_path)
+            return SimpleUploadedFile(rel_path, open(fname).read())
 
-    def tearDown(self):
-        clearDB()
+        def setUp(self):
+            self.user = User.objects.create_user('NeuroGuy')
+            self.user.save()
+            self.coll = Collection(owner=self.user, name="Test Collection")
+            self.coll.save()
 
-    def test_collection_item_partial_update(self):
-        self.client.force_authenticate(user=self.user)
+        def tearDown(self):
+            clearDB()
 
-        patch_dict = {
-            'description': "renamed %s" % uuid.uuid4(),
-        }
+        def test_collection_item_partial_update(self):
+            self.client.force_authenticate(user=self.user)
 
-        response = self.client.patch(self.item_url, patch_dict)
+            patch_dict = {
+                'description': "renamed %s" % uuid.uuid4(),
+            }
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['description'],
-                         patch_dict['description'])
+            response = self.client.patch(self.item_url, patch_dict)
 
-    def test_collection_item_destroy(self):
-        self.client.force_authenticate(user=self.user)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(response.data['description'],
+                             patch_dict['description'])
 
-        response = self.client.delete(self.item_url)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        def _test_collection_item_destroy(self, model_class):
+            self.client.force_authenticate(user=self.user)
 
-        with self.assertRaises(StatisticMap.DoesNotExist):
-            StatisticMap.objects.get(pk=self.item.pk)
+            response = self.client.delete(self.item_url)
+            self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+            with self.assertRaises(model_class.DoesNotExist):
+                model_class.objects.get(pk=self.item.pk)
 
 
-class TestStatisticMapChange(TestCollectionItemChange):
+class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
     def setUp(self):
         super(TestStatisticMapChange, self).setUp()
 
@@ -538,8 +539,11 @@ class TestStatisticMapChange(TestCollectionItemChange):
 
         self.assertEqual(response.data['name'], put_dict['name'])
 
+    def test_statistic_map_destroy(self):
+        self._test_collection_item_destroy(StatisticMap)
 
-class TestNIDMResultsChange(TestCollectionItemChange):
+
+class TestNIDMResultsChange(BaseTestCases.TestCollectionItemChange):
     def setUp(self):
         super(TestNIDMResultsChange, self).setUp()
 
@@ -573,8 +577,11 @@ class TestNIDMResultsChange(TestCollectionItemChange):
         self.assertRegexpMatches(response.data['ttl_file'],
                                  r'fsl_course_fluency2\.nidm\.ttl$')
 
+    def test_nidm_results_destroy(self):
+        self._test_collection_item_destroy(NIDMResults)
 
-class TestAtlasChange(TestCollectionItemChange):
+
+class TestAtlasChange(BaseTestCases.TestCollectionItemChange):
     def setUp(self):
         super(TestAtlasChange, self).setUp()
 
@@ -608,3 +615,6 @@ class TestAtlasChange(TestCollectionItemChange):
         response = self.client.put(self.item_url, put_dict)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], put_dict['name'])
+
+    def test_atlas_destroy(self):
+        self._test_collection_item_destroy(Atlas)
