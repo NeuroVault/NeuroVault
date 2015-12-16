@@ -19,7 +19,7 @@ test:
     - docker-compose --verbose up -d && sleep 50
     - curl --retry 10 --retry-delay 5 -vkf http://localhost
     - set -o pipefail && docker-compose run uwsgi python manage.py test 2>&1 | tee log.txt
-    - if grep -q "\nOK\n" log.txt; then true; else false; fi
+    - if grep -q "^OK" log.txt; then true; else false; fi
 
 deployment:
   hub:
