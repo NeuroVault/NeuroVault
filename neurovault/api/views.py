@@ -249,13 +249,7 @@ class AtlasViewSet(ImageViewSet):
         return Response(data)
 
 
-class CollectionViewSet(mixins.RetrieveModelMixin,
-                        mixins.CreateModelMixin,
-                        mixins.ListModelMixin,
-                        mixins.UpdateModelMixin,
-                        mixins.DestroyModelMixin,
-                        viewsets.GenericViewSet):
-
+class CollectionViewSet(viewsets.ModelViewSet):
     queryset = Collection.objects.filter(private=False)
     filter_fields = ('name', 'DOI', 'owner')
     serializer_class = CollectionSerializer
