@@ -298,7 +298,9 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
             self.permission_denied(request)
 
         obj = obj_serializer.Meta.model(collection=collection)
-        serializer = obj_serializer(data=request.data, instance=obj)
+        serializer = obj_serializer(data=request.data,
+                                    instance=obj,
+                                    context={'request': request})
 
         if serializer.is_valid():
             serializer.save()
