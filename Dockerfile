@@ -62,6 +62,7 @@ RUN pip install django-datatables-view
 RUN pip install 'git+git://github.com/vsoch/nidmviewer.git@0.1'
 RUN pip install https://github.com/benkonrath/django-guardian/archive/django-polymorphic.zip
 RUN pip install 'django-oauth-toolkit==0.9.0'
+RUN pip install certifi==2015.04.28
 
 RUN apt-get install -y npm
 RUN ln -s /usr/bin/nodejs /usr/bin/node
