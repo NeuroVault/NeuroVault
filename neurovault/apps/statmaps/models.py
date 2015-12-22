@@ -172,7 +172,6 @@ class Collection(models.Model):
 
         if (privacy_changed and not self.private) or (DOI_changed and self.DOI is not None):
             for image in self.image_set.all():
-                #TODO: exclude parcellation ROI maps and single subject maps
                 if image.pk:
                     generate_glassbrain_image.apply_async([image.pk])
                     run_voxelwise_pearson_similarity.apply_async([image.pk])

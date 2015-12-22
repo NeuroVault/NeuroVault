@@ -467,14 +467,32 @@ def not_in_mni(nii, plot=False):
 
 # QUERY FUNCTIONS -------------------------------------------------------------------------------
 
+def is_search_compatible(pk):
+    from neurovault.apps.statmaps.models import Image
+    img = Image.objects.get(pk=pk)
+    if img.polymorphic_ctype.model in ['image', 'atlas'] or \
+       img.is_thresholded or \
+       img.analysis_level == 'S' or \
+       img.map_type in ['R', 'Pa'] or img.collection.private:
+        return False
+    else:
+        return True
+
+
 def get_images_to_compare_with(pk1, for_generation=False):
     from neurovault.apps.statmaps.models import StatisticMap, NIDMResultStatisticMap, Image
+
+    # if the map in question is invalid do not generate any comparisons
+    if not is_search_compatible(pk1):
+        return []
+
+    img = Image.objects.get(pk=pk1)
     image_pks = []
     for cls in [StatisticMap, NIDMResultStatisticMap]:
         qs = cls.objects.filter(collection__private=False, is_thresholded=False)
-        if not (for_generation and Image.objects.get(pk=pk1).collection.DOI is not None):
+        if not (for_generation and img.collection.DOI is not None):
             qs = qs.exclude(collection__DOI__isnull=True)
-        qs = qs.exclude(collection=Image.objects.get(pk=pk1).collection)
+        qs = qs.exclude(collection=img.collection)
         qs = qs.exclude(pk=pk1).exclude(analysis_level='S').exclude(map_type='R').exclude(map_type='Pa')
         image_pks += list(qs.values_list('pk', flat=True))
     return image_pks
