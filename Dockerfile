@@ -49,7 +49,7 @@ RUN pip install celery[redis]
 RUN pip install django-celery
 RUN pip install scikit-learn
 RUN pip install nilearn
-RUN pip install https://github.com/vsoch/pybraincompare/archive/v1.0.zip
+RUN pip install pybraincompare==0.1.15
 RUN pip install django-cleanup==0.4.1
 RUN pip install django-chosen
 RUN pip install 'git+https://github.com/sinnwerkstatt/django-file-resubmit.git#egg=file_resubmit'
