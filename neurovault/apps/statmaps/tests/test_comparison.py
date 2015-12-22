@@ -132,7 +132,7 @@ class ComparisonTestCase(TestCase):
         comparison = Comparison.objects.filter(image1=image2,image2=image3,similarity_metric=self.pearson_metric)
         self.assertEqual(len(comparison), 1)
         print comparison[0].similarity_score
-        assert_almost_equal(comparison[0].similarity_score, 0.312337314261478,decimal=5)
+        assert_almost_equal(comparison[0].similarity_score, 0.312548260435768,decimal=5)
         
     def test_private_to_public_switch(self):
         private_collection1 = Collection(name='privateCollection1',owner=self.u1, private=True,
