@@ -258,9 +258,8 @@ def view_image(request, pk, collection_cid=None):
     user_owns_image = owner_or_contrib(request,image.collection)
     api_cid = pk
 
-#     comparison_is_possible = (image.collection.private == False and isinstance(image, BaseStatisticMap) and \
-#                               image.is_thresholded == False)
-    comparison_is_possible = False
+    comparison_is_possible = (image.collection.private == False and isinstance(image, BaseStatisticMap) and \
+                              image.is_thresholded == False)
 
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)

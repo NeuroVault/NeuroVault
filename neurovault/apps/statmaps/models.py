@@ -172,11 +172,11 @@ class Collection(models.Model):
             assign_perm('delete_nidmresults', self.owner, nidmresult)
         
 
-#         if privacy_changed and self.private == False:
-#             for image in self.image_set.all():
-#                 if image.pk:
-#                     generate_glassbrain_image.apply_async([image.pk])
-#                     run_voxelwise_pearson_similarity.apply_async([image.pk])
+        if privacy_changed and self.private == False:
+            for image in self.image_set.all():
+                if image.pk:
+                    generate_glassbrain_image.apply_async([image.pk])
+                    run_voxelwise_pearson_similarity.apply_async([image.pk])
 
     class Meta:
         app_label = 'statmaps'
@@ -407,9 +407,9 @@ class Image(PolymorphicModel, BaseCollectionItem):
             assign_perm('change_image', user, self)
             assign_perm('delete_image', user, self)
 
-#         if (do_update or new_image) and self.collection and self.collection.private == False:
-#             # Generate glass brain image
-#             generate_glassbrain_image.apply_async([self.pk])
+        if (do_update or new_image) and self.collection and self.collection.private == False:
+            # Generate glass brain image
+            generate_glassbrain_image.apply_async([self.pk])
 
         if collection_changed:
             for field_name in self._meta.get_all_field_names():
@@ -500,22 +500,22 @@ class BaseStatisticMap(Image):
         do_update = True if file_changed else False
         new_image = True if self.pk is None else False
 
-#         # If we have an update, delete old pkl and comparisons first before saving
-#         if do_update and self.collection:
-#             if self.reduced_representation: # not applicable for private collections
-#                 self.reduced_representation.delete()
-# 
-#                 # If more than one metric is added to NeuroVault, this must also filter based on metric
-#                 comparisons = Comparison.objects.filter(Q(image1=self) | Q(image2=self))
-#                 if comparisons:
-#                     comparisons.delete()
+        # If we have an update, delete old pkl and comparisons first before saving
+        if do_update and self.collection:
+            if self.reduced_representation: # not applicable for private collections
+                self.reduced_representation.delete()
+
+                # If more than one metric is added to NeuroVault, this must also filter based on metric
+                comparisons = Comparison.objects.filter(Q(image1=self) | Q(image2=self))
+                if comparisons:
+                    comparisons.delete()
         super(BaseStatisticMap, self).save()
 
-#         # Calculate comparisons if private collection, update or save, not thresholded
-#         if (do_update or new_image) and self.collection and self.collection.private == False:
-#             if self.is_thresholded == False and self.analysis_level != 'S':
-#                 # Default resample_dim is 4mm
-#                 run_voxelwise_pearson_similarity.apply_async([self.pk])
+        # Calculate comparisons if private collection, update or save, not thresholded
+        if (do_update or new_image) and self.collection and self.collection.private == False:
+            if self.is_thresholded == False and self.analysis_level != 'S':
+                # Default resample_dim is 4mm
+                run_voxelwise_pearson_similarity.apply_async([self.pk])
 
     @classmethod
     def get_fixed_fields(cls):
