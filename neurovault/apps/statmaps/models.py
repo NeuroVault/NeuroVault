@@ -1,35 +1,31 @@
 # -*- coding: utf-8 -*-
-from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, generate_glassbrain_image
-from neurovault.apps.statmaps.storage import NiftiGzStorage, NIDMStorage,\
-    OverwriteStorage, NeuroVaultStorage
-from polymorphic.polymorphic_model import PolymorphicModel
-from django.db.models.signals import post_delete, pre_delete
-from taggit.models import GenericTaggedItemBase, TagBase
-from django.core.exceptions import ValidationError
-from django.dispatch.dispatcher import receiver
-from django.core.urlresolvers import reverse
-from taggit.managers import TaggableManager
-from django.contrib.auth.models import User
-from django.db.models import Q, DO_NOTHING
-from dirtyfields import DirtyFieldsMixin
-from django.core.files import File
-from django_hstore import hstore
-from neurovault import settings
-from datetime import datetime
-from django.db import models
-from gzip import GzipFile
-from django import forms
-from xml import etree
-import nibabel as nb
-import neurovault
-import urllib2
-import shutil
 import os
-from neurovault.settings import PRIVATE_MEDIA_ROOT
-from django.db.models.fields.files import FileField, FieldFile
+import shutil
+from datetime import datetime
+from gzip import GzipFile
+
+import nibabel as nb
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.core.files import File
+from django.core.urlresolvers import reverse
 from django.core.validators import MaxValueValidator, MinValueValidator
-from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
+from django.db import models
+from django.db.models import Q
+from django.db.models.fields.files import FieldFile
 from django.db.models.signals import m2m_changed
+from django.db.models.signals import post_delete
+from django.dispatch.dispatcher import receiver
+from django_hstore import hstore
+from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
+from polymorphic.polymorphic_model import PolymorphicModel
+from taggit.managers import TaggableManager
+from taggit.models import GenericTaggedItemBase, TagBase
+
+from neurovault.apps.statmaps.storage import NiftiGzStorage, NIDMStorage,\
+    OverwriteStorage
+from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, generate_glassbrain_image
+from neurovault.settings import PRIVATE_MEDIA_ROOT
 
 
 class Collection(models.Model):
@@ -155,10 +151,13 @@ class Collection(models.Model):
 
         # run calculations when collection turns public
         privacy_changed = False
+        DOI_changed = False
         if self.pk is not None:
             old_object = Collection.objects.get(pk=self.pk)
             old_is_private = old_object.private
+            old_has_DOI = old_object.DOI is not None
             privacy_changed = old_is_private != self.private
+            DOI_changed = old_has_DOI != (self.DOI is not None)
 
         super(Collection, self).save(*args, **kwargs)
 
@@ -170,10 +169,10 @@ class Collection(models.Model):
         for nidmresult in self.nidmresults_set.all():
             assign_perm('change_nidmresults', self.owner, nidmresult)
             assign_perm('delete_nidmresults', self.owner, nidmresult)
-        
 
-        if privacy_changed and self.private == False:
+        if (privacy_changed and not self.private) or (DOI_changed and self.DOI is not None):
             for image in self.image_set.all():
+                #TODO: exclude parcellation ROI maps and single subject maps
                 if image.pk:
                     generate_glassbrain_image.apply_async([image.pk])
                     run_voxelwise_pearson_similarity.apply_async([image.pk])

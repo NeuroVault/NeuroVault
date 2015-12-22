@@ -17,8 +17,15 @@ class Test_Counter(TestCase):
         self.user = User.objects.create(username='neurovault')
         self.client = Client()
         self.client.login(username=self.user)
-        self.Collection1 = Collection(name='Collection1',owner=self.user)
+        self.Collection1 = Collection(name='Collection1', owner=self.user,
+                                      DOI='10.3389/fninf.2015.00008')
         self.Collection1.save()
+        self.Collection2 = Collection(name='Collection2', owner=self.user,
+                                      DOI='10.3389/fninf.2015.00009')
+        self.Collection2.save()
+        self.Collection3 = Collection(name='Collection3', owner=self.user,
+                                      DOI='10.3389/fninf.2015.00011')
+        self.Collection3.save()
 
 
     def tearDown(self):
@@ -43,7 +50,7 @@ class Test_Counter(TestCase):
         # after the other, instead of being sent to worker nodes) so there is no way to test submitting a batch of async
         # jobs and watching the "images still processing" counter go from N to 0. There is also no way of arbitrarily
         # setting an image transform field to "None" because on save, all image comparisons are automatically re-calcualted        
-        Image2 = StatisticMap(name='Image2', collection=self.Collection1, file='beta_0001.nii.gz', map_type="Other")
+        Image2 = StatisticMap(name='Image2', collection=self.Collection2, file='beta_0001.nii.gz', map_type="Other")
         Image2.file = SimpleUploadedFile('beta_0001.nii.gz', file(os.path.join(self.test_path,'test_data/statmaps/beta_0001.nii.gz')).read())
         Image2.save()
         images_processing = count_processing_comparisons(Image1.pk)
@@ -64,7 +71,7 @@ class Test_Counter(TestCase):
         post_dict = {
             'name': 'spm_nidm',
             'description':'{0} upload test'.format('spm_example'),
-            'collection':self.Collection1.pk}
+            'collection':self.Collection2.pk}
         fname = os.path.basename(os.path.join(self.test_path,'test_data/nidm/spm_example.nidm.zip'))
         file_dict = {'zip_file': SimpleUploadedFile(fname, zip_file.read())}
         zip_file.close()
@@ -78,7 +85,7 @@ class Test_Counter(TestCase):
         self.assertEqual(total_comparisons,1)
         
         #Let's add a single subject map - this should not trigger a comparison
-        Image2ss = StatisticMap(name='Image2 - single subject', collection=self.Collection1, file='beta_0001.nii.gz', map_type="Other", analysis_level='S')
+        Image2ss = StatisticMap(name='Image2 - single subject', collection=self.Collection3, file='beta_0001.nii.gz', map_type="Other", analysis_level='S')
         Image2ss.file = SimpleUploadedFile('beta_0001.nii.gz', file(os.path.join(self.test_path,'test_data/statmaps/beta_0001.nii.gz')).read())
         Image2ss.save()
         total_comparisons = count_existing_comparisons(Image2ss.pk)

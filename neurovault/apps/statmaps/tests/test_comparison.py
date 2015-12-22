@@ -26,32 +26,46 @@ class ComparisonTestCase(TestCase):
         self.tmpdir = tempfile.mkdtemp()
         app_path = os.path.abspath(os.path.dirname(__file__))
         self.u1 = User.objects.create(username='neurovault')
-        self.comparisonCollection = Collection(name='comparisonCollection',owner=self.u1)
-        self.comparisonCollection.save()
+        self.comparisonCollection1 = Collection(name='comparisonCollection1', owner=self.u1,
+                                                DOI='10.3389/fninf.2015.00008')
+        self.comparisonCollection1.save()
+        self.comparisonCollection2 = Collection(name='comparisonCollection2', owner=self.u1,
+                                                DOI='10.3389/fninf.2015.00009')
+        self.comparisonCollection2.save()
+        self.comparisonCollection3 = Collection(name='comparisonCollection3', owner=self.u1,
+                                                DOI='10.3389/fninf.2015.00010')
+        self.comparisonCollection3.save()
+        self.comparisonCollection4 = Collection(name='comparisonCollection4', owner=self.u1,
+                                                DOI='10.3389/fninf.2015.00011')
+        self.comparisonCollection4.save()
+        self.comparisonCollection5 = Collection(name='comparisonCollection5', owner=self.u1,
+                                                DOI='10.3389/fninf.2015.00012')
+        self.comparisonCollection5.save()
+
 
         image1 = save_statmap_form(image_path=os.path.join(app_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz'),
-                              collection=self.comparisonCollection,
+                              collection=self.comparisonCollection1,
                               image_name = "image1",
                               ignore_file_warning=True)
         self.pk1 = image1.id
                 
         # Image 2 is equivalent to 1, so pearson should be 1.0
         image2 = save_statmap_form(image_path=os.path.join(app_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz'),
-                              collection=self.comparisonCollection,
+                              collection=self.comparisonCollection2,
                               image_name = "image1_copy",
                               ignore_file_warning=True)
         self.pk1_copy = image2.id
         
         # "Bricks" images
         bricks = split_4D_to_3D(nibabel.load(os.path.join(app_path,'test_data/TTatlas.nii.gz')),tmp_dir=self.tmpdir)
-        image3 = save_statmap_form(image_path=bricks[0][1],collection=self.comparisonCollection,image_name="image2",ignore_file_warning=True)
+        image3 = save_statmap_form(image_path=bricks[0][1],collection=self.comparisonCollection3,image_name="image2",ignore_file_warning=True)
         self.pk2 = image3.id     
-        image4 = save_statmap_form(image_path=bricks[1][1],collection=self.comparisonCollection,image_name="image3",ignore_file_warning=True)
+        image4 = save_statmap_form(image_path=bricks[1][1],collection=self.comparisonCollection4,image_name="image3",ignore_file_warning=True)
         self.pk3 = image4.id
 
         # This last image is a statmap with NaNs to test that transformation doesn't eliminate them
         image_nan = save_statmap_form(image_path=os.path.join(app_path,'test_data/statmaps/motor_lips_nan.nii.gz'),
-                                      collection=self.comparisonCollection,
+                                      collection=self.comparisonCollection5,
                                       image_name = "image_nan",
                                       ignore_file_warning=True)
         self.pknan = image_nan.id
@@ -121,24 +135,56 @@ class ComparisonTestCase(TestCase):
         assert_almost_equal(comparison[0].similarity_score, 0.312337314261478,decimal=5)
         
     def test_private_to_public_switch(self):
-        private_collection = Collection(name='privateCollection',owner=self.u1, private=True)
-        private_collection.save()
+        private_collection1 = Collection(name='privateCollection1',owner=self.u1, private=True,
+                                        DOI='10.3389/fninf.2015.00099')
+        private_collection1.save()
+        private_collection2 = Collection(name='privateCollection2',owner=self.u1, private=True,
+                                        DOI='10.3389/fninf.2015.00089')
+        private_collection2.save()
 
         app_path = os.path.abspath(os.path.dirname(__file__))
         private_image1 = save_statmap_form(image_path=os.path.join(app_path,'test_data/statmaps/all.nii.gz'),
-                                           collection=private_collection,
+                                           collection=private_collection1,
                                            image_name = "image1")
         private_image2 = save_statmap_form(image_path=os.path.join(app_path,'test_data/statmaps/motor_lips.nii.gz'),
-                                           collection=private_collection,
+                                           collection=private_collection2,
                                            image_name = "image2")
         comparison = Comparison.objects.filter(image1=private_image1,image2=private_image2)
         self.assertEqual(len(comparison), 0)
         
         print "before private: %s"%Comparison.objects.all().count()
-        private_collection = Collection.objects.get(pk=private_collection.pk)
-        private_collection.private = False
-        private_collection.save()
+        private_collection1 = Collection.objects.get(pk=private_collection1.pk)
+        private_collection1.private = False
+        private_collection1.save()
+        private_collection2 = Collection.objects.get(pk=private_collection2.pk)
+        private_collection2.private = False
+        private_collection2.save()
         print "after private: %s"%Comparison.objects.all().count()
+        print private_collection1.image_set.all()
+        comparison = Comparison.objects.filter(image1=private_image1,image2=private_image2)
+        self.assertEqual(len(comparison), 1)
+
+    def test_add_DOI(self):
+        private_collection1 = Collection(name='privateCollection1', owner=self.u1, private=False)
+        private_collection1.save()
+        private_collection2 = Collection(name='privateCollection2', owner=self.u1, private=False)
+        private_collection2.save()
+
+        app_path = os.path.abspath(os.path.dirname(__file__))
+        private_image1 = save_statmap_form(image_path=os.path.join(app_path,'test_data/statmaps/all.nii.gz'),
+                                           collection=private_collection1,
+                                           image_name = "image1")
+        private_image2 = save_statmap_form(image_path=os.path.join(app_path,'test_data/statmaps/motor_lips.nii.gz'),
+                                           collection=private_collection2,
+                                           image_name = "image2")
+        comparison = Comparison.objects.filter(image1=private_image1,image2=private_image2)
+        self.assertEqual(len(comparison), 0)
+
+        print "without DOI: %s"%Comparison.objects.all().count()
+        private_collection = Collection.objects.get(pk=private_collection1.pk)
+        private_collection.DOI = '10.3389/fninf.2015.00020'
+        private_collection.save()
+        print "with DOI: %s"%Comparison.objects.all().count()
         print private_collection.image_set.all()
         comparison = Comparison.objects.filter(image1=private_image1,image2=private_image2)
         self.assertEqual(len(comparison), 1)

@@ -202,7 +202,7 @@ def run_voxelwise_pearson_similarity(pk1):
     if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
         image = save_resampled_transformation_single(pk1)
 
-    imgs_pks = get_images_to_compare_with(pk1)
+    imgs_pks = get_images_to_compare_with(pk1, for_generation=True)
     
     # exclude single subject maps from analysis
     for pk in imgs_pks:

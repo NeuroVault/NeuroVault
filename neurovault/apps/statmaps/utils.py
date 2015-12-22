@@ -467,11 +467,14 @@ def not_in_mni(nii, plot=False):
 
 # QUERY FUNCTIONS -------------------------------------------------------------------------------
 
-def get_images_to_compare_with(pk1):
-    from neurovault.apps.statmaps.models import StatisticMap, NIDMResultStatisticMap
+def get_images_to_compare_with(pk1, for_generation=False):
+    from neurovault.apps.statmaps.models import StatisticMap, NIDMResultStatisticMap, Image
     image_pks = []
     for cls in [StatisticMap, NIDMResultStatisticMap]:
         qs = cls.objects.filter(collection__private=False, is_thresholded=False)
+        if not (for_generation and Image.objects.get(pk=pk1).collection.DOI is not None):
+            qs = qs.exclude(collection__DOI__isnull=True)
+        qs = qs.exclude(collection=Image.objects.get(pk=pk1).collection)
         qs = qs.exclude(pk=pk1).exclude(analysis_level='S').exclude(map_type='R').exclude(map_type='Pa')
         image_pks += list(qs.values_list('pk', flat=True))
     return image_pks
