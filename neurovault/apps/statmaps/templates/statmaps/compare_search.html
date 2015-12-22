@@ -8,6 +8,8 @@ var addthis_config = {
 } 
 </script>
 <script src="https://tunidesign.googlecode.com/files/jquery.prettyPhoto.min.js"></script>
+
+
 {% endblock %}
 {% block content %}
 
@@ -54,7 +56,11 @@ document.getElementsByClassName("query_image")[0].style.width = 1000/3 + "px"
 <div style="width:100%; margin-top:30px">
     <p><strong>About</p></strong>
     <div class="well">
-    Whole-brain pearson correlations are calculated from a brain-masked, 4mm transformation of the original image with complete-case analysis, meaning only using voxels that are present in both images are used in the calculation.  Images that are tagged as "thresholded," meaning that the image has less than 25% of coverage for a standard brain mask, are not included in the comparison.</div>
+    Whole-brain pearson correlations are calculated from a brain-masked, 4mm transformation of the original image with
+        complete-case analysis, meaning only using voxels that are present in both images are used in the calculation.
+        The search is limited to images linked to published papers. Images that are tagged as "thresholded," meaning
+        that the image has less than 25% of coverage for a standard brain mask, are not included in the comparison.
+        Similarly single subject maps, parcellations, atlases and ROI maps are excluded.</div>
 </div>
 
 {% endblock %}

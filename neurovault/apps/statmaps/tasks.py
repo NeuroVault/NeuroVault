@@ -1,22 +1,21 @@
 from __future__ import absolute_import
+
+import nilearn
+from django.core.files.base import ContentFile
+from django.http import Http404
+from django.shortcuts import get_object_or_404
 from pybraincompare.compare.maths import calculate_correlation, calculate_pairwise_correlation
 from pybraincompare.compare.mrutils import resample_images_ref, make_binary_deletion_mask, make_binary_deletion_vector
-from pybraincompare.mr.transformation import make_resampled_transformation_vector
 from pybraincompare.mr.datasets import get_data_directory
-from neurovault.celery import nvcelery as celery_app
-from django.shortcuts import get_object_or_404
-from django.http import Http404
-from django.core.files.base import ContentFile
+from pybraincompare.mr.transformation import make_resampled_transformation_vector
+
+nilearn.EXPAND_PATH_WILDCARDS = False
 from nilearn.plotting import plot_glass_brain
-from nilearn.image import resample_img
-from sklearn.externals import joblib
-from django.db.models import Q
 from celery import shared_task, Celery
 from six import BytesIO
 import nibabel as nib
 import pylab as plt
 import numpy
-import os
 import urllib, json, tarfile, requests, os
 from StringIO import StringIO
 import xml.etree.cElementTree as e
@@ -24,6 +23,7 @@ from django.db import IntegrityError
 from django.core.files.uploadedfile import SimpleUploadedFile
 import re
 from django.conf import settings
+
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'neurovault.settings')
 app = Celery('neurovault')
@@ -145,7 +145,6 @@ def crawl_anima():
 @shared_task
 def generate_glassbrain_image(image_pk):
     from neurovault.apps.statmaps.models import Image
-    import neurovault
     import matplotlib as mpl
     mpl.rcParams['savefig.format'] = 'jpg'
     my_dpi = 50
@@ -177,7 +176,6 @@ def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
     from neurovault.apps.statmaps.models import Image
     from six import BytesIO
     import numpy as np
-    import neurovault
 
     img = get_object_or_404(Image, pk=pk1)
     nii_obj = nib.load(img.file.path)   # standard_mask=True is default
@@ -197,21 +195,18 @@ def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
 @shared_task
 def run_voxelwise_pearson_similarity(pk1):
     from neurovault.apps.statmaps.models import Image
+    from neurovault.apps.statmaps.utils import get_images_to_compare_with
     
     image = Image.objects.get(pk=pk1)
-    #added for improved performance
+    # added for improved performance
     if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
         image = save_resampled_transformation_single(pk1)
 
-    # Calculate comparisons for other images, and generate reduced_representation if needed
-    imgs = Image.objects.filter(collection__private=False).exclude(pk=pk1)
-    comp_qs = imgs.exclude(polymorphic_ctype__model__in=['image','atlas']).order_by('id')
-    #exclude single subject maps from analysis
-    for comp_img in comp_qs:
-        iargs = sorted([comp_img.pk,pk1]) 
-        if comp_img.is_thresholded == False and comp_img.analysis_level != 'S':
-            save_voxelwise_pearson_similarity.apply_async(iargs)  # Default uses reduced_representaion, reduced_representation = True
-
+    imgs_pks = get_images_to_compare_with(pk1, for_generation=True)
+    
+    # exclude single subject maps from analysis
+    for pk in imgs_pks:
+        save_voxelwise_pearson_similarity.apply_async([pk, pk1])  # Default uses reduced_representaion, reduced_representation = True
 
 @shared_task
 def save_voxelwise_pearson_similarity(pk1,pk2,resample_dim=[4,4,4],reduced_representaion=True):
@@ -327,8 +322,7 @@ def repopulate_cognitive_atlas(CognitiveAtlasTask=None,CognitiveAtlasContrast=No
         from neurovault.apps.statmaps.models import CognitiveAtlasTask
     if CognitiveAtlasContrast==None:
         from neurovault.apps.statmaps.models import CognitiveAtlasContrast
-    
-    import json, os
+
     from cognitiveatlas.api import get_task
     tasks = get_task()
 

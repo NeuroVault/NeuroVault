@@ -1,60 +1,55 @@
-from neurovault.apps.statmaps.models import Collection, Image, Atlas, Comparison, StatisticMap, NIDMResults, NIDMResultStatisticMap,\
-    BaseStatisticMap, CognitiveAtlasTask, CognitiveAtlasContrast
+import csv
+import functools
+import gzip
+import json
+import os
+import re
+import shutil
+import tarfile
+import tempfile
+import traceback
+import zipfile
+from collections import OrderedDict
+from fnmatch import fnmatch
+from xml.dom import minidom
+
+import nibabel as nib
+import numpy as np
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
+from django.core.files.base import ContentFile
+from django.db.models import Q, Count
+from django.db.models.aggregates import Count
+from django.http import Http404, HttpResponse
+from django.http.response import HttpResponseRedirect, HttpResponseForbidden
+from django.shortcuts import get_object_or_404, render_to_response, render, redirect
+from django.template.context import RequestContext
+from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_exempt
+from django_datatables_view.base_datatable_view import BaseDatatableView
+from guardian.shortcuts import get_objects_for_user
+from nidmviewer.viewer import generate
+from pybraincompare.compare import scatterplot, search
+from rest_framework.renderers import JSONRenderer
+from sendfile import sendfile
+from sklearn.externals import joblib
+
+import neurovault
+from neurovault import settings
 from neurovault.apps.statmaps.forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
-from django.http.response import HttpResponseRedirect, HttpResponseForbidden
-from django.shortcuts import get_object_or_404, render_to_response, render, redirect
+from neurovault.apps.statmaps.models import Collection, Image, Atlas, StatisticMap, NIDMResults, NIDMResultStatisticMap,\
+    BaseStatisticMap, CognitiveAtlasTask, CognitiveAtlasContrast
+from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
     get_file_ctime, detect_4D, split_4D_to_3D, splitext_nii_gz, mkdir_p, \
     send_email_notification, populate_nidm_results, get_server_url, populate_feat_directory, \
-    detect_feat_directory, format_image_collection_names, count_existing_comparisons, \
-    count_processing_comparisons, get_existing_comparisons
+    detect_feat_directory, format_image_collection_names, get_existing_comparisons
 from neurovault.apps.statmaps.voxel_query_functions import *
-from django.contrib.auth.decorators import login_required
-from pybraincompare.compare import scatterplot, search
-from pybraincompare.mr.datasets import get_mni_atlas
-from django.views.decorators.csrf import csrf_exempt
-from django.core.exceptions import PermissionDenied
-from neurovault.settings import PRIVATE_MEDIA_ROOT
-from django.template.context import RequestContext
-from rest_framework.renderers import JSONRenderer
-from django.core.files.base import ContentFile
-from django.db.models.aggregates import Count
-from django.http import Http404, HttpResponse
-from django.core.urlresolvers import reverse
-from nidmviewer.viewer import generate
-from django.db.models import Q, Count
-from sklearn.externals import joblib
-from collections import OrderedDict
-from django.contrib import messages
-from django.forms import widgets
-from neurovault import settings
-from sendfile import sendfile
-from xml.dom import minidom
-from fnmatch import fnmatch
-import nibabel as nib
-from glob import glob
-import neurovault
-import traceback
-import tempfile
-import zipfile
-import tarfile
-import shutil
-import pandas
-import gzip
-import csv
-import re
-import os
-from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
-from django.views.decorators.cache import never_cache
-from django_datatables_view.base_datatable_view import BaseDatatableView
-import json
-import functools
 from . import image_metadata
-from guardian.shortcuts import get_objects_for_user
-import numpy as np
 
 
 def owner_or_contrib(request,collection):
@@ -258,9 +253,8 @@ def view_image(request, pk, collection_cid=None):
     user_owns_image = owner_or_contrib(request,image.collection)
     api_cid = pk
 
-#     comparison_is_possible = (image.collection.private == False and isinstance(image, BaseStatisticMap) and \
-#                               image.is_thresholded == False)
-    comparison_is_possible = False
+    comparison_is_possible = (image.collection.private == False and isinstance(image, BaseStatisticMap) and \
+                              image.is_thresholded == False)
 
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
@@ -848,9 +842,9 @@ def compare_images(request,pk1,pk2):
     }
 
     # create reduced representation in case it's not there
-    if not image1.reduced_representation:
+    if not image1.reduced_representation or not os.path.exists(image1.reduced_representation.path):
         image1 = save_resampled_transformation_single(image1.id) # cannot run this async
-    if not image2.reduced_representation:
+    if not image2.reduced_representation or not os.path.exists(image1.reduced_representation.path):
         image2 = save_resampled_transformation_single(image1.id) # cannot run this async
 
     # Load image vectors from npy files

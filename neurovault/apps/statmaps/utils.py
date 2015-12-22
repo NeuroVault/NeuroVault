@@ -1,30 +1,32 @@
-from neurovault.apps.statmaps.models import Collection, NIDMResults, StatisticMap, Comparison, NIDMResultStatisticMap
-from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.core.mail import EmailMultiAlternatives
-from django.template.loader import render_to_string
-from django.core.exceptions import ValidationError
-from django.core.files.base import ContentFile
-from subprocess import CalledProcessError
-from datetime import datetime,date
-from django.conf import settings
-from django.db.models import Q
-from ast import literal_eval
-from scipy.misc import comb
-from lxml import etree
-import nibabel as nib
-import numpy as np
+import errno
+import os
+import pickle
+import random
+import shutil
+import string
 import subprocess
 import tempfile
 import urllib2
 import zipfile
-import pickle
-import shutil
-import string
-import random
+from ast import literal_eval
+from datetime import datetime,date
+from subprocess import CalledProcessError
+
 import cortex
-import errno
+import nibabel as nib
+import numpy as np
 import pytz
-import os
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.core.mail import EmailMultiAlternatives
+from django.db.models import Q
+from django.template.loader import render_to_string
+from lxml import etree
+
+from neurovault.apps.statmaps.models import Collection, NIDMResults, StatisticMap, Comparison, NIDMResultStatisticMap
+
 
 # see CollectionRedirectMiddleware
 class HttpRedirectException(Exception):
@@ -465,41 +467,55 @@ def not_in_mni(nii, plot=False):
 
 # QUERY FUNCTIONS -------------------------------------------------------------------------------
 
+def is_search_compatible(pk):
+    from neurovault.apps.statmaps.models import Image
+    img = Image.objects.get(pk=pk)
+    if img.polymorphic_ctype.model in ['image', 'atlas'] or \
+       img.is_thresholded or \
+       img.analysis_level == 'S' or \
+       img.map_type in ['R', 'Pa'] or img.collection.private:
+        return False
+    else:
+        return True
+
+
+def get_images_to_compare_with(pk1, for_generation=False):
+    from neurovault.apps.statmaps.models import StatisticMap, NIDMResultStatisticMap, Image
+
+    # if the map in question is invalid do not generate any comparisons
+    if not is_search_compatible(pk1):
+        return []
+
+    img = Image.objects.get(pk=pk1)
+    image_pks = []
+    for cls in [StatisticMap, NIDMResultStatisticMap]:
+        qs = cls.objects.filter(collection__private=False, is_thresholded=False)
+        if not (for_generation and img.collection.DOI is not None):
+            qs = qs.exclude(collection__DOI__isnull=True)
+        qs = qs.exclude(collection=img.collection)
+        qs = qs.exclude(pk=pk1).exclude(analysis_level='S').exclude(map_type='R').exclude(map_type='Pa')
+        image_pks += list(qs.values_list('pk', flat=True))
+    return image_pks
+
 # Returns number of total comparisons, with public, not thresholded maps
-def count_existing_comparisons(pk1=None):
+def count_existing_comparisons(pk1):
     return get_existing_comparisons(pk1).count()
 
 # Returns number of total comparisons possible
-def count_possible_comparisons(pk1=None):
-    if pk1!=None:
-        # Comparisons possible for one pk is the number of other pks
-        count_statistic_maps = StatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(pk=pk1).exclude(analysis_level='S').count()
-        count_nidm_maps = NIDMResultStatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(pk=pk1).exclude(analysis_level='S').count()
-        return count_statistic_maps + count_nidm_maps
-
-    else:
-        # Comparisons possible across entire database is N combinations of k=2 things
-        Nstat = StatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(analysis_level='S').count()
-        Nnidm = NIDMResultStatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(analysis_level='S').count()
-        N = Nstat+Nnidm
-        k = 2
-        return int(comb(N, k))
+def count_possible_comparisons(pk1):
+    # Comparisons possible for one pk is the number of other pks
+    count_statistic_maps = StatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(pk=pk1).exclude(analysis_level='S').count()
+    count_nidm_maps = NIDMResultStatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(pk=pk1).exclude(analysis_level='S').count()
+    return count_statistic_maps + count_nidm_maps
 
 # Returns image comparisons still processing for a given pk
-def count_processing_comparisons(pk1=None):
-    if pk1!=None:
-        return count_possible_comparisons(pk1) - count_existing_comparisons(pk1)
-    else:
-        return count_possible_comparisons() - count_existing_comparisons()
+def count_processing_comparisons(pk1):
+    return count_possible_comparisons(pk1) - count_existing_comparisons(pk1)
+
 
 # Returns existing comparisons for specific pk, or entire database
-def get_existing_comparisons(pk1=None):
-    threshold_pks = StatisticMap.objects.filter(is_thresholded=True).values_list("pk",flat=True)
-    if pk1!=None:
-        comparisons = Comparison.objects.filter(Q(image1__pk=pk1) | Q(image2__pk=pk1), 
-                     image1__collection__private=False,
-                     image2__collection__private=False)
-    else:
-        comparisons = Comparison.objects.filter(image1__collection__private=False,
-                                                image2__collection__private=False) 
-    return comparisons.exclude(image1__id__in=threshold_pks).exclude(image2__id__in=threshold_pks)
+def get_existing_comparisons(pk1):
+    possible_images_to_compare_with_pks = get_images_to_compare_with(pk1) + [pk1]
+    comparisons = Comparison.objects.filter(Q(image1__pk=pk1) | Q(image2__pk=pk1))
+    return comparisons.filter(image1__id__in=possible_images_to_compare_with_pks,
+                              image2__id__in=possible_images_to_compare_with_pks)
