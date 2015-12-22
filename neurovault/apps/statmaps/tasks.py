@@ -7,6 +7,8 @@ from neurovault.celery import nvcelery as celery_app
 from django.shortcuts import get_object_or_404
 from django.http import Http404
 from django.core.files.base import ContentFile
+import nilearn
+nilearn.EXPAND_PATH_WILDCARDS = False
 from nilearn.plotting import plot_glass_brain
 from nilearn.image import resample_img
 from sklearn.externals import joblib
@@ -24,6 +26,7 @@ from django.db import IntegrityError
 from django.core.files.uploadedfile import SimpleUploadedFile
 import re
 from django.conf import settings
+
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'neurovault.settings')
 app = Celery('neurovault')
@@ -196,21 +199,20 @@ def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
 
 @shared_task
 def run_voxelwise_pearson_similarity(pk1):
-    from neurovault.apps.statmaps.models import Image
+    from neurovault.apps.statmaps.models import StatisticMap, NIDMResultStatisticMap, Image
     
     image = Image.objects.get(pk=pk1)
-    #added for improved performance
+    # added for improved performance
     if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
         image = save_resampled_transformation_single(pk1)
 
     # Calculate comparisons for other images, and generate reduced_representation if needed
-    imgs = Image.objects.filter(collection__private=False).exclude(pk=pk1)
-    comp_qs = imgs.exclude(polymorphic_ctype__model__in=['image','atlas']).order_by('id')
-    #exclude single subject maps from analysis
-    for comp_img in comp_qs:
-        iargs = sorted([comp_img.pk,pk1]) 
-        if comp_img.is_thresholded == False and comp_img.analysis_level != 'S':
-            save_voxelwise_pearson_similarity.apply_async(iargs)  # Default uses reduced_representaion, reduced_representation = True
+    imgs_pks = list(StatisticMap.objects.filter(collection__private=False, is_thresholded=False).exclude(pk=pk1).exclude(analysis_level='S').exclude(map_type='R').exclude(map_type='Pa').values_list('pk', flat=True))
+    imgs_pks += list(NIDMResultStatisticMap.objects.filter(collection__private=False, is_thresholded=False).exclude(pk=pk1).exclude(analysis_level='S').exclude(map_type='R').exclude(map_type='Pa').values_list('pk', flat=True))
+    
+    # exclude single subject maps from analysis
+    for pk in imgs_pks:
+        save_voxelwise_pearson_similarity.apply_async([pk, pk1])  # Default uses reduced_representaion, reduced_representation = True
 
 
 @shared_task
