@@ -1,30 +1,33 @@
-from neurovault.apps.statmaps.models import Collection, NIDMResults, StatisticMap, Comparison, NIDMResultStatisticMap
-from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.core.mail import EmailMultiAlternatives
-from django.template.loader import render_to_string
-from django.core.exceptions import ValidationError
-from django.core.files.base import ContentFile
-from subprocess import CalledProcessError
-from datetime import datetime,date
-from django.conf import settings
-from django.db.models import Q
-from ast import literal_eval
-from scipy.misc import comb
-from lxml import etree
-import nibabel as nib
-import numpy as np
+import errno
+import os
+import pickle
+import random
+import shutil
+import string
 import subprocess
 import tempfile
 import urllib2
 import zipfile
-import pickle
-import shutil
-import string
-import random
+from ast import literal_eval
+from datetime import datetime,date
+from subprocess import CalledProcessError
+
 import cortex
-import errno
+import nibabel as nib
+import numpy as np
 import pytz
-import os
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.core.mail import EmailMultiAlternatives
+from django.db.models import Q
+from django.template.loader import render_to_string
+from lxml import etree
+from scipy.misc import comb
+
+from neurovault.apps.statmaps.models import Collection, NIDMResults, StatisticMap, Comparison, NIDMResultStatisticMap
+
 
 # see CollectionRedirectMiddleware
 class HttpRedirectException(Exception):
@@ -464,6 +467,15 @@ def not_in_mni(nii, plot=False):
 
 
 # QUERY FUNCTIONS -------------------------------------------------------------------------------
+
+def get_images_to_compare_with(pk1):
+    from neurovault.apps.statmaps.models import StatisticMap, NIDMResultStatisticMap
+    image_pks = []
+    for cls in [StatisticMap, NIDMResultStatisticMap]:
+        qs = cls.objects.filter(collection__private=False, is_thresholded=False)
+        qs = qs.exclude(pk=pk1).exclude(analysis_level='S').exclude(map_type='R').exclude(map_type='Pa')
+        image_pks += list(qs.values_list('pk', flat=True))
+    return image_pks
 
 # Returns number of total comparisons, with public, not thresholded maps
 def count_existing_comparisons(pk1=None):
