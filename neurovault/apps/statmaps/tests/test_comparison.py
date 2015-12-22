@@ -1,14 +1,17 @@
+import os
+import shutil
+import tempfile
+
+import nibabel
+import numpy
+from django.test import TestCase
+from numpy.testing import assert_almost_equal, assert_equal
+
+from neurovault.apps.statmaps.models import Comparison, Similarity, User, Collection
 from neurovault.apps.statmaps.tasks import save_voxelwise_pearson_similarity, get_images_by_ordered_id, save_resampled_transformation_single
 from neurovault.apps.statmaps.tests.utils import clearDB, save_statmap_form
-from neurovault.apps.statmaps.models import Comparison, Similarity, User, Collection
-from numpy.testing import assert_almost_equal, assert_equal
 from neurovault.apps.statmaps.utils import split_4D_to_3D
-from django.test import TestCase
-import tempfile
-import nibabel
-import shutil
-import numpy
-import os
+
 
 class ComparisonTestCase(TestCase):
     pk1 = None
@@ -115,7 +118,7 @@ class ComparisonTestCase(TestCase):
         comparison = Comparison.objects.filter(image1=image2,image2=image3,similarity_metric=self.pearson_metric)
         self.assertEqual(len(comparison), 1)
         print comparison[0].similarity_score
-        assert_almost_equal(comparison[0].similarity_score, 0.312548260436,decimal=5)
+        assert_almost_equal(comparison[0].similarity_score, 0.312337314261478,decimal=5)
         
     def test_private_to_public_switch(self):
         private_collection = Collection(name='privateCollection',owner=self.u1, private=True)
