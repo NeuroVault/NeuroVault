@@ -1,14 +1,14 @@
-import json
 import os.path
-import time
-from .utils import clearDB
-from operator import itemgetter
-from django.test import TestCase, Client
+
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
-from neurovault.apps.statmaps.utils import count_processing_comparisons,count_existing_comparisons
+from django.test import TestCase, Client
+
 from neurovault.apps.statmaps.forms import NIDMResultsForm
-from neurovault.apps.statmaps.models import Atlas, Collection, Image,StatisticMap, Comparison
+from neurovault.apps.statmaps.models import Collection, StatisticMap, Comparison
+from neurovault.apps.statmaps.utils import count_processing_comparisons,count_existing_comparisons
+from .utils import clearDB
+
 
 class Test_Counter(TestCase):
     def setUp(self):
@@ -24,12 +24,6 @@ class Test_Counter(TestCase):
     def tearDown(self):
         clearDB()
 
-    # An empty database should have zero images still processing
-    def test_empty_database(self):
-        images_processing = count_processing_comparisons()
-        print "%s images processing [should be 0]" %(images_processing)
-        self.assertEqual(images_processing,0)
-
     def test_statmaps_processing(self):
 
         # The counter is the count of the number of images with the field "transform" set to None
@@ -40,7 +34,7 @@ class Test_Counter(TestCase):
         Image1 = StatisticMap(name='Image1', collection=self.Collection1, file='motor_lips.nii.gz', map_type="Z")
         Image1.file = SimpleUploadedFile('motor_lips.nii.gz', file(os.path.join(self.test_path,'test_data/statmaps/motor_lips.nii.gz')).read())
         Image1.save()
-        images_processing = count_processing_comparisons()
+        images_processing = count_processing_comparisons(Image1.pk)
         print "%s images processing [should be 0]" %(images_processing)
         self.assertEqual(images_processing,0)
 
@@ -52,12 +46,12 @@ class Test_Counter(TestCase):
         Image2 = StatisticMap(name='Image2', collection=self.Collection1, file='beta_0001.nii.gz', map_type="Other")
         Image2.file = SimpleUploadedFile('beta_0001.nii.gz', file(os.path.join(self.test_path,'test_data/statmaps/beta_0001.nii.gz')).read())
         Image2.save()
-        images_processing = count_processing_comparisons()
+        images_processing = count_processing_comparisons(Image1.pk)
         print "%s images processing [should be 0]" %(images_processing)
         self.assertEqual(images_processing,0)
 
         # We should have 2 images total, so 1 comparison
-        total_comparisons = count_existing_comparisons()
+        total_comparisons = count_existing_comparisons(Image1.pk)
         self.assertEqual(total_comparisons,1)
 
     # Adding a group of NIDM result images
@@ -77,22 +71,18 @@ class Test_Counter(TestCase):
         form = NIDMResultsForm(post_dict, file_dict)
         # Transforms should be generated synchronously
         nidm = form.save()
-        images_processing = count_processing_comparisons()
-        print "\nTesting Counter - added nidm result ###" 
-        # And when we count, there should be 0 still processing
-        print "%s images processing [should be 0]" %(images_processing)
-        self.assertEqual(images_processing,0)
+        print "\nTesting Counter - added nidm result ###"
 
         # We should have 2 images total, so 1 comparison
-        total_comparisons = count_existing_comparisons()
+        total_comparisons = count_existing_comparisons(Image2.pk)
         self.assertEqual(total_comparisons,1)
         
         #Let's add a single subject map - this should not trigger a comparison
         Image2ss = StatisticMap(name='Image2 - single subject', collection=self.Collection1, file='beta_0001.nii.gz', map_type="Other", analysis_level='S')
         Image2ss.file = SimpleUploadedFile('beta_0001.nii.gz', file(os.path.join(self.test_path,'test_data/statmaps/beta_0001.nii.gz')).read())
         Image2ss.save()
-        total_comparisons = count_existing_comparisons()
-        self.assertEqual(total_comparisons,1)
+        total_comparisons = count_existing_comparisons(Image2ss.pk)
+        self.assertEqual(total_comparisons,0)
 
         # Make sure comparisons were calculated
         number_comparisons = len(Comparison.objects.all())

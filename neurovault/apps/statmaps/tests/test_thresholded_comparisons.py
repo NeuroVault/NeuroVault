@@ -1,18 +1,15 @@
-from neurovault.apps.statmaps.utils import count_existing_comparisons, get_existing_comparisons, count_processing_comparisons
-from neurovault.apps.statmaps.models import Image, Comparison, Similarity, User, Collection, StatisticMap
-from neurovault.apps.statmaps.tests.utils import save_statmap_form, save_atlas_form
-from numpy.testing import assert_array_equal, assert_almost_equal, assert_equal
-from django.core.files.uploadedfile import SimpleUploadedFile
-from neurovault.apps.statmaps.utils import split_4D_to_3D
-from neurovault.apps.statmaps.tests.utils import clearDB
-from django.shortcuts import get_object_or_404
-from django.db import IntegrityError
-from django.test import TestCase
-import tempfile
-import nibabel
-import shutil
-import errno
 import os
+import shutil
+import tempfile
+
+from django.test import TestCase
+from numpy.testing import assert_equal
+
+from neurovault.apps.statmaps.models import Image, Comparison, Similarity, User, Collection
+from neurovault.apps.statmaps.tests.utils import clearDB
+from neurovault.apps.statmaps.tests.utils import save_statmap_form, save_atlas_form
+from neurovault.apps.statmaps.utils import count_existing_comparisons, get_existing_comparisons
+
 
 class QueryTestCase(TestCase):
     pk1 = None
@@ -94,10 +91,9 @@ class QueryTestCase(TestCase):
         print Comparison.objects.all()
         assert_equal(1,count_existing_comparisons(self.pk2))
         assert_equal(1,count_existing_comparisons(self.pk4))
-        assert_equal(1,count_existing_comparisons())
 
         # This is the call that find_similar users to get images
-        comparisons =  get_existing_comparisons(self.pk4)
+        comparisons = get_existing_comparisons(self.pk4)
         for comp in comparisons:
             pk1=comp.image1.pk
             pk2=comp.image2.pk          
