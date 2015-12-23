@@ -183,14 +183,14 @@ class Collection(models.Model):
         return ret
 
 @receiver(post_save, sender=Collection)
-def collection_created(sender, instance, created):
+def collection_created(sender, instance, created, **kwargs):
     if created:
         assign_perm('delete_collection', instance.owner, instance)
         assign_perm('change_collection', instance.owner, instance)
-        for image in self.image_set.all():
+        for image in instance.image_set.all():
             assign_perm('change_image', instance.owner, image)
             assign_perm('delete_image', instance.owner, image)
-        for nidmresult in self.nidmresults_set.all():
+        for nidmresult in instance.nidmresults_set.all():
             assign_perm('change_nidmresults', instance.owner, nidmresult)
             assign_perm('delete_nidmresults', instance.owner, nidmresult)
 
@@ -402,10 +402,6 @@ class Image(PolymorphicModel, BaseCollectionItem):
         do_update = True if file_changed else False
         new_image = True if self.pk is None else False
         super(Image, self).save()
-        
-        for user in [self.collection.owner,] + list(self.collection.contributors.all()):
-            assign_perm('change_image', user, self)
-            assign_perm('delete_image', user, self)
 
         if (do_update or new_image) and self.collection and self.collection.private == False:
             # Generate glass brain image
@@ -426,6 +422,14 @@ class Image(PolymorphicModel, BaseCollectionItem):
                     assert(old_path != new_path)
                     os.remove(old_path)
             super(Image, self).save()
+
+
+@receiver(post_save, sender=Image)
+def image_created(sender, instance, created, **kwargs):
+    if created:
+        for user in [instance.collection.owner, ] + list(instance.collection.contributors.all()):
+            assign_perm('change_image', user, instance)
+            assign_perm('delete_image', user, instance)
 
 class BaseStatisticMap(Image):
     T = 'T'
