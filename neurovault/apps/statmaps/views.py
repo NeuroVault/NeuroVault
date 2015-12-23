@@ -25,6 +25,7 @@ from django.http import Http404, HttpResponse
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from django.template.context import RequestContext
+from django.utils.encoding import filepath_to_uri
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
@@ -987,7 +988,7 @@ class ImagesInCollectionJson(BaseDatatableView):
 
         # We want to render user as a custom column
         if column == 'file.url':
-            return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>'%(row.file.url, type)
+            return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>'%(filepath_to_uri(row.file.url), type)
         elif column == 'polymorphic_ctype.name':
             return type
         else:

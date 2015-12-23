@@ -1,7 +1,13 @@
-from rest_framework.pagination import LimitOffsetPagination
 from django.conf.urls import patterns, url
+from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView, TemplateView
-from .models import Collection
+from django.views.generic.base import RedirectView
+from rest_framework.pagination import LimitOffsetPagination
+
+from neurovault import settings
+from neurovault.apps.statmaps.models import KeyValueTag
+from neurovault.apps.statmaps.views import ImagesInCollectionJson,\
+    PublicCollectionsJson, MyCollectionsJson
 from .views import edit_collection, edit_images, view_image, delete_image, edit_image, \
                 view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
                 serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
@@ -9,14 +15,6 @@ from .views import edit_collection, edit_images, view_image, delete_image, edit_
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
                 view_nidm_results, find_similar, compare_images,  edit_metadata, \
                 export_images_filenames, delete_nidm_results
-from neurovault.apps.statmaps.models import KeyValueTag
-from django.db.models import Count
-from django.contrib.auth.decorators import login_required
-from neurovault import settings
-from django.views.generic.base import RedirectView
-from django.db.models import Q
-from neurovault.apps.statmaps.views import ImagesInCollectionJson,\
-    PublicCollectionsJson, MyCollectionsJson
 
 urlpatterns = patterns('',
     url(r'^my_collections/$',
@@ -111,7 +109,7 @@ urlpatterns = patterns('',
         papaya_js_embed,
         {'iframe':True},name='papaya_iframe_embed'),
 
-    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<img_name>[A-Za-z0-9\.\+\-\_\s\[\]\(\)]+)$',
+    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<img_name>[0-9a-zA-Z\^\&\'\@\{\}\[\]\,\$\=\!\-\#\(\)\.\%\+\~\_ ]+)$',
         serve_image,
         name='serve_image'),
 
@@ -125,7 +123,7 @@ urlpatterns = patterns('',
         RedirectView.as_view(url='{0}pycortex-ctmcache/%(ctmfile)s.%(ext)s'.format(settings.STATIC_URL)),
         name='redirect_pycortex_ctm'),
 
-    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<pycortex_dir>[A-Za-z0-9\.\+\-\_\s]+\_pycortex/)(?P<path>.*)$',
+    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<pycortex_dir>[0-9a-zA-Z\^\&\'\@\{\}\[\]\,\$\=\!\-\#\(\)\.\%\+\~\_ ]+\_pycortex/)(?P<path>.*)$',
         serve_pycortex,
         name='serve_pycortex'),
 
@@ -133,11 +131,11 @@ urlpatterns = patterns('',
         serve_pycortex,
         name='serve_pycortex_collection'),
 
-    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[A-Za-z0-9\.\+\-\_\s\[\]\(\)]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
+    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[0-9a-zA-Z\^\&\'\@\{\}\[\]\,\$\=\!\-\#\(\)\.\%\+\~\_ ]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
         serve_nidm,
         name='serve_nidm_files'),
 
-    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[A-Za-z0-9\.\+\-\_\s\[\]\(\)]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
+    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[0-9a-zA-Z\^\&\'\@\{\}\[\]\,\$\=\!\-\#\(\)\.\%\+\~\_ ]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
         serve_nidm_image,
         name='serve_nidm_images'),
 
