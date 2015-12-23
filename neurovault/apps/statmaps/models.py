@@ -13,8 +13,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Q
 from django.db.models.fields.files import FieldFile
-from django.db.models.signals import m2m_changed
-from django.db.models.signals import post_delete
+from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch.dispatcher import receiver
 from django_hstore import hstore
 from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
@@ -161,15 +160,6 @@ class Collection(models.Model):
 
         super(Collection, self).save(*args, **kwargs)
 
-        assign_perm('delete_collection', self.owner, self)
-        assign_perm('change_collection', self.owner, self)
-        for image in self.image_set.all():
-            assign_perm('change_image', self.owner, image)
-            assign_perm('delete_image', self.owner, image)
-        for nidmresult in self.nidmresults_set.all():
-            assign_perm('change_nidmresults', self.owner, nidmresult)
-            assign_perm('delete_nidmresults', self.owner, nidmresult)
-
         if (privacy_changed and not self.private) or (DOI_changed and self.DOI is not None):
             for image in self.image_set.all():
                 if image.pk:
@@ -191,6 +181,18 @@ class Collection(models.Model):
             print 'Image directory for collection %s does not exist' %cid
 
         return ret
+
+@receiver(post_save, sender=Collection)
+def collection_created(sender, instance, created, **kwargs):
+    if created:
+        assign_perm('delete_collection', instance.owner, instance)
+        assign_perm('change_collection', instance.owner, instance)
+        for image in instance.image_set.all():
+            assign_perm('change_image', instance.owner, image)
+            assign_perm('delete_image', instance.owner, image)
+        for nidmresult in instance.nidmresults_set.all():
+            assign_perm('change_nidmresults', instance.owner, nidmresult)
+            assign_perm('delete_nidmresults', instance.owner, nidmresult)
 
 def contributors_changed(sender, instance, action, **kwargs):
     if action in ["post_remove", "post_add", "post_clear"]:
@@ -400,10 +402,6 @@ class Image(PolymorphicModel, BaseCollectionItem):
         do_update = True if file_changed else False
         new_image = True if self.pk is None else False
         super(Image, self).save()
-        
-        for user in [self.collection.owner,] + list(self.collection.contributors.all()):
-            assign_perm('change_image', user, self)
-            assign_perm('delete_image', user, self)
 
         if (do_update or new_image) and self.collection and self.collection.private == False:
             # Generate glass brain image
@@ -424,6 +422,14 @@ class Image(PolymorphicModel, BaseCollectionItem):
                     assert(old_path != new_path)
                     os.remove(old_path)
             super(Image, self).save()
+
+
+@receiver(post_save, sender=Image)
+def image_created(sender, instance, created, **kwargs):
+    if created:
+        for user in [instance.collection.owner, ] + list(instance.collection.contributors.all()):
+            assign_perm('change_image', user, instance)
+            assign_perm('delete_image', user, instance)
 
 class BaseStatisticMap(Image):
     T = 'T'
