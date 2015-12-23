@@ -196,17 +196,17 @@ def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
 def run_voxelwise_pearson_similarity(pk1):
     from neurovault.apps.statmaps.models import Image
     from neurovault.apps.statmaps.utils import get_images_to_compare_with
-    
-    image = Image.objects.get(pk=pk1)
-    # added for improved performance
-    if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
-        image = save_resampled_transformation_single(pk1)
 
     imgs_pks = get_images_to_compare_with(pk1, for_generation=True)
-    
-    # exclude single subject maps from analysis
-    for pk in imgs_pks:
-        save_voxelwise_pearson_similarity.apply_async([pk, pk1])  # Default uses reduced_representaion, reduced_representation = True
+    if imgs_pks:
+        image = Image.objects.get(pk=pk1)
+        # added for improved performance
+        if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
+            image = save_resampled_transformation_single(pk1)
+
+        # exclude single subject maps from analysis
+        for pk in imgs_pks:
+            save_voxelwise_pearson_similarity.apply_async([pk, pk1])  # Default uses reduced_representaion, reduced_representation = True
 
 @shared_task
 def save_voxelwise_pearson_similarity(pk1,pk2,resample_dim=[4,4,4],reduced_representaion=True):
