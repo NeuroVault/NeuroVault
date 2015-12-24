@@ -255,8 +255,8 @@ def save_voxelwise_pearson_similarity_reduced_representation(pk1, pk2):
         # Only save comparison if is not nan
         if not numpy.isnan(pearson_score):     
             Comparison.objects.update_or_create(image1=image1, image2=image2,
-                                                similarity_metric=pearson_metric,
-                                                similarity_score=pearson_score)
+                                                defaults={'similarity_metric': pearson_metric,
+                                                          'similarity_score': pearson_score})
             return image1.pk,image2.pk,pearson_score
         else:
             print "Comparison returned NaN."
@@ -307,8 +307,8 @@ def save_voxelwise_pearson_similarity_resample(pk1, pk2,resample_dim=[4,4,4]):
         # Only save comparison if is not nan
         if not numpy.isnan(pearson_score):     
             Comparison.objects.update_or_create(image1=image1, image2=image2,
-                                            similarity_metric=pearson_metric,
-                                            similarity_score=pearson_score)
+                                                defaults={'similarity_metric': pearson_metric,
+                                                          'similarity_score': pearson_score})
 
             return image1.pk,image2.pk,pearson_score
         else:
