@@ -6,14 +6,7 @@ Easy to use web database for human brain statistical maps, atlases and parcellat
 1. Fork the main repository (https://github.com/NeuroVault/NeuroVault)
 2. Clone your fork to your computer: `git clone https://github.com/<your_username>/NeuroVault`
 3. Install [Docker Machine](https://docs.docker.com/machine/install-machine/)
-4. Register your username/password/email at [Docker Hub](hub.docker.com).
-5. From the terminal, create a new docker machine, 'nv': `docker-machine create --driver virtualbox nv`
-   * Note: this also starts `nv`; if stopped, you can start by running `docker-machine start nv`.
-6. Run `docker-machine env nv && eval "$(docker-machine env nv)"` to start the docker daemon.
-   * Note: you can validate by running `docker ps`--should return with no errors.
-7. Run `docker login`, using your username/password/email from Step 4.
-8. Run `docker pull neurovault/neurovault` to download the latest docker container.
-   * Note: to build the container locally, run `docker build -t neurovault/neurovault .` from the (cloned) NeuroVault directory.
+4. From the terminal, create a new docker machine, 'nv': `docker-machine create --driver virtualbox nv`
 
 
 ### Running the server
