@@ -7,7 +7,7 @@ from django.db import migrations
 def cogatlas_change(apps, schema_editor):
     CognitiveAtlasTask = apps.get_model("statmaps", "CognitiveAtlasTask")
     CognitiveAtlasTask.objects.update_or_create(name="None / Other",
-                                                defaults={cog_atlas_id:"other"})
+                                                defaults={"cog_atlas_id":"other"})
 
 class Migration(migrations.Migration):
 
