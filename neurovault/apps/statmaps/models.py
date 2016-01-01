@@ -563,8 +563,12 @@ class StatisticMap(BaseStatisticMap):
     smoothness_fwhm = models.FloatField(help_text="Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.", verbose_name="Smoothness FWHM", null=True, blank=True)
     contrast_definition = models.CharField(help_text="Exactly what terms are subtracted from what? Define these in terms of task or stimulus conditions (e.g., 'one-back task with objects versus zero-back task with objects') instead of underlying psychological concepts (e.g., 'working memory').", verbose_name="Contrast definition", max_length=200, null=True, blank=True)
     contrast_definition_cogatlas = models.CharField(help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast", verbose_name="Cognitive Atlas definition", max_length=200, null=True, blank=True)
-    cognitive_paradigm_cogatlas = models.ForeignKey(CognitiveAtlasTask, help_text="Task (or lack of it) performed by the subjects in the scanner described using <a href='http://www.cognitiveatlas.org/' target='_blank'>Cognitive Atlas</a> terms", verbose_name="Cognitive Paradigm", null=True, blank=False)
-    cognitive_contrast_cogatlas = models.ForeignKey(CognitiveAtlasContrast, help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast", verbose_name="Cognitive Atlas Contrast", null=True, blank=True)
+    cognitive_paradigm_cogatlas = models.ForeignKey(CognitiveAtlasTask, help_text="Task (or lack of it) performed by the subjects in the scanner described using <a href='http://www.cognitiveatlas.org/' target='_blank'>Cognitive Atlas</a> terms",
+                                                    verbose_name="Cognitive Paradigm", null=True, blank=False,
+                                                    on_delete=models.PROTECT)
+    cognitive_contrast_cogatlas = models.ForeignKey(CognitiveAtlasContrast, help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast",
+                                                    verbose_name="Cognitive Atlas Contrast", null=True, blank=True,
+                                                    on_delete=models.PROTECT)
 
     @classmethod
     def get_fixed_fields(cls):
