@@ -89,7 +89,10 @@
                 %a.btn.btn-primary.btn-lg{href: "{{ image.file.url|urlencode }}" } Download
             %a.btn.btn-primary.btn-lg{href: "http://neurosynth.org/decode/?neurovault={{ api_cid }}" } Decode with neurosynth
             - if comparison_is_possible
-                %a.btn.btn-primary.btn-lg{href: "{% url 'find_similar' image.id %}" } Find similar
+                %a.btn.btn-primary.btn-lg{href: "{% url 'find_similar' image.id %}", data-toggle: "tooltip", title: "Find maps with similar patters."} Find similar
+            - else
+                %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Find maps with similar patters. This function is only enabled for public group level unthresholded statistical maps."}
+                    %a.btn.btn-primary.btn-lg.disabled{href: "{% url 'find_similar' image.id %}"} Find similar
             - if user_owns_image
                 %a.btn.btn-primary.btn-lg{href: "{% url 'edit_image' image.id %}" } Edit details
                 .float-right-wrapper
