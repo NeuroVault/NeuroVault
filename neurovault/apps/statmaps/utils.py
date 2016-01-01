@@ -517,5 +517,7 @@ def count_processing_comparisons(pk1):
 def get_existing_comparisons(pk1):
     possible_images_to_compare_with_pks = get_images_to_compare_with(pk1) + [pk1]
     comparisons = Comparison.objects.filter(Q(image1__pk=pk1) | Q(image2__pk=pk1))
-    return comparisons.filter(image1__id__in=possible_images_to_compare_with_pks,
-                              image2__id__in=possible_images_to_compare_with_pks)
+    comparisons = comparisons.filter(image1__id__in=possible_images_to_compare_with_pks,
+                                     image2__id__in=possible_images_to_compare_with_pks)
+    comparisons = comparisons.exclude(image1__pk=pk1, image2__pk=pk1)
+    return comparisons
