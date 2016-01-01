@@ -16,8 +16,8 @@ dependencies:
 
 test:
   override:
-    - docker-compose --verbose up -d && sleep 50 && docker-compose ps | awk '{print $1}' | grep neurovault  | xargs -I{} docker logs --tail=1000 {}
-    - curl --retry 10 --retry-delay 1us5 -vkf http://localhost
+    - docker-compose --verbose up -d && sleep 50
+    - curl --retry 10 --retry-delay 15 -vkf http://localhost
     - set -o pipefail && docker-compose run uwsgi python manage.py test 2>&1 | tee log.txt
     - if grep -q "^OK" log.txt; then true; else cat log.txt; false; fi
 
