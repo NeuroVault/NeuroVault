@@ -19,7 +19,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.files.base import ContentFile
-from django.db.models import Q, Count
+from django.db.models import Q
 from django.db.models.aggregates import Count
 from django.http import Http404, HttpResponse
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
@@ -41,14 +41,14 @@ from neurovault import settings
 from neurovault.apps.statmaps.forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
-from neurovault.apps.statmaps.models import Collection, Image, Atlas, StatisticMap, NIDMResults, NIDMResultStatisticMap,\
-    BaseStatisticMap, CognitiveAtlasTask, CognitiveAtlasContrast
+from neurovault.apps.statmaps.models import Collection, Image, Atlas, StatisticMap, NIDMResults, NIDMResultStatisticMap, \
+    CognitiveAtlasTask, CognitiveAtlasContrast
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
     get_file_ctime, detect_4D, split_4D_to_3D, splitext_nii_gz, mkdir_p, \
     send_email_notification, populate_nidm_results, get_server_url, populate_feat_directory, \
-    detect_feat_directory, format_image_collection_names, get_existing_comparisons
+    detect_feat_directory, format_image_collection_names, get_existing_comparisons, is_search_compatible
 from neurovault.apps.statmaps.voxel_query_functions import *
 from . import image_metadata
 
@@ -254,8 +254,7 @@ def view_image(request, pk, collection_cid=None):
     user_owns_image = owner_or_contrib(request,image.collection)
     api_cid = pk
 
-    comparison_is_possible = (image.collection.private == False and isinstance(image, BaseStatisticMap) and \
-                              image.is_thresholded == False)
+    comparison_is_possible = is_search_compatible(pk) and image.thumbnail
 
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
