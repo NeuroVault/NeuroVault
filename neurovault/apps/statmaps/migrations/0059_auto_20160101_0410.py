@@ -8,7 +8,7 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('statmaps', '0058_cogatlas_change'),
+        ('statmaps', '0057c_populate_permissions')
     ]
 
     operations = [
