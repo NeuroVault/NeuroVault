@@ -17,7 +17,7 @@ from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch.dispatcher import receiver
 from django_hstore import hstore
 from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
-from polymorphic.polymorphic_model import PolymorphicModel
+from polymorphic.models import PolymorphicModel
 from taggit.managers import TaggableManager
 from taggit.models import GenericTaggedItemBase, TagBase
 
