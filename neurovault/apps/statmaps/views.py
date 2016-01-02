@@ -1012,7 +1012,10 @@ class AtlasesAndParcellationsJson(BaseDatatableView):
         # these are simply objects displayed in datatable
         # You should not filter data returned here by any filter values entered by user. This is because
         # we need some base queryset to count total number of records.
-        return Image.objects.instance_of(Atlas) | Image.objects.instance_of(StatisticMap).filter(statisticmap__map_type=BaseStatisticMap.Pa)
+        qs = Image.objects.instance_of(Atlas) | Image.objects.instance_of(StatisticMap).filter(statisticmap__map_type=BaseStatisticMap.Pa)
+        qs = qs.filter(collection__private=False).exclude(collection__DOI__isnull=True)
+        return qs
+
 
     def render_column(self, row, column):
         if row.polymorphic_ctype.name == "statistic map":
@@ -1025,6 +1028,10 @@ class AtlasesAndParcellationsJson(BaseDatatableView):
             return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>'%(filepath_to_uri(row.file.url), type)
         elif column == 'polymorphic_ctype.name':
             return type
+        if column == 'collection.authors' and row.collection.authors:
+            return row.collection.authors.split(',')[0].split(' ')[-1] + " et al."
+        if column == 'collection.name':
+            return "<a href='" + row.collection.get_absolute_url() + "'>" + row.collection.name + "</a>"
         else:
             return super(AtlasesAndParcellationsJson, self).render_column(row, column)
 
