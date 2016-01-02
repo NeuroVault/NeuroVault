@@ -7,7 +7,7 @@ from rest_framework.pagination import LimitOffsetPagination
 from neurovault import settings
 from neurovault.apps.statmaps.models import KeyValueTag
 from neurovault.apps.statmaps.views import ImagesInCollectionJson,\
-    PublicCollectionsJson, MyCollectionsJson
+    PublicCollectionsJson, MyCollectionsJson, AtlasesAndParcellationsJson
 from .views import edit_collection, edit_images, view_image, delete_image, edit_image, \
                 view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
                 serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
@@ -68,6 +68,11 @@ urlpatterns = patterns('',
     url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/editmetadata$',
         edit_metadata,
         name="edit_metadata"),
+    url(r'^atlases/$', TemplateView.as_view(template_name="statmaps/atlases.html"),
+        name="atlases_and_parcellations"),
+    url(r'^atlases/json$',
+        AtlasesAndParcellationsJson.as_view(),
+        name='atlases_and_parcellations_json'),
     url(r'^images/tags/$',
         ListView.as_view(
             queryset=KeyValueTag.objects.all(),

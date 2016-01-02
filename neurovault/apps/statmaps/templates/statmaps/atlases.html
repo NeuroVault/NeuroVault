@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block head %}
+<script type="text/javascript" src="{% static "scripts/papaya.js"%}"/>
+<script src="{% static "scripts/jquery-1.10.2.min.js"%}" type="text/javascript"></script>
+<script src="{% static "scripts/bootstrap.min.js"%}" type="text/javascript"></script>
+<link href="http://netdna.bootstrapcdn.com/font-awesome/3.1.1/css/font-awesome.css" rel="stylesheet">
+
+<title>{% block title %}NeuroVault: Atlases and parcellations{% endblock %}</title>
+
+<script type="text/javascript">
+
+var params = [];
+     
+{% if first_image %}
+   params["images"] = ["{% static "images/MNI152.nii.gz"%}","{{ first_image.file.url|urlencode }}".replace(" ","")];
+   var tmpname = "{{ first_image.file.url }}".replace(/^.*[\\\/]/, '')
+    {% if first_image.map_type == 'Pa' %}
+        params[tmpname] = {"parametric": true,  "lut":"Spectrum", "alpha":"0.75", minPercent: 0.0, maxPercent: 1.0};
+    {% elif first_image.map_type == 'R' %}
+        params[tmpname] = {"parametric": true,  "lut":"Overlay (Negatives)", "alpha":"0.75", minPercent: 0.0, maxPercent: 1.0};
+    {% else %}
+        params[tmpname] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
+    {% endif %}
+{% else %}
+   params["images"] = ["{% static "images/MNI152.nii.gz"%}"];
+{% endif %}
+     
+   params["{% static "images/MNI152.nii.gz"%}"] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
+   params["worldSpace"] = true;
+   params["expandable"] = true;
+   params["combineParametric"] = true;
+   params["showControls"] = false;
+   params["smoothDisplay"] = false;
+   params["luts"] = [{"name":"PuBu", "data":[[0,1,0.968627,0.984314],[0.125,0.92549,0.905882,0.94902],[0.25,0.815686,0.819608,0.901961],[0.375,0.65098,0.741176,0.858824],[0.5,0.454902,0.662745,0.811765],[0.625,0.211765,0.564706,0.752941],[0.75,0.0196078,0.439216,0.690196],[0.875,0.0156863,0.352941,0.552941],[1,0.00784314,0.219608,0.345098]]},
+   {"name":"OrRd", "data":[[0,1,0.968627,0.92549],[0.125,0.996078,0.909804,0.784314],[0.25,0.992157,0.831373,0.619608],[0.375,0.992157,0.733333,0.517647],[0.5,0.988235,0.552941,0.34902],[0.625,0.937255,0.396078,0.282353],[0.75,0.843137,0.188235,0.121569],[0.875,0.701961,0,0],[1,0.498039,0,0]]}];
+
+</script>
+
+<!-- Fix for dropdown menus -->
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+<script src="{% static "scripts/jquery.cookie.js"%}" type="text/javascript"></script>
+<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+<script src="//cdn.datatables.net/1.10.7/js/jquery.dataTables.min.js" type="text/javascript"></script>
+<script src="//cdn.datatables.net/plug-ins/1.10.7/integration/bootstrap/3/dataTables.bootstrap.js" type="text/javascript"></script>
+<link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+<link rel="stylesheet" href="{% static "css/style.css" %}" />
+<link rel="stylesheet" type="text/css" href="/static/css/papaya.css" />
+
+
+<script type='text/javascript'>
+
+ function showLoader() {   
+    document.getElementById('spinny').style.display = 'block';
+    document.getElementById('fade').style.display = 'block';
+  }
+
+  function hideLoader() {
+    document.getElementById('spinny').style.display = 'none';
+    document.getElementById('fade').style.display = 'none';
+  }
+
+  // Function to add / remove image from viewer
+  function viewimage(mrimage) {
+
+     var params = []
+     // Reset viewer and load new images
+     $(".viewimage").removeClass("active")
+
+      var tmpname = $(mrimage).attr("filename").replace(/^.*[\\\/]/, '')
+      params["images"] = ["{% static "images/MNI152.nii.gz"%}",$(mrimage).attr("filename")];
+      if ($(mrimage).attr("type") == "atlas" || $(mrimage).attr("type") == "parcellation") {
+      	params[tmpname] = {"parametric": true,  "lut":"Spectrum", "alpha":"0.75",  minPercent: 0.0, maxPercent: 1.0};
+      } else if ($(mrimage).attr("type") == "ROI/mask") {
+        params[tmpname] = {"parametric": true,  "lut":"Overlay (Negatives)", "alpha":"0.75",  minPercent: 0.0, maxPercent: 1.0};
+      } else {
+      	params[tmpname] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
+      }
+   
+      params["{% static "images/MNI152.nii.gz"%}"] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
+      params["worldSpace"] = true;
+      params["expandable"] = true;
+      params["combineParametric"] = true;
+      params["showControls"] = false;
+      params["smoothDisplay"] = false;
+      params["luts"] = [{"name":"PuBu", "data":[[0,1,0.968627,0.984314],[0.125,0.92549,0.905882,0.94902],[0.25,0.815686,0.819608,0.901961],[0.375,0.65098,0.741176,0.858824],[0.5,0.454902,0.662745,0.811765],[0.625,0.211765,0.564706,0.752941],[0.75,0.0196078,0.439216,0.690196],[0.875,0.0156863,0.352941,0.552941],[1,0.00784314,0.219608,0.345098]]},
+      {"name":"OrRd", "data":[[0,1,0.968627,0.92549],[0.125,0.996078,0.909804,0.784314],[0.25,0.992157,0.831373,0.619608],[0.375,0.992157,0.733333,0.517647],[0.5,0.988235,0.552941,0.34902],[0.625,0.937255,0.396078,0.282353],[0.75,0.843137,0.188235,0.121569],[0.875,0.701961,0,0],[1,0.498039,0,0]]}];
+
+      papaya.Container.resetViewer(0, params);  // specify new ones
+      $(mrimage).addClass("active")
+  
+  }
+
+(function() {
+  var uldata;
+
+  uldata = void 0;
+
+  $(document).ready(function() {
+    $('#show-viewer').click((function(_this) {
+      return function() {
+        window.viewer.paint();
+        return setTimeout(function() {
+          return window.viewer.paint();
+        }, 1);
+      };
+    })(this));
+    $('#id_file').change(function(e) {
+      return document.upload_folder_form.submit();
+    });
+
+    if (navigator.userAgent.indexOf("Safari") > -1 && navigator.userAgent.indexOf("Chrome") === -1) {
+      return $('a[href="pycortex"]').hide();
+    }
+  });
+}).call(this);
+
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="fade"></div>
+
+<!-- Meta data and header row-->
+<div class="row">
+        <h2>Atlases and Parcellations</h2>
+</div>
+<div class="row">
+</div>
+
+<!-- Content-->
+<div class="row">
+
+<div class="col-md-6" style="margin-top:20px">    
+    <div class="papaya" data-params="params" style="width:560px; float:left;"></div>
+</div>
+<div class="col-md-6">
+               <table id="collection-images-datatable" class="table table-condensed table-striped table-hover">
+               <thead>
+                      <tr>
+                          <th>View</th>
+                          <th>Name</th>
+                          <th>Paper</th>
+                          <th>Authors</th>
+                          <th>Type</th>
+                      </tr>
+               </thead>
+               </table>
+
+</div>
+</div>
+</div>
+
+
+<script>
+$(document).ready(function() {
+    $('#collection-details-datatable').dataTable({
+      responsive: true
+    });
+    $('#collection-images-datatable').dataTable({
+        "processing": true,
+        "serverSide": true,
+        "columnDefs": [
+    		{ "orderable": false, "targets": 0 }
+  		],
+        "order": [[ 1, "asc" ]],
+        "ajax": "{% url 'atlases_and_parcellations_json' %}",
+        "initComplete": function(settings, json) {
+    		var collection_images = $(".viewimage")
+        	$(collection_images[0]).addClass("active")
+  		}
+    });
+} );
+
+
+</script>
+{% endblock %}

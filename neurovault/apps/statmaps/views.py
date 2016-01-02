@@ -42,7 +42,7 @@ from neurovault.apps.statmaps.forms import CollectionFormSet, CollectionForm, Up
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
 from neurovault.apps.statmaps.models import Collection, Image, Atlas, StatisticMap, NIDMResults, NIDMResultStatisticMap, \
-    CognitiveAtlasTask, CognitiveAtlasContrast
+    CognitiveAtlasTask, CognitiveAtlasContrast, BaseStatisticMap
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
@@ -992,6 +992,41 @@ class ImagesInCollectionJson(BaseDatatableView):
             return type
         else:
             return super(ImagesInCollectionJson, self).render_column(row, column)
+
+    def filter_queryset(self, qs):
+        # use parameters passed in GET request to filter queryset
+
+        # simple example:
+        search = self.request.GET.get(u'search[value]', None)
+        if search:
+            qs = qs.filter(Q(name__icontains=search)| Q(description__icontains=search))
+        return qs
+
+
+class AtlasesAndParcellationsJson(BaseDatatableView):
+    columns = ['file.url', 'name', 'collection.name', 'collection.authors', 'polymorphic_ctype.name']
+    order_columns = ['','name', 'polymorphic_ctype.name']
+
+    def get_initial_queryset(self):
+        # return queryset used as base for futher sorting/filtering
+        # these are simply objects displayed in datatable
+        # You should not filter data returned here by any filter values entered by user. This is because
+        # we need some base queryset to count total number of records.
+        return Image.objects.instance_of(Atlas) | Image.objects.instance_of(StatisticMap).filter(statisticmap__map_type=BaseStatisticMap.Pa)
+
+    def render_column(self, row, column):
+        if row.polymorphic_ctype.name == "statistic map":
+            type = row.get_map_type_display()
+        else:
+            type = row.polymorphic_ctype.name
+
+        # We want to render user as a custom column
+        if column == 'file.url':
+            return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>'%(filepath_to_uri(row.file.url), type)
+        elif column == 'polymorphic_ctype.name':
+            return type
+        else:
+            return super(AtlasesAndParcellationsJson, self).render_column(row, column)
 
     def filter_queryset(self, qs):
         # use parameters passed in GET request to filter queryset
