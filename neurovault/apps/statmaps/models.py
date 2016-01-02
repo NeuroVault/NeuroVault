@@ -515,11 +515,17 @@ class BaseStatisticMap(Image):
                     comparisons.delete()
         super(BaseStatisticMap, self).save()
 
-        # Calculate comparisons if private collection, update or save, not thresholded
-        if (do_update or new_image) and self.collection and self.collection.private == False:
-            if self.is_thresholded == False and self.analysis_level != 'S':
-                # Default resample_dim is 4mm
-                run_voxelwise_pearson_similarity.apply_async([self.pk])
+        # Calculate comparisons
+        if do_update or new_image:
+            if self.map_type == self.OTHER:
+                import neurovault.apps.statmaps.utils as nvutils
+                self.file.open()
+                gzfileobj = GzipFile(filename=self.file.name, mode='rb', fileobj=self.file.file)
+                nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(self.file.name, gzfileobj)})
+                self.map_type = nvutils.infer_map_type(nii)
+                super(BaseStatisticMap, self).save()
+
+            run_voxelwise_pearson_similarity.apply_async([self.pk])
 
     @classmethod
     def get_fixed_fields(cls):
