@@ -495,6 +495,13 @@ class BaseStatisticMap(Image):
             nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(self.file.name, gzfileobj)})
             self.not_mni, self.brain_coverage, self.perc_voxels_outside = nvutils.not_in_mni(nii)
 
+        if self.map_type == self.OTHER:
+            import neurovault.apps.statmaps.utils as nvutils
+            self.file.open()
+            gzfileobj = GzipFile(filename=self.file.name, mode='rb', fileobj=self.file.file)
+            nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(self.file.name, gzfileobj)})
+            self.map_type = nvutils.infer_map_type(nii)
+
         # Calculation of image reduced_representation and comparisons
         file_changed = False
         if self.pk is not None:
@@ -517,14 +524,6 @@ class BaseStatisticMap(Image):
 
         # Calculate comparisons
         if do_update or new_image:
-            if self.map_type == self.OTHER:
-                import neurovault.apps.statmaps.utils as nvutils
-                self.file.open()
-                gzfileobj = GzipFile(filename=self.file.name, mode='rb', fileobj=self.file.file)
-                nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(self.file.name, gzfileobj)})
-                self.map_type = nvutils.infer_map_type(nii)
-                super(BaseStatisticMap, self).save()
-
             run_voxelwise_pearson_similarity.apply_async([self.pk])
 
     @classmethod
