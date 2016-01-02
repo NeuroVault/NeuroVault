@@ -25,7 +25,8 @@ from django.db.models import Q
 from django.template.loader import render_to_string
 from lxml import etree
 
-from neurovault.apps.statmaps.models import Collection, NIDMResults, StatisticMap, Comparison, NIDMResultStatisticMap
+from neurovault.apps.statmaps.models import Collection, NIDMResults, StatisticMap, Comparison, NIDMResultStatisticMap, \
+    BaseStatisticMap
 
 
 # see CollectionRedirectMiddleware
@@ -421,7 +422,26 @@ def is_thresholded(nii_obj, thr=0.85):
         return (True, ratio_bad)
     else:
         return (False, ratio_bad)
-    
+
+
+#checks if map is a parcellation or ROI/mask
+def infer_map_type(nii_obj):
+    data = nii_obj.get_data()
+    zero_mask = (data == 0)
+    nan_mask = (np.isnan(data))
+    missing_mask = zero_mask | nan_mask
+    unique_values = np.unique(data[np.logical_not(missing_mask)])
+    if len(unique_values) == 1:
+        map_type = BaseStatisticMap.R
+    elif len(unique_values) > 1200:
+        map_type = BaseStatisticMap.OTHER
+    else:
+        map_type = BaseStatisticMap.Pa
+        for val in unique_values:
+            if not(isinstance(val, np.integer) or (isinstance(val, np.floating) and float(val).is_integer())):
+                map_type = BaseStatisticMap.OTHER
+                break
+    return map_type
     
 import nibabel as nb
 from nilearn.image import resample_img

@@ -14,7 +14,13 @@ var params = [];
 {% if first_image %}
    params["images"] = ["{% static "images/MNI152.nii.gz"%}","{{ first_image.file.url|urlencode }}".replace(" ","")];
    var tmpname = "{{ first_image.file.url }}".replace(/^.*[\\\/]/, '')
-   params[tmpname] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
+    {% if first_image.map_type == 'Pa' %}
+        params[tmpname] = {"parametric": true,  "lut":"Spectrum", "alpha":"0.75", minPercent: 0.0, maxPercent: 1.0};
+    {% elif first_image.map_type == 'R' %}
+        params[tmpname] = {"parametric": true,  "lut":"Overlay (Negatives)", "alpha":"0.75", minPercent: 0.0, maxPercent: 1.0};
+    {% else %}
+        params[tmpname] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
+    {% endif %}
 {% else %}
    params["images"] = ["{% static "images/MNI152.nii.gz"%}"];
    {% endif %}
@@ -62,8 +68,10 @@ var params = [];
 
       var tmpname = $(mrimage).attr("filename").replace(/^.*[\\\/]/, '')
       params["images"] = ["{% static "images/MNI152.nii.gz"%}",$(mrimage).attr("filename")];
-      if ($(mrimage).attr("type") == "atlas" || $(mrimage).attr("type") == "parcellation" || $(mrimage).attr("type") == "ROI/mask") {
+      if ($(mrimage).attr("type") == "atlas" || $(mrimage).attr("type") == "parcellation") {
       	params[tmpname] = {"parametric": true,  "lut":"Spectrum", "alpha":"0.75",  minPercent: 0.0, maxPercent: 1.0};
+      } else if ($(mrimage).attr("type") == "ROI/mask") {
+        params[tmpname] = {"parametric": true,  "lut":"Overlay (Negatives)", "alpha":"0.75",  minPercent: 0.0, maxPercent: 1.0};
       } else {
       	params[tmpname] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
       }
