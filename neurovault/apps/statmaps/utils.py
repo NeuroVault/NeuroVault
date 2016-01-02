@@ -441,6 +441,9 @@ def infer_map_type(nii_obj):
             if not(isinstance(val, np.integer) or (isinstance(val, np.floating) and float(val).is_integer())):
                 map_type = BaseStatisticMap.OTHER
                 break
+            if (data == val).sum() == 1:
+                map_type = BaseStatisticMap.OTHER
+                break
     return map_type
     
 import nibabel as nb

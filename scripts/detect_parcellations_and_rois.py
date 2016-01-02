@@ -19,3 +19,4 @@ for image in StatisticMap.objects.filter(map_type=BaseStatisticMap.OTHER):
         print "changed type of %s to %s"%(image.get_absolute_url(), map_type)
         image.map_type = map_type
         image.save()
+    image.file.close()
