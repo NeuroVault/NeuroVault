@@ -424,12 +424,12 @@ class Image(PolymorphicModel, BaseCollectionItem):
             super(Image, self).save()
 
 
-@receiver(post_save, sender=Image)
 def image_created(sender, instance, created, **kwargs):
     if created:
         for user in [instance.collection.owner, ] + list(instance.collection.contributors.all()):
             assign_perm('change_image', user, instance)
             assign_perm('delete_image', user, instance)
+
 
 class BaseStatisticMap(Image):
     T = 'T'
@@ -582,6 +582,8 @@ class StatisticMap(BaseStatisticMap):
         return super(StatisticMap, cls).get_fixed_fields() + (
             'modality', 'contrast_definition', 'cognitive_paradigm_cogatlas')
 
+post_save.connect(image_created, sender=StatisticMap, weak=True)
+
 
 class NIDMResults(BaseCollectionItem):
     ttl_file = models.FileField(upload_to=upload_nidm_to,
@@ -631,6 +633,9 @@ class NIDMResultStatisticMap(BaseStatisticMap):
     nidm_results = models.ForeignKey(NIDMResults)
 
 
+post_save.connect(image_created, sender=NIDMResultStatisticMap, weak=True)
+
+
 class Atlas(Image):
     label_description_file = models.FileField(
                                 upload_to=upload_img_to,
@@ -640,6 +645,9 @@ class Atlas(Image):
 
     class Meta:
         verbose_name_plural = "Atlases"
+
+
+post_save.connect(image_created, sender=Atlas, weak=True)
 
 
 class Similarity(models.Model):

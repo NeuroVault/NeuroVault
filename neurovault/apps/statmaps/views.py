@@ -519,14 +519,14 @@ def upload_folder(request, collection_cid):
                         nii_path = os.path.join(root, fname)
 
                         if ext == '.xml':
-                            print "found xml"
                             dom = minidom.parse(os.path.join(root, fname))
-                            for atlas in dom.getElementsByTagName("summaryimagefile"):
-                                print "found atlas"
+                            for atlas in dom.getElementsByTagName("imagefile"):
                                 path, base = os.path.split(atlas.lastChild.nodeValue)
                                 nifti_name = os.path.join(path, base)
+                                if nifti_name.startswith("/"):
+                                    nifti_name = nifti_name[1:]
                                 atlases[str(os.path.join(root,
-                                            nifti_name[1:]))] = os.path.join(root, fname)
+                                            nifti_name))] = os.path.join(root, fname)
                         if ext in allowed_extensions:
                             nii = nib.load(nii_path)
                             if detect_4D(nii):

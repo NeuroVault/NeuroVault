@@ -20,7 +20,6 @@ from neurovault.apps.statmaps.voxel_query_functions import (getAtlasVoxels,
                                                             getSynonyms,
                                                             toAtlas,
                                                             voxelToRegion)
-
 from .serializers import (AtlasSerializer, CollectionSerializer,
                           EditableAtlasSerializer,
                           EditableNIDMResultsSerializer,
@@ -123,9 +122,16 @@ class AtlasViewSet(ImageViewSet):
         root = ET.fromstring(xmlFile.read())
         xmlFile.close()
         lines = root.find('data').findall('label')
-        indices = [int(line.get('index')) + 1 for line in lines]
-        regions = [line.text.split(
-            '(')[0].replace("'", '').rstrip(' ').lower() for line in lines]
+        if lines[0].get("index"):
+            indices = [int(line.get('index')) + 1 for line in lines]
+        else:
+            indices = [int(line.find('index').text) for line in lines]
+        if line.text:
+            regions = [line.text.split(
+                '(')[0].replace("'", '').rstrip(' ').lower() for line in lines]
+        else:
+            regions = [line.find("name").text.split(
+                '(')[0].replace("'", '').rstrip(' ').lower() for line in lines]
         return Response(
             {'aaData': zip(indices, regions)})
 
