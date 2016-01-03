@@ -1,9 +1,8 @@
 import os
 
 import pandas as pd
-
 from django.forms.utils import ErrorDict, ErrorList
-
+from django.utils.http import urlquote
 from rest_framework import serializers
 from rest_framework.relations import PrimaryKeyRelatedField, StringRelatedField
 
@@ -22,7 +21,7 @@ class HyperlinkedFileField(serializers.FileField):
     def to_representation(self, value):
         if value:
             request = self.context.get('request', None)
-            return request.build_absolute_uri(value.url)
+            return request.build_absolute_uri(urlquote(value.url))
 
 
 class HyperlinkedRelatedURL(serializers.RelatedField):
