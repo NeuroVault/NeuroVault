@@ -496,7 +496,7 @@ def is_search_compatible(pk):
     if img.polymorphic_ctype.model in ['image', 'atlas'] or \
        img.is_thresholded or \
        img.analysis_level == 'S' or \
-       img.map_type in ['R', 'Pa'] or img.collection.private:
+       img.map_type in ['R', 'Pa', 'A'] or img.collection.private:
         return False
     else:
         return True

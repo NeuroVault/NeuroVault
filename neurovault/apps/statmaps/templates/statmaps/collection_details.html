@@ -12,20 +12,23 @@
 var params = [];
      
 {% if first_image %}
-   params["images"] = ["{% static "images/MNI152.nii.gz"%}","{{ first_image.file.url|urlencode }}".replace(" ","")];
    var tmpname = "{{ first_image.file.url }}".replace(/^.*[\\\/]/, '')
     {% if first_image.map_type == 'Pa' or first_image.polymorphic_ctype.model == 'atlas' %}
+        params["images"] = ["{% static "images/MNI152.nii.gz"%}","{{ first_image.file.url|urlencode }}".replace(" ","")];
         params[tmpname] = {"parametric": true,  "lut":"Spectrum", "alpha":"0.75", minPercent: 0.0, maxPercent: 1.0};
     {% elif first_image.map_type == 'R' %}
+        params["images"] = ["{% static "images/MNI152.nii.gz"%}","{{ first_image.file.url|urlencode }}".replace(" ","")];
         params[tmpname] = {"parametric": true,  "lut":"Overlay (Negatives)", "alpha":"0.75", minPercent: 0.0, maxPercent: 1.0};
+    {% elif first_image.map_type == 'A' %}
+        params["images"] = ["{{ first_image.file.url|urlencode }}".replace(" ","")];
     {% else %}
+        params["images"] = ["{% static "images/MNI152.nii.gz"%}","{{ first_image.file.url|urlencode }}".replace(" ","")];
         params[tmpname] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
+        params["{% static "images/MNI152.nii.gz"%}"] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
     {% endif %}
 {% else %}
    params["images"] = ["{% static "images/MNI152.nii.gz"%}"];
-   {% endif %}
-     
-   params["{% static "images/MNI152.nii.gz"%}"] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
+{% endif %}
    params["worldSpace"] = true;
    params["expandable"] = true;
    params["combineParametric"] = true;
@@ -67,16 +70,20 @@ var params = [];
      $(".viewimage").removeClass("active")
 
       var tmpname = $(mrimage).attr("filename").replace(/^.*[\\\/]/, '')
-      params["images"] = ["{% static "images/MNI152.nii.gz"%}",$(mrimage).attr("filename")];
+
       if ($(mrimage).attr("type") == "atlas" || $(mrimage).attr("type") == "parcellation") {
+        params["images"] = ["{% static "images/MNI152.nii.gz"%}",$(mrimage).attr("filename")];
       	params[tmpname] = {"parametric": true,  "lut":"Spectrum", "alpha":"0.75",  minPercent: 0.0, maxPercent: 1.0};
       } else if ($(mrimage).attr("type") == "ROI/mask") {
+        params["images"] = ["{% static "images/MNI152.nii.gz"%}",$(mrimage).attr("filename")];
         params[tmpname] = {"parametric": true,  "lut":"Overlay (Negatives)", "alpha":"0.75",  minPercent: 0.0, maxPercent: 1.0};
+      } else if ($(mrimage).attr("type") == "Anatomical") {
+        params["images"] = [$(mrimage).attr("filename")];
       } else {
+        params["images"] = ["{% static "images/MNI152.nii.gz"%}",$(mrimage).attr("filename")];
       	params[tmpname] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
       }
-   
-      params["{% static "images/MNI152.nii.gz"%}"] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
+
       params["worldSpace"] = true;
       params["expandable"] = true;
       params["combineParametric"] = true;

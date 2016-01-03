@@ -445,6 +445,7 @@ class BaseStatisticMap(Image):
     S = 'S'
     G = 'G'
     M = 'M'
+    A = 'A'
     MAP_TYPE_CHOICES = (
         (T, 'T map'),
         (Z, 'Z map'),
@@ -455,13 +456,14 @@ class BaseStatisticMap(Image):
         (U, 'univariate-beta map'),
         (R, 'ROI/mask'),
         (Pa, 'parcellation'),
-        (OTHER, 'Other'),
+        (A, 'anatomical'),
+        (OTHER, 'other'),
     )
     ANALYSIS_LEVEL_CHOICES = (
         (S, 'single-subject'),
         (G, 'group'),
         (M, 'meta-analysis'),
-        (OTHER, 'Other'),
+        (OTHER, 'other'),
     )
 
     map_type = models.CharField(
