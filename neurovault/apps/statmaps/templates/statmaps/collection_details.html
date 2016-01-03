@@ -14,7 +14,7 @@ var params = [];
 {% if first_image %}
    params["images"] = ["{% static "images/MNI152.nii.gz"%}","{{ first_image.file.url|urlencode }}".replace(" ","")];
    var tmpname = "{{ first_image.file.url }}".replace(/^.*[\\\/]/, '')
-    {% if first_image.map_type == 'Pa' %}
+    {% if first_image.map_type == 'Pa' or first_image.polymorphic_ctype.model == 'atlas' %}
         params[tmpname] = {"parametric": true,  "lut":"Spectrum", "alpha":"0.75", minPercent: 0.0, maxPercent: 1.0};
     {% elif first_image.map_type == 'R' %}
         params[tmpname] = {"parametric": true,  "lut":"Overlay (Negatives)", "alpha":"0.75", minPercent: 0.0, maxPercent: 1.0};
