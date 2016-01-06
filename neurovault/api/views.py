@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 
 from django.http import HttpResponse
 from rest_framework import mixins, permissions, status, viewsets
+from rest_framework.views import APIView
 from rest_framework.decorators import detail_route, list_route
 from rest_framework.filters import DjangoFilterBackend
 from rest_framework.renderers import JSONRenderer
@@ -20,8 +21,8 @@ from neurovault.apps.statmaps.voxel_query_functions import (getAtlasVoxels,
                                                             getSynonyms,
                                                             toAtlas,
                                                             voxelToRegion)
-from .serializers import (AtlasSerializer, CollectionSerializer,
-                          EditableAtlasSerializer,
+from .serializers import (UserSerializer, AtlasSerializer,
+                          CollectionSerializer, EditableAtlasSerializer,
                           EditableNIDMResultsSerializer,
                           EditableStatisticMapSerializer, ImageSerializer,
                           NIDMResultsSerializer)
@@ -62,6 +63,14 @@ class APIHelper:
         return Response(
             {'aaData': zip(data.keys(), data.values())}
         )
+
+
+class AuthUserView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request):
+        serializer = UserSerializer(request.user, context={'request': request})
+        return Response(serializer.data)
 
 
 class ImageViewSet(mixins.RetrieveModelMixin,
