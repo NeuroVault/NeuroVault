@@ -7,7 +7,7 @@ from neurovault.apps.statmaps.models import (Atlas, Collection,
                                              StatisticMap, NIDMResults)
 from neurovault.apps.statmaps.urls import StandardResultPagination
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Permission
 from django.test import TestCase, Client
 from rest_framework.test import APITestCase
 from rest_framework import status
@@ -345,6 +345,28 @@ class TestCollection(APITestCase):
         with self.assertRaises(Collection.DoesNotExist):
             Collection.objects.get(pk=self.coll.pk)
 
+    def test_missing_required_permissions(self):
+        self.client.force_authenticate(user=self.user)
+
+        other_user = User.objects.create_user('OtherGuy')
+        other_user.save()
+
+        other_collection = Collection(owner=other_user,
+                                      name="Another Test Collection")
+        other_collection.save()
+
+        url = '/api/collections/%s/' % other_collection.pk
+
+        put_dict = {
+            'name': "renamed %s" % uuid.uuid4()
+        }
+
+        response = self.client.put(url, put_dict)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, {
+            'detail': 'You do not have permission to perform this action.'
+        })
+
 
 class TestCollectionItemUpload(APITestCase):
     def setUp(self):
@@ -550,6 +572,15 @@ class BaseTestCases:
 class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
     def setUp(self):
         super(TestStatisticMapChange, self).setUp()
+        import pudb; pudb.set_trace()
+
+        model_name = StatisticMap._meta.model_name
+        f = '{0}_{1}'.format
+        self.user.user_permissions = [
+            Permission.objects.get(codename=f('add', model_name)),
+            Permission.objects.get(codename=f('change', model_name)),
+            Permission.objects.get(codename=f('delete', model_name))
+        ]
 
         self.item = save_statmap_form(
             image_path=self.abs_file_path(
@@ -574,6 +605,7 @@ class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
             'file': file
         }
 
+        import pudb; pudb.set_trace()
         response = self.client.put(self.item_url, put_dict)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -581,6 +613,20 @@ class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
 
     def test_statistic_map_destroy(self):
         self._test_collection_item_destroy(StatisticMap)
+
+    def test_missing_required_permissions(self):
+        other_user = User.objects.create_user('OtherGuy')
+        self.client.force_authenticate(user=other_user)
+
+        patch_dict = {
+            'description': "renamed %s" % uuid.uuid4(),
+        }
+
+        response = self.client.patch(self.item_url, patch_dict)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        response = self.client.delete(self.item_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
 class TestNIDMResultsChange(BaseTestCases.TestCollectionItemChange):
