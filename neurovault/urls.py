@@ -6,7 +6,7 @@ from django.conf.urls import include, patterns, url
 from django.contrib import admin
 from oauth2_provider import views as oauth_views
 
-from neurovault.api.urls import router
+from neurovault.api.urls import api_urls
 
 admin.autodiscover()
 
@@ -31,7 +31,7 @@ urlpatterns = patterns('',
                        url(r'^accounts/',
                            include('neurovault.apps.users.urls')),
                        url(r'^admin/', include(admin.site.urls)),
-                       url(r'^api/', include(router.urls)),
+                       url(r'^api/', include(api_urls)),
                        url(r'^api-auth/', include(
                            'rest_framework.urls', namespace='rest_framework')),
                        url(r'^o/', include((oauth_urlpatterns,

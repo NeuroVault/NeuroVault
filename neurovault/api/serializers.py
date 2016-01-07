@@ -3,6 +3,7 @@ import os
 import pandas as pd
 from django.forms.utils import ErrorDict, ErrorList
 from django.utils.http import urlquote
+from django.contrib.auth.models import User
 from rest_framework import serializers
 from rest_framework.relations import PrimaryKeyRelatedField, StringRelatedField
 
@@ -55,6 +56,12 @@ class NIDMDescriptionSerializedField(serializers.CharField):
             parent = self.parent.instance.nidm_results.name
             fname = os.path.split(self.parent.instance.file.name)[-1]
             return 'NIDM Results: {0}.zip > {1}'.format(parent, fname)
+
+
+class UserSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'email', 'first_name', 'last_name')
 
 
 class ImageSerializer(serializers.HyperlinkedModelSerializer):
