@@ -111,7 +111,6 @@ WSGI_APPLICATION = 'neurovault.wsgi.application'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'APP_DIRS': True,
         'DIRS': (),
         'OPTIONS': {'context_processors': ("django.contrib.auth.context_processors.auth",
                                             "django.core.context_processors.debug",
@@ -125,9 +124,7 @@ TEMPLATES = [
                                 'hamlpy.template.loaders.HamlPyAppDirectoriesLoader',
                                 'django.template.loaders.filesystem.Loader',
                                 'django.template.loaders.app_directories.Loader',
-                                ),
-                    'builtins': ['django.templatetags.future',
-                                 'django.contrib.staticfiles.templatetags.staticfiles']}
+                                )}
     }
 ]
 
