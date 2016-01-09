@@ -55,7 +55,7 @@ RUN pip install 'git+https://github.com/sinnwerkstatt/django-file-resubmit.git#e
 RUN pip install nidmfsl
 RUN pip install opbeat
 RUN pip install djrill
-RUN pip install 'django-hstore==1.3.5'
+RUN pip install 'django-hstore==1.4.1'
 RUN pip install cognitiveatlas
 RUN pip install django-datatables-view
 RUN pip install 'git+git://github.com/vsoch/nidmviewer.git@0.1'

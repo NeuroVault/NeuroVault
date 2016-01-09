@@ -42,7 +42,7 @@ git+https://github.com/sinnwerkstatt/django-file-resubmit.git#egg=file_resubmit
 nidmfsl
 opbeat
 djrill
-django-hstore==1.3.5
+django-hstore==1.4.1
 cognitiveatlas
 django-datatables-view
 git+git://github.com/vsoch/nidmviewer.git@0.1
