@@ -1,6 +1,5 @@
 import os
 
-from django import template
 from django.conf import settings
 from django.conf.urls import include, patterns, url
 from django.contrib import admin
@@ -9,9 +8,6 @@ from oauth2_provider import views as oauth_views
 from neurovault.api.urls import api_urls
 
 admin.autodiscover()
-
-template.add_to_builtins('django.templatetags.future')
-template.add_to_builtins('django.contrib.staticfiles.templatetags.staticfiles')
 
 
 oauth_urlpatterns = [
