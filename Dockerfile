@@ -12,8 +12,8 @@ RUN pip install -v scipy
 RUN pip install scikit-learn pandas h5py matplotlib
 RUN pip install https://github.com/gallantlab/pycortex/archive/master.zip --egg
 RUN pip install uwsgi
-RUN pip install 'Django==1.9.1'
-RUN pip install 'python-social-auth==0.2.7'
+RUN pip install 'Django==1.8.8'
+RUN pip install 'python-social-auth==0.2.13'
 RUN pip install djangorestframework
 RUN pip install markdown
 RUN pip install django-filter
@@ -49,7 +49,7 @@ RUN pip install django-celery
 RUN pip install scikit-learn
 RUN pip install nilearn
 RUN pip install pybraincompare==0.1.15
-RUN pip install django-cleanup==0.4.1
+RUN pip install django-cleanup==0.4.2
 RUN pip install django-chosen
 RUN pip install 'git+https://github.com/sinnwerkstatt/django-file-resubmit.git#egg=file_resubmit'
 RUN pip install nidmfsl
