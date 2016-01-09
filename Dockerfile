@@ -12,7 +12,7 @@ RUN pip install -v scipy
 RUN pip install scikit-learn pandas h5py matplotlib
 RUN pip install https://github.com/gallantlab/pycortex/archive/master.zip --egg
 RUN pip install uwsgi
-RUN pip install 'Django>=1.7.1,<1.8'
+RUN pip install 'Django==1.9.1'
 RUN pip install 'python-social-auth==0.2.7'
 RUN pip install djangorestframework
 RUN pip install markdown
