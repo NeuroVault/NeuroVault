@@ -1,21 +1,19 @@
 import os
 import re
 import shutil
-from tempfile import mkstemp, NamedTemporaryFile
 
 import nibabel as nb
 import numpy as np
-
+from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.forms.models import (
-    inlineformset_factory, ModelMultipleChoiceField, BaseInlineFormSet,
-    ModelChoiceField
+    inlineformset_factory, ModelMultipleChoiceField, BaseInlineFormSet
 )
-from django.core.exceptions import ValidationError
+
 # from form_utils.forms import BetterModelForm
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Div, Submit, HTML, Button, Row, Field, Hidden
+from crispy_forms.layout import Layout, Submit, Button
 from crispy_forms.bootstrap import TabHolder, Tab
 
 from .models import Collection, Image, ValueTaggedItem, User, StatisticMap, BaseStatisticMap, \
@@ -33,12 +31,11 @@ from neurovault.apps.statmaps.nidm_results import NIDMUpload
 from django import forms
 from django.utils.encoding import smart_str
 from django.utils.safestring import mark_safe
-from django.forms.util import flatatt
+from django.forms.utils import flatatt
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.files.base import ContentFile
 from django.forms.widgets import HiddenInput
 from neurovault import settings
-from neurovault.apps.statmaps.models import CognitiveAtlasTask
 from gzip import GzipFile
 from file_resubmit.admin import AdminResubmitFileWidget
 from guardian.shortcuts import get_objects_for_user
