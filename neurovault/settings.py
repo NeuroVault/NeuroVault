@@ -1,10 +1,12 @@
 # Django settings for neurovault project.
 import os
 import sys
-from datetime import timedelta
-import matplotlib
 import tempfile
+from datetime import timedelta
+
+import matplotlib
 from kombu import Exchange, Queue
+
 matplotlib.use('Agg')
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -87,15 +89,6 @@ STATICFILES_FINDERS = (
 #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
-# List of callables that know how to import templates from various sources.
-TEMPLATE_LOADERS = (
-    'hamlpy.template.loaders.HamlPyFilesystemLoader',
-    'hamlpy.template.loaders.HamlPyAppDirectoriesLoader',
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-#     'django.template.loaders.eggs.Loader',
-)
-
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -114,21 +107,29 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 # Python dotted path to the WSGI application used by Django's runserver.
 WSGI_APPLICATION = 'neurovault.wsgi.application'
 
-TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-)
 
-TEMPLATE_CONTEXT_PROCESSORS = ("django.contrib.auth.context_processors.auth",
-"django.core.context_processors.debug",
-"django.core.context_processors.i18n",
-"django.core.context_processors.media",
-"django.core.context_processors.static",
-"django.core.context_processors.tz",
-"django.contrib.messages.context_processors.messages",
-'django.core.context_processors.request',
-)
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'APP_DIRS': True,
+        'DIRS': (),
+        'OPTIONS': {'context_processors': ("django.contrib.auth.context_processors.auth",
+                                            "django.core.context_processors.debug",
+                                            "django.core.context_processors.i18n",
+                                            "django.core.context_processors.media",
+                                            "django.core.context_processors.static",
+                                            "django.core.context_processors.tz",
+                                            "django.contrib.messages.context_processors.messages",
+                                            'django.core.context_processors.request'),
+                    'loaders': ('hamlpy.template.loaders.HamlPyFilesystemLoader',
+                                'hamlpy.template.loaders.HamlPyAppDirectoriesLoader',
+                                'django.template.loaders.filesystem.Loader',
+                                'django.template.loaders.app_directories.Loader',
+                                ),
+                    'builtins': ['django.templatetags.future',
+                                 'django.contrib.staticfiles.templatetags.staticfiles']}
+    }
+]
 
 INSTALLED_APPS = (
     'django.contrib.auth',
