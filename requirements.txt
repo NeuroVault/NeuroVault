@@ -29,7 +29,7 @@ requests
 requests-oauthlib
 python-openid
 django-sendfile
-django-polymorphic
+django-polymorphic==0.8.1
 networkx
 rdflib>=4.1.0
 celery[redis]
