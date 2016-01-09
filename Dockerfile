@@ -22,7 +22,6 @@ RUN pip install django-form-utils
 RUN pip install hamlpy
 RUN pip install django-crispy-forms
 RUN pip install django-coffeescript
-RUN pip install South
 RUN pip install django-taggit-templatetags
 RUN pip install django-dirtyfields
 RUN pip install 'dropbox==1.6'

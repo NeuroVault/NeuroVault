@@ -8,7 +8,6 @@ django-form-utils
 hamlpy
 django-crispy-forms
 django-coffeescript
-South
 django-taggit-templatetags
 django-dirtyfields
 dropbox==1.6
