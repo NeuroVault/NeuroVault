@@ -1,3 +1,4 @@
+{% load static from staticfiles %}
 (function () {
     function loadScript(url, callback) {
     var script = document.createElement("script")

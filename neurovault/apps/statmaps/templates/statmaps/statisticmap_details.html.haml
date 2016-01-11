@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load coffeescript %}
+{% load static from staticfiles %}
 {% block includes %}
 <title>{% block title %}NeuroVault: {{image.name}}{% endblock %}</title>
 <script type="text/javascript" src="{% static "scripts/papaya.js"%}"/>

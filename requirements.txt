@@ -1,5 +1,5 @@
-Django>=1.7.1,<1.8
-python-social-auth==0.2.7
+Django==1.8.8
+python-social-auth==0.2.13
 djangorestframework
 markdown
 django-filter
@@ -8,7 +8,6 @@ django-form-utils
 hamlpy
 django-crispy-forms
 django-coffeescript
-South
 django-taggit-templatetags
 django-dirtyfields
 dropbox==1.6
@@ -29,7 +28,7 @@ requests
 requests-oauthlib
 python-openid
 django-sendfile
-django-polymorphic
+django-polymorphic==0.8.1
 networkx
 rdflib>=4.1.0
 celery[redis]
@@ -37,16 +36,16 @@ django-celery
 scikit-learn
 nilearn
 pybraincompare==0.1.15
-django-cleanup==0.4.1
+django-cleanup==0.4.2
 django-chosen
 git+https://github.com/sinnwerkstatt/django-file-resubmit.git#egg=file_resubmit
 nidmfsl
 opbeat
 djrill
-django-hstore==1.3.5
+django-hstore==1.4.1
 cognitiveatlas
 django-datatables-view
 git+git://github.com/vsoch/nidmviewer.git@0.1
 https://github.com/benkonrath/django-guardian/archive/django-polymorphic.zip
-django-oauth-toolkit==0.9.0
+django-oauth-toolkit==0.10.0
 certifi==2015.04.28
