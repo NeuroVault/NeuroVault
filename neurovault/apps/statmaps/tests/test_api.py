@@ -572,16 +572,6 @@ class BaseTestCases:
 class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
     def setUp(self):
         super(TestStatisticMapChange, self).setUp()
-        import pudb; pudb.set_trace()
-
-        model_name = StatisticMap._meta.model_name
-        f = '{0}_{1}'.format
-        self.user.user_permissions = [
-            Permission.objects.get(codename=f('add', model_name)),
-            Permission.objects.get(codename=f('change', model_name)),
-            Permission.objects.get(codename=f('delete', model_name))
-        ]
-
         self.item = save_statmap_form(
             image_path=self.abs_file_path(
                 'test_data/statmaps/motor_lips.nii.gz'
@@ -605,7 +595,6 @@ class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
             'file': file
         }
 
-        import pudb; pudb.set_trace()
         response = self.client.put(self.item_url, put_dict)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 

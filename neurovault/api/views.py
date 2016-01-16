@@ -26,6 +26,8 @@ from .serializers import (UserSerializer, AtlasSerializer,
                           EditableStatisticMapSerializer, ImageSerializer,
                           NIDMResultsSerializer)
 
+from .permissions import ObjectOnlyPermissions
+
 
 class JSONResponse(HttpResponse):
 
@@ -80,7 +82,7 @@ class ImageViewSet(mixins.RetrieveModelMixin,
 
     queryset = Image.objects.filter(collection__private=False)
     serializer_class = ImageSerializer
-    permission_classes = (permissions.DjangoObjectPermissions,)
+    permission_classes = (ObjectOnlyPermissions,)
 
     def _get_api_image(self, request, pk=None):
         private_url = re.match(r'^[A-Z]{8}\-\d+$', pk)
@@ -104,10 +106,6 @@ class ImageViewSet(mixins.RetrieveModelMixin,
         image = self._get_api_image(request, pk)
         data = ImageSerializer(image, context={'request': request}).data
         return Response(data)
-
-    # def check_permissions(self, request):
-    #     import pudb; pudb.set_trace()
-    #     super(ImageViewSet, self).check_permissions(request)
 
 
 class AtlasViewSet(ImageViewSet):
