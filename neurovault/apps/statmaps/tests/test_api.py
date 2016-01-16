@@ -559,6 +559,20 @@ class BaseTestCases:
             self.assertEqual(response.data['description'],
                              patch_dict['description'])
 
+        def test_missing_required_permissions(self):
+            other_user = User.objects.create_user('OtherGuy')
+            self.client.force_authenticate(user=other_user)
+
+            patch_dict = {
+                'description': "renamed %s" % uuid.uuid4(),
+            }
+
+            response = self.client.patch(self.item_url, patch_dict)
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+            response = self.client.delete(self.item_url)
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
         def _test_collection_item_destroy(self, model_class):
             self.client.force_authenticate(user=self.user)
 
@@ -602,20 +616,6 @@ class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
 
     def test_statistic_map_destroy(self):
         self._test_collection_item_destroy(StatisticMap)
-
-    def test_missing_required_permissions(self):
-        other_user = User.objects.create_user('OtherGuy')
-        self.client.force_authenticate(user=other_user)
-
-        patch_dict = {
-            'description': "renamed %s" % uuid.uuid4(),
-        }
-
-        response = self.client.patch(self.item_url, patch_dict)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-        response = self.client.delete(self.item_url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
 class TestNIDMResultsChange(BaseTestCases.TestCollectionItemChange):
