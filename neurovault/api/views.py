@@ -26,7 +26,8 @@ from .serializers import (UserSerializer, AtlasSerializer,
                           EditableStatisticMapSerializer, ImageSerializer,
                           NIDMResultsSerializer)
 
-from .permissions import ObjectOnlyPermissions
+from .permissions import (ObjectOnlyPermissions,
+                          ObjectOnlyPolymorphicPermissions)
 
 
 class JSONResponse(HttpResponse):
@@ -111,6 +112,7 @@ class ImageViewSet(mixins.RetrieveModelMixin,
 class AtlasViewSet(ImageViewSet):
     queryset = Atlas.objects.filter(collection__private=False)
     serializer_class = AtlasSerializer
+    permission_classes = (ObjectOnlyPolymorphicPermissions,)
 
     @detail_route()
     def datatable(self, request, pk=None):
