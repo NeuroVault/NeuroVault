@@ -649,8 +649,8 @@ def view_collection_with_pycortex(request, cid):
 
     if not images:
         return redirect(collection)
-    else:
 
+    else:
         basedir = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',str(collection.id))
         baseurl = os.path.join(settings.PRIVATE_MEDIA_URL,cid)
 
@@ -667,7 +667,8 @@ def view_collection_with_pycortex(request, cid):
             for image in images:
                 vol = generate_pycortex_volume(image)
                 volumes[image.name] = vol
-            generate_pycortex_static(volumes, output_dir)
+            generate_pycortex_static(volumes, output_dir,
+                                     title=collection.name)
 
         return redirect(pycortex_url)
 
