@@ -1,9 +1,8 @@
+import nibabel as nb
+import numpy as np
 import os
 import re
 import shutil
-
-import nibabel as nb
-import numpy as np
 from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.forms.models import (
@@ -811,15 +810,17 @@ def handle_update_ttl_urls(instance):
     fname = os.path.basename(
         instance.nidmresultstatisticmap_set.first().file.name)
 
-    ttl_regx = re.compile(r'(prov:atLocation\ \")(file:\/.*\/)(' +
+    ttl_regx = re.compile(r'(prov:atLocation\ \")(file:\/.*\/)?(' +
                           fname + ')(\"\^\^xsd\:anyURI\ \;)')
 
     hdr, urlprefix, nifti, ftr = re.search(ttl_regx, ttl_content).groups()
+    if not urlprefix:
+        urlprefix = ""
     base_url = settings.DOMAIN_NAME
     replace_path = base_url + os.path.join(
         instance.collection.get_absolute_url(), instance.name) + '/'
 
-    updated_ttl = ttl_content.replace(urlprefix, replace_path)
+    updated_ttl = ttl_content.replace(hdr + urlprefix, hdr + replace_path)
     instance.ttl_file.file.close()
 
     with open(instance.ttl_file.path, 'w') as ttlf:

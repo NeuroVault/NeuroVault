@@ -1,11 +1,12 @@
-from django.test import TestCase, Client
-from neurovault.apps.statmaps.models import Collection, User
-import tempfile
 import os
 import shutil
+import tempfile
 from django.core.files.uploadedfile import SimpleUploadedFile
-from neurovault.apps.statmaps.nidm_results import NIDMUpload
+from django.test import TestCase, Client
+
 from neurovault.apps.statmaps.forms import NIDMResultsForm
+from neurovault.apps.statmaps.models import Collection, User
+from neurovault.apps.statmaps.nidm_results import NIDMUpload
 from .utils import clearDB
 
 TEST_PATH = os.path.abspath(os.path.dirname(__file__))
@@ -27,6 +28,13 @@ NIMD_TEST_FILES = {
     'spm_example': {
         'file': os.path.join(TEST_PATH,
                              'test_data/nidm/spm_example.nidm.zip'),
+        'output_row': {'type': u'T',
+                       'name': u'Statistic Map: passive listening > rest'},
+        'num_statmaps': 1,
+    },
+    'spm_auditory_v1.2.0': {
+        'file': os.path.join(TEST_PATH,
+                             'test_data/nidm/auditory.nidm.zip'),
         'output_row': {'type': u'T',
                        'name': u'Statistic Map: passive listening > rest'},
         'num_statmaps': 1,

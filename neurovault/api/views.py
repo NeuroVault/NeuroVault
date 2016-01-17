@@ -2,14 +2,13 @@ import cPickle as pickle
 import os
 import re
 import xml.etree.ElementTree as ET
-
 from django.http import HttpResponse
 from rest_framework import mixins, permissions, status, viewsets
-from rest_framework.views import APIView
 from rest_framework.decorators import detail_route, list_route
 from rest_framework.filters import DjangoFilterBackend
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from taggit.models import Tag
 
 from neurovault.apps.statmaps.models import (Atlas, Collection, Image,
@@ -312,6 +311,14 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+
+
+class MyCollectionsViewSet(CollectionViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_queryset(self):
+        user = self.request.user
+        return Collection.objects.filter(owner=user)
 
 
 class NIDMResultsViewSet(mixins.RetrieveModelMixin,

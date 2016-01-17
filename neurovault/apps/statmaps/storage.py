@@ -2,11 +2,10 @@ import errno
 import itertools
 import os
 import tempfile
-from fnmatch import fnmatch
-
 from django.apps import apps
 from django.core.files.move import file_move_safe
 from django.core.files.storage import FileSystemStorage
+from fnmatch import fnmatch
 
 from neurovault import settings
 
@@ -109,7 +108,7 @@ class NIDMStorage(NiftiGzStorage):
 
     def url(self, name):
         rpath = super(NIDMStorage, self).url(name)
-        rpath = rpath.replace(self.base_url, '/collections').split('/')
+        rpath = rpath.replace(self.base_url, '/collections/').split('/')
         for ext in ['.ttl', '.provn', '.zip']:
             if fnmatch(rpath[-1], '*{0}'.format(ext)):
                 rpath.pop()
