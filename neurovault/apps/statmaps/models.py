@@ -182,6 +182,7 @@ class Collection(models.Model):
 
         return ret
 
+
 @receiver(post_save, sender=Collection)
 def collection_created(sender, instance, created, **kwargs):
     if created:
@@ -190,36 +191,54 @@ def collection_created(sender, instance, created, **kwargs):
         for image in instance.image_set.all():
             assign_perm('change_image', instance.owner, image)
             assign_perm('delete_image', instance.owner, image)
+
         for nidmresult in instance.nidmresults_set.all():
             assign_perm('change_nidmresults', instance.owner, nidmresult)
             assign_perm('delete_nidmresults', instance.owner, nidmresult)
+
+        for atlas in instance.image_set.instance_of(Atlas):
+            assign_perm('change_atlas', instance.owner, atlas)
+            assign_perm('delete_atlas', instance.owner, atlas)
+
 
 def contributors_changed(sender, instance, action, **kwargs):
     if action in ["post_remove", "post_add", "post_clear"]:
         current_contributors = set([user.pk for user in get_users_with_perms(instance)])
         new_contributors = set([user.pk for user in [instance.owner, ] + list(instance.contributors.all())])
-         
+
         for contributor in list(new_contributors - current_contributors):
             contributor = User.objects.get(pk=contributor)
             assign_perm('change_collection', contributor, instance)
             for image in instance.image_set.all():
                 assign_perm('change_image', contributor, image)
                 assign_perm('delete_image', contributor, image)
+
             for nidmresult in instance.nidmresults_set.all():
                 assign_perm('change_nidmresults', contributor, nidmresult)
                 assign_perm('delete_nidmresults', contributor, nidmresult)
-                
+
+            for atlas in instance.image_set.instance_of(Atlas):
+                assign_perm('change_atlas', contributor, atlas)
+                assign_perm('delete_atlas', contributor, atlas)
+
         for contributor in (current_contributors - new_contributors):
             contributor = User.objects.get(pk=contributor)
             remove_perm('change_collection', contributor, instance)
             for image in instance.image_set.all():
                 remove_perm('change_image', contributor, image)
                 remove_perm('delete_image', contributor, image)
+
             for nidmresult in instance.nidmresults_set.all():
                 remove_perm('change_nidmresults', contributor, nidmresult)
                 remove_perm('delete_nidmresults', contributor, nidmresult)
 
-m2m_changed.connect(contributors_changed, sender=Collection.contributors.through)
+            for atlas in instance.image_set.instance_of(Atlas):
+                remove_perm('change_atlas', contributor, atlas)
+                remove_perm('delete_atlas', contributor, atlas)
+
+m2m_changed.connect(contributors_changed,
+                    sender=Collection.contributors.through)
+
 
 class CognitiveAtlasTask(models.Model):
     name = models.CharField(max_length=200, null=False, blank=False, db_index=True)
@@ -233,6 +252,7 @@ class CognitiveAtlasTask(models.Model):
 
     class Meta:
         ordering = ['name']
+
 
 class CognitiveAtlasContrast(models.Model):
     name = models.CharField(max_length=200, null=False, blank=False)
@@ -299,7 +319,7 @@ class BaseCollectionItem(models.Model):
         self.collection.modify_date = datetime.now()
         self.collection.save()
         super(BaseCollectionItem, self).save()
-        
+
 
     def delete(self):
         self.collection.modify_date = datetime.now()
@@ -429,6 +449,9 @@ def image_created(sender, instance, created, **kwargs):
         for user in [instance.collection.owner, ] + list(instance.collection.contributors.all()):
             assign_perm('change_image', user, instance)
             assign_perm('delete_image', user, instance)
+            if isinstance(instance, Atlas):
+                assign_perm('change_atlas', user, instance)
+                assign_perm('delete_atlas', user, instance)
 
 
 class BaseStatisticMap(Image):
@@ -437,7 +460,7 @@ class BaseStatisticMap(Image):
     F = 'F'
     X2 = 'X2'
     P = 'P'
-    M ='M'
+    M = 'M'
     U = 'U'
     R = 'R'
     Pa = 'Pa'
@@ -615,7 +638,7 @@ class NIDMResults(BaseCollectionItem):
     def get_form_class():
         from neurovault.apps.statmaps.forms import NIDMResultsForm
         return NIDMResultsForm
-    
+
     def save(self):
         BaseCollectionItem.save(self)
         for user in [self.collection.owner,] + list(self.collection.contributors.all()):
