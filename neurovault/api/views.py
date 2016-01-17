@@ -256,7 +256,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
     filter_fields = ('name', 'DOI', 'owner')
     serializer_class = CollectionSerializer
     filter_backends = (DjangoFilterBackend,)
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    permission_classes = (ObjectOnlyPermissions,)
 
     @detail_route()
     def datatable(self, request, pk=None):
@@ -315,10 +315,6 @@ class CollectionViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
-    def partial_update(self, request, *args, **kwargs):
-        import pudb; pudb.set_trace()
-        super(CollectionViewSet, self).partial_update(request, *args, **kwargs)
-
 
 class MyCollectionsViewSet(CollectionViewSet):
     permission_classes = (permissions.IsAuthenticated,)
@@ -336,7 +332,7 @@ class NIDMResultsViewSet(mixins.RetrieveModelMixin,
 
     queryset = NIDMResults.objects.filter(collection__private=False)
     serializer_class = NIDMResultsSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    permission_classes = (ObjectOnlyPermissions,)
 
 
 class TagViewSet(viewsets.ModelViewSet):
