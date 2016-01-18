@@ -312,7 +312,7 @@ def view_nidm_results(request, collection_cid, nidm_name):
     collection = get_collection(collection_cid,request)
     nidmr = get_object_or_404(NIDMResults, collection=collection,name=nidm_name)
     if request.method == "POST":
-        if not request.user.has_perm("statmaps.change_nidmresults", nidmr):
+        if not request.user.has_perm("statmaps.change_basecollectionitem", nidmr):
             return HttpResponseForbidden()
         form = NIDMResultsForm(request.POST, request.FILES, instance=nidmr)
         if form.is_valid():
@@ -357,7 +357,7 @@ def delete_nidm_results(request, collection_cid, nidm_name):
     collection = get_collection(collection_cid,request)
     nidmr = get_object_or_404(NIDMResults, collection=collection, name=nidm_name)
 
-    if request.user.has_perm("statmaps.delete_nidmresults", nidmr):
+    if request.user.has_perm("statmaps.delete_basecollectionitem", nidmr):
         nidmr.delete()
         return redirect('collection_details', cid=collection_cid)
     else:
@@ -570,7 +570,7 @@ def upload_folder(request, collection_cid):
 def delete_image(request, pk):
     image = get_object_or_404(Image,pk=pk)
     cid = image.collection.pk
-    if not request.user.has_perm("statmaps.delete_image", image):
+    if not request.user.has_perm("statmaps.delete_basecollectionitem", image):
         return HttpResponseForbidden()
     image.delete()
     return redirect('collection_details', cid=cid)
@@ -665,6 +665,10 @@ def serve_nidm(request, collection_cid, nidmdir, sep, path):
 
     return sendfile(request, os.path.join(basepath, fpath), encoding="utf-8")
 
+def serve_nidm_image(request, collection_cid, nidmdir, sep, path):
+    collection = get_collection(collection_cid,request,mode='file')
+    path = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',str(collection.id),nidmdir,path)
+    return sendfile(request, path, encoding="utf-8")
 
 def stats_view(request):
     collections_by_journals = {}

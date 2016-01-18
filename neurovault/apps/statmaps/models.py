@@ -160,7 +160,7 @@ class Collection(models.Model):
         super(Collection, self).save(*args, **kwargs)
 
         if (privacy_changed and not self.private) or (DOI_changed and self.DOI is not None):
-            for image in self.image_set.all():
+            for image in self.basecollectionitem_set.instance_of(Image).all():
                 if image.pk:
                     generate_glassbrain_image.apply_async([image.pk])
                     run_voxelwise_pearson_similarity.apply_async([image.pk])
@@ -170,8 +170,8 @@ class Collection(models.Model):
 
     def delete(self, using=None):
         cid = self.pk
-        for image in self.image_set.all():
-            image.delete()
+        for basecollectionitem in self.basecollectionitem_set.all():
+            basecollectionitem.delete()
         ret = models.Model.delete(self, using=using)
         collDir = os.path.join(PRIVATE_MEDIA_ROOT, 'images',str(cid))
         try:
@@ -186,12 +186,9 @@ def collection_created(sender, instance, created, **kwargs):
     if created:
         assign_perm('delete_collection', instance.owner, instance)
         assign_perm('change_collection', instance.owner, instance)
-        for image in instance.image_set.all():
-            assign_perm('change_image', instance.owner, image)
-            assign_perm('delete_image', instance.owner, image)
-        for nidmresult in instance.nidmresults_set.all():
-            assign_perm('change_nidmresults', instance.owner, nidmresult)
-            assign_perm('delete_nidmresults', instance.owner, nidmresult)
+        for image in instance.basecollectionitem_set.all():
+            assign_perm('change_basecollectionitem', instance.owner, image)
+            assign_perm('delete_basecollectionitem', instance.owner, image)
 
 def contributors_changed(sender, instance, action, **kwargs):
     if action in ["post_remove", "post_add", "post_clear"]:
@@ -201,22 +198,16 @@ def contributors_changed(sender, instance, action, **kwargs):
         for contributor in list(new_contributors - current_contributors):
             contributor = User.objects.get(pk=contributor)
             assign_perm('change_collection', contributor, instance)
-            for image in instance.image_set.all():
-                assign_perm('change_image', contributor, image)
-                assign_perm('delete_image', contributor, image)
-            for nidmresult in instance.nidmresults_set.all():
-                assign_perm('change_nidmresults', contributor, nidmresult)
-                assign_perm('delete_nidmresults', contributor, nidmresult)
+            for image in instance.basecollectionitem_set.all():
+                assign_perm('change_basecollectionitem', contributor, image)
+                assign_perm('delete_basecollectionitem', contributor, image)
                 
         for contributor in (current_contributors - new_contributors):
             contributor = User.objects.get(pk=contributor)
             remove_perm('change_collection', contributor, instance)
-            for image in instance.image_set.all():
-                remove_perm('change_image', contributor, image)
-                remove_perm('delete_image', contributor, image)
-            for nidmresult in instance.nidmresults_set.all():
-                remove_perm('change_nidmresults', contributor, nidmresult)
-                remove_perm('delete_nidmresults', contributor, nidmresult)
+            for image in instance.basecollectionitem_set.all():
+                remove_perm('change_basecollectionitem', contributor, image)
+                remove_perm('delete_basecollectionitem', contributor, image)
 
 m2m_changed.connect(contributors_changed, sender=Collection.contributors.through)
 
@@ -322,6 +313,15 @@ class BaseCollectionItem(PolymorphicModel, models.Model):
     def get_fixed_fields(cls):
         return ('name', 'description', 'figure')
 
+@receiver(post_save, sender=BaseCollectionItem)
+def basecollectionitem_created(sender, instance, created, **kwargs):
+    if created:
+        for user in [instance.collection.owner, ] + list(instance.collection.contributors.all()):
+            assign_perm('change_basecollectionitem', user, instance)
+            assign_perm('delete_basecollectionitem', user, instance)
+
+#post_save.connect(basecollectionitem_created, sender=BaseCollectionItem, weak=True)
+
 class Image(BaseCollectionItem):
     file = models.FileField(upload_to=upload_img_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='File with the unthresholded map (.img, .nii, .nii.gz)')
     figure = models.CharField(help_text="Which figure in the corresponding paper was this map displayed in?", verbose_name="Corresponding figure", max_length=200, null=True, blank=True)
@@ -419,12 +419,6 @@ class Image(BaseCollectionItem):
                     os.remove(old_path)
             super(Image, self).save()
 
-
-def image_created(sender, instance, created, **kwargs):
-    if created:
-        for user in [instance.collection.owner, ] + list(instance.collection.contributors.all()):
-            assign_perm('change_image', user, instance)
-            assign_perm('delete_image', user, instance)
 
 
 class BaseStatisticMap(Image):
@@ -578,8 +572,6 @@ class StatisticMap(BaseStatisticMap):
         return super(StatisticMap, cls).get_fixed_fields() + (
             'modality', 'contrast_definition', 'cognitive_paradigm_cogatlas')
 
-post_save.connect(image_created, sender=StatisticMap, weak=True)
-
 
 class NIDMResults(BaseCollectionItem):
     ttl_file = models.FileField(upload_to=upload_nidm_to,
@@ -610,12 +602,6 @@ class NIDMResults(BaseCollectionItem):
     def get_form_class():
         from neurovault.apps.statmaps.forms import NIDMResultsForm
         return NIDMResultsForm
-    
-    def save(self):
-        BaseCollectionItem.save(self)
-        for user in [self.collection.owner,] + list(self.collection.contributors.all()):
-            assign_perm('change_nidmresults', user, self)
-            assign_perm('delete_nidmresults', user, self)
 
 @receiver(post_delete, sender=NIDMResults)
 def mymodel_delete(sender, instance, **kwargs):
@@ -627,10 +613,6 @@ def mymodel_delete(sender, instance, **kwargs):
 class NIDMResultStatisticMap(BaseStatisticMap):
     nidm_results = models.ForeignKey(NIDMResults)
 
-
-post_save.connect(image_created, sender=NIDMResultStatisticMap, weak=True)
-
-
 class Atlas(Image):
     label_description_file = models.FileField(
                                 upload_to=upload_img_to,
@@ -640,10 +622,6 @@ class Atlas(Image):
 
     class Meta:
         verbose_name_plural = "Atlases"
-
-
-post_save.connect(image_created, sender=Atlas, weak=True)
-
 
 class Similarity(models.Model):
     similarity_metric = models.CharField(max_length=200, null=False, blank=False, db_index=True,help_text="the name of the similarity metric to describe a relationship between two or more images.",verbose_name="similarity metric name")
