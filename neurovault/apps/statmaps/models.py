@@ -313,14 +313,11 @@ class BaseCollectionItem(PolymorphicModel, models.Model):
     def get_fixed_fields(cls):
         return ('name', 'description', 'figure')
 
-@receiver(post_save, sender=BaseCollectionItem)
 def basecollectionitem_created(sender, instance, created, **kwargs):
     if created:
         for user in [instance.collection.owner, ] + list(instance.collection.contributors.all()):
             assign_perm('change_basecollectionitem', user, instance)
             assign_perm('delete_basecollectionitem', user, instance)
-
-#post_save.connect(basecollectionitem_created, sender=BaseCollectionItem, weak=True)
 
 class Image(BaseCollectionItem):
     file = models.FileField(upload_to=upload_img_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='File with the unthresholded map (.img, .nii, .nii.gz)')
@@ -572,6 +569,7 @@ class StatisticMap(BaseStatisticMap):
         return super(StatisticMap, cls).get_fixed_fields() + (
             'modality', 'contrast_definition', 'cognitive_paradigm_cogatlas')
 
+post_save.connect(basecollectionitem_created, sender=StatisticMap, weak=True)
 
 class NIDMResults(BaseCollectionItem):
     ttl_file = models.FileField(upload_to=upload_nidm_to,
@@ -609,9 +607,13 @@ def mymodel_delete(sender, instance, **kwargs):
     if os.path.isdir(nidm_path):
         shutil.rmtree(nidm_path)
 
+post_save.connect(basecollectionitem_created, sender=NIDMResults, weak=True)
+
 
 class NIDMResultStatisticMap(BaseStatisticMap):
     nidm_results = models.ForeignKey(NIDMResults)
+
+post_save.connect(basecollectionitem_created, sender=NIDMResultStatisticMap, weak=True)
 
 class Atlas(Image):
     label_description_file = models.FileField(
@@ -622,6 +624,8 @@ class Atlas(Image):
 
     class Meta:
         verbose_name_plural = "Atlases"
+
+post_save.connect(basecollectionitem_created, sender=Atlas, weak=True)
 
 class Similarity(models.Model):
     similarity_metric = models.CharField(max_length=200, null=False, blank=False, db_index=True,help_text="the name of the similarity metric to describe a relationship between two or more images.",verbose_name="similarity metric name")
