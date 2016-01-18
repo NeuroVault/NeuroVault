@@ -6,7 +6,7 @@ from django.core.urlresolvers import reverse
 from django.test import TestCase, Client
 from zipfile import ZipFile
 
-from neurovault.apps.statmaps.models import User, Collection
+from neurovault.apps.statmaps.models import User, Collection, Image
 from .utils import clearDB
 
 

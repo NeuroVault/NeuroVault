@@ -6,7 +6,7 @@ import tempfile
 from django.test import TestCase
 from numpy.testing import assert_almost_equal, assert_equal
 
-from neurovault.apps.statmaps.models import Comparison, Similarity, User, Collection
+from neurovault.apps.statmaps.models import Comparison, Similarity, User, Collection, Image
 from neurovault.apps.statmaps.tasks import save_voxelwise_pearson_similarity, get_images_by_ordered_id, save_resampled_transformation_single
 from neurovault.apps.statmaps.tests.utils import clearDB, save_statmap_form
 from neurovault.apps.statmaps.utils import split_4D_to_3D

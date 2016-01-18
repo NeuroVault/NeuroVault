@@ -9,7 +9,7 @@ from django.db.models import Model
 from django.db.models.fields import FieldDoesNotExist
 from django.db.models.fields.related import ForeignKey
 
-from .models import StatisticMap
+from .models import StatisticMap, Image
 
 
 class MetadataGridValidationError(ValidationError):

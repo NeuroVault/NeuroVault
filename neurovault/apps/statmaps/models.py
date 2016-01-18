@@ -313,11 +313,14 @@ class BaseCollectionItem(PolymorphicModel, models.Model):
     def get_fixed_fields(cls):
         return ('name', 'description', 'figure')
 
+
+# sadly signals are not emitted for base classes so we need to connect this to every class separately
 def basecollectionitem_created(sender, instance, created, **kwargs):
     if created:
         for user in [instance.collection.owner, ] + list(instance.collection.contributors.all()):
             assign_perm('change_basecollectionitem', user, instance)
             assign_perm('delete_basecollectionitem', user, instance)
+
 
 class Image(BaseCollectionItem):
     file = models.FileField(upload_to=upload_img_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='File with the unthresholded map (.img, .nii, .nii.gz)')
