@@ -12,7 +12,7 @@ from .views import edit_collection, view_image, delete_image, edit_image, \
                 view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
                 serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
                 papaya_js_embed, view_images_by_tag, \
-                view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
+                view_image_with_pycortex, stats_view, serve_nidm, \
                 view_nidm_results, find_similar, compare_images,  edit_metadata, \
                 export_images_filenames, delete_nidm_results
 
@@ -138,10 +138,6 @@ urlpatterns = patterns('',
     url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[0-9a-zA-Z\^\&\'\@\{\}\[\]\,\$\=\!\-\#\(\)\.\%\+\~\_ ]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
         serve_nidm,
         name='serve_nidm_files'),
-
-    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[0-9a-zA-Z\^\&\'\@\{\}\[\]\,\$\=\!\-\#\(\)\.\%\+\~\_ ]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
-        serve_nidm_image,
-        name='serve_nidm_images'),
 
    # Compare images
     url(r'^images/compare/(?P<pk1>\d+)/(?P<pk2>\d+)$',

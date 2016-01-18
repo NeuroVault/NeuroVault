@@ -23,7 +23,7 @@ def move_collection_data(apps, schema_editor):
         new_basebollectionitem.polymorphic_ctype = image.polymorphic_ctype
         new_basebollectionitem.tags = image.tags
         new_basebollectionitem.save()
-        image.basecollectionitem_ptr = new_basebollectionitem.id
+        image.basecollectionitem_ptr = new_basebollectionitem
         image.save()
 
     cursor = connection.cursor()
@@ -40,11 +40,8 @@ def move_collection_data(apps, schema_editor):
         new_basebollectionitem.tags = nidmresult.tags
         new_basebollectionitem.save()
 
-        for image in nidmresult.nidmresultstatisticmap_set.all():
-            image.nidm_results_id = new_basebollectionitem.id
-            image.save()
-
-        nidmresult.basecollectionitem_ptr = new_basebollectionitem.id
+        nidmresult.basecollectionitem_ptr = new_basebollectionitem
+        nidmresult.old_id = nidmresult.id
         nidmresult.save()
 
 class Migration(migrations.Migration):
@@ -54,16 +51,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name='image',
-            name='basecollectionitem_ptr',
-            field=models.IntegerField(default=0, serialize=False, null=True),
-            preserve_default=False,
-        ),
-        migrations.AlterField(
+        migrations.AddField(
             model_name='nidmresults',
-            name='basecollectionitem_ptr',
-            field=models.IntegerField(default=0, serialize=False, null=True),
+            name='old_id',
+            field=models.IntegerField(null=True),
             preserve_default=False,
         ),
         migrations.RunPython(move_collection_data),

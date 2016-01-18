@@ -14,7 +14,7 @@ import zipfile
 from collections import OrderedDict
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Q
 from django.db.models.aggregates import Count
@@ -648,28 +648,22 @@ def serve_pycortex(request, collection_cid, path, pycortex_dir='pycortex_all'):
 
 def serve_nidm(request, collection_cid, nidmdir, sep, path):
     collection = get_collection(collection_cid, request, mode='file')
-    basepath = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images')
-    fpath = path if sep is '/' else ''.join([nidmdir,sep,path])
+    basepath = os.path.join(settings.PRIVATE_MEDIA_ROOT, 'images')
+    fpath = path if sep is '/' else ''.join([nidmdir, sep, path])
     try:
-        nidmr = collection.nidmresults_set.get(name=nidmdir)
-    except:
-        return HttpResponseForbidden
+        nidmr = collection.basecollectionitem_set.instance_of(NIDMResults).get(name=nidmdir)
+    except ObjectDoesNotExist:
+        return HttpResponseForbidden()
 
-    if path in ['zip','ttl','provn']:
-        fieldf = getattr(nidmr,'{0}_file'.format(path))
+    if path in ['zip', 'ttl', 'provn']:
+        fieldf = getattr(nidmr, '{0}_file'.format(path))
         fpath = fieldf.path
     else:
         zipfile = nidmr.zip_file.path
         fpathbase = os.path.dirname(zipfile)
         fpath = ''.join([fpathbase,sep,path])
 
-    return sendfile(request, os.path.join(basepath,fpath), encoding="utf-8")
-
-
-def serve_nidm_image(request, collection_cid, nidmdir, sep, path):
-    collection = get_collection(collection_cid,request,mode='file')
-    path = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',str(collection.id),nidmdir,path)
-    return sendfile(request, path, encoding="utf-8")
+    return sendfile(request, os.path.join(basepath, fpath), encoding="utf-8")
 
 
 def stats_view(request):
