@@ -8,7 +8,7 @@ from neurovault import settings
 from neurovault.apps.statmaps.models import KeyValueTag
 from neurovault.apps.statmaps.views import ImagesInCollectionJson,\
     PublicCollectionsJson, MyCollectionsJson, AtlasesAndParcellationsJson
-from .views import edit_collection, edit_images, view_image, delete_image, edit_image, \
+from .views import edit_collection, view_image, delete_image, edit_image, \
                 view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
                 serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
                 papaya_js_embed, view_images_by_tag, \
@@ -47,9 +47,6 @@ urlpatterns = patterns('',
     url(r'^collections/(?P<cid>\d+|[A-Z]{8})/delete$',
         delete_collection,
         name='delete_collection'),
-    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/editimages$',
-        edit_images,
-        name="edit_images"),
     url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/addimage',
         add_image,
         name="add_image"),

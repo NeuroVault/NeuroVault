@@ -127,7 +127,7 @@ class Collection(models.Model):
 
     @property
     def is_statisticmap_set(self):
-        return all((isinstance(i, StatisticMap) for i in self.image_set.all()))
+        return all((isinstance(i, StatisticMap) for i in self.basecollectionitem_set.all()))
 
     def get_absolute_url(self):
         return_cid = self.id
