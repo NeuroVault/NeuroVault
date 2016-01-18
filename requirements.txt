@@ -22,7 +22,7 @@ scipy
 numexpr
 lxml
 shapely
-git+https://github.com/gallantlab/pycortex.git#egg=pycortex
+git+https://github.com/gallantlab/pycortex.git@fe58400c8c3a3187d930b8a696cda8fec62c0f19#egg=pycortex
 Pillow
 requests
 requests-oauthlib
