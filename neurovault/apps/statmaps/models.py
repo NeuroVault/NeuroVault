@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
+import nibabel as nb
 import os
 import shutil
 from datetime import datetime
-from gzip import GzipFile
-
-import nibabel as nb
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files import File
@@ -17,6 +15,7 @@ from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch.dispatcher import receiver
 from django_hstore import hstore
 from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
+from gzip import GzipFile
 from polymorphic.models import PolymorphicModel
 from taggit.managers import TaggableManager
 from taggit.models import GenericTaggedItemBase, TagBase
@@ -278,7 +277,7 @@ class ValueTaggedItem(GenericTaggedItemBase):
     tag = models.ForeignKey(KeyValueTag, related_name="tagged_items")
 
 
-class BaseCollectionItem(models.Model):
+class BaseCollectionItem(PolymorphicModel, models.Model):
     name = models.CharField(max_length=200, null=False, blank=False, db_index=True)
     description = models.TextField(blank=True)
     collection = models.ForeignKey(Collection)
@@ -291,9 +290,6 @@ class BaseCollectionItem(models.Model):
 
     def set_name(self, new_name):
         self.name = new_name
-
-    class Meta:
-        abstract = True
 
     def save(self):
         self.collection.modify_date = datetime.now()
@@ -326,7 +322,7 @@ class BaseCollectionItem(models.Model):
     def get_fixed_fields(cls):
         return ('name', 'description', 'figure')
 
-class Image(PolymorphicModel, BaseCollectionItem):
+class Image(BaseCollectionItem):
     file = models.FileField(upload_to=upload_img_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='File with the unthresholded map (.img, .nii, .nii.gz)')
     figure = models.CharField(help_text="Which figure in the corresponding paper was this map displayed in?", verbose_name="Corresponding figure", max_length=200, null=True, blank=True)
     thumbnail = models.FileField(help_text="The orthogonal view thumbnail path of the nifti image",
@@ -602,7 +598,6 @@ class NIDMResults(BaseCollectionItem):
 
     class Meta:
         verbose_name_plural = "NIDMResults"
-        unique_together = ('collection','name')
 
     def get_absolute_url(self):
         return_args = [str(self.collection_id),self.name]
