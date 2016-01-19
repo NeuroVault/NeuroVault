@@ -22,6 +22,8 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
+SITE_ID = 1
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
