@@ -57,7 +57,10 @@ def edit_user(request):
     if request.method == "POST":
         if edit_form.is_valid():
             edit_form.save()
-            return HttpResponseRedirect(reverse("my_profile"))
+            messages.success(request,
+                             'Profile has been successfully updated.')
+
+            return HttpResponseRedirect(reverse("edit_user"))
     return render_to_response("registration/edit_profile.html",
                               {'form': edit_form},
                               context_instance=RequestContext(request))
