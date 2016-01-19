@@ -137,26 +137,12 @@ def generate_pycortex_volume(image):
         shutil.rmtree(temp_dir)
 
 
-def generate_pycortex_static(volumes, output_dir, title=None):
-    """
-    Parameters
-    ----------
-
-    volumes: dict
-        key is volume name; value is a set of images.
-
-    output_dir: str
-        file location to dump output html
-
-    title: str (optional)
-        HTML title of pycortex viewer.
-    """
+def generate_pycortex_static(volumes, output_dir):
     app_path = os.path.abspath(os.path.dirname(__file__))
     tpl_path = os.path.join(app_path, 'templates/pycortex/dataview.html')
     ds = cortex.Dataset(**volumes)
-    title = title or ', '.join(volumes.keys())
     cortex.webgl.make_static(output_dir, ds, template=tpl_path, html_embed=False,
-                             copy_ctmfiles=False, title=title)
+                             copy_ctmfiles=False)
 
 
 def generate_url_token(length=8):
@@ -259,9 +245,9 @@ def get_afni_subbrick_labels(nii):
     try:
         tree = etree.fromstring(header[0].get_content())
         lnode = [v for v in tree.findall('.//AFNI_atr') if v.attrib['atr_name'] == 'BRICK_LABS']
-
+    
         # header xml is wrapped in string literals
-
+        
         if lnode:
             retval += literal_eval(lnode[0].text.strip()).split('~')
     except:
@@ -314,7 +300,7 @@ def save_pickle_atomically(pkl_data,filename,directory=None):
     filey.writelines(pickle_text)
     # make sure that all data is on disk
     filey.flush()
-    os.fsync(filey.fileno())
+    os.fsync(filey.fileno()) 
     filey.close()
     os.rename(tmp_file, filename)
 
@@ -419,9 +405,9 @@ def get_server_url(request):
 def format_image_collection_names(image_name,collection_name,total_length,map_type=None):
    # 3/5 total length should be collection, 2/5 image
    collection_length = int(np.floor(.60*total_length))
-   image_length = int(np.floor(total_length - collection_length))
-   if len(image_name) > image_length: image_name = "%s..." % image_name[0:image_length]
-   if len(collection_name) > collection_length: collection_name = "%s..." % collection_name[0:collection_length]
+   image_length = int(np.floor(total_length - collection_length)) 
+   if len(image_name) > image_length: image_name = "%s..." % image_name[0:image_length] 
+   if len(collection_name) > collection_length: collection_name = "%s..." % collection_name[0:collection_length] 
    if map_type == None: return "%s : %s" %(image_name,collection_name)
    else: return "%s : %s [%s]" %(image_name,collection_name,map_type)
 
@@ -459,13 +445,13 @@ def infer_map_type(nii_obj):
                 map_type = BaseStatisticMap.OTHER
                 break
     return map_type
-
+    
 import nibabel as nb
 from nilearn.image import resample_img
 def not_in_mni(nii, plot=False):
     this_path = os.path.abspath(os.path.dirname(__file__))
     mask_nii = nb.load(os.path.join(this_path, "static", 'anatomical','MNI152_T1_2mm_brain_mask.nii.gz'))
-
+    
     #resample to the smaller one
     if np.prod(nii.shape) > np.prod(mask_nii.shape):
         nan_mask = np.isnan(nii.get_data())
@@ -474,19 +460,19 @@ def not_in_mni(nii, plot=False):
         nii = resample_img(nii, target_affine=mask_nii.get_affine(), target_shape=mask_nii.get_shape(),interpolation='nearest')
     else:
         mask_nii = resample_img(mask_nii, target_affine=nii.get_affine(), target_shape=nii.get_shape(),interpolation='nearest')
-
+    
     brain_mask = mask_nii.get_data() > 0
-    excursion_set = np.logical_not(np.logical_or(nii.get_data() == 0, np.isnan(nii.get_data())))
-
+    excursion_set = np.logical_not(np.logical_or(nii.get_data() == 0, np.isnan(nii.get_data())))    
+    
     in_brain_voxels = np.logical_and(excursion_set, brain_mask).sum()
     out_of_brain_voxels = np.logical_and(excursion_set, np.logical_not(brain_mask)).sum()
-
-
+    
+    
     perc_mask_covered = in_brain_voxels/float(brain_mask.sum())*100.0
     if np.isnan(perc_mask_covered):
         perc_mask_covered = 0
     perc_voxels_outside_of_mask = out_of_brain_voxels/float(excursion_set.sum())*100.0
-
+    
     if perc_mask_covered > 50:
         if perc_mask_covered < 90 and perc_voxels_outside_of_mask > 20:
             ret = True
@@ -498,7 +484,7 @@ def not_in_mni(nii, plot=False):
         ret = True
     else:
         ret = False
-
+    
     return ret, perc_mask_covered, perc_voxels_outside_of_mask
 
 

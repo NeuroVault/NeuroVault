@@ -10,7 +10,7 @@ RUN pip install numpy \
     cython
 RUN pip install -v scipy
 RUN pip install scikit-learn pandas h5py matplotlib
-RUN pip install https://github.com/gallantlab/pycortex/archive/fe58400c8c3a3187d930b8a696cda8fec62c0f19.zip --egg
+RUN pip install https://github.com/gallantlab/pycortex/archive/master.zip --egg
 RUN pip install uwsgi
 RUN pip install 'Django==1.8.8'
 RUN pip install 'python-social-auth==0.2.13'
