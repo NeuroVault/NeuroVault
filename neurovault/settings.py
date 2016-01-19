@@ -241,8 +241,8 @@ OAUTH2_PROVIDER = {
     'REQUEST_APPROVAL_PROMPT': 'auto'
 }
 
+LOGIN_REDIRECT_URL = '/my_collections/'
 #LOGIN_URL          = '/login-form/'
-#LOGIN_REDIRECT_URL = '/logged-in/'
 #LOGIN_ERROR_URL    = '/login-error/'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap3'
