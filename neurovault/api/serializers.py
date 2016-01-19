@@ -50,7 +50,6 @@ class SerializedContributors(serializers.CharField):
 class NIDMDescriptionSerializedField(serializers.CharField):
 
     def to_representation(self, value):
-        print self.parent.instance.nidm_results.name
         if value and self.parent.instance is not None:
             parent = self.parent.instance.nidm_results.name
             fname = os.path.split(self.parent.instance.file.name)[-1]
@@ -211,8 +210,8 @@ class NIDMResultsSerializer(serializers.ModelSerializer):
 
 class EditableNIDMResultsSerializer(serializers.ModelSerializer,
                                     NIDMResultsValidationMixin):
-
     def validate(self, data):
+        data['collection'] = self.instance.collection
         return self.clean_and_validate(data)
 
     def save(self):
