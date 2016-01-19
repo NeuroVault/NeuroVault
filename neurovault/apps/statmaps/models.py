@@ -293,22 +293,6 @@ class BaseCollectionItem(PolymorphicModel, models.Model):
         self.collection.save()
         super(BaseCollectionItem, self).delete()
 
-    def validate_unique(self, *args, **kwargs):
-
-        # Centralized validation for all needed uniqueness constraints.
-        # unique_together creates db constraints that break polymorphic children.
-        # Won't anyone please think of the children?!
-        if isinstance(self,NIDMResultStatisticMap):
-            if self.__class__.objects.filter(~Q(id=self.pk),nidm_results=self.nidm_results,
-                                             name=self.name):
-                raise ValidationError({"name":"A statistic map with this name already " +
-                                       "exists in this NIDM Results zip file."})
-        else:
-            if self.__class__.objects.filter(~Q(id=self.pk),collection=self.collection,
-                                             name=self.name):
-                raise ValidationError({"name":"An object with this name already exists in this " +
-                                      "collection."})
-
     @classmethod
     def get_fixed_fields(cls):
         return ('name', 'description', 'figure')
