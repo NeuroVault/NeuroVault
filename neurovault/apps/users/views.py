@@ -42,7 +42,7 @@ def create_user(request):
             if request.POST['next']:
                 return HttpResponseRedirect(request.POST['next'])
             else:
-                return HttpResponseRedirect(reverse("my_profile"))
+                return HttpResponseRedirect(reverse("my_collections"))
     else:
         form = UserCreateForm(instance=User())
 
