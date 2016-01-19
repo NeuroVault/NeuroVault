@@ -1,7 +1,8 @@
 from django.conf.urls import patterns, url
 from django.conf import settings
 from django.contrib import admin
-from .views import view_profile, edit_user, create_user
+from .views import (view_profile, edit_user, create_user,
+                    password_change_done)
 from django.contrib.auth.views import login
 from django.contrib.auth import views as auth_views
 from oauth2_provider.views.application import ApplicationList
@@ -26,7 +27,7 @@ urlpatterns = patterns('',
                     auth_views.password_change,
                     name='password_change'),
     url(r'^password/change/done/$',
-                    auth_views.password_change_done,
+                    password_change_done,
                     name='password_change_done'),
     url(r'^password/reset/$',
                     auth_views.password_reset,

@@ -58,12 +58,21 @@ def edit_user(request):
         if edit_form.is_valid():
             edit_form.save()
             messages.success(request,
-                             'Profile has been successfully updated.')
+                             'Your profile has been successfully updated.')
 
             return HttpResponseRedirect(reverse("edit_user"))
     return render_to_response("registration/edit_profile.html",
                               {'form': edit_form},
                               context_instance=RequestContext(request))
+
+
+@login_required
+def password_change_done(request):
+    messages.success(request,
+                     'Your password has been successfully updated.')
+
+    return HttpResponseRedirect(reverse("password_change"))
+
 
 # def login(request):
 #     return render_to_response('home.html', {
