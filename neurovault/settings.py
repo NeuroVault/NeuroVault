@@ -1,10 +1,9 @@
 # Django settings for neurovault project.
+import matplotlib
 import os
 import sys
 import tempfile
 from datetime import timedelta
-
-import matplotlib
 from kombu import Exchange, Queue
 
 matplotlib.use('Agg')
@@ -272,6 +271,7 @@ CACHES = {
 # Mandrill config
 MANDRILL_API_KEY = "z2O_vfFUJB4L2yeF4Be9Tg" # this is a test key replace wit ha different one in production
 EMAIL_BACKEND = "djrill.mail.backends.djrill.DjrillBackend"
+DEFAULT_FROM_EMAIL = "noreply@neurovault.org"
 
 if os.path.exists('/usr/local/share/pycortex/db/fsaverage'):
     STATICFILES_DIRS = (
