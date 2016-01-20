@@ -234,7 +234,12 @@ REST_FRAMEWORK = {
 
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.ext.rest_framework.OAuth2Authentication',
-    )
+    ),
+    'DEFAULT_RENDERER_CLASSES': (
+        'neurovault.api.utils.ExplicitUnicodeJSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ),
+    'UNICODE_JSON': True,
 }
 
 OAUTH2_PROVIDER = {
