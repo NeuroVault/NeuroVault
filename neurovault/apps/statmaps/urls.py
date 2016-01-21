@@ -8,12 +8,12 @@ from neurovault import settings
 from neurovault.apps.statmaps.models import KeyValueTag
 from neurovault.apps.statmaps.views import ImagesInCollectionJson,\
     PublicCollectionsJson, MyCollectionsJson, AtlasesAndParcellationsJson
-from .views import edit_collection, edit_images, view_image, delete_image, edit_image, \
+from .views import edit_collection, view_image, delete_image, edit_image, \
                 view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
                 serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
                 papaya_js_embed, view_images_by_tag, \
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
-                view_nidm_results, find_similar, compare_images,  edit_metadata, \
+                view_nidm_results, find_similar, compare_images, edit_metadata, \
                 export_images_filenames, delete_nidm_results
 
 urlpatterns = patterns('',
@@ -47,9 +47,6 @@ urlpatterns = patterns('',
     url(r'^collections/(?P<cid>\d+|[A-Z]{8})/delete$',
         delete_collection,
         name='delete_collection'),
-    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/editimages$',
-        edit_images,
-        name="edit_images"),
     url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/addimage',
         add_image,
         name="add_image"),
@@ -120,6 +117,10 @@ urlpatterns = patterns('',
         serve_image,
         name='serve_image'),
 
+    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[0-9a-zA-Z\^\&\'\@\{\}\[\]\,\$\=\!\-\#\(\)\.\%\+\~\_ ]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
+        serve_nidm_image,
+        name='serve_nidm_images'),
+
     # redirect dynamically loaded pycortex scripts
     url(r'^media/images/(\d+|[A-Z]{8})/(.*_pycortex|pycortex_all)/resources/(?P<path>.*).js$',
         RedirectView.as_view(url='{0}pycortex-resources/%(path)s.js'.format(settings.STATIC_URL)),
@@ -141,10 +142,6 @@ urlpatterns = patterns('',
     url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[0-9a-zA-Z\^\&\'\@\{\}\[\]\,\$\=\!\-\#\(\)\.\%\+\~\_ ]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
         serve_nidm,
         name='serve_nidm_files'),
-
-    url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[0-9a-zA-Z\^\&\'\@\{\}\[\]\,\$\=\!\-\#\(\)\.\%\+\~\_ ]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
-        serve_nidm_image,
-        name='serve_nidm_images'),
 
    # Compare images
     url(r'^images/compare/(?P<pk1>\d+)/(?P<pk2>\d+)$',

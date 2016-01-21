@@ -2,6 +2,8 @@ import csv
 import functools
 import gzip
 import json
+import nibabel as nib
+import numpy as np
 import os
 import re
 import shutil
@@ -10,14 +12,9 @@ import tempfile
 import traceback
 import zipfile
 from collections import OrderedDict
-from fnmatch import fnmatch
-from xml.dom import minidom
-
-import nibabel as nib
-import numpy as np
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Q
 from django.db.models.aggregates import Count
@@ -29,12 +26,14 @@ from django.utils.encoding import filepath_to_uri
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
+from fnmatch import fnmatch
 from guardian.shortcuts import get_objects_for_user
 from nidmviewer.viewer import generate
 from pybraincompare.compare import scatterplot, search
 from rest_framework.renderers import JSONRenderer
 from sendfile import sendfile
 from sklearn.externals import joblib
+from xml.dom import minidom
 
 import neurovault
 from neurovault import settings
@@ -91,44 +90,6 @@ def get_image(pk,collection_cid,request,mode=None):
             raise PermissionDenied()
     else:
         return image
-
-
-@login_required
-@never_cache
-def edit_images(request, collection_cid):
-    collection = get_collection(collection_cid,request)
-    if not owner_or_contrib(request,collection):
-        return HttpResponseForbidden()
-    if request.method == "POST":
-        formset = CollectionFormSet(request.POST, request.FILES, instance=collection)
-        for n,form in enumerate(formset):
-            # hack: check fields to determine polymorphic type
-            if form.instance.polymorphic_ctype is None:
-                atlas_f = 'image_set-{0}-label_description_file'.format(n)
-                has_atlas = [v for v in form.files if v == atlas_f]
-                if has_atlas:
-                    use_model = Atlas
-                    use_form = AtlasForm
-                else:
-                    use_model = StatisticMap
-                    use_form = StatisticMapForm
-                form.instance = use_model(collection=collection)
-                form.base_fields = use_form.base_fields
-                form.fields = use_form.base_fields
-        if formset.is_valid():
-            formset.save()
-            return HttpResponseRedirect(collection.get_absolute_url())
-    else:
-        formset = CollectionFormSet(instance=collection)
-
-    blank_statmap = StatisticMapForm(instance=StatisticMap(collection=collection))
-    blank_atlas = AtlasForm(instance=Atlas(collection=collection))
-    upload_form = UploadFileForm()
-    context = {"formset": formset, "blank_statmap": blank_statmap,
-               "blank_atlas": blank_atlas, "upload_form":upload_form}
-
-    return render(request, "statmaps/edit_images.html", context)
-
 
 @login_required
 def edit_collection(request, cid=None):
@@ -221,7 +182,7 @@ def edit_metadata(request, collection_cid):
             **image_metadata.handle_post_metadata(
                 request, collection, 'Images metadata have been saved.'))
 
-    collection_images = collection.image_set.all().order_by('pk')
+    collection_images = collection.basecollectionitem_set.instance_of(Image).order_by('pk')
     data_headers = image_metadata.get_data_headers(collection_images)
     metadata = image_metadata.get_images_metadata(collection_images)
     datasources = get_field_datasources()
@@ -292,7 +253,7 @@ def view_collection(request, cid):
     collection = get_collection(cid,request)
     edit_permission = request.user.has_perm('statmaps.change_collection', collection)
     delete_permission = request.user.has_perm('statmaps.delete_collection', collection)
-    is_empty = not collection.image_set.exists()
+    is_empty = not collection.basecollectionitem_set.exists()
     context = {'collection': collection,
             'is_empty': is_empty,
             'user': request.user,
@@ -301,7 +262,7 @@ def view_collection(request, cid):
             'cid':cid}
 
     if not is_empty:
-        context["first_image"] = collection.image_set.all().order_by("pk")[0]
+        context["first_image"] = collection.basecollectionitem_set.order_by("pk")[0]
 
     if owner_or_contrib(request,collection):
         form = UploadFileForm()
@@ -351,7 +312,7 @@ def view_nidm_results(request, collection_cid, nidm_name):
     collection = get_collection(collection_cid,request)
     nidmr = get_object_or_404(NIDMResults, collection=collection,name=nidm_name)
     if request.method == "POST":
-        if not request.user.has_perm("statmaps.change_nidmresults", nidmr):
+        if not request.user.has_perm("statmaps.change_basecollectionitem", nidmr):
             return HttpResponseForbidden()
         form = NIDMResultsForm(request.POST, request.FILES, instance=nidmr)
         if form.is_valid():
@@ -396,7 +357,7 @@ def delete_nidm_results(request, collection_cid, nidm_name):
     collection = get_collection(collection_cid,request)
     nidmr = get_object_or_404(NIDMResults, collection=collection, name=nidm_name)
 
-    if request.user.has_perm("statmaps.delete_nidmresults", nidmr):
+    if request.user.has_perm("statmaps.delete_basecollectionitem", nidmr):
         nidmr.delete()
         return redirect('collection_details', cid=collection_cid)
     else:
@@ -609,7 +570,7 @@ def upload_folder(request, collection_cid):
 def delete_image(request, pk):
     image = get_object_or_404(Image,pk=pk)
     cid = image.collection.pk
-    if not request.user.has_perm("statmaps.delete_image", image):
+    if not request.user.has_perm("statmaps.delete_basecollectionitem", image):
         return HttpResponseForbidden()
     image.delete()
     return redirect('collection_details', cid=cid)
@@ -645,7 +606,7 @@ def view_image_with_pycortex(request, pk, collection_cid=None):
 def view_collection_with_pycortex(request, cid):
     volumes = {}
     collection = get_collection(cid,request,mode='file')
-    images = collection.image_set.all()
+    images = collection.basecollectionitem_set.instance_of(Image)
 
     if not images:
         return redirect(collection)
@@ -688,29 +649,27 @@ def serve_pycortex(request, collection_cid, path, pycortex_dir='pycortex_all'):
 
 def serve_nidm(request, collection_cid, nidmdir, sep, path):
     collection = get_collection(collection_cid, request, mode='file')
-    basepath = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images')
-    fpath = path if sep is '/' else ''.join([nidmdir,sep,path])
+    basepath = os.path.join(settings.PRIVATE_MEDIA_ROOT, 'images')
+    fpath = path if sep is '/' else ''.join([nidmdir, sep, path])
     try:
-        nidmr = collection.nidmresults_set.get(name=nidmdir)
-    except:
-        return HttpResponseForbidden
+        nidmr = collection.basecollectionitem_set.instance_of(NIDMResults).get(name=nidmdir)
+    except ObjectDoesNotExist:
+        return HttpResponseForbidden()
 
-    if path in ['zip','ttl','provn']:
-        fieldf = getattr(nidmr,'{0}_file'.format(path))
+    if path in ['zip', 'ttl', 'provn']:
+        fieldf = getattr(nidmr, '{0}_file'.format(path))
         fpath = fieldf.path
     else:
         zipfile = nidmr.zip_file.path
         fpathbase = os.path.dirname(zipfile)
         fpath = ''.join([fpathbase,sep,path])
 
-    return sendfile(request, os.path.join(basepath,fpath), encoding="utf-8")
-
+    return sendfile(request, os.path.join(basepath, fpath), encoding="utf-8")
 
 def serve_nidm_image(request, collection_cid, nidmdir, sep, path):
     collection = get_collection(collection_cid,request,mode='file')
     path = os.path.join(settings.PRIVATE_MEDIA_ROOT,'images',str(collection.id),nidmdir,path)
     return sendfile(request, path, encoding="utf-8")
-
 
 def stats_view(request):
     collections_by_journals = {}
@@ -978,7 +937,7 @@ class ImagesInCollectionJson(BaseDatatableView):
         # You should not filter data returned here by any filter values entered by user. This is because
         # we need some base queryset to count total number of records.
         collection = get_collection(self.kwargs['cid'], self.request)
-        return collection.image_set.all()
+        return collection.basecollectionitem_set.all()
 
     def render_column(self, row, column):
         if row.polymorphic_ctype.name == "statistic map":
@@ -988,7 +947,10 @@ class ImagesInCollectionJson(BaseDatatableView):
 
         # We want to render user as a custom column
         if column == 'file.url':
-            return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>'%(filepath_to_uri(row.file.url), type)
+            if isinstance(row, Image):
+                return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>'%(filepath_to_uri(row.file.url), type)
+            elif isinstance(row, NIDMResults):
+                return ""
         elif column == 'polymorphic_ctype.name':
             return type
         else:
@@ -1064,7 +1026,7 @@ class PublicCollectionsJson(BaseDatatableView):
             else:
                 return ""
         elif column == 'n_images':
-            return row.image_set.count()
+            return row.basecollectionitem_set.count()
         else:
             return super(PublicCollectionsJson, self).render_column(row, column)
 

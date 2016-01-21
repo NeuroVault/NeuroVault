@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
+import nibabel as nb
 import os
 import shutil
 from datetime import datetime
-from gzip import GzipFile
-
-import nibabel as nb
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files import File
@@ -17,6 +15,7 @@ from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch.dispatcher import receiver
 from django_hstore import hstore
 from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
+from gzip import GzipFile
 from polymorphic.models import PolymorphicModel
 from taggit.managers import TaggableManager
 from taggit.models import GenericTaggedItemBase, TagBase
@@ -128,7 +127,7 @@ class Collection(models.Model):
 
     @property
     def is_statisticmap_set(self):
-        return all((isinstance(i, StatisticMap) for i in self.image_set.all()))
+        return all((isinstance(i, StatisticMap) for i in self.basecollectionitem_set.all()))
 
     def get_absolute_url(self):
         return_cid = self.id
@@ -161,7 +160,7 @@ class Collection(models.Model):
         super(Collection, self).save(*args, **kwargs)
 
         if (privacy_changed and not self.private) or (DOI_changed and self.DOI is not None):
-            for image in self.image_set.all():
+            for image in self.basecollectionitem_set.instance_of(Image).all():
                 if image.pk:
                     generate_glassbrain_image.apply_async([image.pk])
                     run_voxelwise_pearson_similarity.apply_async([image.pk])
@@ -171,8 +170,8 @@ class Collection(models.Model):
 
     def delete(self, using=None):
         cid = self.pk
-        for image in self.image_set.all():
-            image.delete()
+        for basecollectionitem in self.basecollectionitem_set.all():
+            basecollectionitem.delete()
         ret = models.Model.delete(self, using=using)
         collDir = os.path.join(PRIVATE_MEDIA_ROOT, 'images',str(cid))
         try:
@@ -187,12 +186,9 @@ def collection_created(sender, instance, created, **kwargs):
     if created:
         assign_perm('delete_collection', instance.owner, instance)
         assign_perm('change_collection', instance.owner, instance)
-        for image in instance.image_set.all():
-            assign_perm('change_image', instance.owner, image)
-            assign_perm('delete_image', instance.owner, image)
-        for nidmresult in instance.nidmresults_set.all():
-            assign_perm('change_nidmresults', instance.owner, nidmresult)
-            assign_perm('delete_nidmresults', instance.owner, nidmresult)
+        for image in instance.basecollectionitem_set.all():
+            assign_perm('change_basecollectionitem', instance.owner, image)
+            assign_perm('delete_basecollectionitem', instance.owner, image)
 
 def contributors_changed(sender, instance, action, **kwargs):
     if action in ["post_remove", "post_add", "post_clear"]:
@@ -202,22 +198,16 @@ def contributors_changed(sender, instance, action, **kwargs):
         for contributor in list(new_contributors - current_contributors):
             contributor = User.objects.get(pk=contributor)
             assign_perm('change_collection', contributor, instance)
-            for image in instance.image_set.all():
-                assign_perm('change_image', contributor, image)
-                assign_perm('delete_image', contributor, image)
-            for nidmresult in instance.nidmresults_set.all():
-                assign_perm('change_nidmresults', contributor, nidmresult)
-                assign_perm('delete_nidmresults', contributor, nidmresult)
+            for image in instance.basecollectionitem_set.all():
+                assign_perm('change_basecollectionitem', contributor, image)
+                assign_perm('delete_basecollectionitem', contributor, image)
                 
         for contributor in (current_contributors - new_contributors):
             contributor = User.objects.get(pk=contributor)
             remove_perm('change_collection', contributor, instance)
-            for image in instance.image_set.all():
-                remove_perm('change_image', contributor, image)
-                remove_perm('delete_image', contributor, image)
-            for nidmresult in instance.nidmresults_set.all():
-                remove_perm('change_nidmresults', contributor, nidmresult)
-                remove_perm('delete_nidmresults', contributor, nidmresult)
+            for image in instance.basecollectionitem_set.all():
+                remove_perm('change_basecollectionitem', contributor, image)
+                remove_perm('delete_basecollectionitem', contributor, image)
 
 m2m_changed.connect(contributors_changed, sender=Collection.contributors.through)
 
@@ -278,7 +268,7 @@ class ValueTaggedItem(GenericTaggedItemBase):
     tag = models.ForeignKey(KeyValueTag, related_name="tagged_items")
 
 
-class BaseCollectionItem(models.Model):
+class BaseCollectionItem(PolymorphicModel, models.Model):
     name = models.CharField(max_length=200, null=False, blank=False, db_index=True)
     description = models.TextField(blank=True)
     collection = models.ForeignKey(Collection)
@@ -292,9 +282,6 @@ class BaseCollectionItem(models.Model):
     def set_name(self, new_name):
         self.name = new_name
 
-    class Meta:
-        abstract = True
-
     def save(self):
         self.collection.modify_date = datetime.now()
         self.collection.save()
@@ -306,27 +293,20 @@ class BaseCollectionItem(models.Model):
         self.collection.save()
         super(BaseCollectionItem, self).delete()
 
-    def validate_unique(self, *args, **kwargs):
-
-        # Centralized validation for all needed uniqueness constraints.
-        # unique_together creates db constraints that break polymorphic children.
-        # Won't anyone please think of the children?!
-        if isinstance(self,NIDMResultStatisticMap):
-            if self.__class__.objects.filter(~Q(id=self.pk),nidm_results=self.nidm_results,
-                                             name=self.name):
-                raise ValidationError({"name":"A statistic map with this name already " +
-                                       "exists in this NIDM Results zip file."})
-        else:
-            if self.__class__.objects.filter(~Q(id=self.pk),collection=self.collection,
-                                             name=self.name):
-                raise ValidationError({"name":"An object with this name already exists in this " +
-                                      "collection."})
-
     @classmethod
     def get_fixed_fields(cls):
         return ('name', 'description', 'figure')
 
-class Image(PolymorphicModel, BaseCollectionItem):
+
+# sadly signals are not emitted for base classes so we need to connect this to every class separately
+def basecollectionitem_created(sender, instance, created, **kwargs):
+    if created:
+        for user in [instance.collection.owner, ] + list(instance.collection.contributors.all()):
+            assign_perm('change_basecollectionitem', user, instance)
+            assign_perm('delete_basecollectionitem', user, instance)
+
+
+class Image(BaseCollectionItem):
     file = models.FileField(upload_to=upload_img_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='File with the unthresholded map (.img, .nii, .nii.gz)')
     figure = models.CharField(help_text="Which figure in the corresponding paper was this map displayed in?", verbose_name="Corresponding figure", max_length=200, null=True, blank=True)
     thumbnail = models.FileField(help_text="The orthogonal view thumbnail path of the nifti image",
@@ -423,12 +403,6 @@ class Image(PolymorphicModel, BaseCollectionItem):
                     os.remove(old_path)
             super(Image, self).save()
 
-
-def image_created(sender, instance, created, **kwargs):
-    if created:
-        for user in [instance.collection.owner, ] + list(instance.collection.contributors.all()):
-            assign_perm('change_image', user, instance)
-            assign_perm('delete_image', user, instance)
 
 
 class BaseStatisticMap(Image):
@@ -582,8 +556,7 @@ class StatisticMap(BaseStatisticMap):
         return super(StatisticMap, cls).get_fixed_fields() + (
             'modality', 'contrast_definition', 'cognitive_paradigm_cogatlas')
 
-post_save.connect(image_created, sender=StatisticMap, weak=True)
-
+post_save.connect(basecollectionitem_created, sender=StatisticMap, weak=True)
 
 class NIDMResults(BaseCollectionItem):
     ttl_file = models.FileField(upload_to=upload_nidm_to,
@@ -602,7 +575,6 @@ class NIDMResults(BaseCollectionItem):
 
     class Meta:
         verbose_name_plural = "NIDMResults"
-        unique_together = ('collection','name')
 
     def get_absolute_url(self):
         return_args = [str(self.collection_id),self.name]
@@ -615,12 +587,6 @@ class NIDMResults(BaseCollectionItem):
     def get_form_class():
         from neurovault.apps.statmaps.forms import NIDMResultsForm
         return NIDMResultsForm
-    
-    def save(self):
-        BaseCollectionItem.save(self)
-        for user in [self.collection.owner,] + list(self.collection.contributors.all()):
-            assign_perm('change_nidmresults', user, self)
-            assign_perm('delete_nidmresults', user, self)
 
 @receiver(post_delete, sender=NIDMResults)
 def mymodel_delete(sender, instance, **kwargs):
@@ -628,13 +594,13 @@ def mymodel_delete(sender, instance, **kwargs):
     if os.path.isdir(nidm_path):
         shutil.rmtree(nidm_path)
 
+post_save.connect(basecollectionitem_created, sender=NIDMResults, weak=True)
+
 
 class NIDMResultStatisticMap(BaseStatisticMap):
     nidm_results = models.ForeignKey(NIDMResults)
 
-
-post_save.connect(image_created, sender=NIDMResultStatisticMap, weak=True)
-
+post_save.connect(basecollectionitem_created, sender=NIDMResultStatisticMap, weak=True)
 
 class Atlas(Image):
     label_description_file = models.FileField(
@@ -646,9 +612,7 @@ class Atlas(Image):
     class Meta:
         verbose_name_plural = "Atlases"
 
-
-post_save.connect(image_created, sender=Atlas, weak=True)
-
+post_save.connect(basecollectionitem_created, sender=Atlas, weak=True)
 
 class Similarity(models.Model):
     similarity_metric = models.CharField(max_length=200, null=False, blank=False, db_index=True,help_text="the name of the similarity metric to describe a relationship between two or more images.",verbose_name="similarity metric name")

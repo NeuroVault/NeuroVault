@@ -1,19 +1,18 @@
-from django.test import TestCase, Client, override_settings, RequestFactory
-from django.core.urlresolvers import reverse
-from neurovault.apps.statmaps.models import Collection, User, Image, Atlas
-from django.core.files.uploadedfile import SimpleUploadedFile
 import json
-from uuid import uuid4
-import tempfile
+import nibabel
 import os
 import shutil
+import tempfile
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.urlresolvers import reverse
+from django.test import TestCase, Client, override_settings, RequestFactory
+from uuid import uuid4
+
+from neurovault.apps.statmaps.models import Collection, User, Image, Atlas, Image
 from neurovault.apps.statmaps.utils import detect_4D, split_4D_to_3D
-import nibabel
-from .utils import clearDB, save_statmap_form
-from neurovault.settings import PRIVATE_MEDIA_ROOT
-
 from neurovault.apps.statmaps.views import delete_collection
-
+from neurovault.settings import PRIVATE_MEDIA_ROOT
+from .utils import clearDB, save_statmap_form
 
 
 class CollectionSharingTest(TestCase):

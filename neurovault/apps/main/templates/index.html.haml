@@ -60,7 +60,7 @@ var addthis_config = {
                         %td.col-md-9
                             %a{href: "{% url 'collection_details' collection.id %}"}= collection.name
                         %td.col-md-1
-                            {{ collection.image_set.all.count }}
+                            {{ collection.basecollectionitem_set.all.count }}
                         
 .row
     .span11.text-center

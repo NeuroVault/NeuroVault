@@ -1,13 +1,15 @@
-from neurovault.apps.statmaps.models import User, Collection
-from django.test import TestCase, Client
 import os
-import tempfile
 import shutil
+import tarfile
+import tempfile
+from django.core.urlresolvers import reverse
+from django.test import TestCase, Client
+from zipfile import ZipFile
+
+from neurovault.apps.statmaps.models import User, Collection, Image
 from .utils import clearDB
 
-from django.core.urlresolvers import reverse
-from zipfile import ZipFile
-import tarfile
+
 # The function 'reverse' resolves a view name and its arguments into a path
 # which can be passed into the method self.client.get(). We use the 'reverse'
 # method here in order to avoid writing hard-coded URLs inside tests.
@@ -50,13 +52,13 @@ class UploadFolderTestCase(TestCase):
             response = self.client.post(reverse('upload_folder', kwargs={'collection_cid': self.coll.id}), {'collection_cid': self.coll.id, 'file': fp})
         # Assert that self.post is actually returned by the post_detail view
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(self.coll.image_set.count(), 4)
+        self.assertEqual(self.coll.basecollectionitem_set.instance_of(Image).count(), 4)
         
     def test_upload_tar_gz(self):
         with open(os.path.join(self.tmpdir, 'example.tar.gz')) as fp:
             response = self.client.post(reverse('upload_folder', kwargs={'collection_cid': self.coll.id}), {'collection_cid': self.coll.id, 'file': fp})
         # Assert that self.post is actually returned by the post_detail view
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(self.coll.image_set.count(), 4)
+        self.assertEqual(self.coll.basecollectionitem_set.instance_of(Image).count(), 4)
 
         

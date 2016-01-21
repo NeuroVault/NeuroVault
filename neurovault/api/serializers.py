@@ -1,9 +1,8 @@
 import os
-
 import pandas as pd
+from django.contrib.auth.models import User
 from django.forms.utils import ErrorDict, ErrorList
 from django.utils.http import urlquote
-from django.contrib.auth.models import User
 from rest_framework import serializers
 from rest_framework.relations import PrimaryKeyRelatedField, StringRelatedField
 
@@ -14,7 +13,7 @@ from neurovault.apps.statmaps.forms import (handle_update_ttl_urls,
 from neurovault.apps.statmaps.models import (Atlas, Collection, Image,
                                              NIDMResults,
                                              NIDMResultStatisticMap,
-                                             StatisticMap)
+                                             StatisticMap, BaseCollectionItem)
 
 
 class HyperlinkedFileField(serializers.FileField):
@@ -51,7 +50,6 @@ class SerializedContributors(serializers.CharField):
 class NIDMDescriptionSerializedField(serializers.CharField):
 
     def to_representation(self, value):
-        print self.parent.instance.nidm_results.name
         if value and self.parent.instance is not None:
             parent = self.parent.instance.nidm_results.name
             fname = os.path.split(self.parent.instance.file.name)[-1]
@@ -74,7 +72,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
     file_size = serializers.SerializerMethodField()
 
     class Meta:
-        model = Image
+        model = BaseCollectionItem
         exclude = ['polymorphic_ctype']
 
     def get_file_size(self, obj):
@@ -93,6 +91,9 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
         elif isinstance(obj, NIDMResultStatisticMap):
             serializer = NIDMResultStatisticMapSerializer
             image_type = 'NIDM results statistic map'
+        elif isinstance(obj, NIDMResults):
+            serializer = NIDMResultsSerializer
+            image_type = 'NIDM Results'
 
         orderedDict = serializer(obj, context={
             'request': self.context['request']}).to_representation(obj)
@@ -209,8 +210,8 @@ class NIDMResultsSerializer(serializers.ModelSerializer):
 
 class EditableNIDMResultsSerializer(serializers.ModelSerializer,
                                     NIDMResultsValidationMixin):
-
     def validate(self, data):
+        data['collection'] = self.instance.collection
         return self.clean_and_validate(data)
 
     def save(self):
@@ -229,8 +230,7 @@ class EditableNIDMResultsSerializer(serializers.ModelSerializer,
 class CollectionSerializer(serializers.ModelSerializer):
     url = HyperlinkedImageURL(source='get_absolute_url', read_only=True)
     owner = serializers.ReadOnlyField(source='owner.id')
-    images = ImageSerializer(many=True, source='image_set')
-    nidm_results = NIDMResultsSerializer(many=True, source='nidmresults_set')
+    images = ImageSerializer(many=True, source='basecollectionitem_set')
     contributors = SerializedContributors(required=False)
     owner_name = serializers.SerializerMethodField()
 
@@ -239,4 +239,4 @@ class CollectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Collection
-        exclude = ['private_token', 'private', 'images', 'nidm_results']
+        exclude = ['private_token', 'private', 'images']

@@ -1,16 +1,15 @@
+import functools
+import json
 import os
 import re
 from collections import defaultdict
-import json
-import functools
-
-from django.core.exceptions import ValidationError
-from django.db.models.fields import FieldDoesNotExist
 from django.contrib import messages
-from django.db.models.fields.related import ForeignKey
+from django.core.exceptions import ValidationError
 from django.db.models import Model
+from django.db.models.fields import FieldDoesNotExist
+from django.db.models.fields.related import ForeignKey
 
-from .models import StatisticMap
+from .models import StatisticMap, Image
 
 
 class MetadataGridValidationError(ValidationError):
@@ -146,7 +145,7 @@ def save_metadata(collection, metadata):
     metadata_dict = list_to_dict(metadata_list,
                                  key=lambda x: x['Filename'])
 
-    image_obj_list = collection.image_set.all()
+    image_obj_list = collection.basecollectionitem_set.instance_of(Image).all()
     image_obj_dict = list_to_dict(image_obj_list,
                                   key=file_basename)
 
@@ -257,4 +256,4 @@ def get_images_metadata(image_obj_list):
 
 def get_images_filenames(collection):
     return [os.path.basename(image.file.name)
-            for image in collection.image_set.all()]
+            for image in collection.basecollection_set.instance_of(Image).all()]

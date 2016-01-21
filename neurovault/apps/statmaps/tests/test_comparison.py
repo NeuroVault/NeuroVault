@@ -1,13 +1,12 @@
+import nibabel
+import numpy
 import os
 import shutil
 import tempfile
-
-import nibabel
-import numpy
 from django.test import TestCase
 from numpy.testing import assert_almost_equal, assert_equal
 
-from neurovault.apps.statmaps.models import Comparison, Similarity, User, Collection
+from neurovault.apps.statmaps.models import Comparison, Similarity, User, Collection, Image
 from neurovault.apps.statmaps.tasks import save_voxelwise_pearson_similarity, get_images_by_ordered_id, save_resampled_transformation_single
 from neurovault.apps.statmaps.tests.utils import clearDB, save_statmap_form
 from neurovault.apps.statmaps.utils import split_4D_to_3D
@@ -160,7 +159,7 @@ class ComparisonTestCase(TestCase):
         private_collection2.private = False
         private_collection2.save()
         print "after private: %s"%Comparison.objects.all().count()
-        print private_collection1.image_set.all()
+        print private_collection1.basecollectionitem_set.instance_of(Image).all()
         comparison = Comparison.objects.filter(image1=private_image1,image2=private_image2)
         self.assertEqual(len(comparison), 1)
 
@@ -185,6 +184,6 @@ class ComparisonTestCase(TestCase):
         private_collection.DOI = '10.3389/fninf.2015.00020'
         private_collection.save()
         print "with DOI: %s"%Comparison.objects.all().count()
-        print private_collection.image_set.all()
+        print private_collection.basecollectionitem_set.instance_of(Image).all()
         comparison = Comparison.objects.filter(image1=private_image1,image2=private_image2)
         self.assertEqual(len(comparison), 1)
