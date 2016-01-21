@@ -170,9 +170,11 @@ class Collection(models.Model):
 
     def delete(self, using=None):
         cid = self.pk
-        for basecollectionitem in self.basecollectionitem_set.all():
-            basecollectionitem.delete()
-        ret = models.Model.delete(self, using=using)
+        for image in self.basecollectionitem_set.instance_of(Image):
+            image.delete()
+        for nidmresult in self.basecollectionitem_set.instance_of(NIDMResults):
+            nidmresult.delete()
+        ret = super(Collection, self).delete(using=using)
         collDir = os.path.join(PRIVATE_MEDIA_ROOT, 'images',str(cid))
         try:
             shutil.rmtree(collDir)
