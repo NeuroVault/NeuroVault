@@ -220,6 +220,7 @@ class NIDMResultsSerializer(serializers.ModelSerializer,
     statmaps = ImageSerializer(many=True, source='nidmresultstatisticmap_set')
 
     def validate(self, data):
+        data['collection'] = self.instance.collection
         return self.clean_and_validate(data)
 
     def save(self):
