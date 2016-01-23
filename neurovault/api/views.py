@@ -83,7 +83,7 @@ class ImageViewSet(mixins.RetrieveModelMixin,
 
     queryset = Image.objects.filter(collection__private=False)
     serializer_class = ImageSerializer
-    permission_classes = (ObjectOnlyPermissions,)
+    permission_classes = (ObjectOnlyPolymorphicPermissions,)
 
     def _get_api_image(self, request, pk=None):
         private_url = re.match(r'^[A-Z]{8}\-\d+$', pk)
@@ -334,7 +334,7 @@ class NIDMResultsViewSet(mixins.RetrieveModelMixin,
 
     queryset = NIDMResults.objects.filter(collection__private=False)
     serializer_class = NIDMResultsSerializer
-    permission_classes = (ObjectOnlyPermissions,)
+    permission_classes = (ObjectOnlyPolymorphicPermissions,)
 
 
 class TagViewSet(viewsets.ModelViewSet):
