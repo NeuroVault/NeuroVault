@@ -192,6 +192,18 @@ var params = [];
                 {% endif %}
             </div>
          </div>
+
+     {% if messages %}
+         <div class="row">
+            <ul class="messages">
+                {% for message in messages %}
+                <div class="alert alert-dismissible alert-danger">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </ul>
+         </div>
+            {% endif %}
          <div class="row">
             <div class="col-md-9">
              <form action="upload_folder" enctype="multipart/form-data" method= "POST" name="upload_folder_form">
@@ -257,15 +269,6 @@ var params = [];
 
 <!-- Content-->
 <div class="row">
-        {% if messages %}
-        <ul class="messages">
-            {% for message in messages %}
-            <div class="alert alert-dismissible alert-danger">
-                <button class="close data-dismiss alert" type="button">× {{ message }}</button>
-            </div>
-            {% endfor %}
-        </ul>
-        {% endif %}
 
 <div class="col-md-6" style="margin-top:20px">    
     <div class="papaya" data-params="params" style="width:560px; float:left;"></div>

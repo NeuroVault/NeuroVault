@@ -237,6 +237,10 @@ def view_image(request, pk, collection_cid=None):
     else:
         if np.isnan(image.perc_bad_voxels) or np.isnan(image.perc_voxels_outside):
             context['warning'] = "Warning: This map seems to be empty!"
+        elif not image.is_valid:
+            context['warning'] = "Warning: This map is missing some mandatory metadata!"
+            if user_owns_image:
+                context['warning'] += "Please edit image details to provide the missing information."
         elif image.not_mni:
             context['warning'] = "Warning: This map seems not to be in the MNI space (%.4g%% of meaningful voxels are outside of the brain). "%image.perc_voxels_outside
             context['warning'] += "Please transform the map to MNI space. "
@@ -260,6 +264,12 @@ def view_collection(request, cid):
             'delete_permission': delete_permission,
             'edit_permission': edit_permission,
             'cid':cid}
+
+    if not all(collection.basecollectionitem_set.instance_of(StatisticMap).values_list('is_valid', flat=True)):
+        msg = "Some of the images in this collection are missing crucial metadata."
+        if owner_or_contrib(request,collection):
+            msg += "Please add the missing information by editing images metadata."
+        context["messages"] = [msg]
 
     if not is_empty:
         context["first_image"] = collection.basecollectionitem_set.order_by("pk")[0]
@@ -543,7 +553,7 @@ def upload_folder(request, collection_cid):
                                     open(atlases[os.path.join(path,name)]).read(),
                                                                     name=name + ".xml")
                     else:
-                        new_image = StatisticMap(name=spaced_name,
+                        new_image = StatisticMap(name=spaced_name, is_valid=False,
                                 description=raw_hdr['descrip'] or label, collection=collection)
                         new_image.map_type = map_type
 
