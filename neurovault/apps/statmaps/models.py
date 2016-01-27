@@ -277,7 +277,7 @@ class BaseCollectionItem(PolymorphicModel, models.Model):
     add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
     tags = TaggableManager(through=ValueTaggedItem, blank=True)
-    is_valid = models.BooleanField()
+    is_valid = models.BooleanField(default=True)
 
     def __unicode__(self):
         return self.name
