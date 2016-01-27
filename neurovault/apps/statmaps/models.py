@@ -465,6 +465,7 @@ class BaseStatisticMap(Image):
             nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(self.file.name, gzfileobj)})
             self.is_thresholded, ratio_bad = nvutils.is_thresholded(nii)
             self.perc_bad_voxels = ratio_bad*100.0
+            self.file.close()
 
         if self.brain_coverage == None and self.file:
             import neurovault.apps.statmaps.utils as nvutils
@@ -472,6 +473,7 @@ class BaseStatisticMap(Image):
             gzfileobj = GzipFile(filename=self.file.name, mode='rb', fileobj=self.file.file)
             nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(self.file.name, gzfileobj)})
             self.not_mni, self.brain_coverage, self.perc_voxels_outside = nvutils.not_in_mni(nii)
+            self.file.close()
 
         if self.map_type == self.OTHER:
             import neurovault.apps.statmaps.utils as nvutils
@@ -479,6 +481,7 @@ class BaseStatisticMap(Image):
             gzfileobj = GzipFile(filename=self.file.name, mode='rb', fileobj=self.file.file)
             nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(self.file.name, gzfileobj)})
             self.map_type = nvutils.infer_map_type(nii)
+            self.file.close()
 
         # Calculation of image reduced_representation and comparisons
         file_changed = False
