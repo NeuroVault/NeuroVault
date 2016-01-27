@@ -5,6 +5,26 @@
 <script src="{% static "scripts/jquery-1.10.2.min.js"%}" type="text/javascript"></script>
 <script src="{% static "scripts/bootstrap.min.js"%}" type="text/javascript"></script>
 <link href="http://netdna.bootstrapcdn.com/font-awesome/3.1.1/css/font-awesome.css" rel="stylesheet">
+<style>
+tr.invalid * {
+    color: #a94442;
+}
+tr.invalid a:hover {
+    color: #a94442;
+}
+tr.invalid td {
+    background-color: #f2dede;
+    color: #a94442;
+}
+div.alert a {
+    color: #a94442;
+    text-decoration: underline;
+}
+div.alert a:hover {
+    color: #a94442;
+}
+</style>
+
 
 <title>{% block title %}NeuroVault: {{collection.name}}{% endblock %}</title>
 
@@ -198,7 +218,7 @@ var params = [];
             <ul class="messages">
                 {% for message in messages %}
                 <div class="alert alert-dismissible alert-danger">
-                    {{ message }}
+                    {{ message|safe }}
                 </div>
                 {% endfor %}
             </ul>
@@ -285,7 +305,7 @@ var params = [];
         <div class='tab-content'>
                <div id='images' class='tab-pane active'>
                {% if not is_empty or not edit_permission %}
-               <table id="collection-images-datatable" class="table table-condensed table-striped table-hover">
+               <table id="collection-images-datatable" class="compact">
                <thead>
                       <tr>
                           <th>View</th>
@@ -315,7 +335,7 @@ var params = [];
               
               {% if not is_empty %}
               <div id="details" class="tab-pane">
-                  <table id="collection-details-datatable" class="table table-condensed table-striped table-hover">
+                  <table id="collection-details-datatable" class="compact">
                   <thead>
                       <tr>
                           <th>Field</th>
@@ -354,10 +374,18 @@ $(document).ready(function() {
     $('#collection-images-datatable').dataTable({
         "processing": true,
         "serverSide": true,
+        "pagingType": "full",
+        "lengthMenu": [ 7, 10, 25, 50, 75, 100 ],
         "columnDefs": [
     		{ "orderable": false, "targets": 0 }
   		],
         "order": [[ 1, "asc" ]],
+        "createdRow": function( row, data, dataIndex ) {
+              if (data[4] == false) {
+                $(row).removeClass('odd');
+                $(row).addClass('invalid');
+              }
+        },
         {% if collection.private %}
         "ajax": "{% url 'collection_images_json' collection.private_token %}"
         {% else %}

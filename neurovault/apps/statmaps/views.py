@@ -240,7 +240,7 @@ def view_image(request, pk, collection_cid=None):
         elif not image.is_valid:
             context['warning'] = "Warning: This map is missing some mandatory metadata!"
             if user_owns_image:
-                context['warning'] += "Please edit image details to provide the missing information."
+                context['warning'] += " Please <a href='edit'>edit image details</a> to provide the missing information."
         elif image.not_mni:
             context['warning'] = "Warning: This map seems not to be in the MNI space (%.4g%% of meaningful voxels are outside of the brain). "%image.perc_voxels_outside
             context['warning'] += "Please transform the map to MNI space. "
@@ -268,7 +268,7 @@ def view_collection(request, cid):
     if not all(collection.basecollectionitem_set.instance_of(StatisticMap).values_list('is_valid', flat=True)):
         msg = "Some of the images in this collection are missing crucial metadata."
         if owner_or_contrib(request,collection):
-            msg += "Please add the missing information by editing images metadata."
+            msg += " Please add the missing information by <a href='editmetadata'>editing images metadata</a>."
         context["messages"] = [msg]
 
     if not is_empty:
@@ -938,8 +938,8 @@ class JSONResponse(HttpResponse):
 
 
 class ImagesInCollectionJson(BaseDatatableView):
-    columns = ['file.url', 'pk', 'name', 'polymorphic_ctype.name']
-    order_columns = ['','pk', 'name', 'polymorphic_ctype.name']
+    columns = ['file.url', 'pk', 'name', 'polymorphic_ctype.name', 'is_valid']
+    order_columns = ['','pk', 'name', 'polymorphic_ctype.name', '']
 
     def get_initial_queryset(self):
         # return queryset used as base for futher sorting/filtering
@@ -963,6 +963,8 @@ class ImagesInCollectionJson(BaseDatatableView):
                 return ""
         elif column == 'polymorphic_ctype.name':
             return type
+        elif column == 'is_valid':
+            return row.is_valid
         else:
             return super(ImagesInCollectionJson, self).render_column(row, column)
 
