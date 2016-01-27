@@ -256,3 +256,24 @@ ul.collection_nav li {
     width: 40%;
     margin-bottom: 60px;
 }
+
+tr.invalid * {
+    color: #a94442;
+}
+tr.invalid a:hover {
+    color: #a94442;
+}
+tr.invalid td {
+    background-color: #f2dede;
+    color: #a94442;
+}
+div.alert {
+    margin-right: 30px;
+}
+div.alert a {
+    color: #a94442;
+    text-decoration: underline;
+}
+div.alert a:hover {
+    color: #a94442;
+}
