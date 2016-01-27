@@ -469,7 +469,7 @@ class ImageForm(ModelForm, ImageValidationMixin):
         exclude = []
         widgets = {
             'file': AdminResubmitFileWidget,
-            'hdr_file': AdminResubmitFileWidget,
+            'hdr_file': AdminResubmitFileWidget
         }
 
     def clean(self, **kwargs):
@@ -487,6 +487,8 @@ class StatisticMapForm(ImageForm):
     def clean(self, **kwargs):
         cleaned_data = super(StatisticMapForm, self).clean()
         django_file = cleaned_data.get("file")
+
+        cleaned_data["is_valid"] = True #This will be only saved if the form will validate
 
         if django_file and "file" not in self._errors and "hdr_file" not in self._errors:
             django_file.open()
@@ -524,7 +526,7 @@ class StatisticMapForm(ImageForm):
         fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
                   'cognitive_contrast_cogatlas', 'analysis_level', 'contrast_definition', 'figure',
                   'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
-                  'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels')
+                  'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels', 'is_valid')
         widgets = {
             'file': AdminResubmitFileWidget,
             'hdr_file': AdminResubmitFileWidget,
@@ -533,7 +535,8 @@ class StatisticMapForm(ImageForm):
             'perc_bad_voxels': HiddenInput,
             'not_mni': HiddenInput,
             'brain_coverage': HiddenInput,
-            'perc_voxels_outside': HiddenInput
+            'perc_voxels_outside': HiddenInput,
+            'is_valid': HiddenInput
         }
 
 
@@ -832,6 +835,9 @@ class NIDMResultsForm(forms.ModelForm, NIDMResultsValidationMixin):
 
     class Meta:
         model = NIDMResults
+        widgets = {
+            'is_valid': forms.HiddenInput()
+        }
         exclude = []
 
     def __init__(self, *args, **kwargs):
