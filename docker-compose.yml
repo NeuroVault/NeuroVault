@@ -10,7 +10,7 @@ data:
 
 uwsgi:
   restart: always
-  image: neurovault/neurovault
+  image: neurovault/neurovault_fs
   command: /code/run_uwsgi.sh
   volumes_from:
     - data
