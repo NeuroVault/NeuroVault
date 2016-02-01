@@ -163,6 +163,7 @@ def save_metadata(collection, metadata):
         raise MetadataGridValidationError(image_obj_errors)
 
     for image_obj in image_obj_list:
+        image_obj.is_valid = True
         image_obj.save()
 
     return metadata_list
