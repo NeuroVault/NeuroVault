@@ -26,6 +26,9 @@ from .serializers import (UserSerializer, AtlasSerializer,
                           EditableStatisticMapSerializer, ImageSerializer,
                           NIDMResultsSerializer)
 
+from .permissions import (ObjectOnlyPermissions,
+                          ObjectOnlyPolymorphicPermissions)
+
 
 class JSONResponse(HttpResponse):
 
@@ -74,10 +77,13 @@ class AuthUserView(APIView):
 
 class ImageViewSet(mixins.RetrieveModelMixin,
                    mixins.ListModelMixin,
+                   mixins.UpdateModelMixin,
+                   mixins.DestroyModelMixin,
                    viewsets.GenericViewSet):
 
     queryset = Image.objects.filter(collection__private=False)
     serializer_class = ImageSerializer
+    permission_classes = (ObjectOnlyPolymorphicPermissions,)
 
     def _get_api_image(self, request, pk=None):
         private_url = re.match(r'^[A-Z]{8}\-\d+$', pk)
@@ -106,6 +112,7 @@ class ImageViewSet(mixins.RetrieveModelMixin,
 class AtlasViewSet(ImageViewSet):
     queryset = Atlas.objects.filter(collection__private=False)
     serializer_class = AtlasSerializer
+    permission_classes = (ObjectOnlyPolymorphicPermissions,)
 
     @detail_route()
     def datatable(self, request, pk=None):
@@ -246,16 +253,12 @@ class AtlasViewSet(ImageViewSet):
         return Response(data)
 
 
-class CollectionViewSet(mixins.RetrieveModelMixin,
-                        mixins.CreateModelMixin,
-                        mixins.ListModelMixin,
-                        viewsets.GenericViewSet):
-
+class CollectionViewSet(viewsets.ModelViewSet):
     queryset = Collection.objects.filter(private=False)
     filter_fields = ('name', 'DOI', 'owner')
     serializer_class = CollectionSerializer
     filter_backends = (DjangoFilterBackend,)
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    permission_classes = (ObjectOnlyPermissions,)
 
     @detail_route()
     def datatable(self, request, pk=None):
@@ -295,7 +298,9 @@ class CollectionViewSet(mixins.RetrieveModelMixin,
             self.permission_denied(request)
 
         obj = obj_serializer.Meta.model(collection=collection)
-        serializer = obj_serializer(data=request.data, instance=obj)
+        serializer = obj_serializer(data=request.data,
+                                    instance=obj,
+                                    context={'request': request})
 
         if serializer.is_valid():
             serializer.save()
@@ -323,10 +328,13 @@ class MyCollectionsViewSet(CollectionViewSet):
 
 class NIDMResultsViewSet(mixins.RetrieveModelMixin,
                          mixins.ListModelMixin,
+                         mixins.UpdateModelMixin,
+                         mixins.DestroyModelMixin,
                          viewsets.GenericViewSet):
 
     queryset = NIDMResults.objects.filter(collection__private=False)
     serializer_class = NIDMResultsSerializer
+    permission_classes = (ObjectOnlyPolymorphicPermissions,)
 
 
 class TagViewSet(viewsets.ModelViewSet):
