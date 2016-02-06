@@ -10,7 +10,7 @@ from neurovault.apps.statmaps.nidm_results import NIDMUpload
 from .utils import clearDB
 
 TEST_PATH = os.path.abspath(os.path.dirname(__file__))
-NIMD_TEST_FILES = {
+NIDM_TEST_FILES = {
     'fsl_course_av': {
         'file': os.path.join(TEST_PATH,
                              'test_data/nidm/fsl_course_av.nidm.zip'),
@@ -52,7 +52,7 @@ NIMD_TEST_FILES = {
 class NIDMResultsTest(TestCase):
 
     def setUp(self):
-        self.files = NIMD_TEST_FILES
+        self.files = NIDM_TEST_FILES
 
         self.failing_files = {
             'spm_bad_ttl': os.path.join(TEST_PATH,

@@ -16,7 +16,7 @@ from operator import itemgetter
 import os.path
 import json
 
-from .test_nidm import NIMD_TEST_FILES
+from .test_nidm import NIDM_TEST_FILES
 
 
 class Test_Atlas_APIs(TestCase):
@@ -437,7 +437,7 @@ class TestCollectionItemUpload(APITestCase):
         self.client.force_authenticate(user=self.user)
         url = '/api/collections/%s/nidm_results/' % self.coll.pk
 
-        for name, data in NIMD_TEST_FILES.items():
+        for name, data in NIDM_TEST_FILES.items():
             self._test_upload_nidm_results(url, name, data)
 
     def _test_upload_nidm_results(self, url, name, data):
