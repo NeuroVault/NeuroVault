@@ -399,14 +399,21 @@ def view_task(request, cog_atlas_id):
     '''view_task returns a view to see a group of images associated with a particular cognitive atlas task.
     :param cog_atlas_id: statmaps.models.CognitiveAtlasTask the id for the task defined in the Cognitive Atlas
     '''
+    from cogat_functions import get_task_graph
     task = CognitiveAtlasTask.objects.filter(cog_atlas_id=cog_atlas_id)[0]
     images = StatisticMap.objects.filter(cognitive_paradigm_cogatlas=task,collection__private=False)
+    
+    graph = get_task_graph(cog_atlas_id)
 
     context = {'task': task,
-               'images': images}
+               'images': images,
+               'cognitive_atlas_tree':graph,
+               'tree_divid':"graph"} # div id in template to append tree svg to
 
-    return render(request, 'statmaps/cognitive_atlas_task.html', context)
+    if images.count()>0:
+        context["first_image"] = images[0]
 
+    return render(request, 'cogatlas/cognitive_atlas_task.html', context)
 
 @login_required
 def add_image_for_neurosynth(request):
