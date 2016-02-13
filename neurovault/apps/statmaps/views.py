@@ -53,11 +53,16 @@ from . import image_metadata
 
 
 def owner_or_contrib(request,collection):
-
+    '''owner_or_contrib determines if user is an owner or contributor to a collection
+    :param collection: statmaps.models.Collection
+    '''
     return request.user.has_perm('statmaps.change_collection', collection) or request.user.is_superuser
 
 
 def get_collection(cid,request,mode=None):
+    '''get_collection returns collection object based on a primary key (cid)
+    :param cid: statmaps.models.Collection.pk the primary key of the collection
+    '''
     keyargs = {'pk':cid}
     private_url = re.match(r'^[A-Z]{8}$',cid)
     if private_url is not None:
@@ -79,6 +84,10 @@ def get_collection(cid,request,mode=None):
 
 
 def get_image(pk,collection_cid,request,mode=None):
+    '''get_image returns image object from a collection based on a primary key (pk)
+    :param pk: statmaps.models.Image.pk the primary key of the image
+    :param collection_cid: the primary key of the image collection
+    '''
     image = get_object_or_404(Image, pk=pk)
     if image.collection.private and image.collection.private_token != collection_cid:
         if owner_or_contrib(request,image.collection):
@@ -93,6 +102,9 @@ def get_image(pk,collection_cid,request,mode=None):
 
 @login_required
 def edit_collection(request, cid=None):
+    '''edit_collection is a view to edit a collection, meaning showing the edit form for an existing collection, creating a new collection, or passing POST data to update an existing collection
+    :param cid: statmaps.models.Collection.pk the primary key of the collection. If none, will generate form to make a new collection.
+    '''
     page_header = "Add new collection"
     if cid:
         collection = get_collection(cid,request)
@@ -158,6 +170,8 @@ def get_field_datasources():
     return ds
 
 def get_contrast_lookup():
+    '''get_contrast_lookup returns a dictionary with keys being cognitive atlas task primary keys, and keys a list of contrasts, each a dictionary with keys "name" and "value"
+    '''
     contrasts = dict()
     for task in CognitiveAtlasTask.objects.all():
         task_contrasts = CognitiveAtlasContrast.objects.filter(task=task)
@@ -211,6 +225,10 @@ def export_images_filenames(request, collection_cid):
 
 
 def view_image(request, pk, collection_cid=None):
+    '''view_image returns main view to see an image and associated meta data. If the image is in a collection with a DOI and has a generated thumbnail, it is a contender for image comparison, and a find similar button is exposed.
+    :param pk: statmaps.models.Image.pk the primary key of the image
+    :param collection_cid: statmaps.models.Collection.pk the primary key of the collection. Default None
+    '''
     image = get_image(pk,collection_cid,request)
     user_owns_image = owner_or_contrib(request,image.collection)
     api_cid = pk
@@ -254,6 +272,9 @@ def view_image(request, pk, collection_cid=None):
 
 
 def view_collection(request, cid):
+    '''view_collection returns main view to see an entire collection of images, meaning a viewer and list of images to load into it. 
+    :param cid: statmaps.models.Collection.pk the primary key of the collection
+    '''
     collection = get_collection(cid,request)
     edit_permission = request.user.has_perm('statmaps.change_collection', collection)
     delete_permission = request.user.has_perm('statmaps.delete_collection', collection)
@@ -372,6 +393,20 @@ def delete_nidm_results(request, collection_cid, nidm_name):
         return redirect('collection_details', cid=collection_cid)
     else:
         return HttpResponseForbidden()
+
+
+def view_task(request, cog_atlas_id):
+    '''view_task returns a view to see a group of images associated with a particular cognitive atlas task.
+    :param cog_atlas_id: statmaps.models.CognitiveAtlasTask the id for the task defined in the Cognitive Atlas
+    '''
+    task = CognitiveAtlasTask.objects.filter(cog_atlas_id=cog_atlas_id)[0]
+    images = StatisticMap.objects.filter(cognitive_paradigm_cogatlas=task,collection__private=False)
+
+    context = {'task': task,
+               'images': images}
+
+    return render(request, 'statmaps/cognitive_atlas_task.html', context)
+
 
 @login_required
 def add_image_for_neurosynth(request):
@@ -975,6 +1010,42 @@ class ImagesInCollectionJson(BaseDatatableView):
         search = self.request.GET.get(u'search[value]', None)
         if search:
             qs = qs.filter(Q(name__icontains=search)| Q(description__icontains=search))
+        return qs
+
+
+class ImagesByTaskJson(BaseDatatableView):
+    columns = ['file.url', 'pk', 'name', 'polymorphic_ctype.name', 'is_valid']
+    order_columns = ['','pk', 'name', 'polymorphic_ctype.name', '']
+
+    def get_initial_queryset(self):
+        # Do not filter by task here, we may want other parameters
+        return StatisticMap.objects.filter(collection__private=False).exclude(cognitive_paradigm_cogatlas=None)
+
+    def render_column(self, row, column):
+        if row.polymorphic_ctype.name == "statistic map":
+            type = row.get_map_type_display()
+        else:
+            type = row.polymorphic_ctype.name
+
+        # We want to render user as a custom column
+        if column == 'file.url':
+            if isinstance(row, Image):
+                return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>'%(filepath_to_uri(row.file.url), type)
+            elif isinstance(row, NIDMResults):
+                return ""
+        elif column == 'polymorphic_ctype.name':
+            return type
+        elif column == 'is_valid':
+            return row.is_valid
+        else:
+            return super(ImagesByTaskJson, self).render_column(row, column)
+
+    def filter_queryset(self, qs):
+        # use parameters passed in GET request to filter queryset
+        # simple example:
+        search = self.request.GET.get(u'search[value]', None)
+        if search:
+            qs = qs.filter(Q(name__icontains=search)| Q(id__icontains=search))
         return qs
 
 
