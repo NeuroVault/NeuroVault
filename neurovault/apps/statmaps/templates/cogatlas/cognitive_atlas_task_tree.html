@@ -203,6 +203,9 @@ function click(d) {
     d._children = null;
   }
   update(d);
+  if (d.url) {
+    document.location = d.url;
+  }
 }
 }
 </script>

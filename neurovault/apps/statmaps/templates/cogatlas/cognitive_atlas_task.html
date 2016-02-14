@@ -143,6 +143,14 @@ var params = [];
 
     {% if images %}
     <div id="graph" class="tab-pane">
+        <div id="tree"></div>
+        {% if images_without_contrasts %}
+            <p style="padding-left:20px">You must tag the following images to include them in the tree
+            {% for image_wo_contrast in images_without_contrasts %}
+                <a href="/images/{{ image_wo_contrast.pk }}">{{ image_wo_contrast.name}}</a> -
+            {% endfor %}
+            </p>
+        {% endif %}
     {% include "cogatlas/cognitive_atlas_task_tree.html" %}
     </div><!-- close details tab-->
     {% endif %}
