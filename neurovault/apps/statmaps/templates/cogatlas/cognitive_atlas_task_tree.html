@@ -8,7 +8,6 @@
 
 .node circle {
   fill: #fff;
-  stroke: steelblue;
   stroke-width: 1.5px;
 }
 
@@ -22,12 +21,18 @@
   stroke-width: 1.5px;
 }
 
+.legend {
+  font-size: 12px;
+}
+rect {
+  stroke-width: 2;
+}
 </style>
 
 <script>
 
 var margin = {top: 20, right: 10, bottom: 20, left: 250},
-    width = 960 - margin.right - margin.left,
+    width = 1100 - margin.right - margin.left,
     height = 400 - margin.top - margin.bottom;
     
 var i = 0,
@@ -86,7 +91,8 @@ function update(source) {
 
   nodeEnter.append("circle")
       .attr("r", 1e-6)
-      .style("fill", function(d) { return d._children ? d.color : "#fff"; });
+      .style("fill", function(d) { return d._children ? d.color : d.color; })
+      .style("stroke", function(d) { return d._children ? d.color : d.color; });
 
   nodeEnter.append("text")
       .attr("x", function(d) { return d.children || d._children ? -10 : 10; })
@@ -102,7 +108,8 @@ function update(source) {
 
   nodeUpdate.select("circle")
       .attr("r", 4.5)
-      .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+      .style("fill", function(d) { return d._children ? d.color : d.color; })
+      .style("stroke", function(d) { return d._children ? d.color : d.color; });
 
   nodeUpdate.select("text")
       .style("fill-opacity", 1);
@@ -151,6 +158,40 @@ function update(source) {
     d.y0 = d.y;
   });
 
+  // Add legend
+  var legendRectSize = 18;
+  var legendSpacing = 4;
+
+  // task, contrast, concept, image
+  var lookup = [{"color":"#63506d","name":"Task"},
+                {"color":"#d89013","name":"Contrast"},
+                {"color":"#3c7263","name":"Concept"},
+                {"color":"#337ab7","name":"Image"}]
+
+  var legend = svg.selectAll('.legend')
+      .data(lookup)
+      .enter()
+      .append('g')
+      .attr('class', 'legend')
+      .attr('transform', function(d, i) {
+          var lheight = legendRectSize + legendSpacing;
+          var offset =  (lheight * lookup.length / 2) - 50;
+          var horz = -2 * legendRectSize + 800;
+          var vert = i * lheight - offset;
+          return 'translate(' + horz + ',' + vert + ')';
+      });
+
+
+    legend.append('rect')                                     
+        .attr('width', legendRectSize)                        
+        .attr('height', legendRectSize)                       
+        .style('fill', function(d) {return d.color})                                 
+        .style('stroke', function(d) {return d.color});                              
+          
+    legend.append('text')                                     
+        .attr('x', legendRectSize + legendSpacing)              
+        .attr('y', legendRectSize - legendSpacing)              
+        .text(function(d) { return d.name; });                       
 
 // Toggle children on click
 function click(d) {
