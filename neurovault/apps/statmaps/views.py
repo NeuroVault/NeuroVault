@@ -409,15 +409,15 @@ def view_task(request, cog_atlas_id=None):
     if cog_atlas_id:
         task = CognitiveAtlasTask.objects.get(cog_atlas_id=cog_atlas_id)
         if task:
-            first_image = StatisticMap.objects.filter(cognitive_paradigm_cogatlas=cog_atlas_id,
-                                                      collection__private=False).order_by("pk")[0]
-    
-            graph,images_with_contrasts = get_task_graph(cog_atlas_id, get_images_with_contrasts=True)
+            images = StatisticMap.objects.filter(cognitive_paradigm_cogatlas=cog_atlas_id,
+                                                 collection__private=False).order_by("pk")
+            first_image = images[0]
+            graph = get_task_graph(cog_atlas_id, images=images)
 
             # Which images aren't tagged with contrasts?
-            not_tagged = [i for i in images if i.pk not in images_with_contrasts]
+            not_tagged = images.filter(cognitive_contrast_cogatlas__isnull=True)
 
-            context = {'task': task[0],
+            context = {'task': task,
                        'first_image': first_image,
                        'cognitive_atlas_tree': graph,
                        'tree_divid': "tree",  # div id in template to append tree svg to
