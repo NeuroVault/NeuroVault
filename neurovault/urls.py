@@ -2,8 +2,6 @@ import os
 from django.conf import settings
 from django.conf.urls import include, patterns, url
 from django.contrib import admin
-from django.contrib.sitemaps.views import sitemap
-from django.contrib.sitemaps.views import sitemap
 from oauth2_provider import views as oauth_views
 
 from neurovault.api.urls import api_urls
@@ -21,8 +19,6 @@ oauth_urlpatterns = [
 ]
 
 urlpatterns = patterns('',
-                       url(r'^sitemap\.xml$', sitemap, {'sitemaps': sitemaps},
-                           name='django.contrib.sitemaps.views.sitemap'),
                        url('', include(
                            'social.apps.django_app.urls', namespace='social')),
                        url(r'^', include('neurovault.apps.main.urls')),
