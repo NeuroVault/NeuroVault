@@ -1,0 +1,37 @@
+<meta name="pagetype" content="images">
+<meta name="name" content="{{ image.name }}">
+<meta name="thumbnail" content="http://www.neurovault.org{{ image.thumbnail.url }}">
+<meta name="file" content="http://www.neurovault.org{{ image.file.url }}">
+<meta name="add_date" content="{{ image.add_date }}">
+<meta name="brain_coverage" content="{{ image.brain_coverage }}">
+<meta name="map_type" content="{{ image.map_type }}">
+<meta name="modality" content="{{ image.modality }}">
+<meta name="database" content="neurovault.org">
+{% if image.smoothness_fwhm %}
+<meta name="smoothness_fwhm" content="{{ image.smoothness_fwhm }}">
+{% endif %}
+{% if image.analysis_level %}
+<meta name="analysis_level" content="{{ image.analysis_level }}">
+{% endif %}
+{% if image.figure %}
+<meta name="figure" content="{{ image.figure }}">
+{% endif %}
+{% if image.not_mni == False %}
+<meta name="mni" content="true">
+{% else %}
+<meta name="mni" content="false">
+{% endif %}
+
+<!-- Cognitive Atlas -->
+{% if image.cognitive_contrast_cogatlas_id %}
+<meta name="cognitive_contrast_cogatlas_id" content="{{ image.cognitive_contrast_cogatlas_id }}">
+{% endif %}
+{% if image.cognitive_contrast_cogatlas %}
+<meta name="cognitive_contrast_cogatlas" content="{{ image.cognitive_contrast_cogatlas }}">
+{% endif %}
+{% if image.cognitive_paradigm_cogatlas_id %}
+<meta name="cognitive_paradigm_cogatlas_id" content="{{ image.cognitive_paradigm_cogatlas_id }}">
+{% endif %}
+{% if image.cognitive_paradigm_cogatlas %}
+<meta name="cognitive_paradigm_cogatlas" content="{{ image.cognitive_paradigm_cogatlas }}">
+{% endif %}
