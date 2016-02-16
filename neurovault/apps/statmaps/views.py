@@ -5,7 +5,6 @@ import json
 import nibabel as nib
 import numpy as np
 import os
-import pybraincompare.compare as pbcompare
 import re
 import shutil
 import tarfile
@@ -30,6 +29,8 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from fnmatch import fnmatch
 from guardian.shortcuts import get_objects_for_user
 from nidmviewer.viewer import generate
+from pybraincompare.compare.scatterplot import scatterplot_compare_vector
+from pybraincompare.compare.search import similarity_search
 from rest_framework.renderers import JSONRenderer
 from sendfile import sendfile
 from sklearn.externals import joblib
@@ -888,7 +889,7 @@ def compare_images(request,pk1,pk2):
     atlas_svg = joblib.load(atlas_svg)
 
     # Generate html for similarity search, do not specify atlas
-    html_snippet, _ = pbcompare.scatterplot.scatterplot_compare_vector(image_vector1=image_vector1,
+    html_snippet, _ = scatterplot_compare_vector(image_vector1=image_vector1,
                                                                  image_vector2=image_vector2,
                                                                  image_names=image_names,
                                                                  atlas_vector=atlas["atlas_vector"],
@@ -962,7 +963,7 @@ def find_similar(request,pk):
         query_png = image1.thumbnail.url
 
         # Do similarity search and return html to put in page, specify 100 max results, take absolute value of scores
-        html_snippet = pbcompare.search.similarity_search(image_scores=scores,tags=tags,png_paths=png_img_paths,
+        html_snippet = similarity_search(image_scores=scores,tags=tags,png_paths=png_img_paths,
                                     button_url=compare_url,image_url=image_url,query_png=query_png,
                                     query_id=pk,top_text=top_text,image_ids=image_ids,
                                     bottom_text=bottom_text,max_results=max_results,absolute_value=True,
