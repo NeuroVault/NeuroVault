@@ -395,29 +395,39 @@ def delete_nidm_results(request, collection_cid, nidm_name):
         return HttpResponseForbidden()
 
 
-def view_task(request, cog_atlas_id):
+def view_task(request, cog_atlas_id=None):
     '''view_task returns a view to see a group of images associated with a particular cognitive atlas task.
     :param cog_atlas_id: statmaps.models.CognitiveAtlasTask the id for the task defined in the Cognitive Atlas
     '''
     from cogat_functions import get_task_graph
-    task = CognitiveAtlasTask.objects.filter(cog_atlas_id=cog_atlas_id)[0]
-    images = StatisticMap.objects.filter(cognitive_paradigm_cogatlas=task,collection__private=False)
+
+    # Get the cognitive atlas id from the post (given a form submit)
+    if request.method == "POST":
+        cog_atlas_id = request.POST["cogatlas"]
+
+    if cog_atlas_id != None:
+        task = CognitiveAtlasTask.objects.filter(cog_atlas_id=cog_atlas_id)[0]
+        images = StatisticMap.objects.filter(cognitive_paradigm_cogatlas=task,collection__private=False)
     
-    graph,images_with_contrasts = get_task_graph(cog_atlas_id,get_images_with_contrasts=True)
+        graph,images_with_contrasts = get_task_graph(cog_atlas_id,get_images_with_contrasts=True)
 
-    # Which images aren't tagged with contrasts?
-    not_tagged = [i for i in images if i.pk not in images_with_contrasts]
+        # Which images aren't tagged with contrasts?
+        not_tagged = [i for i in images if i.pk not in images_with_contrasts]
 
-    context = {'task': task,
-               'images': images,
-               'cognitive_atlas_tree':graph,
-               'tree_divid':"tree", # div id in template to append tree svg to
-               'images_without_contrasts':not_tagged}
+        context = {'task': task,
+                   'images': images,
+                   'cognitive_atlas_tree':graph,
+                   'tree_divid':"tree", # div id in template to append tree svg to
+                   'images_without_contrasts':not_tagged}
 
-    if images.count()>0:
-        context["first_image"] = images[0]
+        if images.count()>0:
+            context["first_image"] = images[0]
 
-    return render(request, 'cogatlas/cognitive_atlas_task.html', context)
+        return render(request, 'cogatlas/cognitive_atlas_task.html', context)
+
+    # Otherwise, direct back to search page
+    return search(request,error_message="Error querying Cognitive Atlas.")
+
 
 @login_required
 def add_image_for_neurosynth(request):
@@ -973,6 +983,14 @@ def find_similar(request,pk):
         return render(request, 'statmaps/error_message.html', context)
 
 
+# Return search interface
+def search(request,error_message=None):
+    cogatlas_task = CognitiveAtlasTask.objects.all()
+    context = {'error_message': error_message,
+               'cogatlas_task': cogatlas_task}
+    return render(request, 'statmaps/search.html', context)
+
+
 class JSONResponse(HttpResponse):
     """
     An HttpResponse that renders its content into JSON.
@@ -1132,8 +1150,6 @@ class PublicCollectionsJson(BaseDatatableView):
         if search:
             qs = qs.filter(Q(name__icontains=search)| Q(description__icontains=search))
         return qs
-
-
 
 class MyCollectionsJson(PublicCollectionsJson):
 

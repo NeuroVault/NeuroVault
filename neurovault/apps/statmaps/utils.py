@@ -1,5 +1,6 @@
 import errno
 import os
+import re
 import pickle
 import random
 import shutil

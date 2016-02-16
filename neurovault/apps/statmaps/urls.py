@@ -15,7 +15,7 @@ from .views import edit_collection, view_image, delete_image, edit_image, \
                 papaya_js_embed, view_images_by_tag, \
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
                 view_nidm_results, find_similar, compare_images, edit_metadata, \
-                export_images_filenames, delete_nidm_results, view_task
+                export_images_filenames, delete_nidm_results, view_task, search
 
 urlpatterns = patterns('',
     url(r'^my_collections/$',
@@ -144,19 +144,26 @@ urlpatterns = patterns('',
         serve_nidm,
         name='serve_nidm_files'),
 
-    # Compare images
+    # Compare images and search
     url(r'^images/compare/(?P<pk1>\d+)/(?P<pk2>\d+)$',
         compare_images,
         name='compare_images'),
     url(r'^images/(?P<pk>\d+)/find_similar$',
         find_similar,
         name='find_similar'),
+    url(r'^search$',
+        search,
+        name='search'),
+
 
     # Cognitive Atlas
     url(r'^images/(?P<cog_atlas_id>[A-Za-z0-9].*)/task/json$',
         ImagesByTaskJson.as_view(),
         name='task_images_json'),
     url(r'^images/(?P<cog_atlas_id>[A-Za-z0-9].*)/task$',
+        view_task,
+        name='view_task'),
+    url(r'^images/task$',
         view_task,
         name='view_task')
 
