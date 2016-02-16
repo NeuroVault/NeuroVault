@@ -406,24 +406,22 @@ def view_task(request, cog_atlas_id=None):
     if request.method == "POST":
         cog_atlas_id = request.POST["cogatlas"]
 
-    if cog_atlas_id != None:
-        task = CognitiveAtlasTask.objects.filter(cog_atlas_id=cog_atlas_id)
-        if len(task) != 0:
-            images = StatisticMap.objects.filter(cognitive_paradigm_cogatlas=task[0],collection__private=False)
+    if cog_atlas_id:
+        task = CognitiveAtlasTask.objects.get(cog_atlas_id=cog_atlas_id)
+        if task:
+            first_image = StatisticMap.objects.filter(cognitive_paradigm_cogatlas=cog_atlas_id,
+                                                      collection__private=False).order_by("pk")[0]
     
-            graph,images_with_contrasts = get_task_graph(cog_atlas_id,get_images_with_contrasts=True)
+            graph,images_with_contrasts = get_task_graph(cog_atlas_id, get_images_with_contrasts=True)
 
             # Which images aren't tagged with contrasts?
             not_tagged = [i for i in images if i.pk not in images_with_contrasts]
 
             context = {'task': task[0],
-                       'images': images,
-                       'cognitive_atlas_tree':graph,
-                       'tree_divid':"tree", # div id in template to append tree svg to
-                       'images_without_contrasts':not_tagged}
-
-            if images.count()>0:
-                context["first_image"] = images[0]
+                       'first_image': first_image,
+                       'cognitive_atlas_tree': graph,
+                       'tree_divid': "tree",  # div id in template to append tree svg to
+                       'images_without_contrasts': not_tagged}
 
             return render(request, 'cogatlas/cognitive_atlas_task.html', context)
 

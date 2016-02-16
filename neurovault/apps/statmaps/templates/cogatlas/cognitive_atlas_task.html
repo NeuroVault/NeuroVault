@@ -143,14 +143,14 @@ var params = [];
 <!-- COLLECTION TABS -->
 <ul id='collection-tabs' class='nav nav-tabs'>
        <li><a data-toggle='tab' href='#images'>Images</a></li>
-      {% if images %}
+      {% if first_image %}
         <li><a data-toggle='tab' href='#graph'>Graph</a></li>
       {% endif %}
 </ul>
 
 <div class='tab-content' style="padding-bottom:20px">
 
-    {% if images %}
+    {% if first_image %}
     <div id="graph" class="tab-pane">
         <div id="tree"></div>
         {% if images_without_contrasts %}
@@ -172,7 +172,7 @@ var params = [];
     </div>
         <div class="col-md-6">
       
-            {% if images %}
+            {% if first_image %}
             <table id="collection-images-datatable" class="compact">
                 <thead>
                     <tr>
@@ -199,7 +199,7 @@ var params = [];
 </div>
 
 <script>
-{% if images %}
+{% if first_image %}
 $(document).ready(function() {
     $('#collection-images-datatable').dataTable({
         "processing": true,
