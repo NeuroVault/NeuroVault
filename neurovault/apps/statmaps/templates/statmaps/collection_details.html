@@ -6,6 +6,8 @@
 <script src="{% static "scripts/bootstrap.min.js"%}" type="text/javascript"></script>
 <link href="http://netdna.bootstrapcdn.com/font-awesome/3.1.1/css/font-awesome.css" rel="stylesheet">
 
+<!-- Meta tags for PageMap: Google Search-->
+{% include "statmaps/_meta_collection.html" %}
 
 <title>{% block title %}NeuroVault: {{collection.name}}{% endblock %}</title>
 

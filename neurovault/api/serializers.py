@@ -62,13 +62,15 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('id', 'username', 'email', 'first_name', 'last_name')
 
 
-class ImageSerializer(serializers.HyperlinkedModelSerializer):
+class ImageSerializer(serializers.HyperlinkedModelSerializer,
+                      ImageValidationMixin):
 
     id = serializers.ReadOnlyField()
     file = HyperlinkedFileField()
     collection = HyperlinkedRelatedURL(read_only=True)
     collection_id = serializers.ReadOnlyField()
-    url = HyperlinkedImageURL(source='get_absolute_url')
+    url = HyperlinkedImageURL(source='get_absolute_url',
+                              read_only=True)
     file_size = serializers.SerializerMethodField()
 
     class Meta:
@@ -102,6 +104,19 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
             if pd.isnull(val):
                 orderedDict[key] = None
         return orderedDict
+
+    def validate(self, data):
+        self.afni_subbricks = []
+        self.afni_tmp = None
+        self._errors = ErrorDict()
+        self.error_class = ErrorList
+
+        cleaned_data = self.clean_and_validate(data)
+
+        if self.errors:
+            raise serializers.ValidationError(self.errors)
+
+        return cleaned_data
 
 
 class EditableImageSerializer(serializers.ModelSerializer,
@@ -197,15 +212,32 @@ class EditableAtlasSerializer(EditableImageSerializer):
         read_only_fields = ('collection',)
 
 
-class NIDMResultsSerializer(serializers.ModelSerializer):
+class NIDMResultsSerializer(serializers.ModelSerializer,
+                            NIDMResultsValidationMixin):
     zip_file = HyperlinkedFileField()
-    ttl_file = HyperlinkedFileField()
-    provn_file = HyperlinkedFileField()
+    ttl_file = HyperlinkedFileField(required=False)
+    provn_file = HyperlinkedFileField(required=False)
     statmaps = ImageSerializer(many=True, source='nidmresultstatisticmap_set')
+
+    def validate(self, data):
+        data['collection'] = self.instance.collection
+        return self.clean_and_validate(data)
+
+    def save(self):
+        instance = super(NIDMResultsSerializer, self).save()
+        nidm = getattr(self, 'nidm', False)
+
+        if nidm:
+            # Handle file upload
+            save_nidm_statmaps(nidm, instance)
+            handle_update_ttl_urls(instance)
+
+        return instance
 
     class Meta:
         model = NIDMResults
         exclude = ['id']
+        read_only_fields = ('collection',)
 
 
 class EditableNIDMResultsSerializer(serializers.ModelSerializer,
