@@ -1008,6 +1008,9 @@ class ImagesInCollectionJson(BaseDatatableView):
     order_columns = ['','pk', 'name', 'polymorphic_ctype.name', '']
 
     def get_initial_queryset(self):
+        return get_objects_for_user(self.request.user, 'statmaps.change_collection')
+
+    def get_initial_queryset(self):
         # return queryset used as base for futher sorting/filtering
         # these are simply objects displayed in datatable
         # You should not filter data returned here by any filter values entered by user. This is because
@@ -1045,29 +1048,21 @@ class ImagesInCollectionJson(BaseDatatableView):
 
 
 class ImagesByTaskJson(BaseDatatableView):
-    columns = ['file.url', 'pk', 'name', 'polymorphic_ctype.name', 'is_valid']
-    order_columns = ['','pk', 'name', 'polymorphic_ctype.name', '']
+    columns = ['file.url', 'name', 'cognitive_contrast_cogatlas', 'collection.name']
+    order_columns = ['', 'name', 'cognitive_contrast_cogatlas', 'collection.name']
 
     def get_initial_queryset(self):
         # Do not filter by task here, we may want other parameters
-        return StatisticMap.objects.filter(collection__private=False).exclude(cognitive_paradigm_cogatlas=None)
+        cog_atlas_id = self.kwargs['cog_atlas_id']
+        return StatisticMap.objects.filter(collection__private=False).filter(cognitive_paradigm_cogatlas=cog_atlas_id)
 
     def render_column(self, row, column):
-        if row.polymorphic_ctype.name == "statistic map":
-            type = row.get_map_type_display()
-        else:
-            type = row.polymorphic_ctype.name
-
         # We want to render user as a custom column
         if column == 'file.url':
             if isinstance(row, Image):
                 return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>'%(filepath_to_uri(row.file.url), type)
             elif isinstance(row, NIDMResults):
                 return ""
-        elif column == 'polymorphic_ctype.name':
-            return type
-        elif column == 'is_valid':
-            return row.is_valid
         else:
             return super(ImagesByTaskJson, self).render_column(row, column)
 

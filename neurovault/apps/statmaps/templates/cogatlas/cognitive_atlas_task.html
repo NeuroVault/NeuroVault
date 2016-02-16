@@ -177,9 +177,9 @@ var params = [];
                 <thead>
                     <tr>
                         <th>View</th>
-                        <th>ID</th>
                         <th>Name</th>
-                        <th>Type</th>
+                        <th>Contrast</th>
+                        <th>Collection</th>
                     </tr>
                 </thead>
             </table>
@@ -209,13 +209,6 @@ $(document).ready(function() {
         "columnDefs": [
     		{ "orderable": false, "targets": 0 }
   		],
-        "order": [[ 1, "asc" ]],
-        "createdRow": function( row, data, dataIndex ) {
-              if (data[4] == false) {
-                $(row).removeClass('odd');
-                $(row).addClass('invalid');
-              }
-        },
         "ajax": "{% url 'task_images_json' task.cog_atlas_id %}",
         "initComplete": function(settings, json) {
     		var collection_images = $(".viewimage")
