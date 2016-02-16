@@ -1,6 +1,9 @@
 <meta name="pagetype" content="collection">
 <meta name="name" content="{{ collection.name }}">
 <meta name="database" content="neurovault.org">
+{% if collection.private %}
+<meta name="robots" content="noindex">
+{% endif %}
 {% if collection.authors %}
 <meta name="authors" content="{{ collection.authors }}">
 {% endif %}

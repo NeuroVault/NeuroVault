@@ -6,3 +6,6 @@
 <meta name="add_date" content="{{ image.add_date }}">
 <meta name="brain_coverage" content="{{ image.brain_coverage }}">
 <meta name="database" content="neurovault.org">
+{% if image.collection.private %}
+<meta name="robots" content="noindex">
+{% endif %}
