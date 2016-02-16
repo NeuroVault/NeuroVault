@@ -1,5 +1,6 @@
 import numpy as np
 from cognitiveatlas.api import get_task, get_concept
+from exceptions import ValueError
 
 from neurovault.apps.statmaps.models import CognitiveAtlasTask, CognitiveAtlasContrast, StatisticMap
 
@@ -30,30 +31,35 @@ def get_task_graph(task_id, images=None):
     task_concepts = []
 
     for contrast in task_contrasts:
-            contrast_node = make_node(contrast.cog_atlas_id, contrast.name, "#d89013")
+        contrast_node = make_node(contrast.cog_atlas_id, contrast.name, "#d89013")
+        try:
             contrast_concepts = get_concept(contrast_id=contrast.cog_atlas_id)
-            children = []  # concept children of a contrast
-            current_names = []
+        except ValueError:
+            # TODO: disparity between NeuroVault and Cognitive Atlas!
+            continue
 
-            # Do we have images tagged with the contrast?
-            if not images:
-                images = StatisticMap.objects.filter(cognitive_contrast_cogatlas=contrast)
+        children = []  # concept children of a contrast
+        current_names = []
 
-            for concept in contrast_concepts.json:
-                if concept["name"] not in current_names:                   
-                    concept_node = make_node(concept["id"], concept["name"], "#3c7263")
+        # Do we have images tagged with the contrast?
+        if not images:
+            images = StatisticMap.objects.filter(cognitive_contrast_cogatlas=contrast)
 
-                    # Image nodes
-                    if len(images) > 0:
-                        stat_map_nodes = [make_node(i.pk, i.name, "#337ab7", "/images/%s" % i.pk) for i in images]
-                        concept_node["children"] = stat_map_nodes
+        for concept in contrast_concepts.json:
+            if concept["name"] not in current_names:
+                concept_node = make_node(concept["id"], concept["name"], "#3c7263")
 
-                    children.append(concept_node)
-                    current_names.append(concept["name"])
-                contrast_node["children"] = children
-            # Only append contrast if it has children
-            if len(children) > 0:
-                task_concepts.append(contrast_node)
+                # Image nodes
+                if len(images) > 0:
+                    stat_map_nodes = [make_node(i.pk, i.name, "#337ab7", "/images/%s" % i.pk) for i in images]
+                    concept_node["children"] = stat_map_nodes
+
+                children.append(concept_node)
+                current_names.append(concept["name"])
+            contrast_node["children"] = children
+        # Only append contrast if it has children
+        if len(children) > 0:
+            task_concepts.append(contrast_node)
 
     task_node["children"] = task_concepts    
 
