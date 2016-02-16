@@ -414,21 +414,23 @@ def view_task(request, cog_atlas_id=None):
     if task:
         images = StatisticMap.objects.filter(cognitive_paradigm_cogatlas=cog_atlas_id,
                                              collection__private=False).order_by("pk")
-        first_image = images[0]
-        graph = get_task_graph(cog_atlas_id, images=images)
+        
+        if len(images) > 0:
+            first_image = images[0]
+            graph = get_task_graph(cog_atlas_id, images=images)
 
-        # Which images aren't tagged with contrasts?
-        not_tagged = images.filter(cognitive_contrast_cogatlas__isnull=True)
+            # Which images aren't tagged with contrasts?
+            not_tagged = images.filter(cognitive_contrast_cogatlas__isnull=True)
 
-        context = {'task': task,
-                   'first_image': first_image,
-                   'cognitive_atlas_tree': graph,
-                   'tree_divid': "tree",  # div id in template to append tree svg to
-                   'images_without_contrasts': not_tagged}
+            context = {'task': task,
+                       'first_image': first_image,
+                       'cognitive_atlas_tree': graph,
+                       'tree_divid': "tree",  # div id in template to append tree svg to
+                       'images_without_contrasts': not_tagged}
 
-        return render(request, 'cogatlas/cognitive_atlas_task.html', context)
+            return render(request, 'cogatlas/cognitive_atlas_task.html', context)
 
-
+    return search(request, error_message="No tagged images found in NeuroVault for this Cognitive Atlas task.")
 
 
 @login_required
