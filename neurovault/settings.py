@@ -112,6 +112,7 @@ WSGI_APPLICATION = 'neurovault.wsgi.application'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'APP_DIRS': True,
         'DIRS': (),
         'OPTIONS': {'context_processors': ("django.contrib.auth.context_processors.auth",
                                             "django.core.context_processors.debug",
@@ -139,6 +140,7 @@ INSTALLED_APPS = (
     'neurovault.apps.main',
     'neurovault.apps.statmaps',
     'neurovault.apps.users',
+    'django.contrib.sitemaps',
     # Uncomment the next line to enable the admin:
     'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
