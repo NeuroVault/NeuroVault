@@ -406,27 +406,29 @@ def view_task(request, cog_atlas_id=None):
     if request.method == "POST":
         cog_atlas_id = request.POST["cogatlas"]
 
-    if cog_atlas_id:
+    try:
         task = CognitiveAtlasTask.objects.get(cog_atlas_id=cog_atlas_id)
-        if task:
-            images = StatisticMap.objects.filter(cognitive_paradigm_cogatlas=cog_atlas_id,
-                                                 collection__private=False).order_by("pk")
-            first_image = images[0]
-            graph = get_task_graph(cog_atlas_id, images=images)
+    except ObjectDoesNotExist:
+        return search(request, error_message="Invalid search for Cognitive Atlas.")
 
-            # Which images aren't tagged with contrasts?
-            not_tagged = images.filter(cognitive_contrast_cogatlas__isnull=True)
+    if task:
+        images = StatisticMap.objects.filter(cognitive_paradigm_cogatlas=cog_atlas_id,
+                                             collection__private=False).order_by("pk")
+        first_image = images[0]
+        graph = get_task_graph(cog_atlas_id, images=images)
 
-            context = {'task': task,
-                       'first_image': first_image,
-                       'cognitive_atlas_tree': graph,
-                       'tree_divid': "tree",  # div id in template to append tree svg to
-                       'images_without_contrasts': not_tagged}
+        # Which images aren't tagged with contrasts?
+        not_tagged = images.filter(cognitive_contrast_cogatlas__isnull=True)
 
-            return render(request, 'cogatlas/cognitive_atlas_task.html', context)
+        context = {'task': task,
+                   'first_image': first_image,
+                   'cognitive_atlas_tree': graph,
+                   'tree_divid': "tree",  # div id in template to append tree svg to
+                   'images_without_contrasts': not_tagged}
 
-    # Otherwise, direct back to search page
-    return search(request,error_message="Invalid search for Cognitive Atlas.")
+        return render(request, 'cogatlas/cognitive_atlas_task.html', context)
+
+
 
 
 @login_required
