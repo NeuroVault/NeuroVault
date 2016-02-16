@@ -403,8 +403,8 @@ def view_task(request, cog_atlas_id=None):
     from cogat_functions import get_task_graph
 
     # Get the cognitive atlas id from the post (given a form submit)
-    if request.method == "POST":
-        cog_atlas_id = request.POST["cogatlas"]
+    if request.method == "GET":
+        cog_atlas_id = request.GET["cogatlas"]
 
     try:
         task = CognitiveAtlasTask.objects.get(cog_atlas_id=cog_atlas_id)

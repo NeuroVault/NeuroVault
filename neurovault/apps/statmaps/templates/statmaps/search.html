@@ -73,8 +73,7 @@ margin-top: 0 !important;
 
             <!-- Cognitive Atlas Task Search Column -->
             <div class="col-md-4" style="padding-top:45px">
-                <form action="{% url 'view_task' %}" method="post">
-                {% csrf_token %}
+                <form action="{% url 'view_task' %}" method="get">
                     <div class="form-group">
                             <select class="form-control" id="cogatlas" name="cogatlas">
                                 <option>Search by Cognitive Atlas Task</option>
