@@ -5,6 +5,44 @@
 <title>{% block title %}NeuroVault: {{image.name}}{% endblock %}</title>
 <script type="text/javascript" src="{% static "scripts/papaya.js"%}"/>
 {% include "statmaps/_meta_image.html" %}
+<meta name="map_type" content="{{ image.map_type }}">
+<meta name="modality" content="{{ image.modality }}">
+{% if image.smoothness_fwhm %}
+<meta name="smoothness_fwhm" content="{{ image.smoothness_fwhm }}">
+{% endif %}
+{% if image.analysis_level %}
+<meta name="analysis_level" content="{{ image.analysis_level }}">
+{% endif %}
+{% if image.figure %}
+<meta name="figure" content="{{ image.figure }}">
+{% endif %}
+
+{% if image.map_type == 'Pa' %}
+<meta name="pagetype" content="atlas">
+{% else %}
+<meta name="pagetype" content="statmap">
+{% endif %}
+
+{% if image.not_mni == False %}
+<meta name="mni" content="true">
+{% else %}
+<meta name="mni" content="false">
+{% endif %}
+
+<!-- Cognitive Atlas -->
+{% if image.cognitive_contrast_cogatlas_id %}
+<meta name="cognitive_contrast_cogatlas_id" content="{{ image.cognitive_contrast_cogatlas_id }}">
+{% endif %}
+{% if image.cognitive_contrast_cogatlas %}
+<meta name="cognitive_contrast_cogatlas" content="{{ image.cognitive_contrast_cogatlas }}">
+{% endif %}
+{% if image.cognitive_paradigm_cogatlas_id %}
+<meta name="cognitive_paradigm_cogatlas_id" content="{{ image.cognitive_paradigm_cogatlas_id }}">
+{% endif %}
+{% if image.cognitive_paradigm_cogatlas %}
+<meta name="cognitive_paradigm_cogatlas" content="{{ image.cognitive_paradigm_cogatlas }}">
+{% endif %}
+
 {% endblock %}
 {% block head %}
     :javascript
