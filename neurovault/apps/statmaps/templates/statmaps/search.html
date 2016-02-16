@@ -2,9 +2,9 @@
 {% load static from staticfiles %}
 {% block head %}
 <script src="{% static "scripts/jquery-1.10.2.min.js"%}" type="text/javascript"></script>
-<script src="{% static "scripts/bootstrap.min.js"%}" type="text/javascript"></script>
 <script src="{% static "scripts/select2.min.js"%}" type="text/javascript"></script>
 <link href="{% static "css/select2.min.css"%}" rel="stylesheet"></script>
+<script src="{% static "scripts/bootstrap.min.js"%}" type="text/javascript"></script>
 <link href="http://netdna.bootstrapcdn.com/font-awesome/3.1.1/css/font-awesome.css" rel="stylesheet">
 <title>{% block title %}NeuroVault: Search{% endblock %}</title>
 
@@ -97,30 +97,5 @@ margin-top: 0 !important;
       $('#cogatlas').select2();
    });
 </script> 
-
-<!--
-<script type="text/javascript">// <![CDATA[
-      $("#searchterm").keyup(function(e){
-        var q = $("#searchterm").val();
-        $.getJSON("{% url 'collection_images_json' 1 %}",
-        {
-          q: q,
-          action: "query",
-          list: "search",
-          format: "json"
-        },
-        function(data) {
-          console.log(data);
-          $("#results").empty();
-          $("#results").append("Results for <b>" + q + "</b>");
-          $.each(data.data, function(i,item){
-            console.log(item);
-            //Would need to parse this into something prettier
-            $("#results").append("<div>item</div>");
-          });
-        });
-      });
-//]]</script>
--->
 
 {% endblock %}
