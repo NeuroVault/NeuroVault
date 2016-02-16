@@ -223,6 +223,10 @@ class CognitiveAtlasTask(models.Model):
     def __unicode__(self):
         return self.name
 
+    def get_absolute_url(self):
+        cog_atlas_id = self.cog_atlas_id
+        return reverse('view_task', args=[str(cog_atlas_id)])
+
     class Meta:
         ordering = ['name']
 
