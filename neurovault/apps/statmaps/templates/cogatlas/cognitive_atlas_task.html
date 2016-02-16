@@ -209,6 +209,7 @@ $(document).ready(function() {
         "columnDefs": [
     		{ "orderable": false, "targets": 0 }
   		],
+        "order": [[ 3, 'asc' ], [2, 'asc'], [1, 'asc']],
         "ajax": "{% url 'task_images_json' task.cog_atlas_id %}",
         "initComplete": function(settings, json) {
     		var collection_images = $(".viewimage")
