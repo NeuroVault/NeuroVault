@@ -2,7 +2,6 @@ from neurovault.apps.statmaps.models import Image, Collection, CognitiveAtlasTas
 from django.contrib.sitemaps import Sitemap
 
 class BaseSitemap(Sitemap):
-    changefreq = "always"
     priority = 0.5
 
     def lastmod(self, obj):
@@ -13,18 +12,19 @@ class BaseSitemap(Sitemap):
 
 
 class ImageSitemap(BaseSitemap):
-
+    changefreq = "weekly"
     def items(self):
         return Image.objects.filter(collection__private=False)
 
 
 class CollectionSitemap(BaseSitemap):
+    changefreq = "weekly"
     def items(self):
         return Collection.objects.filter(private=False)
 
 
 class CognitiveAtlasTaskSitemap(Sitemap):
-    changefreq = "always"
+    changefreq = "daily"
     priority = 0.5
 
     def items(self):
