@@ -34,7 +34,17 @@ margin-top: 0 !important;
 {% block content %}
 <div class="fade"></div>
 
-<!-- Meta data and header row-->
+{% if message %}
+<div class="row">
+    <ul class="messages">
+    <div class="alert alert-dismissible alert-danger">
+    {{ message|safe }}
+    </div>
+    </ul>
+</div>
+{% endif %}
+
+<!-- Search with two columns -->
 <div class="row" style="padding-bottom:30px">
         <h2>Search</h2>
         <div class="row">
@@ -62,13 +72,12 @@ margin-top: 0 !important;
             </div>
 
             <!-- Cognitive Atlas Task Search Column -->
-            <div class="col-md-4" style="padding-top:7px">
+            <div class="col-md-4" style="padding-top:45px">
                 <form action="{% url 'view_task' %}" method="post">
                 {% csrf_token %}
                     <div class="form-group">
-                        <h4>Search by Cognitive Atlas Task:</h4>
                             <select class="form-control" id="cogatlas" name="cogatlas">
-                                <option>--</option>
+                                <option>Search by Cognitive Atlas Task</option>
                                     {% for task in cogatlas_task %}
                                     <option value="{{ task.cog_atlas_id }}">{{ task.name }}</option>
                                     {% endfor %}
