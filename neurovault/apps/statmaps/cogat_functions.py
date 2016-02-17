@@ -46,7 +46,7 @@ def get_task_graph(task_id, images=None):
             images = StatisticMap.objects.filter(cognitive_contrast_cogatlas=contrast)
 
         for concept in contrast_concepts.json:
-            if concept["name"] not in current_names:
+            if concept and concept["name"] not in current_names:
                 concept_node = make_node(concept["id"], concept["name"], "#3c7263")
 
                 # Image nodes
