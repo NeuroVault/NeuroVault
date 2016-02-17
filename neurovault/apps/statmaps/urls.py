@@ -157,13 +157,13 @@ urlpatterns = patterns('',
 
 
     # Cognitive Atlas
-    url(r'^images/(?P<cog_atlas_id>[A-Za-z0-9].*)/task/json$',
+    url(r'^tasks/(?P<cog_atlas_id>[A-Za-z0-9].*)/json$',
         ImagesByTaskJson.as_view(),
         name='task_images_json'),
-    url(r'^images/(?P<cog_atlas_id>[A-Za-z0-9].*)/task$',
+    url(r'^tasks/(?P<cog_atlas_id>[A-Za-z0-9].*)$',
         view_task,
         name='view_task'),
-    url(r'^images/task$',
+    url(r'^tasks$',
         view_task,
         name='view_task')
 
