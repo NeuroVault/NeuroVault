@@ -49,67 +49,69 @@
 
 <div class="container navigation-container">
 
-<nav class="navbar navbar-default" id="navigation">
-    <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#main-links">
-        <span class="sr-only">Toggle navigation</span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-      </button>
-      <a class="navbar-brand" href="{% url 'index' %}">NeuroVault</a>
-    </div>
-
-    <!-- Collect the nav links, forms, and other content for toggling -->
-    <div class="collapse navbar-collapse" id="main-links">
-      <ul class="nav navbar-nav">
-	  <li class="dropdown">
-	  <a href="" class="dropdown-toggle" data-toggle="dropdown">
-	      Collections
-	      <b class="caret"></b>
-	  </a>
-	  <ul class="dropdown-menu">
-	      <li><a href="{% url 'my_collections' %}">My collections</a></li>
-	      <li><a href="{% url 'new_collection' %}">Add new collection</a></li>
-	      <li><a href="{% url 'collections_list' %}">See all collections</a></li>
-	  </ul>
-	  </li>
-	 <li><a href="{% url 'FAQ' %}">FAQ</a></li>
-	 <li><a href="javascript:void(0)" data-uv-lightbox="classic_widget" data-uv-mode="full" data-uv-primary-color="#cc6d00" data-uv-link-color="#007dbf" data-uv-default-mode="feedback" data-uv-forum-id="210717">Give feedback</a>
-	</li>
-      </ul>
-      <ul class="nav navbar-nav navbar-right">
-
-          <!-- Search Icon -->
-          <li><a href="{% url 'search' %}"><i class="fa fa-search"></i></a></li>
-
-          <!-- User Profile -->
-          {% if request.user.is_authenticated %}
-	  <li class="dropdown">
-	  <a href="{% url 'my_profile' %}" class="dropdown-toggle" data-toggle="dropdown">
-	      {{ request.user.username }}
-	      <b class="caret"></b>
-	  </a>
-	  <ul class="dropdown-menu">
-	      <li><a href="{% url 'my_collections' %}">My collections</a></li>
-          <li role="separator" class="divider"></li>
-          <li><a href="{% url 'edit_user' %}">Settings</a></li>
-	      <li><a href="{% url 'logout' %}">Logout</a></li>
-	  </ul>
-	  </li>
-	  {% else %}
-          <li><a href="{% url 'login' %}">Log in</a></li>
-          {% endif %}
-      </ul>
-    </div><!-- /.navbar-collapse -->
-  </div><!-- /.container -->
-</nav>
-
-    <div class="container" id="main">
-        <div class="row" id="content">
-                {% block content %}{% endblock %}
+    <nav class="navbar navbar-default" id="navigation">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#main-links">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="{% url 'index' %}">NeuroVault</a>
         </div>
-   </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="main-links">
+            <ul class="nav navbar-nav">
+                <li class="dropdown">
+                    <a href="" class="dropdown-toggle" data-toggle="dropdown">
+                        Collections
+                        <b class="caret"></b>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="{% url 'my_collections' %}">My collections</a></li>
+                        <li><a href="{% url 'new_collection' %}">Add new collection</a></li>
+                        <li><a href="{% url 'collections_list' %}">See all collections</a></li>
+                    </ul>
+                </li>
+                <li><a href="{% url 'FAQ' %}">FAQ</a></li>
+                <li><a href="javascript:void(0)" data-uv-lightbox="classic_widget" data-uv-mode="full"
+                       data-uv-primary-color="#cc6d00" data-uv-link-color="#007dbf" data-uv-default-mode="feedback"
+                       data-uv-forum-id="210717">Give feedback</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+
+                <!-- Search Icon -->
+                <li><a href="{% url 'search' %}"><i class="fa fa-search"></i></a></li>
+
+                <!-- User Profile -->
+                {% if request.user.is_authenticated %}
+                    <li class="dropdown">
+                        <a href="{% url 'my_profile' %}" class="dropdown-toggle" data-toggle="dropdown">
+                            {{ request.user.username }}
+                            <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="{% url 'my_collections' %}">My collections</a></li>
+                            <li role="separator" class="divider"></li>
+                            <li><a href="{% url 'edit_user' %}">Settings</a></li>
+                            <li><a href="{% url 'logout' %}">Logout</a></li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li><a href="{% url 'login' %}">Log in</a></li>
+                {% endif %}
+            </ul>
+        </div><!-- /.navbar-collapse -->
+    </nav>
+</div>
+
+<div class="container" id="main">
+    <div class="row" id="content">
+        {% block content %}{% endblock %}
+    </div>
+</div>
 
 {% block footer %}
 <footer style="text-align:center;padding-top:10px">
