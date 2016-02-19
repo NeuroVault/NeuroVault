@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load coffeescript %}
 {% load static from staticfiles %}
-{% block head %}
+{% block includes %}
 <script type="text/javascript" src="{% static "scripts/papaya.js"%}"></script>
 {% include "statmaps/_meta_image.html" %}
 <meta name="map_type" content="{{ image.map_type }}">
@@ -42,6 +42,8 @@
 <meta name="cognitive_paradigm_cogatlas" content="{{ image.cognitive_paradigm_cogatlas }}">
 {% endif %}
 
+{% endblock %}
+{% block head %}
 <title>{% block title %}NeuroVault: {{image.name}}{% endblock %}</title>
     :javascript
          var params = [];
