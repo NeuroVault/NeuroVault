@@ -2,8 +2,7 @@
 {% load coffeescript %}
 {% load static from staticfiles %}
 {% block includes %}
-<title>{% block title %}NeuroVault: {{image.name}}{% endblock %}</title>
-<script type="text/javascript" src="{% static "scripts/papaya.js"%}"/>
+<script type="text/javascript" src="{% static "scripts/papaya.js"%}"></script>
 {% include "statmaps/_meta_image.html" %}
 <meta name="map_type" content="{{ image.map_type }}">
 <meta name="modality" content="{{ image.modality }}">
@@ -45,6 +44,7 @@
 
 {% endblock %}
 {% block head %}
+<title>{% block title %}NeuroVault: {{image.name}}{% endblock %}</title>
     :javascript
          var params = [];
          params["worldSpace"] = true;
