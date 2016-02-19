@@ -2,8 +2,8 @@
 {% load coffeescript %}
 {% load static from staticfiles %}
 {% block includes %}
-<script type="text/javascript" src="{% static "scripts/papaya.js"%}"/>
-<title>{% block title %}NeuroVault: Atlas - {{image.name}}{% endblock %}</title>
+<script type="text/javascript" src="{% static "scripts/papaya.js"%}"/></script>
+
 {% endblock %}
 {% block head %}
     :javascript
@@ -41,7 +41,7 @@
 {% include 'statmaps/_papaya_viewer_head.html.haml' %}
 {% include "statmaps/_meta_image.html" %}
 <meta name="pagetype" content="atlas">
-
+<title>{% block title %}{{image.name}}{% endblock %}</title>
 {% endblock %}
 
 {% block content %}
