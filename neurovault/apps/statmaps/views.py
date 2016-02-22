@@ -272,7 +272,7 @@ def view_image(request, pk, collection_cid=None):
 
 
 def view_collection(request, cid):
-    '''view_collection returns main view to see an entire collection of images, meaning a viewer and list of images to load into it. 
+    '''view_collection returns main view to see an entire collection of images, meaning a viewer and list of images to load into it.
     :param cid: statmaps.models.Collection.pk the primary key of the collection
     '''
     collection = get_collection(cid,request)
@@ -413,7 +413,7 @@ def view_task(request, cog_atlas_id=None):
     if task:
         images = StatisticMap.objects.filter(cognitive_paradigm_cogatlas=cog_atlas_id,
                                              collection__private=False).order_by("pk")
-        
+
         if len(images) > 0:
             first_image = images[0]
             graph = get_task_graph(cog_atlas_id, images=images)
@@ -648,11 +648,11 @@ def delete_image(request, pk):
 
 def view_images_by_tag(request, tag):
     if request.user.is_authenticated():
-        images = Image.objects.filter(tags__name__in=[tag]).filter(
+        images = Image.objects.filter(tags__name__in=[tag.lower()]).filter(
                                         Q(collection__private=False) |
                                         Q(collection__owner=request.user))
     else:
-        images = Image.objects.filter(tags__name__in=[tag]).filter(
+        images = Image.objects.filter(tags__name__in=[tag.lower()]).filter(
                                         collection__private=False)
     context = {'images': images, 'tag': tag}
     return render(request, 'statmaps/images_by_tag.html.haml', context)
