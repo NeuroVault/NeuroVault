@@ -402,7 +402,7 @@ class ImageValidationMixin(object):
 
                 # detect AFNI 4D files and prepare 3D slices
                 if nii is not None and detect_4D(nii):
-                    self.afni_subbricks = split_4D_to_3D(nii)
+                    self.afni_subbricks = split_4D_to_3D(nii, tmp_dir=tmp_dir)
                 else:
                     squeezable_dimensions = len(
                         filter(lambda a: a not in [0, 1], nii.shape)
@@ -443,6 +443,7 @@ class ImageValidationMixin(object):
                         # keep temp dir for AFNI slicing
                         self.afni_tmp = tmp_dir
                     else:
+                        print "removing %s"%tmp_dir
                         shutil.rmtree(tmp_dir)
                 except OSError as exc:
                     if exc.errno != 2:  # code 2 - no such file or directory
@@ -477,6 +478,8 @@ class ImageForm(ModelForm, ImageValidationMixin):
     def clean(self, **kwargs):
         cleaned_data = super(ImageForm, self).clean()
         return self.clean_and_validate(cleaned_data)
+
+
 
 
 class StatisticMapForm(ImageForm):
@@ -540,6 +543,35 @@ class StatisticMapForm(ImageForm):
             'perc_voxels_outside': HiddenInput,
             'is_valid': HiddenInput
         }
+
+    def save_afni_slices(self, commit):
+        try:
+            orig_img = self.instance
+
+            for n, (label, brick) in enumerate(self.afni_subbricks):
+                brick_fname = os.path.split(brick)[-1]
+                mfile = memory_uploadfile(brick, brick_fname, orig_img.file)
+                brick_img = StatisticMap(name='%s - %s' % (orig_img.name, label), collection=orig_img.collection,
+                                         file=mfile)
+                for field in set(self.Meta.fields) - set(['file', 'hdr_file', 'name', 'collection']):
+                    if field in self.cleaned_data:
+                        setattr(brick_img, field, self.cleaned_data[field])
+
+                brick_img.save()
+            return orig_img.collection
+
+        finally:
+            try:
+                shutil.rmtree(self.afni_tmp)
+            except OSError as exc:
+                if exc.errno != 2:
+                    raise
+
+    def save(self, commit=True):
+        if self.afni_subbricks:
+            return self.save_afni_slices(commit)
+        else:
+            return super(StatisticMapForm, self).save(commit=commit)
 
 
 class AtlasForm(ImageForm):
