@@ -477,6 +477,8 @@ def not_in_mni(nii, plot=False):
 
     brain_mask = mask_nii.get_data() > 0
     excursion_set = np.logical_not(np.logical_or(nii.get_data() == 0, np.isnan(nii.get_data())))
+
+    # deals with AFNI files
     if len(excursion_set.shape) == 5:
         excursion_set = excursion_set[:, :, :, 0, 0]
     in_brain_voxels = np.logical_and(excursion_set, brain_mask).sum()
