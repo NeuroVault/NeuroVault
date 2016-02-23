@@ -660,63 +660,6 @@ class SimplifiedStatisticMapForm(EditStatisticMapForm):
                   'cognitive_contrast_cogatlas', 'file', 'ignore_file_warning', 'hdr_file', 'tags', 'is_thresholded',
                   'perc_bad_voxels')
 
-
-class CollectionInlineFormset(BaseInlineFormSet):
-
-    def add_fields(self, form, index):
-        super(CollectionInlineFormset, self).add_fields(form, index)
-
-    def save_afni_slices(self, form, commit):
-        try:
-            orig_img = form.instance
-            first_img = None
-
-            for n, (label, brick) in enumerate(form.afni_subbricks):
-                brick_fname = os.path.split(brick)[-1]
-                mfile = memory_uploadfile(brick, brick_fname, orig_img.file)
-                brick_img = StatisticMap(
-                    name='%s - %s' % (orig_img.name, label), file=mfile)
-                for field in ['collection', 'description']:
-                    setattr(brick_img, field, form.cleaned_data[field])
-                setattr(
-                    brick_img, 'map_type', form.data['%s-map_type' % form.prefix])
-
-                if n == 0:
-                    form.instance = brick_img
-                    first_img = form.save()
-                else:
-                    brick_img.save()
-                    for tag in first_img.tags.all():
-                        tagobj = ValueTaggedItem(
-                            content_object=brick_img, tag=tag)
-                        tagobj.save()
-
-        finally:
-            shutil.rmtree(form.afni_tmp)
-        return form
-
-    def save_new(self, form, commit=True):
-        if form.afni_subbricks:
-            form = self.save_afni_slices(form, commit)
-            return form.instance
-        else:
-            return super(CollectionInlineFormset, self).save_new(form, commit=commit)
-
-    def save_existing(self, form, instance, commit=True):
-        if form.afni_subbricks:
-            form = self.save_afni_slices(form, commit)
-            return form.instance
-        else:
-            return super(CollectionInlineFormset, self).save_existing(
-                form, instance, commit=commit)
-
-
-CollectionFormSet = inlineformset_factory(
-    Collection, Image, form=PolymorphicImageForm,
-    exclude=['json_path', 'nifti_gz_file', 'collection'],
-    extra=1, formset=CollectionInlineFormset, can_delete=False)
-
-
 class UploadFileForm(Form):
 
     # TODO Need to upload in a temp directory
