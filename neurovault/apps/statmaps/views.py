@@ -37,7 +37,7 @@ from xml.dom import minidom
 
 import neurovault
 from neurovault import settings
-from neurovault.apps.statmaps.forms import CollectionFormSet, CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
+from neurovault.apps.statmaps.forms import CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
 from neurovault.apps.statmaps.models import Collection, Image, Atlas, StatisticMap, NIDMResults, NIDMResultStatisticMap, \

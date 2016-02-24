@@ -1,12 +1,14 @@
+import nibabel as nb
 import os
-
-from django.core.urlresolvers import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.urlresolvers import reverse
 from django.test import TestCase, Client
 
-from neurovault.apps.statmaps.models import Collection,User, StatisticMap
 from neurovault.apps.statmaps.forms import StatisticMapForm
+from neurovault.apps.statmaps.models import Collection,User, StatisticMap
+from neurovault.apps.statmaps.utils import detect_4D, split_4D_to_3D
 from .utils import clearDB
+
 
 class AddStatmapsTests(TestCase):
     
@@ -40,7 +42,33 @@ class AddStatmapsTests(TestCase):
             form.save()
             
             self.assertEqual(StatisticMap.objects.filter(collection=self.coll.pk)[0].name, "test map")
-            
+
+    def testaddAFNI(self):
+
+            post_dict = {
+                'name': "test map",
+                'cognitive_paradigm_cogatlas': 'trm_4f24126c22011',
+                'modality':'fMRI-BOLD',
+                'map_type': 'T',
+                'collection':self.coll.pk,
+            }
+            testpath = os.path.abspath(os.path.dirname(__file__))
+            fname = os.path.join(testpath,'test_data/statmaps/saccade.I_C.MNI.nii.gz')
+
+            nii = nb.load(fname)
+
+            self.assertTrue(detect_4D(nii))
+            self.assertTrue(len(split_4D_to_3D(nii)) > 0)
+
+            file_dict = {'file': SimpleUploadedFile(fname, open(fname).read())}
+            form = StatisticMapForm(post_dict, file_dict)
+
+            self.assertTrue(form.is_valid())
+
+            form.save()
+
+            self.assertEqual(StatisticMap.objects.filter(collection=self.coll.pk).count(), 2)
+
     def testaddImgHdr(self):
 
             post_dict = {

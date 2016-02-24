@@ -402,7 +402,7 @@ class ImageValidationMixin(object):
 
                 # detect AFNI 4D files and prepare 3D slices
                 if nii is not None and detect_4D(nii):
-                    self.afni_subbricks = split_4D_to_3D(nii)
+                    self.afni_subbricks = split_4D_to_3D(nii, tmp_dir=tmp_dir)
                 else:
                     squeezable_dimensions = len(
                         filter(lambda a: a not in [0, 1], nii.shape)
@@ -443,6 +443,7 @@ class ImageValidationMixin(object):
                         # keep temp dir for AFNI slicing
                         self.afni_tmp = tmp_dir
                     else:
+                        print "removing %s"%tmp_dir
                         shutil.rmtree(tmp_dir)
                 except OSError as exc:
                     if exc.errno != 2:  # code 2 - no such file or directory
@@ -477,6 +478,8 @@ class ImageForm(ModelForm, ImageValidationMixin):
     def clean(self, **kwargs):
         cleaned_data = super(ImageForm, self).clean()
         return self.clean_and_validate(cleaned_data)
+
+
 
 
 class StatisticMapForm(ImageForm):
@@ -540,6 +543,35 @@ class StatisticMapForm(ImageForm):
             'perc_voxels_outside': HiddenInput,
             'is_valid': HiddenInput
         }
+
+    def save_afni_slices(self, commit):
+        try:
+            orig_img = self.instance
+
+            for n, (label, brick) in enumerate(self.afni_subbricks):
+                brick_fname = os.path.split(brick)[-1]
+                mfile = memory_uploadfile(brick, brick_fname, orig_img.file)
+                brick_img = StatisticMap(name='%s - %s' % (orig_img.name, label), collection=orig_img.collection,
+                                         file=mfile)
+                for field in set(self.Meta.fields) - set(['file', 'hdr_file', 'name', 'collection']):
+                    if field in self.cleaned_data:
+                        setattr(brick_img, field, self.cleaned_data[field])
+
+                brick_img.save()
+            return orig_img.collection
+
+        finally:
+            try:
+                shutil.rmtree(self.afni_tmp)
+            except OSError as exc:
+                if exc.errno != 2:
+                    raise
+
+    def save(self, commit=True):
+        if self.afni_subbricks:
+            return self.save_afni_slices(commit)
+        else:
+            return super(StatisticMapForm, self).save(commit=commit)
 
 
 class AtlasForm(ImageForm):
@@ -627,63 +659,6 @@ class SimplifiedStatisticMapForm(EditStatisticMapForm):
         fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
                   'cognitive_contrast_cogatlas', 'file', 'ignore_file_warning', 'hdr_file', 'tags', 'is_thresholded',
                   'perc_bad_voxels')
-
-
-class CollectionInlineFormset(BaseInlineFormSet):
-
-    def add_fields(self, form, index):
-        super(CollectionInlineFormset, self).add_fields(form, index)
-
-    def save_afni_slices(self, form, commit):
-        try:
-            orig_img = form.instance
-            first_img = None
-
-            for n, (label, brick) in enumerate(form.afni_subbricks):
-                brick_fname = os.path.split(brick)[-1]
-                mfile = memory_uploadfile(brick, brick_fname, orig_img.file)
-                brick_img = StatisticMap(
-                    name='%s - %s' % (orig_img.name, label), file=mfile)
-                for field in ['collection', 'description']:
-                    setattr(brick_img, field, form.cleaned_data[field])
-                setattr(
-                    brick_img, 'map_type', form.data['%s-map_type' % form.prefix])
-
-                if n == 0:
-                    form.instance = brick_img
-                    first_img = form.save()
-                else:
-                    brick_img.save()
-                    for tag in first_img.tags.all():
-                        tagobj = ValueTaggedItem(
-                            content_object=brick_img, tag=tag)
-                        tagobj.save()
-
-        finally:
-            shutil.rmtree(form.afni_tmp)
-        return form
-
-    def save_new(self, form, commit=True):
-        if form.afni_subbricks:
-            form = self.save_afni_slices(form, commit)
-            return form.instance
-        else:
-            return super(CollectionInlineFormset, self).save_new(form, commit=commit)
-
-    def save_existing(self, form, instance, commit=True):
-        if form.afni_subbricks:
-            form = self.save_afni_slices(form, commit)
-            return form.instance
-        else:
-            return super(CollectionInlineFormset, self).save_existing(
-                form, instance, commit=commit)
-
-
-CollectionFormSet = inlineformset_factory(
-    Collection, Image, form=PolymorphicImageForm,
-    exclude=['json_path', 'nifti_gz_file', 'collection'],
-    extra=1, formset=CollectionInlineFormset, can_delete=False)
-
 
 class UploadFileForm(Form):
 
