@@ -22,7 +22,7 @@ class ImageSitemap(BaseSitemap):
 class CollectionSitemap(BaseSitemap):
     changefreq = "weekly"
     def items(self):
-        return Collection.objects.filter(private=False)
+        return Collection.objects.filter(private=False).annotate(num_submissions=Count('basecollectionitem')).filter(num_submissions__gt = 0)
 
 
 class CognitiveAtlasTaskSitemap(Sitemap):
