@@ -1,11 +1,12 @@
-from neurovault.api.sitemap import CollectionSitemap, ImageSitemap, CognitiveAtlasTaskSitemap
-from django.conf.urls import include, patterns, url
-from oauth2_provider import views as oauth_views
-from django.contrib.sitemaps.views import sitemap
-from neurovault.api.urls import api_urls
-from django.conf import settings
-from django.contrib import admin
 import os
+from django.conf import settings
+from django.conf.urls import include, patterns, url
+from django.contrib import admin
+from django.contrib.sitemaps.views import sitemap, index
+from oauth2_provider import views as oauth_views
+
+from neurovault.api.sitemap import CollectionSitemap, ImageSitemap, CognitiveAtlasTaskSitemap
+from neurovault.api.urls import api_urls
 
 admin.autodiscover()
 
@@ -33,8 +34,9 @@ urlpatterns = patterns('',
                        url(r'^api/', include(api_urls)),
                        url(r'^api-auth/', include(
                            'rest_framework.urls', namespace='rest_framework')),
-                       url(r'^sitemap\.xml$', sitemap, {'sitemaps': sitemaps},
+                       url(r'^sitemap\.xml$', index, {'sitemaps': sitemaps},
                            name='django.contrib.sitemaps.views.sitemap'),
+                       url(r'^sitemap-(?P<section>.+)\.xml$', sitemap, {'sitemaps': sitemaps}),
                        url(r'^o/', include((oauth_urlpatterns,
                                             'oauth2_provider',
                                             'oauth2_provider'))),

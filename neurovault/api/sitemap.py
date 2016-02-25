@@ -1,5 +1,7 @@
-from neurovault.apps.statmaps.models import Image, Collection, CognitiveAtlasTask, StatisticMap
 from django.contrib.sitemaps import Sitemap
+
+from neurovault.apps.statmaps.models import Image, Collection, CognitiveAtlasTask, StatisticMap
+
 
 class BaseSitemap(Sitemap):
     priority = 0.5
@@ -28,7 +30,8 @@ class CognitiveAtlasTaskSitemap(Sitemap):
     priority = 0.5
 
     def items(self):
-        task_ids = StatisticMap.objects.values_list('cognitive_paradigm_cogatlas',flat=True).distinct()
+        task_ids = StatisticMap.objects.filter(collection__private=False).values_list('cognitive_paradigm_cogatlas',
+                                                                                      flat=True).distinct()
         return CognitiveAtlasTask.objects.filter(cog_atlas_id__in=task_ids)
          
     def location(self,obj):
