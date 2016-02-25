@@ -1,7 +1,7 @@
 from django.contrib.sitemaps import Sitemap
+from django.db.models.aggregates import Count
 
 from neurovault.apps.statmaps.models import Image, Collection, CognitiveAtlasTask, StatisticMap
-
 
 class BaseSitemap(Sitemap):
     priority = 0.5
