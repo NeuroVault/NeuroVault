@@ -111,7 +111,7 @@
                         - if not forloop.last
 
             - if image.cognitive_paradigm_cogatlas_id
-                %a.btn.btn-primary.btn{href: "{% url 'view_task' %}?cogatlas={{image.cognitive_paradigm_cogatlas_id}}"} Task View
+                %a.btn.btn-primary.btn{href: "{% url 'view_task' image.cognitive_paradigm_cogatlas_id %}"} Task View
             %a.btn.btn-primary.btn{href: "pycortex" } 3D View
             - if image.nidm_results
                 .btn-group
