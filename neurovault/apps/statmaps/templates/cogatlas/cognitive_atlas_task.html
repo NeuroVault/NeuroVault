@@ -7,6 +7,10 @@
     <link href="http://netdna.bootstrapcdn.com/font-awesome/3.1.1/css/font-awesome.css" rel="stylesheet">
 
     <!--Meta data for Google Search-->
+    {% if no_task_images %}
+    <meta name="robots" content="noindex">
+    {% endif %}
+    
     <meta name="pagetype" content="cognitiveatlastask">
     <meta name="name" content="{{ task.name }}">
     <meta name="cognitive_paradigm_cogatlas" content="{{ task.name }}">
@@ -14,9 +18,10 @@
     <meta name="thumbnail" content="http://www.cognitiveatlas.org/images/logo-front.png">
     <meta name="database" content="neurovault.org">
     <meta name="url" content="http://www.cognitiveatlas.org/term/id/{{ task.cog_atlas_id }}">
-
+    
     <title>{% block title %}NeuroVault: {{ task.name }}{% endblock %}</title>
 
+    {% if not no_task_images %}
     <script type="text/javascript">
 
         var params = [];
@@ -172,6 +177,7 @@
         }).call(this);
 
     </script>
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -197,6 +203,16 @@
     <div class="row">
     </div>
 
+    {% if no_task_images %}
+    <div class="row" style="margin-bottom:30px">
+        <ul class="messages">
+        <div class="alert alert-dismissible alert-danger">
+        There are no maps in NeuroVault tagged with this task.
+        </div>
+        </ul>
+    </div>
+
+    {% else %}
     <!-- Content-->
 
     <!-- COLLECTION TABS -->
@@ -278,4 +294,5 @@
             });
         {% endif %}
     </script>
+{% endif %}
 {% endblock %}

@@ -162,9 +162,6 @@ urlpatterns = patterns('',
         name='task_images_json'),
     url(r'^tasks/(?P<cog_atlas_id>[A-Za-z0-9].*)$',
         view_task,
-        name='view_task'),
-    url(r'^tasks$',
-        view_task,
         name='view_task')
 
 )
