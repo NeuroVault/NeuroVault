@@ -302,10 +302,9 @@ class TestCollection(APITestCase):
         url = '/api/collections/%s/' % self.coll.id
 
         response = self.client.post(url, {'name': 'failed test'})
-        self.assertEqual(response.status_code,
-                         status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(response.data, {
-            'detail': 'Method "POST" not allowed.'
+            'detail': 'Authentication credentials were not provided.'
         })
 
     def test_partial_update_collection(self):

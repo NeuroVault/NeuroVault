@@ -6,13 +6,14 @@ from guardian.ctypes import get_ctype_from_polymorphic
 class ObjectOnlyPermissions(DjangoObjectPermissions):
 
     def has_permission(self, request, view):
-        return True
+        return (
+            request.method in SAFE_METHODS or
+            request.user and
+            request.user.is_authenticated()
+        )
 
 
 class ObjectOnlyPolymorphicPermissions(ObjectOnlyPermissions):
-
-    def has_permission(self, request, view):
-        return True
 
     def has_object_permission(self, request, view, obj):
         ctype = get_ctype_from_polymorphic(obj)
