@@ -401,9 +401,9 @@ def view_task(request, cog_atlas_id=None):
     '''
     from cogat_functions import get_task_graph
 
-    # Get the cognitive atlas id from the get (given a form submit)
+    # Get the cognitive atlas id
     if not cog_atlas_id:
-        cog_atlas_id = request.GET["cogatlas"]
+        return search(request, error_message="Please search for a Cognitive Atlas task to see the task view.")
 
     try:
         task = CognitiveAtlasTask.objects.get(cog_atlas_id=cog_atlas_id)
@@ -429,7 +429,11 @@ def view_task(request, cog_atlas_id=None):
 
             return render(request, 'cogatlas/cognitive_atlas_task.html', context)
 
-    return search(request, error_message="No tagged images found in NeuroVault for this Cognitive Atlas task.")
+    # If task does not have images   
+    context = {"no_task_images": True, # robots won't index page if defined
+               "task": task } 
+    return render(request, 'cogatlas/cognitive_atlas_task.html', context)
+
 
 
 @login_required

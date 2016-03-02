@@ -55,7 +55,7 @@ margin-top: 0 !important;
          <div class="row">
 
             <!-- Google Search Column-->
-            <div class="col-md-8" style="padding-top:30px;padding-bottom-20px;">
+            <div class="col-md-12" style="padding-top:30px;padding-bottom-20px;">
 		<script>
 		  (function() {
 		    var cx = '010503388974132107851:0z1x3cffi3u';
@@ -70,31 +70,17 @@ margin-top: 0 !important;
 		</script>
 		<gcse:search linkTarget="_self"></gcse:search>
             </div>
-
-            <!-- Cognitive Atlas Task Search Column -->
-            <div class="col-md-4" style="padding-top:45px">
-                <form action="{% url 'view_task' %}" method="get">
-                    <div class="form-group">
-                            <select class="form-control" id="cogatlas" name="cogatlas">
-                                <option>Search by Cognitive Atlas Task</option>
-                                    {% for task in cogatlas_task %}
-                                    <option value="{{ task.cog_atlas_id }}">{{ task.name }}</option>
-                                    {% endfor %}
-                            </select>
-                    </div>
-                    <input type="submit" class="btn btn-default btn-sm" value="Go">
-                </form>
-            </div>
          </div>
 
 </div>
 <div class="row">
 </div>
 
-<script type="text/javascript">
-   $(document).ready(function(){
-      $('#cogatlas').select2();
-   });
-
-</script> 
+<script>
+//Workaround to add collections link to dropdown
+$("#collections_nav").attr("href","{% url 'collections_list' %}")
+// Remove broken dropdown
+$("#collections_nav").children().remove()
+$("#collections_nav").removeAttr("data-toggle")
+</script>
 {% endblock %}
