@@ -631,7 +631,7 @@ class AddStatisticMapForm(StatisticMapForm):
 
     class Meta(StatisticMapForm.Meta):
         fields = ('name', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas', 
-        		  'cognitive_contrast_cogatlas', 'analysis_level', 'contrast_definition', 'figure',
+                  'cognitive_contrast_cogatlas', 'analysis_level', 'contrast_definition', 'figure',
                   'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels')
 
