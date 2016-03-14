@@ -265,7 +265,11 @@ class CollectionSerializer(serializers.ModelSerializer):
     images = ImageSerializer(many=True, source='basecollectionitem_set')
     contributors = SerializedContributors(required=False)
     owner_name = serializers.SerializerMethodField()
+    number_of_images = serializers.SerializerMethodField('num_im')
 
+    def num_im(self, obj):
+        return obj.basecollectionitem_set.count()
+        
     def get_owner_name(self, obj):
         return obj.owner.username
 
