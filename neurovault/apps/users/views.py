@@ -65,6 +65,10 @@ def edit_user(request):
                               {'form': edit_form},
                               context_instance=RequestContext(request))
 
+@login_required
+def delete_profile(request):
+    #check tomorrow
+
 
 @login_required
 def password_change_done(request):
