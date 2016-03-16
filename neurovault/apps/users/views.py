@@ -67,8 +67,13 @@ def edit_user(request):
 
 @login_required
 def delete_profile(request):
-    #check tomorrow
-
+    if(request.GET.get('delete-btn')):
+        if request.user.username == (request.GET.get('delete-text')):
+            request.user.delete()
+        else: messages.warning(request,'Username did not match, deletion not completed')
+        return HttpResponseRedirect(reverse("delete_profile"))
+    return render_to_response("registration/delete_profile.html",
+                              context_instance=RequestContext(request))
 
 @login_required
 def password_change_done(request):
