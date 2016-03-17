@@ -2,7 +2,7 @@ from django.conf.urls import patterns, url
 from django.conf import settings
 from django.contrib import admin
 from .views import (view_profile, edit_user, create_user,
-                    password_change_done)
+                    password_change_done, delete_profile)
 from django.contrib.auth.views import login
 from django.contrib.auth import views as auth_views
 from oauth2_provider.views.application import ApplicationList
@@ -44,6 +44,10 @@ urlpatterns = patterns('',
     url(r'^profile/edit$',
         edit_user,
         name="edit_user"
+        ),
+    url(r'^profile/delete$',
+        delete_profile,
+        name="delete_profile"
         ),
     url(r'^profile/.*$',
         view_profile,

@@ -1,0 +1,20 @@
+{% extends "base_settings.html" %}
+
+{% block deletetab %}class="active"{% endblock%}
+
+{% block setting_content %}
+<div class="alert alert-danger">
+  <strong>Be careful</strong> This action will delete your user and all your data.
+</div>
+{% if messages %}
+    {% include "_messages_block.html" with messages=messages %}
+{% endif %}
+
+<form action="#" method="get">
+  <div class="form-inline">
+    <label for="username"> Username* </label>
+    <input class="form-control" id="ex1" name="delete-text" type="text">
+    <input type="submit" class="btn btn-danger" name="delete-btn" value="Delete Profile"/>
+  </div>
+</form>
+{% endblock %}
