@@ -1,12 +1,7 @@
-import cortex
 import errno
-import nibabel as nib
-import numpy as np
 import os
 import pickle
-import pytz
 import random
-import re
 import shutil
 import string
 import subprocess
@@ -15,15 +10,20 @@ import urllib2
 import zipfile
 from ast import literal_eval
 from datetime import datetime,date
+from subprocess import CalledProcessError
+
+import cortex
+import nibabel as nib
+import numpy as np
+import pytz
 from django.conf import settings
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.mail import EmailMultiAlternatives
 from django.db.models import Q
 from django.template.loader import render_to_string
 from lxml import etree
-from subprocess import CalledProcessError
 
 from neurovault.apps.statmaps.models import Collection, NIDMResults, StatisticMap, Comparison, NIDMResultStatisticMap, \
     BaseStatisticMap
@@ -509,7 +509,11 @@ def not_in_mni(nii, plot=False):
 
 def is_search_compatible(pk):
     from neurovault.apps.statmaps.models import Image
-    img = Image.objects.get(pk=pk)
+    try:
+        img = Image.objects.get(pk=pk)
+    except ObjectDoesNotExist:
+        return False
+
     if img.polymorphic_ctype.model in ['image', 'atlas'] or \
        img.is_thresholded or \
        img.analysis_level == 'S' or \
