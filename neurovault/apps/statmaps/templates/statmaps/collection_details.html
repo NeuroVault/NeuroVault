@@ -14,7 +14,7 @@
 <script type="text/javascript">
 
 var params = [];
-     
+
 {% if first_image %}
    var tmpname = "{{ first_image.file.url }}".replace(/^.*[\\\/]/, '')
     {% if first_image.map_type == 'Pa' or first_image.polymorphic_ctype.model == 'atlas' %}
@@ -56,7 +56,7 @@ var params = [];
 
 <script type='text/javascript'>
 
- function showLoader() {   
+ function showLoader() {
     document.getElementById('spinny').style.display = 'block';
     document.getElementById('fade').style.display = 'block';
   }
@@ -98,7 +98,7 @@ var params = [];
 
       papaya.Container.resetViewer(0, params);  // specify new ones
       $(mrimage).addClass("active")
-  
+
   }
 
 (function() {
@@ -145,15 +145,15 @@ var params = [];
           }
         }
       }
-      
+
       csrftoken = $.cookie('csrftoken');
       xhr.open('POST', "upload_folder", true);
       xhr.setRequestHeader("X-CSRFToken", csrftoken);
       xhr.onloadstart = function(e){
-                $('.modal-backdrop').removeClass("modal-backdrop"); 
+                $('.modal-backdrop').removeClass("modal-backdrop");
                 showLoader();
       };
-      
+
       // We need to know when the request finishes.
       xhr.onload = function (e) {
       if (xhr.status === 200) {
@@ -235,10 +235,10 @@ var params = [];
                     <a class="btn btn-primary dropdown-toggle" href="#" data-toggle="dropdown">Upload<span class="caret"></span></a>
                     <ul class="dropdown-menu">
                         <li><a id="upload_archive" href="#">Archive (.zip)</a></li>
-                        <!--[if !IE]> -->                               
+                        <!--[if !IE]> -->
                         <li><a id="upload_folder" href="#">Folder</a></li>
                         <!-- <![endif]-->
-                    </ul>                      
+                    </ul>
                 </div>
                 {% endif %}<!-- close if images -->
 
@@ -273,7 +273,7 @@ var params = [];
 <!-- Content-->
 <div class="row">
 
-<div class="col-md-6" style="margin-top:20px">    
+<div class="col-md-6" style="margin-top:20px">
     <div class="papaya" data-params="params" style="width:560px; float:left;"></div>
 </div>
 <div class="col-md-6">
@@ -314,8 +314,8 @@ var params = [];
               {% endif %} <!-- close if not empty -->
               </form>
 
-              </div><!-- Close images tab-->  
-              
+              </div><!-- Close images tab-->
+
               {% if not is_empty %}
               <div id="details" class="tab-pane">
                   <table id="collection-details-datatable" class="compact">
@@ -338,7 +338,7 @@ var params = [];
                   </table>
               </div><!-- close details tab-->
               {% endif %}
-              <div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false"></div>               
+              <div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false"></div>
          </div><!-- close tab content-->
     </div>
 </div>
@@ -358,7 +358,8 @@ $(document).ready(function() {
         "processing": true,
         "serverSide": true,
         "pagingType": "full",
-        "lengthMenu": [ 7, 10, 25, 50, 75, 100 ],
+		"iDisplayLength": 7,
+        "lengthMenu": [7, 10, 25, 50, 75, 100],
         "columnDefs": [
     		{ "orderable": false, "targets": 0 }
   		],

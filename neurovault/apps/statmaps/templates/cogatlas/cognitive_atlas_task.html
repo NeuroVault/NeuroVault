@@ -10,7 +10,7 @@
     {% if no_task_images %}
     <meta name="robots" content="noindex">
     {% endif %}
-    
+
     <meta name="pagetype" content="cognitiveatlastask">
     <meta name="name" content="{{ task.name }}">
     <meta name="cognitive_paradigm_cogatlas" content="{{ task.name }}">
@@ -18,7 +18,7 @@
     <meta name="thumbnail" content="http://www.cognitiveatlas.org/images/logo-front.png">
     <meta name="database" content="neurovault.org">
     <meta name="url" content="http://www.cognitiveatlas.org/term/id/{{ task.cog_atlas_id }}">
-    
+
     <title>{% block title %}NeuroVault: {{ task.name }}{% endblock %}</title>
 
     {% if not no_task_images %}
@@ -280,6 +280,7 @@
                     "processing": true,
                     "serverSide": true,
                     "pagingType": "full",
+					"iDisplayLength": 7,
                     "lengthMenu": [7, 10, 25, 50, 75, 100],
                     "columnDefs": [
                         {"orderable": false, "targets": 0}
