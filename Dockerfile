@@ -51,7 +51,7 @@ RUN pip install nilearn
 RUN pip install pybraincompare==0.1.15
 RUN pip install django-cleanup==0.4.2
 RUN pip install django-chosen
-RUN pip install 'git+https://github.com/sinnwerkstatt/django-file-resubmit.git#egg=file_resubmit'
+RUN pip install django-file-resubmit==0.4.3
 RUN pip install nidmfsl
 RUN pip install opbeat
 RUN pip install djrill

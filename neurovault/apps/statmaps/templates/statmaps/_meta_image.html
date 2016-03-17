@@ -1,7 +1,9 @@
 <meta name="name" content="{{ image.name }}">
 <meta name="description" content="{{ image.description }}">
 <meta name="collection" content="{{ image.collection.name }}">
-<meta name="thumbnail" content="http://www.neurovault.org{{ image.thumbnail.url }}">
+{% if image.thumbnail %}
+  <meta name="thumbnail" content="http://www.neurovault.org{{ image.thumbnail.url }}">
+{% endif %}
 <meta name="file" content="http://www.neurovault.org{{ image.file.url }}">
 <meta name="add_date" content="{{ image.add_date }}">
 <meta name="brain_coverage" content="{{ image.brain_coverage }}">
