@@ -509,7 +509,7 @@ class StatisticMapForm(ImageForm):
             cleaned_data["is_thresholded"], ratio_bad = is_thresholded(nii)
             cleaned_data["perc_bad_voxels"] = ratio_bad*100.0
 
-            if cleaned_data["is_thresholded"] and not cleaned_data.get("ignore_file_warning"):
+            if cleaned_data["is_thresholded"] and not cleaned_data.get("ignore_file_warning") and cleaned_data.get("map_type") != "R":
                 self._errors["file"] = self.error_class(
                     ["This map seems to be thresholded (%.4g%% of voxels are zeros). Please use an unthresholded version of the map if possible." % (cleaned_data["perc_bad_voxels"])])
                 if cleaned_data.get("hdr_file"):
@@ -520,7 +520,8 @@ class StatisticMapForm(ImageForm):
             else:
                 cleaned_data["not_mni"], cleaned_data["brain_coverage"], cleaned_data[
                     "perc_voxels_outside"] = not_in_mni(nii)
-                if cleaned_data["not_mni"] and not cleaned_data.get("ignore_file_warning"):
+                if cleaned_data["not_mni"] and not cleaned_data.get("ignore_file_warning") and cleaned_data.get(
+                    "map_type") != "R":
                     self._errors["file"] = self.error_class(
                         ["This map seems not to be in the MNI space (%.4g%% of meaningful voxels are outside of the brain). Please use transform your data to MNI space." % (cleaned_data["perc_voxels_outside"])])
                     if cleaned_data.get("hdr_file"):
@@ -528,6 +529,12 @@ class StatisticMapForm(ImageForm):
                             ["This map seems not to be in the MNI space (%.4g%% of meaningful voxels are outside of the brain). Please use transform your data to MNI space." % (cleaned_data["perc_voxels_outside"])])
                     self.fields[
                         "ignore_file_warning"].widget = forms.CheckboxInput()
+
+            if cleaned_data["map_type"] == "R":
+                if "not_mni" in cleaned_data:
+                    del cleaned_data["not_mni"]
+                if "is_thresholded" in cleaned_data:
+                    del cleaned_data["is_thresholded"]
 
         return cleaned_data
 
