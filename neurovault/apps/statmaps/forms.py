@@ -1,12 +1,14 @@
-import nibabel as nb
-import numpy as np
 import os
 import re
 import shutil
+from cStringIO import StringIO
+
+import nibabel as nb
+import numpy as np
 from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.forms.models import (
-    inlineformset_factory, ModelMultipleChoiceField, BaseInlineFormSet
+    ModelMultipleChoiceField
 )
 
 # from form_utils.forms import BetterModelForm
@@ -15,7 +17,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Submit, Button
 from crispy_forms.bootstrap import TabHolder, Tab
 
-from .models import Collection, Image, ValueTaggedItem, User, StatisticMap, BaseStatisticMap, \
+from .models import Collection, Image, User, StatisticMap, BaseStatisticMap, \
     Atlas, NIDMResults, NIDMResultStatisticMap
 
 from django.forms.forms import Form
@@ -357,11 +359,10 @@ class ImageValidationMixin(object):
 
             # prepare file to loading into memory
             file.open()
+            fileobj = file.file
             if file.name.lower().endswith(".gz"):
                 fileobj = GzipFile(filename=file.name, mode='rb',
-                                   fileobj=file.file)
-            else:
-                fileobj = file.file
+                                   fileobj=fileobj)
 
             file_map = {'image': nb.FileHolder(file.name, fileobj)}
             try:
@@ -396,9 +397,6 @@ class ImageValidationMixin(object):
                         nii = nb.Nifti1Image.from_file_map(file_map)
                 except Exception as e:
                     raise
-                    self._errors["file"] = self.error_class([str(e)])
-                    del cleaned_data["file"]
-                    return cleaned_data
 
                 # detect AFNI 4D files and prepare 3D slices
                 if nii is not None and detect_4D(nii):
@@ -433,6 +431,8 @@ class ImageValidationMixin(object):
                         new_name = fname + ".nii.gz"
                         nii_tmp = os.path.join(tmp_dir, new_name)
                         nb.save(nii, nii_tmp)
+
+                        print "updating file in cleaned_data"
 
                         cleaned_data['file'] = memory_uploadfile(
                             nii_tmp, new_name, cleaned_data['file']
@@ -497,14 +497,16 @@ class StatisticMapForm(ImageForm):
 
         if django_file and "file" not in self._errors and "hdr_file" not in self._errors:
             django_file.open()
+            fileobj = StringIO(django_file.read())
+            django_file.seek(0)
             gzfileobj = GzipFile(
-                filename=django_file.name, mode='rb', fileobj=django_file.file)
+                filename=django_file.name, mode='rb', fileobj=fileobj)
             nii = nb.Nifti1Image.from_file_map(
                 {'image': nb.FileHolder(django_file.name, gzfileobj)})
             cleaned_data["is_thresholded"], ratio_bad = is_thresholded(nii)
             cleaned_data["perc_bad_voxels"] = ratio_bad*100.0
 
-            if cleaned_data["is_thresholded"] and not cleaned_data.get("ignore_file_warning"):
+            if cleaned_data["is_thresholded"] and not cleaned_data.get("ignore_file_warning") and cleaned_data.get("map_type") != "R":
                 self._errors["file"] = self.error_class(
                     ["This map seems to be thresholded (%.4g%% of voxels are zeros). Please use an unthresholded version of the map if possible." % (cleaned_data["perc_bad_voxels"])])
                 if cleaned_data.get("hdr_file"):
@@ -515,7 +517,8 @@ class StatisticMapForm(ImageForm):
             else:
                 cleaned_data["not_mni"], cleaned_data["brain_coverage"], cleaned_data[
                     "perc_voxels_outside"] = not_in_mni(nii)
-                if cleaned_data["not_mni"] and not cleaned_data.get("ignore_file_warning"):
+                if cleaned_data["not_mni"] and not cleaned_data.get("ignore_file_warning") and cleaned_data.get(
+                    "map_type") != "R":
                     self._errors["file"] = self.error_class(
                         ["This map seems not to be in the MNI space (%.4g%% of meaningful voxels are outside of the brain). Please use transform your data to MNI space." % (cleaned_data["perc_voxels_outside"])])
                     if cleaned_data.get("hdr_file"):
@@ -523,6 +526,12 @@ class StatisticMapForm(ImageForm):
                             ["This map seems not to be in the MNI space (%.4g%% of meaningful voxels are outside of the brain). Please use transform your data to MNI space." % (cleaned_data["perc_voxels_outside"])])
                     self.fields[
                         "ignore_file_warning"].widget = forms.CheckboxInput()
+
+            if cleaned_data["map_type"] == "R":
+                if "not_mni" in cleaned_data:
+                    del cleaned_data["not_mni"]
+                if "is_thresholded" in cleaned_data:
+                    del cleaned_data["is_thresholded"]
 
         return cleaned_data
 
