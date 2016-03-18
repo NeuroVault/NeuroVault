@@ -359,15 +359,12 @@ class ImageValidationMixin(object):
 
             # prepare file to loading into memory
             file.open()
-            fileobj = StringIO(file.read())
-            file.seek(0)
+            fileobj = file.file
             if file.name.lower().endswith(".gz"):
                 fileobj = GzipFile(filename=file.name, mode='rb',
                                    fileobj=fileobj)
 
-            file_map = nb.Nifti1Image.make_file_map()
-            print "fobject class " + fileobj.__class__.__name__
-            file_map['image'].fileobj = fileobj
+            file_map = {'image': nb.FileHolder(file.name, fileobj)}
             try:
                 tmp_dir = tempfile.mkdtemp()
                 if ext.lower() == ".img":
