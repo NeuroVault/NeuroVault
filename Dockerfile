@@ -48,7 +48,7 @@ RUN pip install celery[redis]
 RUN pip install django-celery
 RUN pip install scikit-learn
 RUN pip install nilearn
-RUN pip install pybraincompare==0.1.15
+RUN pip install pybraincompare==0.1.18
 RUN pip install django-cleanup==0.4.2
 RUN pip install django-chosen
 RUN pip install django-file-resubmit==0.4.3
