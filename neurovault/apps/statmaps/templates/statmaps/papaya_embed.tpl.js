@@ -19,7 +19,7 @@
     document.getElementsByTagName("head")[0].appendChild(script);
     }
 
-    loadScript("http://{{ request.get_host }}{% static 'scripts/jquery-1.10.2.min.js'%}", function () {
+    loadScript("http://cdnjs.cloudflare.com/ajax/libs/jquery/1.10.2/jquery.min.js", function () {
         frame_src = "http://{{ request.get_host }}{% url 'papaya_iframe_embed' image.pk %}"
         $('#NeuroVaultPapayaHolder').prepend($("<iframe scrolling='no' frameborder='1' allowtransparency='true' id='NeuroVaultEmbedded' src='"+frame_src+"' />"));
         $('#NeuroVaultEmbedded').css({

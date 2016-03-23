@@ -3,18 +3,18 @@
 {% load static from staticfiles %}
 {% block head %}
 <title>{% block title %}Image Comparison{% endblock %}</title>
-<script src="{% static "scripts/d3.v3.min.js" %}"></script>
-<script type="text/javascript"> 
+<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.16/d3.min.js"></script>
+<script type="text/javascript">
 var addthis_config = {
-     data_track_clickback: false 
-} 
+     data_track_clickback: false
+}
 </script>
 {% endblock %}
 {% block content %}
 
     {% if warnings %}
        {% for warning in warnings %}
-        <div class="alert alert-danger" style="width:90%; margin-bottom:5px; margin-top:5px">{{ warning }}</div>   
+        <div class="alert alert-danger" style="width:90%; margin-bottom:5px; margin-top:5px">{{ warning }}</div>
        {% endfor %}
     {% endif %}
 
@@ -24,7 +24,7 @@ var addthis_config = {
     {% endfor %}
  {% endautoescape %}
 
-<style>    
+<style>
        body {
          font: 14px sans-serif;
        }
@@ -35,5 +35,3 @@ var addthis_config = {
     Regional correlations are calculated from a brain-masked, 4mm transformation of the original image.  This visualization displays every 10th voxel for rendering purposes only.</div></div>
 
 {% endblock %}
-
-
