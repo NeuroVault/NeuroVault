@@ -527,7 +527,7 @@ class StatisticMapForm(ImageForm):
                     self.fields[
                         "ignore_file_warning"].widget = forms.CheckboxInput()
 
-            if cleaned_data["map_type"] == "R":
+            if cleaned_data.get("map_type") == "R":
                 if "not_mni" in cleaned_data:
                     del cleaned_data["not_mni"]
                 if "is_thresholded" in cleaned_data:
