@@ -67,10 +67,14 @@ margin-top: 0 !important;
 		    var s = document.getElementsByTagName('script')[0];
 		    s.parentNode.insertBefore(gcse, s);
 		  })();
+
 		</script>
-		<gcse:search linkTarget="_self"></gcse:search>
+		<!-- <gcse:search linkTarget="_self"></gcse:search> -->
+    <gcse:searchbox-only resultsUrl="http://neurovault.org/search" queryParameterName="as_q"></gcse:searchbox-only>
+    <gcse:searchresults-only queryParameterName="as_q" linkTarget="_self"></gcse:searchresults-only>
             </div>
          </div>
+
 
 </div>
 <div class="row">
