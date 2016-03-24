@@ -166,8 +166,11 @@ class ApplicationUpdate(ApplicationOwnerIsUserMixin, UpdateView):
     View used to update an application owned by the request.user
     """
     context_object_name = 'application'
-    form_class = ApplicationEditForm
     template_name = 'oauth2_provider/application_form.html'
+
+    # Reset the inherited fields attribute and use a form_class instead
+    fields = None
+    form_class = ApplicationEditForm
 
     def get_success_url(self):
         return reverse('developerapps_list')
