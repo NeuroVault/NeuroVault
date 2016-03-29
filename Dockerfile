@@ -26,13 +26,8 @@ RUN pip install django-taggit-templatetags
 RUN pip install django-dirtyfields
 RUN pip install 'dropbox==1.6'
 RUN pip install 'django-dbbackup<2.3'
-RUN pip install numpy
 RUN pip install nibabel
 RUN pip install psycopg2
-RUN pip install cython
-RUN pip install h5py
-RUN pip install matplotlib
-RUN pip install scipy
 RUN pip install numexpr
 RUN pip install lxml
 RUN pip install shapely
@@ -46,7 +41,6 @@ RUN pip install networkx
 RUN pip install 'rdflib>=4.1.0'
 RUN pip install celery[redis]
 RUN pip install django-celery
-RUN pip install scikit-learn
 RUN pip install nilearn
 RUN pip install pybraincompare==0.1.18
 RUN pip install django-cleanup==0.4.2
