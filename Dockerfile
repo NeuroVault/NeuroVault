@@ -6,7 +6,8 @@ RUN apt-get update && apt-get install -y \
     libhdf5-dev \
     libgeos-dev
 
-RUN pip install numpy cython scipy
+RUN pip install numpy
+RUN pip install cython scipy
 RUN pip install scikit-learn pandas h5py matplotlib
 
 RUN pip install celery[redis]
