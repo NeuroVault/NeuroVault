@@ -42,7 +42,7 @@ def crawl_anima():
     except IntegrityError:
         anima_user = models.User.objects.get(username=username, email=email)
     
-    url = "http://anima.modelgui.org/api/studies"
+    url = "http://anima.fz-juelich.de/api/studies"
     response = urllib.urlopen(url);
     datasets = json.loads(response.read())
     
@@ -69,7 +69,7 @@ def crawl_anima():
         post_dict = {
             'name': study_name,
             'description': study_description,
-            'full_dataset_url': "http://anima.modelgui.org/studies/" + os.path.split(url)[1].replace(".study", "")
+            'full_dataset_url': "http://anima.fz-juelich.de/api/studies/" + os.path.split(url)[1].replace(".study", "")
         }
         if doi != None:
             post_dict['DOI'] = doi.text.strip()
