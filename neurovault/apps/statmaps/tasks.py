@@ -103,7 +103,13 @@ def crawl_anima():
             for study_element in xml_obj.findall(".//StudyElement[@type='VolumeFile']"):
                 image_name = study_element.attrib['name'].strip()
                 image_filename = study_element.attrib['file']
-                image_fileobject = arch_results.extractfile(xml_obj.find(".").attrib['directory'] + "/" + image_filename)
+                try:
+                    image_fileobject = arch_results.extractfile(xml_obj.find(".").attrib['directory'] + "/" +
+                                                                image_filename)
+                except KeyError:
+                    image_fileobject = arch_results.extractfile(
+                        xml_obj.find(".").attrib['directory'] + "/" + xml_obj.find(".").attrib['directory'] + "/" +
+                        image_filename)
         
                 map_type = models.BaseStatisticMap.OTHER
         
