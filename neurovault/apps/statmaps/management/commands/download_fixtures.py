@@ -34,7 +34,7 @@ class Command(BaseCommand):
             temp1 = tempfile.mkdtemp()
             for fixtureName in args:
                 fileName = fixtureName + '.zip'
-                url = 'https://github.com/neurovault/NeuroVault_data/raw/add-fixtures/fixtures/%s' % fileName
+                url = 'https://github.com/jbwexler/neurovault_data/trunk/fixtures/%s' % fileName
                 (path, _) = urllib.urlretrieve(url)
                 with zipfile.ZipFile(path, "r") as z:
                     # extract everything except for _MACOSX folder, which contains redundant data
@@ -46,11 +46,11 @@ class Command(BaseCommand):
         else:
             temp1 = tempfile.mkdtemp()
             temp2 = tempfile.mkdtemp()
-            command = "svn export https://github.com/NeuroVault/neurovault_data/trunk/fixtures %s --force" % temp1
+            command = "svn export https://github.com/erramuzpe/neurovault_data/trunk/fixtures %s --force" % temp1
             p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
             (output, err) = p.communicate()
             for fileName in os.listdir(temp1):
-                print os.path.join(temp1, fileName)
+                # print os.path.join(temp1, fileName)
                 with zipfile.ZipFile(os.path.join(temp1, fileName), "r") as z:
                     # extract everything except for _MACOSX folder, which contains redundant data
                     z.extractall(temp2, [x for x in z.namelist() if not x.startswith('__MACOSX')])
