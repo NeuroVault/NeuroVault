@@ -39,7 +39,7 @@ RUN pip install lxml
 RUN pip install markdown
 RUN pip install networkx
 RUN pip install nibabel
-RUN pip install nidmfsl
+RUN pip install nidmfsl==0.2.0
 RUN pip install nilearn
 RUN pip install numexpr
 RUN pip install opbeat
