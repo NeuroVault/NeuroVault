@@ -1,15 +1,16 @@
-from django.test import TestCase, Client
-from neurovault.apps.statmaps.models import Collection,User
-import tempfile
 import os
 import shutil
-from django.core.files.uploadedfile import SimpleUploadedFile
-from neurovault.apps.statmaps.forms import NIDMResultsForm
-from neurovault.apps.statmaps.utils import detect_feat_directory, get_traceback
-from nidmfsl.fsl_exporter.fsl_exporter import FSLtoNIDMExporter
-from neurovault.apps.statmaps.nidm_results import NIDMUpload
+import tempfile
 import urllib
 import zipfile
+
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase, Client
+from nidmfsl.fsl_exporter.fsl_exporter import FSLtoNIDMExporter
+
+from neurovault.apps.statmaps.forms import NIDMResultsForm
+from neurovault.apps.statmaps.models import Collection,User
+from neurovault.apps.statmaps.utils import detect_feat_directory
 from .utils import clearDB
 
 
@@ -87,13 +88,10 @@ class FeatDirectoryTest(TestCase):
                 if detect_feat_directory(root):
                     print 'Found FEAT directory at {}.'.format(root)
                     info['found_feat'] = True
-                    try:
-                        fslnidm = FSLtoNIDMExporter(feat_dir=root, version="0.2.0")
-                        fslnidm.parse()
-                        export_dir = fslnidm.export()
-                        ttl_file = os.path.join(export_dir,'nidm.ttl')
-                    except:
-                        print("Unable to parse the FEAT directory: \n{0}.".format(get_traceback()))
+                    fslnidm = FSLtoNIDMExporter(feat_dir=root, version="1.2.0")
+                    fslnidm.parse()
+                    export_dir = fslnidm.export()
+                    ttl_file = os.path.join(export_dir,'nidm.ttl')
 
                     # confirm results path and existence
                     self.assertTrue(os.path.exists(export_dir))
