@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-import nibabel as nb
 import os
 import shutil
 from datetime import datetime
+from gzip import GzipFile
+
+import nibabel as nb
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.urlresolvers import reverse
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -15,7 +16,6 @@ from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch.dispatcher import receiver
 from django_hstore import hstore
 from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
-from gzip import GzipFile
 from polymorphic.models import PolymorphicModel
 from taggit.managers import TaggableManager
 from taggit.models import GenericTaggedItemBase, TagBase
@@ -50,7 +50,6 @@ class Collection(models.Model):
     length_of_trials = models.CharField(help_text="Length of individual trials in seconds. If length varies across trials, enter 'variable'. ", max_length=200, null=True, verbose_name="Length of trials", blank=True)
     optimization = models.NullBooleanField(help_text="Was the design optimized for efficiency", null=True, verbose_name="Optimization?", blank=True)
     optimization_method = models.CharField(help_text="What method was used for optimization?", verbose_name="Optimization method", max_length=200, null=True, blank=True)
-    number_of_subjects = models.IntegerField(help_text="Number of subjects entering into the analysis", null=True, verbose_name="No. of subjects", blank=True)
     subject_age_mean = models.FloatField(help_text="Mean age of subjects", null=True, verbose_name="Subject age mean", blank=True)
     subject_age_min = models.FloatField(help_text="Minimum age of subjects", null=True, verbose_name="Subject age min", blank=True)
     subject_age_max = models.FloatField(help_text="Maximum age of subjects", null=True, verbose_name="Subject age max", blank=True)
@@ -461,6 +460,8 @@ class BaseStatisticMap(Image):
                     help_text=("What level of summary data was used as the input to this analysis?"),
                     verbose_name="Analysis level",
                     max_length=200, null=True, blank=True, choices=ANALYSIS_LEVEL_CHOICES)
+    number_of_subjects = models.IntegerField(help_text="Number of subjects used to generate this map", null=True,
+                                             verbose_name="No. of subjects", blank=True)
 
     def save(self):
         if self.perc_bad_voxels == None and self.file:
