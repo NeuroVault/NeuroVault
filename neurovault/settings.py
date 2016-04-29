@@ -278,9 +278,9 @@ CACHES = {
           }
 
 # Mandrill config
-EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend' # replace this with 'django_mailgun.MailgunBackend' in production
-MAILGUN_ACCESS_KEY = 'ACCESS-KEY' # with a real key in production
-MAILGUN_SERVER_NAME = 'neurovault.org'
+EMAIL_BACKEND = 'django_mailgun.MailgunBackend'
+MAILGUN_ACCESS_KEY = 'key-3ax6xnjp29jd6fds4gc373sgvjxteol0' # replace with a real key in production
+MAILGUN_SERVER_NAME = 'samples.mailgun.org'# replace with 'neurovault.org' in production
 DEFAULT_FROM_EMAIL = "noreply@neurovault.org"
 
 if os.path.exists('/usr/local/share/pycortex/db/fsaverage'):
