@@ -32,7 +32,7 @@ RUN pip install django-polymorphic==0.8.1
 RUN pip install django-sendfile
 RUN pip install django-taggit
 RUN pip install django-taggit-templatetags
-RUN pip install djrill
+RUN pip install django-mailgun
 RUN pip install 'dropbox==1.6'
 RUN pip install hamlpy
 RUN pip install lxml
