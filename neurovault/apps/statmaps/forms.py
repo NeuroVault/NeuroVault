@@ -50,8 +50,7 @@ collection_fieldsets = [
                                'contributors',
                                'private'],
                     'legend': 'Essentials'}),
-    ('Participants', {'fields': ['number_of_subjects',
-                                 'subject_age_mean',
+    ('Participants', {'fields': ['subject_age_mean',
                                  'subject_age_min',
                                  'subject_age_max',
                                  'handedness',
@@ -187,7 +186,6 @@ collection_row_attrs = {
     'functional_coregistration_method': {'priority': 3},
     'length_of_trials': {'priority': 2},
     'handedness': {'priority': 2},
-    'number_of_subjects': {'priority': 1},
     'used_motion_correction': {'priority': 1},
     'pulse_sequence': {'priority': 1},
     'used_high_pass_filter': {'priority': 1},
@@ -538,7 +536,7 @@ class StatisticMapForm(ImageForm):
     class Meta(ImageForm.Meta):
         model = StatisticMap
         fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
-                  'cognitive_contrast_cogatlas', 'analysis_level', 'contrast_definition', 'figure',
+                  'cognitive_contrast_cogatlas', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
                   'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels', 'is_valid')
         widgets = {
@@ -640,7 +638,7 @@ class AddStatisticMapForm(StatisticMapForm):
 
     class Meta(StatisticMapForm.Meta):
         fields = ('name', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas', 
-                  'cognitive_contrast_cogatlas', 'analysis_level', 'contrast_definition', 'figure',
+                  'cognitive_contrast_cogatlas', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
                   'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels')
 
