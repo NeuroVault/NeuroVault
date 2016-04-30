@@ -1,9 +1,10 @@
 # Django settings for neurovault project.
-import matplotlib
 import os
 import sys
 import tempfile
 from datetime import timedelta
+
+import matplotlib
 from kombu import Exchange, Queue
 
 matplotlib.use('Agg')
@@ -156,7 +157,7 @@ INSTALLED_APPS = (
     'djcelery',
     'django_cleanup',
     'file_resubmit',
-    'djrill',
+    'django_mailgun',
     'django_hstore',
     'guardian',
     'oauth2_provider'
@@ -277,8 +278,9 @@ CACHES = {
           }
 
 # Mandrill config
-MANDRILL_API_KEY = "z2O_vfFUJB4L2yeF4Be9Tg" # this is a test key replace wit ha different one in production
-EMAIL_BACKEND = "djrill.mail.backends.djrill.DjrillBackend"
+EMAIL_BACKEND = 'django_mailgun.MailgunBackend'
+MAILGUN_ACCESS_KEY = 'key-3ax6xnjp29jd6fds4gc373sgvjxteol0' # replace with a real key in production
+MAILGUN_SERVER_NAME = 'samples.mailgun.org'# replace with 'neurovault.org' in production
 DEFAULT_FROM_EMAIL = "noreply@neurovault.org"
 
 if os.path.exists('/usr/local/share/pycortex/db/fsaverage'):
