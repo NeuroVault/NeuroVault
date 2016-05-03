@@ -5,12 +5,13 @@ from django.db.models.query_utils import Q
 from neurovault.apps.statmaps.models import Collection
 
 template = """<p>Dear {username},<br \>
+<br \>
 Twice a year data from NeuroVault are deposited in Stanford Digital
 Repository (SDR). The mission of SDR is to preserve important scientific dataset for decades. They increase chances of
 long-term data accessibility by mirroring datasets at multiple data centers distributed across the globe. In two weeks
 we will be depositing a snapshot of NeuroVault data in SDR. Only public collections with a DOI of a corresponding paper
-will be included in the deposition. It seems that you currently have {collection_noun} that are either private or do not
-have a DOI of a corresponding paper:</p>
+will be included in the deposition. It seems that you currently have {collection_noun} that {collection_verb} either
+private or {collection_pronoun} not have a DOI of a corresponding paper:</p>
 <ul>
 {collections}
 </ul>
@@ -20,7 +21,7 @@ from your other papers. Depositing data in NeuroVault increases the exposure of 
 other researchers to build upon thus increasing your citation rates.</p>
 
 <p>Best regards,<br />
-NeuroVault Team</p>"""
+The NeuroVault Team</p>"""
 
 counter = 0
 for user in User.objects.all():
@@ -34,14 +35,17 @@ for user in User.objects.all():
 
         if len(collections) == 1:
             email = email.replace("{collection_noun}", "a collection")
+            email = email.replace("{collection_verb}", "is")
+            email = email.replace("{collection_pronoun}", "does")
         else:
             email = email.replace("{collection_noun}", "collections")
+            email = email.replace("{collection_verb}", "are")
+            email = email.replace("{collection_pronoun}", "do")
 
         collections_text = "\n".join(["<li><a href='http://neurovault.org%s'>%s</a></li>" % (col.get_absolute_url(), col.name)
                                       for col in collections])
         email = email.replace("{collections}", collections_text)
         send_mail("Time to update your NeuroVault maps", email, "team@neurovault.org",
-                  ["krzysztof.gorgolewski@gmail.com"], html_message=email)
+                  [user.email], html_message=email, fail_silently=True)
         counter += 1
-        break
 print "Sent %d emails" % counter
