@@ -46,7 +46,7 @@ class Command(BaseCommand):
         else:
             temp1 = tempfile.mkdtemp()
             temp2 = tempfile.mkdtemp()
-            command = "svn export https://github.com/erramuzpe/neurovault_data/trunk/fixtures %s --force" % temp1
+            command = "wget https://raw.github.com/erramuzpe/neurovault_data/master/fixtures/dumpdata.zip -P %s " % temp1
             p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
             (output, err) = p.communicate()
             for fileName in os.listdir(temp1):
