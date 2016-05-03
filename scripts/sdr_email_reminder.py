@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.core.mail import send_mail
 from django.db.models.query_utils import Q
 
 from neurovault.apps.statmaps.models import Collection
@@ -26,7 +27,7 @@ for user in User.objects.all():
     collections = [col for col in collections if col.basecollectionitem_set.count() > 0]
     if collections:
         if user.first_name:
-            email = template.replace("{username}", user.first_name)
+            email = template.replace("{username}", user.first_name.capitalize())
         else:
             email = template.replace("{username}", "NeuroVault User")
 
@@ -38,4 +39,5 @@ for user in User.objects.all():
         collections_text = "\n".join(["<li><a href='http://neurovault.org%s'>%s</a></li>" % (col.get_absolute_url(), col.name)
                                       for col in collections])
         email = email.replace("{collections}", collections_text)
-        print email
+        send_mail("Time to update your NeuroVault maps", email, "team@neurovault.org",
+                  "krzysztof.gorgolewski@gmail.com", html_message=True)
