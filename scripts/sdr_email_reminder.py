@@ -22,6 +22,7 @@ other researchers to build upon thus increasing your citation rates.</p>
 <p>Best regards,<br />
 NeuroVault Team</p>"""
 
+counter = 0
 for user in User.objects.all():
     collections = Collection.objects.filter(owner=user).filter(Q(DOI__isnull=True) | Q(private=True))
     collections = [col for col in collections if col.basecollectionitem_set.count() > 0]
@@ -39,5 +40,7 @@ for user in User.objects.all():
         collections_text = "\n".join(["<li><a href='http://neurovault.org%s'>%s</a></li>" % (col.get_absolute_url(), col.name)
                                       for col in collections])
         email = email.replace("{collections}", collections_text)
-        send_mail("Time to update your NeuroVault maps", email, "team@neurovault.org",
+        send_mail("Time to update your NeuroVault maps", email, ["team@neurovault.org"],
                   "krzysztof.gorgolewski@gmail.com", html_message=True)
+        counter += 1
+print "Sent %d emails" % counter
