@@ -40,7 +40,7 @@ for user in User.objects.all():
         collections_text = "\n".join(["<li><a href='http://neurovault.org%s'>%s</a></li>" % (col.get_absolute_url(), col.name)
                                       for col in collections])
         email = email.replace("{collections}", collections_text)
-        send_mail("Time to update your NeuroVault maps", email, ["team@neurovault.org"],
-                  "krzysztof.gorgolewski@gmail.com", html_message=True)
+        send_mail("Time to update your NeuroVault maps", email, "team@neurovault.org",
+                  ["krzysztof.gorgolewski@gmail.com"], html_message=True)
         counter += 1
 print "Sent %d emails" % counter
