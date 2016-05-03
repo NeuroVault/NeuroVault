@@ -19,12 +19,12 @@ for user in User.objects.all():
     collections = [col for col in collections if col.basecollectionitem_set.count() > 0]
     if collections:
         if user.first_name:
-            email = template.replace("{username}", user.firs_name)
+            email = template.replace("{username}", user.first_name_name)
         else:
             email = template.replace("{username}", "NeuroVault user")
 
-        collections_text = "\n".join(["<li><a href='http://neurovault.org%s'>%s</a></li>"%(col.name,
-                                                                                           col.get_absolute_url())
+        collections_text = "\n".join(["<li><a href='http://neurovault.org%s'>%s</a></li>" % (col.name,
+                                                                                             col.get_absolute_url())
                                       for col in collections])
         email = email.replace("{collections}", collections_text)
         print email
