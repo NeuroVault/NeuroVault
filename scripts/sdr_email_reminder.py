@@ -19,7 +19,7 @@ for user in User.objects.all():
     collections = [col for col in collections if col.basecollectionitem_set.count() > 0]
     if collections:
         if user.first_name:
-            email = template.replace("{username}", user.first_name_name)
+            email = template.replace("{username}", user.first_name)
         else:
             email = template.replace("{username}", "NeuroVault user")
 
