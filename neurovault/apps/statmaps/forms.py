@@ -289,6 +289,7 @@ class CollectionForm(ModelForm):
             self.cleaned_data['DOI'] = None
 
         if self.cleaned_data['DOI']:
+            self.cleaned_data['DOI'] = self.cleaned_data['DOI'].strip()
             try:
                 self.cleaned_data["name"], self.cleaned_data["authors"], self.cleaned_data[
                     "paper_url"], _, self.cleaned_data["journal_name"] = get_paper_properties(self.cleaned_data['DOI'].strip())
