@@ -41,6 +41,7 @@ for user in User.objects.all():
                                       for col in collections])
         email = email.replace("{collections}", collections_text)
         send_mail("Time to update your NeuroVault maps", email, "team@neurovault.org",
-                  ["krzysztof.gorgolewski@gmail.com"], html_message=True)
+                  ["krzysztof.gorgolewski@gmail.com"], html_message=email)
         counter += 1
+        break
 print "Sent %d emails" % counter
