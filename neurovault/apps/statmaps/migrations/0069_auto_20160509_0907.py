@@ -9,20 +9,17 @@ def tag_sensitiveness(apps, schema_editor):
     Image = apps.get_model("statmaps", "Image")
     KeyValueTag = apps.get_model("statmaps", "KeyValueTag")
 
-    value_tags = ValueTaggedItem.objects.all().distinct('object_id')
-
-    for i_, value in enumerate(value_tags):
+    for value in ValueTaggedItem.objects.all().distinct('object_id'):
         image = Image.objects.all().filter(id=value.object_id)
         tags = image[0].tags.names()
         tags = [x.lower() for x in tags]
         tags = list(set(tags))[:]
         image[0].tags.clear()
-        for j_, tag_name in enumerate(tags):
+        for tag_name in tags:
             image[0].tags.add(tag_name)
 
     # Find not lowercase KeyTags and delete them
-    tags = KeyValueTag.objects.all()
-    for i_, tag in enumerate(tags):
+    for tag in KeyValueTag.objects.all():
         if not tag.name.islower():
             print "Deleting %s" % tag.name
             tag.delete()
