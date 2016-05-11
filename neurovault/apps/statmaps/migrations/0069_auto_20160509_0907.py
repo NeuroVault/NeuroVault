@@ -13,12 +13,10 @@ def tag_sensitiveness(apps, schema_editor):
     # Find for all tagged_items if there is a lowercased case, replace or create
     for item in ValueTaggedItem.objects.all():
         if tag_dict.has_key(item.tag.name.lower()):
-            print "%s has id %s" %(item.tag.name,item.tag_id)
             item.tag_id = tag_dict.get(item.tag.name.lower())
             print item.tag_id
             item.save()
         else:  # if there was not a lowercase tag associated to it
-            print "%s not in the dict with id %s" %(item.tag.name,item.tag_id)
             item.tag.name = item.tag.name.lower()
             item.tag.save()
             tag_dict[item.tag.name] = item.tag_id
