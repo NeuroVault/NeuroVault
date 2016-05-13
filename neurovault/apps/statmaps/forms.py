@@ -669,6 +669,10 @@ class SimplifiedStatisticMapForm(EditStatisticMapForm):
                   'perc_bad_voxels')
 
 class NeuropowerStatisticMapForm(EditStatisticMapForm):
+    def __init__(self, *args, **kwargs):
+        super(NeuropowerStatisticMapForm, self).__init__(*args, **kwargs)
+        self.fields['analysis_level'].required = True
+        self.fields['number_of_subjects'].required = True
 
     class Meta(EditStatisticMapForm.Meta):
         fields = ('name', 'collection', 'description', 'map_type', 'modality', 'map_type','analysis_level','number_of_subjects','cognitive_paradigm_cogatlas',
