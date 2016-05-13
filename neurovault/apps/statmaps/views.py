@@ -448,8 +448,8 @@ def add_image_redirect(request,app,template_path,redirect_url,is_private):
                                      private_token=priv_token)
         temp_collection.save()
     image = StatisticMap(collection=temp_collection)
-    redirect = redirect_url+"/?neurovault=%s-%s" % (
-        temp_collection.private_token,image.id)
+    redirect = redirect_url % {'private_token': temp_collection.private_token,
+                               'image_id': image.id}
     if request.method == "POST":
         if app == "neurosynth":
             form = SimplifiedStatisticMapForm(request.POST, request.FILES, instance=image, user=request.user)
@@ -469,13 +469,13 @@ def add_image_redirect(request,app,template_path,redirect_url,is_private):
 
 @login_required
 def add_image_for_neurosynth(request):
-    redirect_url = "http://neurosynth.org/decode"
+    redirect_url = "http://neurosynth.org/decode/?neurovault=%(private_token)s-%(image_id)s"
     template_path = "statmaps/add_image_for_neurosynth.html"
     return add_image_redirect(request,"neurosynth",template_path,redirect_url,False)
 
 @login_required
 def add_image_for_neuropower(request):
-    redirect_url = "http://neuropowertools.org/neuropowerinput/"
+    redirect_url = "http://neuropowertools.org/neuropowerinput/?neurovault=%(private_token)s-%(image_id)s"
     template_path = "statmaps/add_image_for_neuropower.html"
     return add_image_redirect(request,"neuropower",template_path,redirect_url,True)
 
