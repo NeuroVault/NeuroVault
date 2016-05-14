@@ -638,7 +638,7 @@ class EditStatisticMapForm(StatisticMapForm):
 class AddStatisticMapForm(StatisticMapForm):
 
     class Meta(StatisticMapForm.Meta):
-        fields = ('name', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas', 
+        fields = ('name', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
                   'cognitive_contrast_cogatlas', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
                   'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels')
@@ -666,6 +666,17 @@ class SimplifiedStatisticMapForm(EditStatisticMapForm):
 
     class Meta(EditStatisticMapForm.Meta):
         fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
+                  'cognitive_contrast_cogatlas', 'file', 'ignore_file_warning', 'hdr_file', 'tags', 'is_thresholded',
+                  'perc_bad_voxels')
+
+class NeuropowerStatisticMapForm(EditStatisticMapForm):
+    def __init__(self, *args, **kwargs):
+        super(NeuropowerStatisticMapForm, self).__init__(*args, **kwargs)
+        self.fields['analysis_level'].required = True
+        self.fields['number_of_subjects'].required = True
+
+    class Meta(EditStatisticMapForm.Meta):
+        fields = ('name', 'collection', 'description', 'map_type', 'modality', 'map_type','analysis_level','number_of_subjects','cognitive_paradigm_cogatlas',
                   'cognitive_contrast_cogatlas', 'file', 'ignore_file_warning', 'hdr_file', 'tags', 'is_thresholded',
                   'perc_bad_voxels')
 

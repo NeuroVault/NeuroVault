@@ -141,6 +141,7 @@
             - else
                 %a.btn.btn-primary.btn{href: "{{ image.file.url|urlencode }}" } Download
             %a.btn.btn-primary.btn{href: "http://neurosynth.org/decode/?neurovault={{ api_cid }}" } Decode with neurosynth
+            %a.btn.btn-primary.btn{href: "http://neuropowertools.org/neuropowerinput/?neurovault={{ api_cid }}" } Perform power analysis
             - if comparison_is_possible
                 %a.btn.btn-primary.btn{href: "{% url 'find_similar' image.id %}", data-toggle: "tooltip", title: "Find maps with similar patters."} Find similar
             - else
