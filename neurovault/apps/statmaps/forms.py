@@ -289,6 +289,7 @@ class CollectionForm(ModelForm):
             self.cleaned_data['DOI'] = None
 
         if self.cleaned_data['DOI']:
+            self.cleaned_data['DOI'] = self.cleaned_data['DOI'].strip()
             try:
                 self.cleaned_data["name"], self.cleaned_data["authors"], self.cleaned_data[
                     "paper_url"], _, self.cleaned_data["journal_name"] = get_paper_properties(self.cleaned_data['DOI'].strip())
@@ -492,6 +493,7 @@ class StatisticMapForm(ImageForm):
         django_file = cleaned_data.get("file")
 
         cleaned_data["is_valid"] = True #This will be only saved if the form will validate
+        cleaned_data["tags"] = clean_tags(cleaned_data)
 
         if django_file and "file" not in self._errors and "hdr_file" not in self._errors:
             django_file.open()
@@ -637,7 +639,7 @@ class EditStatisticMapForm(StatisticMapForm):
 class AddStatisticMapForm(StatisticMapForm):
 
     class Meta(StatisticMapForm.Meta):
-        fields = ('name', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas', 
+        fields = ('name', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
                   'cognitive_contrast_cogatlas', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
                   'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels')
@@ -665,6 +667,17 @@ class SimplifiedStatisticMapForm(EditStatisticMapForm):
 
     class Meta(EditStatisticMapForm.Meta):
         fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
+                  'cognitive_contrast_cogatlas', 'file', 'ignore_file_warning', 'hdr_file', 'tags', 'is_thresholded',
+                  'perc_bad_voxels')
+
+class NeuropowerStatisticMapForm(EditStatisticMapForm):
+    def __init__(self, *args, **kwargs):
+        super(NeuropowerStatisticMapForm, self).__init__(*args, **kwargs)
+        self.fields['analysis_level'].required = True
+        self.fields['number_of_subjects'].required = True
+
+    class Meta(EditStatisticMapForm.Meta):
+        fields = ('name', 'collection', 'description', 'map_type', 'modality', 'map_type','analysis_level','number_of_subjects','cognitive_paradigm_cogatlas',
                   'cognitive_contrast_cogatlas', 'file', 'ignore_file_warning', 'hdr_file', 'tags', 'is_thresholded',
                   'perc_bad_voxels')
 
@@ -936,3 +949,14 @@ class EditNIDMResultStatisticMapForm(NIDMResultStatisticMapForm):
 
     def __init__(self, user, *args, **kwargs):
         super(EditNIDMResultStatisticMapForm, self).__init__(*args, **kwargs)
+
+
+def clean_tags(self):
+    """
+    Force all tags to lowercase.
+    """
+    tags = self.get('tags', None)
+    if tags:
+        tags = [t.lower() for t in tags]
+
+    return tags

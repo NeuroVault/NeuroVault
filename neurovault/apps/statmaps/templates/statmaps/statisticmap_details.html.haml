@@ -171,9 +171,14 @@ a.disabled-link:hover {
                             %a.disabled-link{:href => "{% url 'find_similar' image.id %}"}
                                 %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Find maps with similar patters. This function is only enabled for public group level unthresholded statistical maps."}
                                     Find similar
-                        %li
-                            %a{:href => "{% url 'spatial_regression_select' image.id %}"}
-                                Tal's wet dream
+                    %li
+                        %a{:href => "{% url 'spatial_regression_select' image.id %}"}
+                            Tal's wet dream
+                    %li
+                        %a{:href => "http://neuropowertools.org/neuropowerinput/?neurovault={{ api_cid }}"}
+                            %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Use neuropower to estimate how many subjects would be required to find an effect of similar size as in this map."}
+                                Perform power analysis
+
             - if user_owns_image
                 %a.btn.btn-primary.btn{href: "{% url 'edit_image' image.id %}" } Edit details
                 .float-right-wrapper

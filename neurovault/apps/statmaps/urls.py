@@ -12,7 +12,7 @@ from neurovault.apps.statmaps.views import ImagesInCollectionJson,\
 from .views import edit_collection, view_image, delete_image, edit_image, \
                 view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
                 serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
-                papaya_js_embed, view_images_by_tag, \
+                papaya_js_embed, view_images_by_tag, add_image_for_neuropower, \
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
                 view_nidm_results, find_similar, compare_images, edit_metadata, \
                 export_images_filenames, delete_nidm_results, view_task, search, \
@@ -101,6 +101,9 @@ urlpatterns = patterns('',
     url(r'^images/add_for_neurosynth$',
         add_image_for_neurosynth,
         name='add_for_neurosynth'),
+    url(r'^images/add_for_neuropower$',
+        add_image_for_neuropower,
+        name='add_for_neuropower'),
     url(r'^images/(?P<pk>\d+)/js/embed$',
         papaya_js_embed,
         name='papaya_js_embed'),

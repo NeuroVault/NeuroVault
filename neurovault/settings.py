@@ -352,3 +352,6 @@ if "test" in sys.argv:
     PRIVATE_MEDIA_ROOT = test_media_root
     CELERY_ALWAYS_EAGER = True
     CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
+
+
+TAGGIT_CASE_INSENSITIVE=True

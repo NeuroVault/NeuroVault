@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% load static from staticfiles %}
+
+{% block head %}
+    <link href="{% static 'css/studies.css' %}" media="screen" rel="stylesheet" type="text/css"/>
+    <script src="{% static "scripts/select2.min.js"%}" type="text/javascript"></script>
+    <link rel="stylesheet" href="{% static "css/select2.min.css" %}" />
+    <title>{% block title %}Add a new image{% endblock %}</title>
+{% endblock %}
+
+{% block content %}
+    <div class="col-md-11">
+        <h2>Upload a map to perform a power analysis with Neuropower</h2>
+        <div class="row">
+            <div class="col-md-9">
+                <p>Welcome to NeuroVault - a  public web repository for statistical
+                        maps of the human brain. After filling in the minimum
+                        information outlined below (only the fields with an
+                        asterisk [*] are compulsory), your map
+                        will be sent back to <a href="http://neuropowertools.org">Neuropowertools.org</a> for
+                        a power analysis. Your (pilot or preliminary) data will not be public, but we strongly encourage you to upload your full dataset after collection to Neurovault and make it public.
+  			You can always come back to <a href="/">NeuroVault.org</a> to
+			inspect, modify, and/or delete your maps. 
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-11">
+        <hr>
+        <form  class="form-horizontal" method="post"  enctype="multipart/form-data">
+    		{% crispy form %}
+	</form>
+    </div>
+
+    {% include "statmaps/_contrast_lookup.html" %}
+
+{% endblock %}
