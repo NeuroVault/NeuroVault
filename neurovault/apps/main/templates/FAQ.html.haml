@@ -6,43 +6,46 @@
         %br
         %h4 1. What is this website for?
         .well
-            %p The purpose of this website/database is to collect and distribute statistical maps of the human brain. Such maps are acquired by scientist all around the world using brain imaging techniques such as MRI or PET in a combined effort to map the functions and structures of the brain. Unfortunately, due to the limitations of the academic paper form (as in publication not pulp) in which most findings are disseminated, only coordinates of peaks are reported. This makes doing meta-analyses and hypothesis-driven studies very difficult. With <b>unthresholded</b> statistical maps, one can find subthreshold effects that are consistent across studies, which cannot be achieved using just peak coordinates. You can read more about NeuroVault in our <a href="http://journal.frontiersin.org/article/10.3389/fninf.2015.00008/full">paper</a>. 
+            %p The purpose of this website/database is to collect and distribute statistical maps of the human brain. Such maps are acquired by scientists all around the world using brain imaging techniques such as MRI or PET in a combined effort to map the functions and structures of the brain. Unfortunately, due to the limitations of the academic paper form (as in publication not pulp) in which most findings are disseminated, only coordinates of peaks are reported. This makes doing meta-analyses and hypothesis-driven studies very difficult. With <b>unthresholded</b> statistical maps, one can find subthreshold effects that are consistent across studies, which cannot be achieved using just peak coordinates. You can read more about NeuroVault in our <a href="http://journal.frontiersin.org/article/10.3389/fninf.2015.00008/full">paper</a>. 
         %h4 2. Why would I submit anything?
         .well
             %p When you submit data to NeuroVault you will be provided with a permanent link for each map. The links lead to an interactive visualization. You can share you results with other researchers without sending files around! Readers of your papers will also appreciate additional clarity provided by an interactive visualization. Therefore you can include links to your NeuroVault dataset in your paper (see <a href="http://www.jneurosci.org/content/33/42/16657.short">this</a> and <a href="http://www.frontiersin.org/Journal/10.3389/fnhum.2013.00734/abstract">this paper</a>). On top of that, all the maps uploaded to NeuroVault can be decoded using <a href="http://neurosynth.org">neurosynth.org</a>.
-        %h4#decoding 3. How does decoding work?
+        %h4#persistance 3. How do I know my data is safe and will be available for the years to come?
+        .well
+           %p All of NeuroVault is backed up daily into off site storage. In addition all of the public collections that have been associated with a paper (through the DOI field) will be archived in <a href="https://purl.stanford.edu/qd938sk1220">Stanford Digital Repository (SDR)</a>. This operation is performed in bulk twice a year and ensures long term preservation of maps deposited in NeuroVault. 
+        %h4#decoding 4. How does decoding work?
         .well
             %p Decoding is an experimental feature that takes your map and compares it with patterns associated with cognitive terms in thousands of papers. All the hard work is provided by <a href="http://neurosynth.org">neurosynth.org</a>, which will pull your map from NeuroVault and run spatial correlation restricted by a gray matter mask. Give it a try - just hit the "Decode" button above any image. This can potentially be very useful in interpreting your results. The feature is still experimental and we would be grateful for any feedback.
-        %h4#reference 4. How can I cite NeuroVault?
+        %h4#reference 5. How can I cite NeuroVault?
         .well
             %p If you refer to NeuroVault in an academic context (manuscript or talk) please cite our paper:
             %blockquote
                 %p Gorgolewski KJ, Varoquaux G, Rivera G, Schwartz Y, Ghosh SS, Maumet C, Sochat VV, Nichols TE, Poldrack RA, Poline J-B, Yarkoni T and Margulies DS (2015) <a href="http://journal.frontiersin.org/article/10.3389/fninf.2015.00008/full">NeuroVault.org: a web-based repository for collecting and sharing unthresholded statistical maps of the human brain.</a> Front. Neuroinform. 9:8. doi: 10.3389/fninf.2015.00008
             Citing this paper is the best way to show your appreciation and will help us with securing funds necessary to run and improve NeuroVault.
-        %h4 5. Is it only about fMRI?
+        %h4 6. Is it only about fMRI?
         .well
             %p No - not at all. We accept any brain data that is stored in a 3D NIFTI format and has been <b>transformed into MNI space</b>. This means that structural studies (for example VBM) as well as PET are more than welcomed here.
-        %h4 6. How can I access the database in a programmatic way? Is there an API?
+        %h4 7. How can I access the database in a programmatic way? Is there an API?
         .well
             %p 
             :markdown
                 Yes there is a RESTful API - you can find it [here]({% url 'api-docs' %}). Please let us know if you build something cool using NeuroVault!
-        %h4 7. I found a bug. How can I report it?
+        %h4 8. I found a bug. How can I report it?
         .well  
             %p Excellent! Please use the "Give feedback" button in the toolbar.
-        %h4 8. Who is behind the project?
+        %h4 9. Who is behind the project?
         .well      
             %p NeuroVault is being built by a group of dedicated developers led by Chris Gorgolewski. They include (in no particular order): Tal Yarkoni, Yannick Schwartz, Camille Maumet, Vanessa Sochat, Joe Wexler, and Daniel Margulies. Additionally many people have been consulting on this project, including  Tom Nichols, Yaroslav Halchenko, Michael Hanke, Russell Poldrack, Michael Milham, Satrajit Ghosh and the INCF Neuroimaging Data Sharing group. The project is supported by <a href="http://incf.org">International Neuroinformatics Coordination Facility</a> and Max Planck Society (in particular <a href="http://www.cbs.mpg.de">Max Planck Institute for Human Cognitive and Brain Sciences</a> and <a href="http://www.gwdg.de">Gesellschaft für  wissenschaftliche Datenverarbeitung mbH Göttingen</a>).
-        %h4 9. I'm a developer and I have some ideas on how to improve the website.
+        %h4 10. I'm a developer and I have some ideas on how to improve the website.
         .well
-            %p Fantastic! You can send us a pull request on <a href="https://github.com/chrisfilo/NeuroVault">github</a>.
-        %h4 10. Sharing statistical maps is great, but I would like to share whole datasets!
+            %p Fantastic! You can send us a pull request on <a href="https://github.com/NeuroVault/NeuroVault">github</a>.
+        %h4 11. Sharing statistical maps is great, but I would like to share whole datasets!
         .well    
             %p NeuroVault is dedicated to just statistical maps, but you should check out <a href="http://www.openfmri.org">OpenfMRI</a>. Additionally you might consider publishing a <a href="http://multiplecomparisons.blogspot.de/2013/02/making-data-sharing-count.html">data paper</a> to get credit for your sharing efforts.
-        %h4 11. Those are some beautiful viewers! Where did you get them from?
+        %h4 12. Those are some beautiful viewers! Where did you get them from?
         .well
             %p We use <a href="https://github.com/rii-mango/Papaya">Papaya</a> and <a href="https://github.com/gallantlab/pycortex">pycortex</a> for 3D view.
-        %h4 12. What license is the data distributed under?
+        %h4 13. What license is the data distributed under?
         .well     
             %p All data in NeuroVault (with exclusion of private collections) is distributed under <a href="http://creativecommons.org/publicdomain/zero/1.0/">CC0 license</a>.
 {% endblock %}

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load coffeescript %}
 {% block head %}
-<title>{% block title %}NeuroVault: a new home for all brain statistical maps!{% endblock %}</title>
+<title>{% block title %}Images tagged with "{{ tag }}"{% endblock %}</title>
     :javascript
 
         {% inlinecoffeescript %}
@@ -9,7 +9,7 @@
         $(document).ready ->
             $("table").dataTable
                 sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
-                iDisplayLength: 10
+                iDisplayLength: 25
                 aoColumns: [ { sWidth: '6%'}, { sWidth: '20%' }, { sWidth: '20%'}, { sWidth: '54%'}]
                 fnRowCallback: (nRow, aData, iDisplayIndex) ->
                     nRow

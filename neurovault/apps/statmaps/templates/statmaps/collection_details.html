@@ -1,29 +1,43 @@
 {% extends "base.html" %}
+{% load static from staticfiles %}
 {% block head %}
-<script type="text/javascript" src="{% static "scripts/papaya.js"%}"/>
+<script type="text/javascript" src="{% static "scripts/papaya.js"%}"/></script>
 <script src="{% static "scripts/jquery-1.10.2.min.js"%}" type="text/javascript"></script>
 <script src="{% static "scripts/bootstrap.min.js"%}" type="text/javascript"></script>
 <link href="http://netdna.bootstrapcdn.com/font-awesome/3.1.1/css/font-awesome.css" rel="stylesheet">
 
-<title>{% block title %}NeuroVault: {{collection.name}}{% endblock %}</title>
+<!-- Meta tags for PageMap: Google Search-->
+{% include "statmaps/_meta_collection.html" %}
+
+<title>{% block title %}{{collection.name}}{% endblock %}</title>
 
 <script type="text/javascript">
 
 var params = [];
-     
+
 {% if first_image %}
-   params["images"] = ["{% static "images/MNI152.nii.gz"%}","{{ first_image.file.url }}".replace(" ","")];
    var tmpname = "{{ first_image.file.url }}".replace(/^.*[\\\/]/, '')
-   params[tmpname] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
+    {% if first_image.map_type == 'Pa' or first_image.polymorphic_ctype.model == 'atlas' %}
+        params["images"] = ["{% static "images/MNI152.nii.gz"%}","{{ first_image.file.url|urlencode }}".replace(" ","")];
+        params[tmpname] = {"parametric": true,  "lut":"Spectrum", "alpha":"0.75", minPercent: 0.0, maxPercent: 1.0};
+    {% elif first_image.map_type == 'R' %}
+        params["images"] = ["{% static "images/MNI152.nii.gz"%}","{{ first_image.file.url|urlencode }}".replace(" ","")];
+        params[tmpname] = {"parametric": true,  "lut":"Overlay (Negatives)", "alpha":"0.75", minPercent: 0.0, maxPercent: 1.0};
+    {% elif first_image.map_type == 'A' %}
+        params["images"] = ["{{ first_image.file.url|urlencode }}".replace(" ","")];
+    {% else %}
+        params["images"] = ["{% static "images/MNI152.nii.gz"%}","{{ first_image.file.url|urlencode }}".replace(" ","")];
+        params[tmpname] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
+        params["{% static "images/MNI152.nii.gz"%}"] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
+    {% endif %}
 {% else %}
    params["images"] = ["{% static "images/MNI152.nii.gz"%}"];
-   {% endif %}
-     
-   params["{% static "images/MNI152.nii.gz"%}"] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
+{% endif %}
    params["worldSpace"] = true;
    params["expandable"] = true;
    params["combineParametric"] = true;
    params["showControls"] = false;
+   params["smoothDisplay"] = false;
    params["luts"] = [{"name":"PuBu", "data":[[0,1,0.968627,0.984314],[0.125,0.92549,0.905882,0.94902],[0.25,0.815686,0.819608,0.901961],[0.375,0.65098,0.741176,0.858824],[0.5,0.454902,0.662745,0.811765],[0.625,0.211765,0.564706,0.752941],[0.75,0.0196078,0.439216,0.690196],[0.875,0.0156863,0.352941,0.552941],[1,0.00784314,0.219608,0.345098]]},
    {"name":"OrRd", "data":[[0,1,0.968627,0.92549],[0.125,0.996078,0.909804,0.784314],[0.25,0.992157,0.831373,0.619608],[0.375,0.992157,0.733333,0.517647],[0.5,0.988235,0.552941,0.34902],[0.625,0.937255,0.396078,0.282353],[0.75,0.843137,0.188235,0.121569],[0.875,0.701961,0,0],[1,0.498039,0,0]]}];
 
@@ -42,7 +56,7 @@ var params = [];
 
 <script type='text/javascript'>
 
- function showLoader() {   
+ function showLoader() {
     document.getElementById('spinny').style.display = 'block';
     document.getElementById('fade').style.display = 'block';
   }
@@ -59,25 +73,32 @@ var params = [];
      // Reset viewer and load new images
      $(".viewimage").removeClass("active")
 
-     {% if first_image %}
-       var tmpname = $(mrimage).attr("filename").replace(/^.*[\\\/]/, '')
-       params["images"] = ["{% static "images/MNI152.nii.gz"%}",$(mrimage).attr("filename")];
-       params[tmpname] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
-     {% else %}
-       params["images"] = ["{% static "images/MNI152.nii.gz"%}"];
-     {% endif %}  
-   
-      params["{% static "images/MNI152.nii.gz"%}"] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
+      var tmpname = $(mrimage).attr("filename").replace(/^.*[\\\/]/, '')
+
+      if ($(mrimage).attr("type") == "atlas" || $(mrimage).attr("type") == "parcellation") {
+        params["images"] = ["{% static "images/MNI152.nii.gz"%}",$(mrimage).attr("filename")];
+      	params[tmpname] = {"parametric": true,  "lut":"Spectrum", "alpha":"0.75",  minPercent: 0.0, maxPercent: 1.0};
+      } else if ($(mrimage).attr("type") == "ROI/mask") {
+        params["images"] = ["{% static "images/MNI152.nii.gz"%}",$(mrimage).attr("filename")];
+        params[tmpname] = {"parametric": true,  "lut":"Overlay (Negatives)", "alpha":"0.75",  minPercent: 0.0, maxPercent: 1.0};
+      } else if ($(mrimage).attr("type") == "anatomical") {
+        params["images"] = [$(mrimage).attr("filename")];
+      } else {
+        params["images"] = ["{% static "images/MNI152.nii.gz"%}",$(mrimage).attr("filename")];
+      	params[tmpname] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
+      }
+
       params["worldSpace"] = true;
       params["expandable"] = true;
       params["combineParametric"] = true;
       params["showControls"] = false;
+      params["smoothDisplay"] = false;
       params["luts"] = [{"name":"PuBu", "data":[[0,1,0.968627,0.984314],[0.125,0.92549,0.905882,0.94902],[0.25,0.815686,0.819608,0.901961],[0.375,0.65098,0.741176,0.858824],[0.5,0.454902,0.662745,0.811765],[0.625,0.211765,0.564706,0.752941],[0.75,0.0196078,0.439216,0.690196],[0.875,0.0156863,0.352941,0.552941],[1,0.00784314,0.219608,0.345098]]},
       {"name":"OrRd", "data":[[0,1,0.968627,0.92549],[0.125,0.996078,0.909804,0.784314],[0.25,0.992157,0.831373,0.619608],[0.375,0.992157,0.733333,0.517647],[0.5,0.988235,0.552941,0.34902],[0.625,0.937255,0.396078,0.282353],[0.75,0.843137,0.188235,0.121569],[0.875,0.701961,0,0],[1,0.498039,0,0]]}];
 
       papaya.Container.resetViewer(0, params);  // specify new ones
       $(mrimage).addClass("active")
-  
+
   }
 
 (function() {
@@ -124,15 +145,15 @@ var params = [];
           }
         }
       }
-      
+
       csrftoken = $.cookie('csrftoken');
       xhr.open('POST', "upload_folder", true);
       xhr.setRequestHeader("X-CSRFToken", csrftoken);
       xhr.onloadstart = function(e){
-                $('.modal-backdrop').removeClass("modal-backdrop"); 
+                $('.modal-backdrop').removeClass("modal-backdrop");
                 showLoader();
       };
-      
+
       // We need to know when the request finishes.
       xhr.onload = function (e) {
       if (xhr.status === 200) {
@@ -165,7 +186,7 @@ var params = [];
         <div class="row">
             <div class="col-md-3">
                 {% if collection.DOI %}
-                <div class="lead"><a href="{{ collection.url }}">Link to the paper</a></div>
+                <div class="lead"><a href="{{ collection.paper_url }}">Link to the paper</a></div>
                 {% endif %}
                 {% if collection.full_dataset_url %}
                 <div class="lead">Full dataset available at:<a href="{{ collection.full_dataset_url }}">
@@ -173,8 +194,21 @@ var params = [];
                 </div>
                 {% endif %}
             </div>
+         </div>
+
+     {% if messages %}
+         <div class="row">
+            <ul class="messages">
+                {% for message in messages %}
+                <div class="alert alert-dismissible alert-danger">
+                    {{ message|safe }}
+                </div>
+                {% endfor %}
+            </ul>
+         </div>
+            {% endif %}
+         <div class="row">
             <div class="col-md-9">
-        <div class="management-options float-right-wrapper">
              <form action="upload_folder" enctype="multipart/form-data" method= "POST" name="upload_folder_form">
 
             {% if not is_empty %}
@@ -201,10 +235,10 @@ var params = [];
                     <a class="btn btn-primary dropdown-toggle" href="#" data-toggle="dropdown">Upload<span class="caret"></span></a>
                     <ul class="dropdown-menu">
                         <li><a id="upload_archive" href="#">Archive (.zip)</a></li>
-                        <!--[if !IE]> -->                               
+                        <!--[if !IE]> -->
                         <li><a id="upload_folder" href="#">Folder</a></li>
                         <!-- <![endif]-->
-                    </ul>                      
+                    </ul>
                 </div>
                 {% endif %}<!-- close if images -->
 
@@ -217,7 +251,7 @@ var params = [];
                 <div style="height: 0px;width: 0px; overflow:hidden;">
                      {{ form.file }}
                      <input type="file" name="file_input[]" id="folder_input" multiple="" directory="" mozdirectory="" webkitdirectory=""></input>
-                     <input type=hidden" name="paths" id="paths"></input>
+                     <input type="hidden" name="paths" id="paths"></input>
                 </div>
 
                 {% if collection.private %}
@@ -229,26 +263,18 @@ var params = [];
                 </div>
                 {% endif %}
                 {% endif %}<!-- close edit permissions-->
-        </div><!-- close management options-->
 
             </div>
         </div>
 </div>
+<div class="row">
+</div>
 
 <!-- Content-->
 <div class="row">
-        {% if messages %}
-        <ul class="messages">
-            {% for message in messages %}
-            <div class="alert alert-dismissible alert-danger">
-                <button class="close data-dismiss alert" type="button">× {{ message }}</button>
-            </div>
-            {% endfor %}
-        </ul>
-        {% endif %}
 
-<div class="aside" style="width:560px">    
-    <div class="papaya" data-params="params" style="width:560px; float:left"></div>
+<div class="col-md-6" style="margin-top:20px">
+    <div class="papaya" data-params="params" style="width:560px; float:left;"></div>
 </div>
 <div class="col-md-6">
         {% if not is_empty %}
@@ -262,14 +288,13 @@ var params = [];
         <div class='tab-content'>
                <div id='images' class='tab-pane active'>
                {% if not is_empty or not edit_permission %}
-               <table id="collection-images-datatable" class="table table-condensed table-striped table-hover">
+               <table id="collection-images-datatable" class="compact">
                <thead>
                       <tr>
                           <th>View</th>
                           <th>ID</th>
                           <th>Name</th>
                           <th>Type</th>
-                          <th>Description</th>
                       </tr>
                </thead>
                </table>
@@ -289,11 +314,11 @@ var params = [];
               {% endif %} <!-- close if not empty -->
               </form>
 
-              </div><!-- Close images tab-->  
-              
+              </div><!-- Close images tab-->
+
               {% if not is_empty %}
               <div id="details" class="tab-pane">
-                  <table id="collection-details-datatable" class="table table-condensed table-striped table-hover">
+                  <table id="collection-details-datatable" class="compact">
                   <thead>
                       <tr>
                           <th>Field</th>
@@ -313,7 +338,7 @@ var params = [];
                   </table>
               </div><!-- close details tab-->
               {% endif %}
-              <div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false"></div>               
+              <div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false"></div>
          </div><!-- close tab content-->
     </div>
 </div>
@@ -332,10 +357,19 @@ $(document).ready(function() {
     $('#collection-images-datatable').dataTable({
         "processing": true,
         "serverSide": true,
+        "pagingType": "full",
+		"iDisplayLength": 7,
+        "lengthMenu": [7, 10, 25, 50, 75, 100],
         "columnDefs": [
     		{ "orderable": false, "targets": 0 }
   		],
         "order": [[ 1, "asc" ]],
+        "createdRow": function( row, data, dataIndex ) {
+              if (data[4] == false) {
+                $(row).removeClass('odd');
+                $(row).addClass('invalid');
+              }
+        },
         {% if collection.private %}
         "ajax": "{% url 'collection_images_json' collection.private_token %}"
         {% else %}
@@ -352,6 +386,5 @@ $(document).ready(function() {
 </script>
 {% comment %}
 <a href="{{collection.url}}">{{collection.name}}</a> by {{collection.authors}}
-<a href="{% url 'edit_images' cid %}">Add/edit files</a>
 {% endcomment %}
 {% endblock %}

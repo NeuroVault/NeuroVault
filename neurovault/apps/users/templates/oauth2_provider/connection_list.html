@@ -1,0 +1,45 @@
+{% extends "base_settings.html" %}
+
+{% block connectedappstab %}class="active"{% endblock%}
+
+{% block setting_content %}
+  <div class="row settings-pane">
+    <div class="col-md-12">
+
+    {% if messages %}
+        {% include "_messages_block.html" with messages=messages %}
+    {% endif %}
+
+    {% if object_list %}
+      <table class="table">
+          <caption>You have authorized these applications to access your NeuroVault account on your behalf.</caption>
+          <thead>
+            <tr>
+              <th class="col-md-5">Name</th>
+              <th class="col-md-6">Owner</th>
+              <th class="col-md-1"></th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for rt in object_list %}
+              <tr>
+                <td>{{ rt.application.name }}</td>
+                <td>
+                  {{ rt.application.user.username }}
+                </td>
+                <td><a class="btn btn-danger btn-sm" href="{% url "connection_revoke" rt.application.id %}">Revoke access</a>
+                </td>
+              </tr>
+          {% endfor %}
+          </tbody>
+      </table>
+    {% else %}
+    <div class="text-center settings-no-content">
+      <h3>No connected applications</h3>
+      <p>You have no applications authorized to access your account on your behalf via <a href="{% url 'api-docs' %}">NeuroVault API</a>.</p>
+    </div>
+    {% endif %}
+    </div>
+
+  </div>
+{% endblock setting_content %}

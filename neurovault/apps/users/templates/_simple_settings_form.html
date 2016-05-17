@@ -1,0 +1,13 @@
+{% load crispy_forms_tags %}
+
+<div class="row settings-pane">
+  <div class="col-md-6">
+    <form action="" method="post">
+      {% csrf_token %}
+      {{ form | crispy }}
+      <div class="form-controls">
+          <input class="btn btn-primary" type="submit" value="{{ submit_title }}" />
+      </div>
+    </form>
+  </div>
+</div>

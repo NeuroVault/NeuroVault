@@ -10,7 +10,7 @@ import django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.settings")
 django.setup()
 
-from neurovault.apps.statmaps.models import Similarity, Comparison, Image
+from neurovault.apps.statmaps.models import Similarity, Comparison, StatisticMap
 from neurovault.apps.statmaps.tasks import save_voxelwise_pearson_similarity
 from django.db import IntegrityError
 import errno
@@ -27,7 +27,7 @@ pearson_metric = Similarity.objects.update_or_create(similarity_metric="pearson 
 all_comparisons = Comparison.objects.all()
 all_comparisons.delete()
 
-all_images = Image.objects.filter(collection__private=False and is_thresholded == False).exclude(polymorphic_ctype__model__in=['image','atlas'])
+all_images = StatisticMap.objects.filter(collection__private=False).exclude(is_thresholded = True).exclude(analysis_level = 'S')
 
 # Filter down to images that are not private, not thresholded
 # Now, we need to generate a "comparison" object for all files in the database
@@ -36,4 +36,4 @@ for image1 in all_images:
   for image2 in all_images:
     if image1.pk < image2.pk:
       print "Calculating pearson similarity for images %s and %s" %(image1,image2)
-      save_voxelwise_pearson_similarity(image1.pk,image2.pk)
+      save_voxelwise_pearson_similarity.apply_async([image1.pk,image2.pk])

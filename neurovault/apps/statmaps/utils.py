@@ -1,30 +1,33 @@
-from neurovault.apps.statmaps.models import Collection, NIDMResults, StatisticMap, Comparison, NIDMResultStatisticMap
-from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.core.mail import EmailMultiAlternatives
-from django.template.loader import render_to_string
-from django.core.exceptions import ValidationError
-from django.core.files.base import ContentFile
-from subprocess import CalledProcessError
-from datetime import datetime,date
-from django.conf import settings
-from django.db.models import Q
-from ast import literal_eval
-from scipy.misc import comb
-from lxml import etree
-import nibabel as nib
-import numpy as np
+import errno
+import os
+import pickle
+import random
+import shutil
+import string
 import subprocess
 import tempfile
 import urllib2
 import zipfile
-import pickle
-import shutil
-import string
-import random
+from ast import literal_eval
+from datetime import datetime,date
+from subprocess import CalledProcessError
+
 import cortex
-import errno
+import nibabel as nib
+import numpy as np
 import pytz
-import os
+from django.conf import settings
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.core.mail import EmailMultiAlternatives
+from django.db.models import Q
+from django.template.loader import render_to_string
+from lxml import etree
+
+from neurovault.apps.statmaps.models import Collection, NIDMResults, StatisticMap, Comparison, NIDMResultStatisticMap, \
+    BaseStatisticMap
+
 
 # see CollectionRedirectMiddleware
 class HttpRedirectException(Exception):
@@ -134,12 +137,26 @@ def generate_pycortex_volume(image):
         shutil.rmtree(temp_dir)
 
 
-def generate_pycortex_static(volumes, output_dir):
+def generate_pycortex_static(volumes, output_dir, title=None):
+    """
+    Parameters
+    ----------
+
+    volumes: dict
+        key is volume name; value is a set of images.
+
+    output_dir: str
+        file location to dump output html
+
+    title: str (optional)
+        HTML title of pycortex viewer.
+    """
     app_path = os.path.abspath(os.path.dirname(__file__))
     tpl_path = os.path.join(app_path, 'templates/pycortex/dataview.html')
     ds = cortex.Dataset(**volumes)
+    title = title or ', '.join(volumes.keys())
     cortex.webgl.make_static(output_dir, ds, template=tpl_path, html_embed=False,
-                             copy_ctmfiles=False)
+                             copy_ctmfiles=False, title=title)
 
 
 def generate_url_token(length=8):
@@ -242,9 +259,9 @@ def get_afni_subbrick_labels(nii):
     try:
         tree = etree.fromstring(header[0].get_content())
         lnode = [v for v in tree.findall('.//AFNI_atr') if v.attrib['atr_name'] == 'BRICK_LABS']
-    
+
         # header xml is wrapped in string literals
-        
+
         if lnode:
             retval += literal_eval(lnode[0].text.strip()).split('~')
     except:
@@ -264,10 +281,10 @@ def split_4D_to_3D(nii,with_labels=True,tmp_dir=None):
     for n, slice in enumerate(slices):
         nifti = nib.Nifti1Image(np.squeeze(slice),nii.get_header().get_best_affine())
         layer_nm = labels[n] if n < len(labels) else 'volume_%s' % n
-        outpath = os.path.join(out_dir,'%s__%s%s' % (fname,layer_nm,ext))
+        outpath = os.path.join(out_dir, '%s__%s%s' % (fname, layer_nm, ext))
         nib.save(nifti,outpath)
         if with_labels:
-            outpaths.append((layer_nm,outpath))
+            outpaths.append((layer_nm, outpath))
         else:
             outpaths.append(outpath)
     return outpaths
@@ -297,7 +314,7 @@ def save_pickle_atomically(pkl_data,filename,directory=None):
     filey.writelines(pickle_text)
     # make sure that all data is on disk
     filey.flush()
-    os.fsync(filey.fileno()) 
+    os.fsync(filey.fileno())
     filey.close()
     os.rename(tmp_file, filename)
 
@@ -402,9 +419,9 @@ def get_server_url(request):
 def format_image_collection_names(image_name,collection_name,total_length,map_type=None):
    # 3/5 total length should be collection, 2/5 image
    collection_length = int(np.floor(.60*total_length))
-   image_length = int(np.floor(total_length - collection_length)) 
-   if len(image_name) > image_length: image_name = "%s..." % image_name[0:image_length] 
-   if len(collection_name) > collection_length: collection_name = "%s..." % collection_name[0:collection_length] 
+   image_length = int(np.floor(total_length - collection_length))
+   if len(image_name) > image_length: image_name = "%s..." % image_name[0:image_length]
+   if len(collection_name) > collection_length: collection_name = "%s..." % collection_name[0:collection_length]
    if map_type == None: return "%s : %s" %(image_name,collection_name)
    else: return "%s : %s [%s]" %(image_name,collection_name,map_type)
 
@@ -419,14 +436,36 @@ def is_thresholded(nii_obj, thr=0.85):
         return (True, ratio_bad)
     else:
         return (False, ratio_bad)
-    
-    
+
+
+#checks if map is a parcellation or ROI/mask
+def infer_map_type(nii_obj):
+    data = nii_obj.get_data()
+    zero_mask = (data == 0)
+    nan_mask = (np.isnan(data))
+    missing_mask = zero_mask | nan_mask
+    unique_values = np.unique(data[np.logical_not(missing_mask)])
+    if len(unique_values) == 1:
+        map_type = BaseStatisticMap.R
+    elif len(unique_values) > 1200:
+        map_type = BaseStatisticMap.OTHER
+    else:
+        map_type = BaseStatisticMap.Pa
+        for val in unique_values:
+            if not(isinstance(val, np.integer) or (isinstance(val, np.floating) and float(val).is_integer())):
+                map_type = BaseStatisticMap.OTHER
+                break
+            if (data == val).sum() == 1:
+                map_type = BaseStatisticMap.OTHER
+                break
+    return map_type
+
 import nibabel as nb
 from nilearn.image import resample_img
 def not_in_mni(nii, plot=False):
     this_path = os.path.abspath(os.path.dirname(__file__))
     mask_nii = nb.load(os.path.join(this_path, "static", 'anatomical','MNI152_T1_2mm_brain_mask.nii.gz'))
-    
+
     #resample to the smaller one
     if np.prod(nii.shape) > np.prod(mask_nii.shape):
         nan_mask = np.isnan(nii.get_data())
@@ -435,19 +474,22 @@ def not_in_mni(nii, plot=False):
         nii = resample_img(nii, target_affine=mask_nii.get_affine(), target_shape=mask_nii.get_shape(),interpolation='nearest')
     else:
         mask_nii = resample_img(mask_nii, target_affine=nii.get_affine(), target_shape=nii.get_shape(),interpolation='nearest')
-    
+
     brain_mask = mask_nii.get_data() > 0
-    excursion_set = np.logical_not(np.logical_or(nii.get_data() == 0, np.isnan(nii.get_data())))    
-    
+    excursion_set = np.logical_not(np.logical_or(nii.get_data() == 0, np.isnan(nii.get_data())))
+
+    # deals with AFNI files
+    if len(excursion_set.shape) == 5:
+        excursion_set = excursion_set[:, :, :, 0, 0]
     in_brain_voxels = np.logical_and(excursion_set, brain_mask).sum()
     out_of_brain_voxels = np.logical_and(excursion_set, np.logical_not(brain_mask)).sum()
-    
-    
+
+
     perc_mask_covered = in_brain_voxels/float(brain_mask.sum())*100.0
     if np.isnan(perc_mask_covered):
         perc_mask_covered = 0
     perc_voxels_outside_of_mask = out_of_brain_voxels/float(excursion_set.sum())*100.0
-    
+
     if perc_mask_covered > 50:
         if perc_mask_covered < 90 and perc_voxels_outside_of_mask > 20:
             ret = True
@@ -459,50 +501,70 @@ def not_in_mni(nii, plot=False):
         ret = True
     else:
         ret = False
-    
+
     return ret, perc_mask_covered, perc_voxels_outside_of_mask
 
 
 # QUERY FUNCTIONS -------------------------------------------------------------------------------
 
+def is_search_compatible(pk):
+    from neurovault.apps.statmaps.models import Image
+    try:
+        img = Image.objects.get(pk=pk)
+    except ObjectDoesNotExist:
+        return False
+
+    if img.polymorphic_ctype.model in ['image', 'atlas'] or \
+       img.is_thresholded or \
+       img.analysis_level == 'S' or \
+       img.map_type in ['R', 'Pa', 'A'] or img.collection.private:
+        return False
+    else:
+        return True
+
+
+def get_images_to_compare_with(pk1, for_generation=False):
+    from neurovault.apps.statmaps.models import StatisticMap, NIDMResultStatisticMap, Image
+
+    # if the map in question is invalid do not generate any comparisons
+    if not is_search_compatible(pk1):
+        return []
+
+    img = Image.objects.get(pk=pk1)
+    image_pks = []
+    for cls in [StatisticMap, NIDMResultStatisticMap]:
+        qs = cls.objects.filter(collection__private=False, is_thresholded=False)
+        if not (for_generation and img.collection.DOI is not None):
+            qs = qs.exclude(collection__DOI__isnull=True)
+        qs = qs.exclude(collection=img.collection)
+        qs = qs.exclude(pk=pk1).exclude(analysis_level='S').exclude(map_type='R').exclude(map_type='Pa')
+        image_pks += list(qs.values_list('pk', flat=True))
+    return image_pks
+
 # Returns number of total comparisons, with public, not thresholded maps
-def count_existing_comparisons(pk1=None):
+def count_existing_comparisons(pk1):
     return get_existing_comparisons(pk1).count()
 
 # Returns number of total comparisons possible
-def count_possible_comparisons(pk1=None):
-    if pk1!=None:
-        # Comparisons possible for one pk is the number of other pks
-        count_statistic_maps = StatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(pk=pk1).exclude(analysis_level='S').count()
-        count_nidm_maps = NIDMResultStatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(pk=pk1).exclude(analysis_level='S').count()
-        return count_statistic_maps + count_nidm_maps
-
-    else:
-        # Comparisons possible across entire database is N combinations of k=2 things
-        Nstat = StatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(analysis_level='S').count()
-        Nnidm = NIDMResultStatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(analysis_level='S').count()
-        N = Nstat+Nnidm
-        k = 2
-        return int(comb(N, k))
+def count_possible_comparisons(pk1):
+    # Comparisons possible for one pk is the number of other pks
+    count_statistic_maps = StatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(pk=pk1).exclude(analysis_level='S').count()
+    count_nidm_maps = NIDMResultStatisticMap.objects.filter(is_thresholded=False,collection__private=False).exclude(pk=pk1).exclude(analysis_level='S').count()
+    return count_statistic_maps + count_nidm_maps
 
 # Returns image comparisons still processing for a given pk
-def count_processing_comparisons(pk1=None):
-    if pk1!=None:
-        return count_possible_comparisons(pk1) - count_existing_comparisons(pk1)
-    else:
-        return count_possible_comparisons() - count_existing_comparisons()
+def count_processing_comparisons(pk1):
+    return count_possible_comparisons(pk1) - count_existing_comparisons(pk1)
+
 
 # Returns existing comparisons for specific pk, or entire database
-def get_existing_comparisons(pk1=None):
-    threshold_pks = StatisticMap.objects.filter(is_thresholded=True).values_list("pk",flat=True)
-    if pk1!=None:
-        comparisons = Comparison.objects.filter(Q(image1__pk=pk1) | Q(image2__pk=pk1), 
-                     image1__collection__private=False,
-                     image2__collection__private=False)
-    else:
-        comparisons = Comparison.objects.filter(image1__collection__private=False,
-                                                image2__collection__private=False) 
-    return comparisons.exclude(image1__id__in=threshold_pks).exclude(image2__id__in=threshold_pks)
+def get_existing_comparisons(pk1):
+    possible_images_to_compare_with_pks = get_images_to_compare_with(pk1) + [pk1]
+    comparisons = Comparison.objects.filter(Q(image1__pk=pk1) | Q(image2__pk=pk1))
+    comparisons = comparisons.filter(image1__id__in=possible_images_to_compare_with_pks,
+                                     image2__id__in=possible_images_to_compare_with_pks)
+    comparisons = comparisons.exclude(image1__pk=pk1, image2__pk=pk1)
+    return comparisons
 
 def spatial_regregression(target_map, list_of_regressors):
     pass

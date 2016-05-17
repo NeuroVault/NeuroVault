@@ -1,15 +1,19 @@
 # Django settings for neurovault project.
 import os
 import sys
-from datetime import timedelta
-import matplotlib
 import tempfile
+from datetime import timedelta
+
+import matplotlib
 from kombu import Exchange, Queue
+
 matplotlib.use('Agg')
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DEBUG = True
+
+DOMAIN_NAME = "http://neurovault.org"
 
 TEMPLATE_DEBUG = DEBUG
 
@@ -18,6 +22,8 @@ ADMINS = (
 )
 
 MANAGERS = ADMINS
+
+SITE_ID = 1
 
 DATABASES = {
     'default': {
@@ -85,15 +91,6 @@ STATICFILES_FINDERS = (
 #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
-# List of callables that know how to import templates from various sources.
-TEMPLATE_LOADERS = (
-    'hamlpy.template.loaders.HamlPyFilesystemLoader',
-    'hamlpy.template.loaders.HamlPyAppDirectoriesLoader',
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-#     'django.template.loaders.eggs.Loader',
-)
-
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -112,21 +109,26 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 # Python dotted path to the WSGI application used by Django's runserver.
 WSGI_APPLICATION = 'neurovault.wsgi.application'
 
-TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-)
 
-TEMPLATE_CONTEXT_PROCESSORS = ("django.contrib.auth.context_processors.auth",
-"django.core.context_processors.debug",
-"django.core.context_processors.i18n",
-"django.core.context_processors.media",
-"django.core.context_processors.static",
-"django.core.context_processors.tz",
-"django.contrib.messages.context_processors.messages",
-'django.core.context_processors.request',
-)
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': (),
+        'OPTIONS': {'context_processors': ("django.contrib.auth.context_processors.auth",
+                                            "django.core.context_processors.debug",
+                                            "django.core.context_processors.i18n",
+                                            "django.core.context_processors.media",
+                                            "django.core.context_processors.static",
+                                            "django.core.context_processors.tz",
+                                            "django.contrib.messages.context_processors.messages",
+                                            'django.core.context_processors.request'),
+                    'loaders': ('hamlpy.template.loaders.HamlPyFilesystemLoader',
+                                'hamlpy.template.loaders.HamlPyAppDirectoriesLoader',
+                                'django.template.loaders.filesystem.Loader',
+                                'django.template.loaders.app_directories.Loader',
+                                )}
+    }
+]
 
 INSTALLED_APPS = (
     'django.contrib.auth',
@@ -138,6 +140,7 @@ INSTALLED_APPS = (
     'neurovault.apps.main',
     'neurovault.apps.statmaps',
     'neurovault.apps.users',
+    'django.contrib.sitemaps',
     # Uncomment the next line to enable the admin:
     'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
@@ -154,9 +157,10 @@ INSTALLED_APPS = (
     'djcelery',
     'django_cleanup',
     'file_resubmit',
-    'djrill',
+    'django_mailgun',
     'django_hstore',
-    'guardian'
+    'guardian',
+    'oauth2_provider'
 )
 
 # A sample logging configuration. The only tangible logging
@@ -229,11 +233,23 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
     ],
+
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'oauth2_provider.ext.rest_framework.OAuth2Authentication',
+    ),
+    'DEFAULT_RENDERER_CLASSES': (
+        'neurovault.api.utils.ExplicitUnicodeJSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ),
+    'UNICODE_JSON': True,
 }
 
+OAUTH2_PROVIDER = {
+    'REQUEST_APPROVAL_PROMPT': 'auto'
+}
 
+LOGIN_REDIRECT_URL = '/my_collections/'
 #LOGIN_URL          = '/login-form/'
-#LOGIN_REDIRECT_URL = '/logged-in/'
 #LOGIN_ERROR_URL    = '/login-error/'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap3'
@@ -262,8 +278,10 @@ CACHES = {
           }
 
 # Mandrill config
-MANDRILL_API_KEY = "z2O_vfFUJB4L2yeF4Be9Tg" # this is a test key replace wit ha different one in production
-EMAIL_BACKEND = "djrill.mail.backends.djrill.DjrillBackend"
+EMAIL_BACKEND = 'django_mailgun.MailgunBackend'
+MAILGUN_ACCESS_KEY = 'key-3ax6xnjp29jd6fds4gc373sgvjxteol0' # replace with a real key in production
+MAILGUN_SERVER_NAME = 'samples.mailgun.org'# replace with 'neurovault.org' in production
+DEFAULT_FROM_EMAIL = "noreply@neurovault.org"
 
 if os.path.exists('/usr/local/share/pycortex/db/fsaverage'):
     STATICFILES_DIRS = (
@@ -281,8 +299,24 @@ CELERY_DEFAULT_QUEUE = 'default'
 CELERY_QUEUES = (
     Queue('default', Exchange('default'), routing_key='default'),
 )
+CELERY_IMPORTS = ('neurovault.apps.statmaps.tasks', )
+
+CELERYBEAT_SCHEDULE = {
+    'anima_crawl_every day': {
+        'task': 'crawl_anima',
+        'schedule': timedelta(days=1)
+    },
+}
+
+CELERY_TIMEZONE = 'Europe/Berlin'
 
 ANONYMOUS_USER_ID = -1
+
+DEFAULT_OAUTH_APPLICATION_ID = -1
+DEFAULT_OAUTH_APP_NAME = 'DefaultOAuthApp'
+DEFAULT_OAUTH_APP_OWNER_ID = -2
+DEFAULT_OAUTH_APP_OWNER_USERNAME = 'DefaultAppOwner'
+OAUTH_PERSONAL_TOKEN_LENGTH = 40
 
 # Bogus secret key.
 try:

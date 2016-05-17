@@ -1,4 +1,6 @@
 machine:
+  pre:
+    - curl -sSL https://s3.amazonaws.com/circle-downloads/install-circleci-docker.sh | bash -s -- 1.10.0
   services:
     - docker
 
@@ -7,7 +9,7 @@ dependencies:
     - "~/docker"
 
   override:
-    - pip install docker-compose==1.3.3
+    - pip install docker-compose
     - if [[ -e ~/docker/image.tar ]]; then docker load -i ~/docker/image.tar; fi
     - ./scripts/git-set-file-times
     - docker build -t neurovault/neurovault .
@@ -16,10 +18,10 @@ dependencies:
 
 test:
   override:
-    - docker-compose --verbose up -d && sleep 40
-    - curl --retry 10 --retry-delay 5 -vk http://localhost
+    - docker-compose --verbose up -d && sleep 50
+    - curl --retry 10 --retry-delay 15 -vkf http://localhost
     - set -o pipefail && docker-compose run uwsgi python manage.py test 2>&1 | tee log.txt
-    - if grep -q "FAILED" log.txt; then false; else true; fi
+    - if grep -q "^OK" log.txt; then true; else cat log.txt; false; fi
 
 deployment:
   hub:

@@ -1,22 +1,149 @@
 from __future__ import absolute_import
+
+import nilearn
+from django.core.files.base import ContentFile
+from django.http import Http404
+from django.shortcuts import get_object_or_404
 from pybraincompare.compare.maths import calculate_correlation, calculate_pairwise_correlation
 from pybraincompare.compare.mrutils import resample_images_ref, make_binary_deletion_mask, make_binary_deletion_vector
-from pybraincompare.mr.transformation import make_resampled_transformation_vector
 from pybraincompare.mr.datasets import get_data_directory
-from neurovault.celery import nvcelery as celery_app
-from django.shortcuts import get_object_or_404
-from django.http import Http404
-from django.core.files.base import ContentFile
+from pybraincompare.mr.transformation import make_resampled_transformation_vector
+
+nilearn.EXPAND_PATH_WILDCARDS = False
 from nilearn.plotting import plot_glass_brain
-from nilearn.image import resample_img
-from sklearn.externals import joblib
-from django.db.models import Q
-from celery import shared_task
+from celery import shared_task, Celery
 from six import BytesIO
 import nibabel as nib
 import pylab as plt
 import numpy
-import os
+import urllib, json, tarfile, requests, os
+from StringIO import StringIO
+import xml.etree.cElementTree as e
+from django.db import IntegrityError
+from django.core.files.uploadedfile import SimpleUploadedFile
+import re
+from django.conf import settings
+
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'neurovault.settings')
+app = Celery('neurovault')
+app.config_from_object('django.conf:settings')
+app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
+
+@app.task(name='crawl_anima')
+def crawl_anima():
+    import neurovault.apps.statmaps.models as models
+    from neurovault.apps.statmaps.forms import StatisticMapForm, CollectionForm
+    username = "ANIMA"
+    email = "a.reid@fz-juelich.de"
+    try:
+        anima_user = models.User.objects.create_user(username, email)
+        anima_user.save()
+    except IntegrityError:
+        anima_user = models.User.objects.get(username=username, email=email)
+    
+    url = "http://anima.fz-juelich.de/api/studies"
+    response = urllib.urlopen(url);
+    datasets = json.loads(response.read())
+    
+    # results = tarfile.open(mode="r:gz", fileobj=StringIO(response.content))
+    #     for member in results.getmembers():
+    #         f = results.extractfile(member)
+    #         if member.name.endswith(".study"):
+                
+    for url in datasets:
+        response = requests.get(url)
+        content = response.content.replace("PubMed ID", "PubMedID")
+        xml_obj = e.fromstring(content)
+        
+        version = xml_obj.find(".").find(".//Element[@name='Version']").text.strip()
+        study_description = xml_obj.find(".//Element[@name='Description']").text.strip()
+        study_description += " This dataset was automatically imported from the ANIMA <http://anima.modelgui.org/> database. Version: %s"%version
+        study_name = xml_obj.find(".").attrib['name']
+        
+        tags = xml_obj.find(".//Element[@name='Keywords']").text.strip().split(";")
+        tags.append("ANIMA")
+        doi = xml_obj.find(".//Element[@name='DOI']")
+        pubmedid = xml_obj.find(".//Element[@name='PubMedID']")
+    
+        post_dict = {
+            'name': study_name,
+            'description': study_description,
+            'full_dataset_url': "http://anima.fz-juelich.de/api/studies/" + os.path.split(url)[1].replace(".study", "")
+        }
+        if doi != None:
+            post_dict['DOI'] = doi.text.strip()
+        elif pubmedid != None:
+            pubmedid = pubmedid.text.strip()
+            url = "http://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids=%s&format=json" % pubmedid
+            response = urllib.urlopen(url);
+            parsed = json.loads(response.read())
+            post_dict['DOI'] = parsed['records'][0]['doi']
+        
+        try:
+            col = models.Collection.objects.get(DOI=post_dict['DOI'])
+        except models.Collection.DoesNotExist:
+            col = None
+        
+        if col and not col.description.endswith(version):
+            col.DOI = None
+            old_version = re.search(r"Version: (?P<version>\w)", col.description).group("version")
+            col.name = study_name + " (version %s - deprecated)"%old_version
+            col.save()
+        
+        if not col or not col.description.endswith(version):
+            collection = models.Collection(owner=anima_user)
+            form = CollectionForm(post_dict, instance=collection)
+            form.is_valid()
+            collection = form.save()
+            
+            arch_response = requests.get(url.replace("library", "library/archives").replace(".study", ".tar.gz"))
+            arch_results = tarfile.open(mode="r:gz", fileobj=StringIO(arch_response.content))
+        
+            for study_element in xml_obj.findall(".//StudyElement[@type='VolumeFile']"):
+                image_name = study_element.attrib['name'].strip()
+                image_filename = study_element.attrib['file']
+                try:
+                    image_fileobject = arch_results.extractfile(xml_obj.find(".").attrib['directory'] + "/" +
+                                                                image_filename)
+                except KeyError:
+                    image_fileobject = arch_results.extractfile(
+                        xml_obj.find(".").attrib['directory'] + "/" + xml_obj.find(".").attrib['directory'] + "/" +
+                        image_filename)
+        
+                map_type = models.BaseStatisticMap.OTHER
+        
+                quantity_dict = {"Mask": models.BaseStatisticMap.M,
+                                 "F-statistic": models.BaseStatisticMap.F,
+                                 "T-statistic": models.BaseStatisticMap.T,
+                                 "Z-statistic": models.BaseStatisticMap.Z,
+                                 "Beta": models.BaseStatisticMap.U}
+        
+                quantity = study_element.find("./Metadata/Element[@name='Quantity']")
+                if quantity != None:
+                    quantity = quantity.text.strip()
+                    if quantity in quantity_dict.keys():
+                        map_type = quantity_dict[quantity]
+        
+                post_dict = {
+                    'name': image_name,
+                    'modality': models.StatisticMap.fMRI_BOLD,
+                    'map_type': map_type,
+                    'analysis_level': models.BaseStatisticMap.M,
+                    'collection': collection.pk,
+                    'ignore_file_warning': True,
+                    'cognitive_paradigm_cogatlas': 'None',
+                    'tags': ", ".join(tags)
+                }
+                
+                image_description = study_element.find("./Metadata/Element[@name='Caption']").text
+                if image_description:
+                    post_dict["description"] = image_description.strip()
+                
+                file_dict = {'file': SimpleUploadedFile(image_filename, image_fileobject.read())}
+                form = StatisticMapForm(post_dict, file_dict)
+                form.is_valid()
+                form.save()
 
 
 # THUMBNAIL IMAGE GENERATION ###########################################################################
@@ -24,7 +151,6 @@ import os
 @shared_task
 def generate_glassbrain_image(image_pk):
     from neurovault.apps.statmaps.models import Image
-    import neurovault
     import matplotlib as mpl
     mpl.rcParams['savefig.format'] = 'jpg'
     my_dpi = 50
@@ -56,7 +182,6 @@ def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
     from neurovault.apps.statmaps.models import Image
     from six import BytesIO
     import numpy as np
-    import neurovault
 
     img = get_object_or_404(Image, pk=pk1)
     nii_obj = nib.load(img.file.path)   # standard_mask=True is default
@@ -76,21 +201,18 @@ def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
 @shared_task
 def run_voxelwise_pearson_similarity(pk1):
     from neurovault.apps.statmaps.models import Image
-    
-    image = Image.objects.get(pk=pk1)
-    #added for improved performance
-    if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
-        image = save_resampled_transformation_single(pk1)
+    from neurovault.apps.statmaps.utils import get_images_to_compare_with
 
-    # Calculate comparisons for other images, and generate reduced_representation if needed
-    imgs = Image.objects.filter(collection__private=False).exclude(pk=pk1)
-    comp_qs = imgs.exclude(polymorphic_ctype__model__in=['image','atlas']).order_by('id')
-    #exclude single subject maps from analysis
-    for comp_img in comp_qs:
-        iargs = sorted([comp_img.pk,pk1]) 
-        if comp_img.is_thresholded == False and comp_img.analysis_level != 'S':
-            save_voxelwise_pearson_similarity.apply_async(iargs)  # Default uses reduced_representaion, reduced_representation = True
+    imgs_pks = get_images_to_compare_with(pk1, for_generation=True)
+    if imgs_pks:
+        image = Image.objects.get(pk=pk1)
+        # added for improved performance
+        if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
+            image = save_resampled_transformation_single(pk1)
 
+        # exclude single subject maps from analysis
+        for pk in imgs_pks:
+            save_voxelwise_pearson_similarity.apply_async([pk, pk1])  # Default uses reduced_representaion, reduced_representation = True
 
 @shared_task
 def save_voxelwise_pearson_similarity(pk1,pk2,resample_dim=[4,4,4],reduced_representaion=True):
@@ -139,8 +261,8 @@ def save_voxelwise_pearson_similarity_reduced_representation(pk1, pk2):
         # Only save comparison if is not nan
         if not numpy.isnan(pearson_score):     
             Comparison.objects.update_or_create(image1=image1, image2=image2,
-                                                similarity_metric=pearson_metric,
-                                                similarity_score=pearson_score)
+                                                defaults={'similarity_metric': pearson_metric,
+                                                          'similarity_score': pearson_score})
             return image1.pk,image2.pk,pearson_score
         else:
             print "Comparison returned NaN."
@@ -191,8 +313,8 @@ def save_voxelwise_pearson_similarity_resample(pk1, pk2,resample_dim=[4,4,4]):
         # Only save comparison if is not nan
         if not numpy.isnan(pearson_score):     
             Comparison.objects.update_or_create(image1=image1, image2=image2,
-                                            similarity_metric=pearson_metric,
-                                            similarity_score=pearson_score)
+                                                defaults={'similarity_metric': pearson_metric,
+                                                          'similarity_score': pearson_score})
 
             return image1.pk,image2.pk,pearson_score
         else:
@@ -206,8 +328,7 @@ def repopulate_cognitive_atlas(CognitiveAtlasTask=None,CognitiveAtlasContrast=No
         from neurovault.apps.statmaps.models import CognitiveAtlasTask
     if CognitiveAtlasContrast==None:
         from neurovault.apps.statmaps.models import CognitiveAtlasContrast
-    
-    import json, os
+
     from cognitiveatlas.api import get_task
     tasks = get_task()
 

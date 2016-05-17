@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static from staticfiles %}
 {% load coffeescript %}
 {% block head %}
 <title>{% block title %}NeuroVault: a new home for all brain statistical maps!{% endblock %}</title>
@@ -12,13 +13,12 @@ var addthis_config = {
 .row
     .span11
         .massive
-            %p NeuroVault
-            .lead A public repository of unthresholded statistical maps of the human brain
-        %hr
+            .p <img src='{% static "images/neurovault-logo.png"%}' alt="triangle with equal sides" srcset='{% static "images/neurovault-logo.svg"%}'>
+            .lead A public repository of unthresholded statistical maps, <br />parcellations, and atlases of the human brain
 .row
     .third.slice
         .light-head.center-text What is it?
-        %p A place where researchers can publicly store and share unthresholded statistical maps produced by MRI and PET studies.
+        %p A place where researchers can publicly store and share unthresholded statistical maps, parcellations, and atlases produced by MRI and PET studies.
     .third.slice
         .light-head.center-text Why use it?
         %ul.benefit-list
@@ -28,11 +28,13 @@ var addthis_config = {
             %li Improves meta-analyses
     .third.slice
         .light-head.center-text Supported by
-        .slice{:style => "line-height: 100px;"}
+        .slice{:style => "line-height: 60px;"}
             %a{href: 'http://www.incf.org'}
-                %img.middle{src: '{% static "images/incf-logo.png"%}', width: 110, title:"International Neuroinformatics Coordination Facility"}
+                %img.middle{src: '{% static "images/incf-logo.png"%}', width: 80, title:"International Neuroinformatics Coordination Facility"}
             %a{href: 'http://www.cbs.mpg.de'}
-                %img.middle{src: '{% static "images/MPG_LOGO.gif"%}', width: 90, title:"Max Planck Institute for Human Cognitive and Brain Sciences"}
+                %img.middle{src: '{% static "images/MPG_LOGO.gif"%}', width: 60, title:"Max Planck Institute for Human Cognitive and Brain Sciences"}
+            %a{href: 'http://www.stanford.edu'}
+                %img.middle{src: '{% static "images/SUSig_Stack.png"%}', width:110, title:"Stanford University"}
 
 .row
     .span11
@@ -57,7 +59,7 @@ var addthis_config = {
                         %td.col-md-9
                             %a{href: "{% url 'collection_details' collection.id %}"}= collection.name
                         %td.col-md-1
-                            {{ collection.image_set.all.count }}
+                            {{ collection.basecollectionitem_set.all.count }}
                         
 .row
     .span11.text-center

@@ -1,12 +1,13 @@
 import os
+import rdflib
+import shutil
 import tempfile
 import zipfile
-from fnmatch import fnmatch
-import rdflib
-from rdflib.plugins.parsers.notation3 import BadSyntax
 from collections import Counter
+from fnmatch import fnmatch
+from rdflib.plugins.parsers.notation3 import BadSyntax
 from urlparse import urlparse
-import shutil
+
 
 class NIDMUpload:
 
@@ -79,6 +80,8 @@ class NIDMUpload:
               statistic_type: ?statType ;
               rdfs:label ?rdfLabel ;
               prov:atLocation ?statFile .
+         FILTER (!regex(str(?statFile), "^http:")) .
+         FILTER (!regex(str(?statFile), "^https:")) .
         }
         """
         nidm_g = rdflib.Graph()
@@ -161,9 +164,10 @@ class NIDMUpload:
 
     @classmethod
     def uri_to_path(self,map_uri):
+        print map_uri
         # NIDM schema namespace url, or arbitrary string just in case
         uri = urlparse(map_uri)
-        if not uri.path or uri.scheme != 'file':
+        if not uri.path:
             raise self.ParseException("Invalid location for statistic map file.")
         return '{0}{1}'.format(uri.netloc,uri.path)
 

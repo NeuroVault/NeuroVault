@@ -1,13 +1,15 @@
 {% extends "base.html" %}
 {% load coffeescript %}
 {% block head %}
-<title>{% block title %}NeuroVault: Image Comparison{% endblock %}</title>
+<title>{% block title %}Image Comparison{% endblock %}</title>
 <script type="text/javascript"> 
 var addthis_config = {
      data_track_clickback: false 
 } 
 </script>
 <script src="https://tunidesign.googlecode.com/files/jquery.prettyPhoto.min.js"></script>
+<meta name="robots" content="noindex" />
+
 {% endblock %}
 {% block content %}
 
@@ -34,7 +36,8 @@ function setAttributes(el, attrs) {
 setAttributes(count_a, {"class": "btn btn-warning", "disabled": "true"});
 setAttributes(image_a,{"style": "float:right; margin-right:40px; font-weight:800;", "href": "{{ image_url }}"});
 
-count_a.appendChild(document.createTextNode(["{{ images_processing }} images still processing"]));
+// TODO: improve performance of this calculation
+// count_a.appendChild(document.createTextNode(["{{ images_processing }} images still processing"]));
 image_a.appendChild(document.createTextNode(["{{ image_title }}"]));
 portfolio_filter[0].appendChild(count_li.appendChild(count_a));
 portfolio_filter[0].appendChild(image_li.appendChild(image_a));
@@ -53,7 +56,11 @@ document.getElementsByClassName("query_image")[0].style.width = 1000/3 + "px"
 <div style="width:100%; margin-top:30px">
     <p><strong>About</p></strong>
     <div class="well">
-    Whole-brain pearson correlations are calculated from a brain-masked, 4mm transformation of the original image with complete-case analysis, meaning only using voxels that are present in both images are used in the calculation.  Images that are tagged as "thresholded," meaning that the image has less than 25% of coverage for a standard brain mask, are not included in the comparison.</div>
+    Whole-brain pearson correlations are calculated from a brain-masked, 4mm transformation of the original image with
+        complete-case analysis, meaning only using voxels that are present in both images are used in the calculation.
+        The search is limited to images linked to published papers. Images that are tagged as "thresholded," meaning
+        that the image has less than 25% of coverage for a standard brain mask, are not included in the comparison.
+        Similarly single subject maps, parcellations, atlases and ROI maps are excluded.</div>
 </div>
 
 {% endblock %}

@@ -1,21 +1,24 @@
 # NeuroVault.org
+
+[![Join the chat at https://gitter.im/NeuroVault/NeuroVault](https://badges.gitter.im/NeuroVault/NeuroVault.svg)](https://gitter.im/NeuroVault/NeuroVault?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Easy to use web database for human brain statistical maps, atlases and parcellation maps.
 ## How to set up NeuroVault for local development?
 
 ### Installing dependencies
 1. Fork the main repository (https://github.com/NeuroVault/NeuroVault)
 2. Clone your fork to your computer: `git clone https://github.com/<your_username>/NeuroVault`
-  3. *Warning: if you are using OS X you have to clone the repository to a subfolder in your home folder - `/Users/<your_username/...` - otherwise boot2docker will not be able to mount code directories and will fail silently.*
-3. Install docker >= 1.6 (If you are using OS X you'll also need boot2docker)
-4. Install docker-compose >= 1.2
-  5. If you are using OS X and homebrew steps 3 and 4 can be achieved by: `brew update && brew install docker boot2docker docker-compose`
-6. Make sure your docker daemon is running (on OS X: `boot2docker init && boot2docker up`)
+  3. *Warning: if you are using OS X you have to clone the repository to a subfolder in your home folder - `/Users/<your_username>/...` - otherwise docker-machine will not be able to mount code directories and may fail silently.*
+3. Install docker >= 1.10 (If you are using OS X you'll also need [docker-machine](https://docs.docker.com/machine/install-machine/) and VirtualBox)
+4. Install docker-compose >= 1.6
+  5. If you are using OS X and homebrew steps 3 and 4 can be achieved by: `brew update && brew install docker docker-machine docker-compose`
+6. Make sure your docker daemon is running and environment variables are configured (on OS X: `docker-machine create --driver virtualbox nv && docker-machine start nv && eval "$(docker-machine env nv)"`)
 
 ### Running the server
 ```
 docker-compose up -d
 ```
-The webpage will be available at 127.0.0.1 (unless you are using boot2docker - then run `boot2docker ip` to figure out which IP address you need to use).
+The webpage will be available at 127.0.0.1 (unless you are using docker-machine - then run `docker-machine ip nv` to figure out which IP address you need to use; remember that your enviroment variables need to be properly configured by running `eval "$(docker-machine env nv)"`).
 
 You can also run the server in non detached mode (shows all the logs in realtime).
 ```
@@ -58,5 +61,4 @@ You can also build it locally
 ```
 docker build -t neurovault/neurovault_fs -f fs_docker/Dockerfile .
 ```
-# Uptime
-<a href="http://www.pingdom.com"><img src="https://share.pingdom.com/banners/8bbaa1a5" alt="Uptime Report for Neurovault: Last 30 days" title="Uptime Report for Neurovault: Last 30 days" width="300" height="165" /></a>
+

@@ -1,40 +1,34 @@
 # -*- coding: utf-8 -*-
-from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, generate_glassbrain_image
-from neurovault.apps.statmaps.storage import NiftiGzStorage, NIDMStorage,\
-    OverwriteStorage, NeuroVaultStorage
-from polymorphic.polymorphic_model import PolymorphicModel
-from django.db.models.signals import post_delete, pre_delete
-from taggit.models import GenericTaggedItemBase, TagBase
-from django.core.exceptions import ValidationError
-from django.dispatch.dispatcher import receiver
-from django.core.urlresolvers import reverse
-from taggit.managers import TaggableManager
-from django.contrib.auth.models import User
-from django.db.models import Q, DO_NOTHING
-from dirtyfields import DirtyFieldsMixin
-from django.core.files import File
-from django_hstore import hstore
-from neurovault import settings
-from datetime import datetime
-from django.db import models
-from gzip import GzipFile
-from django import forms
-from xml import etree
-import nibabel as nb
-import neurovault
-import urllib2
-import shutil
 import os
-from neurovault.settings import PRIVATE_MEDIA_ROOT
-from django.db.models.fields.files import FileField, FieldFile
+import shutil
+from datetime import datetime
+from gzip import GzipFile
+
+import nibabel as nb
+from django.contrib.auth.models import User
+from django.core.files import File
+from django.core.urlresolvers import reverse
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
+from django.db.models import Q
+from django.db.models.fields.files import FieldFile
+from django.db.models.signals import m2m_changed, post_delete, post_save
+from django.dispatch.dispatcher import receiver
+from django_hstore import hstore
 from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
-from django.db.models.signals import m2m_changed
+from polymorphic.models import PolymorphicModel
+from taggit.managers import TaggableManager
+from taggit.models import GenericTaggedItemBase, TagBase
+
+from neurovault.apps.statmaps.storage import NiftiGzStorage, NIDMStorage,\
+    OverwriteStorage
+from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, generate_glassbrain_image
+from neurovault.settings import PRIVATE_MEDIA_ROOT
 
 
 class Collection(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of collection")
-    DOI = models.CharField(max_length=200, unique=True, blank=True, null=True, default=None, verbose_name="DOI of the corresponding paper")
+    DOI = models.CharField(max_length=200, unique=True, blank=True, null=True, default=None, verbose_name="DOI of the corresponding paper (required if you want your maps to be archived in Stanford Digital Repository)")
     authors = models.CharField(max_length=5000, blank=True, null=True)
     paper_url = models.CharField(max_length=200, blank=True, null=True)
     journal_name = models.CharField(max_length=200, blank=True, null=True, default=None)
@@ -56,7 +50,6 @@ class Collection(models.Model):
     length_of_trials = models.CharField(help_text="Length of individual trials in seconds. If length varies across trials, enter 'variable'. ", max_length=200, null=True, verbose_name="Length of trials", blank=True)
     optimization = models.NullBooleanField(help_text="Was the design optimized for efficiency", null=True, verbose_name="Optimization?", blank=True)
     optimization_method = models.CharField(help_text="What method was used for optimization?", verbose_name="Optimization method", max_length=200, null=True, blank=True)
-    number_of_subjects = models.IntegerField(help_text="Number of subjects entering into the analysis", null=True, verbose_name="No. of subjects", blank=True)
     subject_age_mean = models.FloatField(help_text="Mean age of subjects", null=True, verbose_name="Subject age mean", blank=True)
     subject_age_min = models.FloatField(help_text="Minimum age of subjects", null=True, verbose_name="Subject age min", blank=True)
     subject_age_max = models.FloatField(help_text="Maximum age of subjects", null=True, verbose_name="Subject age max", blank=True)
@@ -133,7 +126,7 @@ class Collection(models.Model):
 
     @property
     def is_statisticmap_set(self):
-        return all((isinstance(i, StatisticMap) for i in self.image_set.all()))
+        return all((isinstance(i, StatisticMap) for i in self.basecollectionitem_set.all()))
 
     def get_absolute_url(self):
         return_cid = self.id
@@ -149,31 +142,24 @@ class Collection(models.Model):
             self.DOI = None
         if self.private_token is not None and self.private_token.strip() == "":
             self.private_token = None
-            
+
         if self.DOI and not self.private and not self.doi_add_date:
             self.doi_add_date = datetime.now()
 
         # run calculations when collection turns public
         privacy_changed = False
+        DOI_changed = False
         if self.pk is not None:
             old_object = Collection.objects.get(pk=self.pk)
             old_is_private = old_object.private
+            old_has_DOI = old_object.DOI is not None
             privacy_changed = old_is_private != self.private
+            DOI_changed = old_has_DOI != (self.DOI is not None)
 
         super(Collection, self).save(*args, **kwargs)
 
-        assign_perm('delete_collection', self.owner, self)
-        assign_perm('change_collection', self.owner, self)
-        for image in self.image_set.all():
-            assign_perm('change_image', self.owner, image)
-            assign_perm('delete_image', self.owner, image)
-        for nidmresult in self.nidmresults_set.all():
-            assign_perm('change_nidmresults', self.owner, nidmresult)
-            assign_perm('delete_nidmresults', self.owner, nidmresult)
-        
-
-        if privacy_changed and self.private == False:
-            for image in self.image_set.all():
+        if (privacy_changed and not self.private) or (DOI_changed and self.DOI is not None):
+            for image in self.basecollectionitem_set.instance_of(Image).all():
                 if image.pk:
                     generate_glassbrain_image.apply_async([image.pk])
                     run_voxelwise_pearson_similarity.apply_async([image.pk])
@@ -183,9 +169,11 @@ class Collection(models.Model):
 
     def delete(self, using=None):
         cid = self.pk
-        for image in self.image_set.all():
+        for image in self.basecollectionitem_set.instance_of(Image):
             image.delete()
-        ret = models.Model.delete(self, using=using)
+        for nidmresult in self.basecollectionitem_set.instance_of(NIDMResults):
+            nidmresult.delete()
+        ret = super(Collection, self).delete(using=using)
         collDir = os.path.join(PRIVATE_MEDIA_ROOT, 'images',str(cid))
         try:
             shutil.rmtree(collDir)
@@ -193,6 +181,15 @@ class Collection(models.Model):
             print 'Image directory for collection %s does not exist' %cid
 
         return ret
+
+@receiver(post_save, sender=Collection)
+def collection_created(sender, instance, created, **kwargs):
+    if created:
+        assign_perm('delete_collection', instance.owner, instance)
+        assign_perm('change_collection', instance.owner, instance)
+        for image in instance.basecollectionitem_set.all():
+            assign_perm('change_basecollectionitem', instance.owner, image)
+            assign_perm('delete_basecollectionitem', instance.owner, image)
 
 def contributors_changed(sender, instance, action, **kwargs):
     if action in ["post_remove", "post_add", "post_clear"]:
@@ -202,22 +199,16 @@ def contributors_changed(sender, instance, action, **kwargs):
         for contributor in list(new_contributors - current_contributors):
             contributor = User.objects.get(pk=contributor)
             assign_perm('change_collection', contributor, instance)
-            for image in instance.image_set.all():
-                assign_perm('change_image', contributor, image)
-                assign_perm('delete_image', contributor, image)
-            for nidmresult in instance.nidmresults_set.all():
-                assign_perm('change_nidmresults', contributor, nidmresult)
-                assign_perm('delete_nidmresults', contributor, nidmresult)
+            for image in instance.basecollectionitem_set.all():
+                assign_perm('change_basecollectionitem', contributor, image)
+                assign_perm('delete_basecollectionitem', contributor, image)
                 
         for contributor in (current_contributors - new_contributors):
             contributor = User.objects.get(pk=contributor)
             remove_perm('change_collection', contributor, instance)
-            for image in instance.image_set.all():
-                remove_perm('change_image', contributor, image)
-                remove_perm('delete_image', contributor, image)
-            for nidmresult in instance.nidmresults_set.all():
-                remove_perm('change_nidmresults', contributor, nidmresult)
-                remove_perm('delete_nidmresults', contributor, nidmresult)
+            for image in instance.basecollectionitem_set.all():
+                remove_perm('change_basecollectionitem', contributor, image)
+                remove_perm('delete_basecollectionitem', contributor, image)
 
 m2m_changed.connect(contributors_changed, sender=Collection.contributors.through)
 
@@ -230,6 +221,10 @@ class CognitiveAtlasTask(models.Model):
 
     def __unicode__(self):
         return self.name
+
+    def get_absolute_url(self):
+        cog_atlas_id = self.cog_atlas_id
+        return reverse('view_task', args=[str(cog_atlas_id)])
 
     class Meta:
         ordering = ['name']
@@ -278,22 +273,20 @@ class ValueTaggedItem(GenericTaggedItemBase):
     tag = models.ForeignKey(KeyValueTag, related_name="tagged_items")
 
 
-class BaseCollectionItem(models.Model):
+class BaseCollectionItem(PolymorphicModel, models.Model):
     name = models.CharField(max_length=200, null=False, blank=False, db_index=True)
     description = models.TextField(blank=True)
     collection = models.ForeignKey(Collection)
     add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
     tags = TaggableManager(through=ValueTaggedItem, blank=True)
+    is_valid = models.BooleanField(default=True)
 
     def __unicode__(self):
         return self.name
 
     def set_name(self, new_name):
         self.name = new_name
-
-    class Meta:
-        abstract = True
 
     def save(self):
         self.collection.modify_date = datetime.now()
@@ -306,27 +299,20 @@ class BaseCollectionItem(models.Model):
         self.collection.save()
         super(BaseCollectionItem, self).delete()
 
-    def validate_unique(self, *args, **kwargs):
-
-        # Centralized validation for all needed uniqueness constraints.
-        # unique_together creates db constraints that break polymorphic children.
-        # Won't anyone please think of the children?!
-        if isinstance(self,NIDMResultStatisticMap):
-            if self.__class__.objects.filter(~Q(id=self.pk),nidm_results=self.nidm_results,
-                                             name=self.name):
-                raise ValidationError({"name":"A statistic map with this name already " +
-                                       "exists in this NIDM Results zip file."})
-        else:
-            if self.__class__.objects.filter(~Q(id=self.pk),collection=self.collection,
-                                             name=self.name):
-                raise ValidationError({"name":"An object with this name already exists in this " +
-                                      "collection."})
-
     @classmethod
     def get_fixed_fields(cls):
-        return ('name', 'description')
+        return ('name', 'description', 'figure')
 
-class Image(PolymorphicModel, BaseCollectionItem):
+
+# sadly signals are not emitted for base classes so we need to connect this to every class separately
+def basecollectionitem_created(sender, instance, created, **kwargs):
+    if created:
+        for user in [instance.collection.owner, ] + list(instance.collection.contributors.all()):
+            assign_perm('change_basecollectionitem', user, instance)
+            assign_perm('delete_basecollectionitem', user, instance)
+
+
+class Image(BaseCollectionItem):
     file = models.FileField(upload_to=upload_img_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='File with the unthresholded map (.img, .nii, .nii.gz)')
     figure = models.CharField(help_text="Which figure in the corresponding paper was this map displayed in?", verbose_name="Corresponding figure", max_length=200, null=True, blank=True)
     thumbnail = models.FileField(help_text="The orthogonal view thumbnail path of the nifti image",
@@ -402,10 +388,6 @@ class Image(PolymorphicModel, BaseCollectionItem):
         do_update = True if file_changed else False
         new_image = True if self.pk is None else False
         super(Image, self).save()
-        
-        for user in [self.collection.owner,] + list(self.collection.contributors.all()):
-            assign_perm('change_image', user, self)
-            assign_perm('delete_image', user, self)
 
         if (do_update or new_image) and self.collection and self.collection.private == False:
             # Generate glass brain image
@@ -427,6 +409,8 @@ class Image(PolymorphicModel, BaseCollectionItem):
                     os.remove(old_path)
             super(Image, self).save()
 
+
+
 class BaseStatisticMap(Image):
     T = 'T'
     Z = 'Z'
@@ -441,6 +425,7 @@ class BaseStatisticMap(Image):
     S = 'S'
     G = 'G'
     M = 'M'
+    A = 'A'
     MAP_TYPE_CHOICES = (
         (T, 'T map'),
         (Z, 'Z map'),
@@ -451,13 +436,14 @@ class BaseStatisticMap(Image):
         (U, 'univariate-beta map'),
         (R, 'ROI/mask'),
         (Pa, 'parcellation'),
-        (OTHER, 'Other'),
+        (A, 'anatomical'),
+        (OTHER, 'other'),
     )
     ANALYSIS_LEVEL_CHOICES = (
         (S, 'single-subject'),
         (G, 'group'),
         (M, 'meta-analysis'),
-        (OTHER, 'Other'),
+        (OTHER, 'other'),
     )
 
     map_type = models.CharField(
@@ -474,6 +460,8 @@ class BaseStatisticMap(Image):
                     help_text=("What level of summary data was used as the input to this analysis?"),
                     verbose_name="Analysis level",
                     max_length=200, null=True, blank=True, choices=ANALYSIS_LEVEL_CHOICES)
+    number_of_subjects = models.IntegerField(help_text="Number of subjects used to generate this map", null=True,
+                                             verbose_name="No. of subjects", blank=True)
 
     def save(self):
         if self.perc_bad_voxels == None and self.file:
@@ -490,6 +478,13 @@ class BaseStatisticMap(Image):
             gzfileobj = GzipFile(filename=self.file.name, mode='rb', fileobj=self.file.file)
             nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(self.file.name, gzfileobj)})
             self.not_mni, self.brain_coverage, self.perc_voxels_outside = nvutils.not_in_mni(nii)
+
+        if self.map_type == self.OTHER:
+            import neurovault.apps.statmaps.utils as nvutils
+            self.file.open()
+            gzfileobj = GzipFile(filename=self.file.name, mode='rb', fileobj=self.file.file)
+            nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(self.file.name, gzfileobj)})
+            self.map_type = nvutils.infer_map_type(nii)
 
         # Calculation of image reduced_representation and comparisons
         file_changed = False
@@ -511,16 +506,16 @@ class BaseStatisticMap(Image):
                     comparisons.delete()
         super(BaseStatisticMap, self).save()
 
-        # Calculate comparisons if private collection, update or save, not thresholded
-        if (do_update or new_image) and self.collection and self.collection.private == False:
-            if self.is_thresholded == False and self.analysis_level != 'S':
-                # Default resample_dim is 4mm
-                run_voxelwise_pearson_similarity.apply_async([self.pk])
+        # Calculate comparisons
+        if do_update or new_image:
+            run_voxelwise_pearson_similarity.apply_async([self.pk])
+
+        self.file.close()
 
     @classmethod
     def get_fixed_fields(cls):
         return super(BaseStatisticMap, cls).get_fixed_fields() + (
-            'map_type', 'analysis_level')
+            'map_type', 'analysis_level', 'number_of_subjects')
 
     class Meta:
         abstract = True
@@ -559,14 +554,19 @@ class StatisticMap(BaseStatisticMap):
     smoothness_fwhm = models.FloatField(help_text="Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.", verbose_name="Smoothness FWHM", null=True, blank=True)
     contrast_definition = models.CharField(help_text="Exactly what terms are subtracted from what? Define these in terms of task or stimulus conditions (e.g., 'one-back task with objects versus zero-back task with objects') instead of underlying psychological concepts (e.g., 'working memory').", verbose_name="Contrast definition", max_length=200, null=True, blank=True)
     contrast_definition_cogatlas = models.CharField(help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast", verbose_name="Cognitive Atlas definition", max_length=200, null=True, blank=True)
-    cognitive_paradigm_cogatlas = models.ForeignKey(CognitiveAtlasTask, help_text="Task (or lack of it) performed by the subjects in the scanner described using <a href='http://www.cognitiveatlas.org/' target='_blank'>Cognitive Atlas</a> terms", verbose_name="Cognitive Paradigm", null=True, blank=False)
-    cognitive_contrast_cogatlas = models.ForeignKey(CognitiveAtlasContrast, help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast", verbose_name="Cognitive Atlas Contrast", null=True, blank=True)
+    cognitive_paradigm_cogatlas = models.ForeignKey(CognitiveAtlasTask, help_text="Task (or lack of it) performed by the subjects in the scanner described using <a href='http://www.cognitiveatlas.org/' target='_blank'>Cognitive Atlas</a> terms",
+                                                    verbose_name="Cognitive Paradigm", null=True, blank=False,
+                                                    on_delete=models.PROTECT)
+    cognitive_contrast_cogatlas = models.ForeignKey(CognitiveAtlasContrast, help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast",
+                                                    verbose_name="Cognitive Atlas Contrast", null=True, blank=True,
+                                                    on_delete=models.PROTECT)
 
     @classmethod
     def get_fixed_fields(cls):
         return super(StatisticMap, cls).get_fixed_fields() + (
             'modality', 'contrast_definition', 'cognitive_paradigm_cogatlas')
 
+post_save.connect(basecollectionitem_created, sender=StatisticMap, weak=True)
 
 class NIDMResults(BaseCollectionItem):
     ttl_file = models.FileField(upload_to=upload_nidm_to,
@@ -585,7 +585,6 @@ class NIDMResults(BaseCollectionItem):
 
     class Meta:
         verbose_name_plural = "NIDMResults"
-        unique_together = ('collection','name')
 
     def get_absolute_url(self):
         return_args = [str(self.collection_id),self.name]
@@ -598,12 +597,6 @@ class NIDMResults(BaseCollectionItem):
     def get_form_class():
         from neurovault.apps.statmaps.forms import NIDMResultsForm
         return NIDMResultsForm
-    
-    def save(self):
-        BaseCollectionItem.save(self)
-        for user in [self.collection.owner,] + list(self.collection.contributors.all()):
-            assign_perm('change_nidmresults', user, self)
-            assign_perm('delete_nidmresults', user, self)
 
 @receiver(post_delete, sender=NIDMResults)
 def mymodel_delete(sender, instance, **kwargs):
@@ -611,10 +604,13 @@ def mymodel_delete(sender, instance, **kwargs):
     if os.path.isdir(nidm_path):
         shutil.rmtree(nidm_path)
 
+post_save.connect(basecollectionitem_created, sender=NIDMResults, weak=True)
+
 
 class NIDMResultStatisticMap(BaseStatisticMap):
     nidm_results = models.ForeignKey(NIDMResults)
 
+post_save.connect(basecollectionitem_created, sender=NIDMResultStatisticMap, weak=True)
 
 class Atlas(Image):
     label_description_file = models.FileField(
@@ -626,6 +622,7 @@ class Atlas(Image):
     class Meta:
         verbose_name_plural = "Atlases"
 
+post_save.connect(basecollectionitem_created, sender=Atlas, weak=True)
 
 class Similarity(models.Model):
     similarity_metric = models.CharField(max_length=200, null=False, blank=False, db_index=True,help_text="the name of the similarity metric to describe a relationship between two or more images.",verbose_name="similarity metric name")

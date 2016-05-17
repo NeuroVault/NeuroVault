@@ -1,0 +1,22 @@
+{% extends "base_settings.html" %}
+
+{% block developerappstab %}class="active"{% endblock%}
+
+{% block setting_content %}
+<div class="row settings-pane">
+    <div class="col-md-12">
+        <div class="text-center settings-no-content">
+
+        <h3>Delete this application?</h3>
+        <p><strong>{{ application.name }}</strong></p>
+        <form method="post" action="{% url 'developerapps_delete' application.pk %}">
+            {% csrf_token %}
+            <div class="form-controls">
+                <input type="submit" class="btn btn-danger" name="allow" value="Delete"/>
+                <a class="btn btn-link" href="{% url "developerapps_update" application.id %}">Cancel</a>
+            </div>
+        </form>
+        </div>
+    </div>
+</div>
+{% endblock setting_content %}

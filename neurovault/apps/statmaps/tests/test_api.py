@@ -1,13 +1,22 @@
-from neurovault.apps.statmaps.tests.utils import clearDB, save_atlas_form, save_statmap_form, save_nidm_form
-from neurovault.apps.statmaps.models import Atlas, Collection, Image, StatisticMap
+import uuid
+
+from neurovault.apps.statmaps.tests.utils import (clearDB, save_atlas_form,
+                                                  save_statmap_form,
+                                                  save_nidm_form)
+from neurovault.apps.statmaps.models import (Atlas, Collection,
+                                             StatisticMap, NIDMResults)
 from neurovault.apps.statmaps.urls import StandardResultPagination
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Permission
 from django.test import TestCase, Client
+from rest_framework.test import APITestCase
+from rest_framework import status
 import xml.etree.ElementTree as ET
 from operator import itemgetter
 import os.path
 import json
+
+from .test_nidm import NIDM_TEST_FILES
 
 
 class Test_Atlas_APIs(TestCase):
@@ -198,7 +207,6 @@ class Test_Atlas_APIs(TestCase):
         resp_dict = dict(response['aaData'])
         assert('http' in resp_dict['url'])
 
-
     def test_nidm_results(self):
         print "\nTesting NIDM results API...."
         url = '/api/nidm_results/'
@@ -232,3 +240,456 @@ class Test_Atlas_APIs(TestCase):
         url = '/api/images/?limit=2'
         response = json.loads(self.client.get(url, follow=True).content)
         self.assertEqual(2, len(response['results']))
+
+
+class TestAuthenticatedUser(APITestCase):
+    def setUp(self):
+        self.user_fields = {
+            'username': 'NeuroGuy',
+            'email': 'neuroguy@example.com',
+            'first_name': 'Neuro',
+            'last_name': 'Guy'
+        }
+        self.user = User.objects.create_user(**self.user_fields)
+        self.user.save()
+
+    def test_unauthenticated_user(self):
+        response = self.client.get('/api/user/')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data, {
+            'detail': 'Authentication credentials were not provided.'
+        })
+
+    def test_authenticated_user(self):
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.get('/api/user/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsInstance(response.data['id'], int)
+
+        for field in self.user_fields.keys():
+            self.assertEqual(response.data[field], self.user_fields[field])
+
+
+class TestCollection(APITestCase):
+    def setUp(self):
+        self.user_password = 'apitest'
+        self.user = User.objects.create_user('NeuroGuy')
+        self.user.save()
+        self.coll = Collection(owner=self.user, name="Test Collection")
+        self.coll.save()
+
+        self.item_url = '/api/collections/%s/' % self.coll.id
+
+    def test_fetch_collection(self):
+        response = self.client.get('/api/collections/%s/' % self.coll.id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], self.coll.id)
+        self.assertEqual(response.data['name'], self.coll.name)
+
+    def test_create_collection(self):
+        self.client.force_authenticate(user=self.user)
+
+        post_dict = {
+            'name': 'Test Create Collection',
+        }
+
+        response = self.client.post('/api/collections/', post_dict)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['name'], post_dict['name'])
+
+    def test_missing_required_authentication(self):
+        url = '/api/collections/%s/' % self.coll.id
+
+        response = self.client.post(url, {'name': 'failed test'})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data, {
+            'detail': 'Authentication credentials were not provided.'
+        })
+
+    def test_partial_update_collection(self):
+        self.client.force_authenticate(user=self.user)
+
+        patch_dict = {
+            'description': "renamed %s" % uuid.uuid4(),
+        }
+
+        response = self.client.patch(self.item_url, patch_dict)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['description'],
+                         patch_dict['description'])
+
+    def test_update_collection(self):
+        self.client.force_authenticate(user=self.user)
+
+        put_dict = {
+            'name': "renamed %s" % uuid.uuid4(),
+            'description': "renamed %s" % uuid.uuid4(),
+        }
+
+        response = self.client.put(self.item_url, put_dict)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['description'],
+                         put_dict['description'])
+        self.assertEqual(response.data['name'],
+                         put_dict['name'])
+
+    def test_destroy_collection(self):
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.delete(self.item_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        with self.assertRaises(Collection.DoesNotExist):
+            Collection.objects.get(pk=self.coll.pk)
+
+    def test_missing_required_permissions(self):
+        self.client.force_authenticate(user=self.user)
+
+        other_user = User.objects.create_user('OtherGuy')
+        other_user.save()
+
+        other_collection = Collection(owner=other_user,
+                                      name="Another Test Collection")
+        other_collection.save()
+
+        url = '/api/collections/%s/' % other_collection.pk
+
+        put_dict = {
+            'name': "renamed %s" % uuid.uuid4()
+        }
+
+        response = self.client.put(url, put_dict)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, {
+            'detail': 'You do not have permission to perform this action.'
+        })
+
+
+class TestCollectionItemUpload(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user('NeuroGuy')
+        self.user.save()
+        self.coll = Collection(owner=self.user, name="Test Collection")
+        self.coll.save()
+
+    def tearDown(self):
+        clearDB()
+
+    def abs_file_path(self, rel_path):
+        return os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                            rel_path)
+
+    def test_upload_statmap(self):
+        self.client.force_authenticate(user=self.user)
+
+        url = '/api/collections/%s/images/' % self.coll.pk
+        fname = self.abs_file_path('test_data/statmaps/motor_lips.nii.gz')
+
+        post_dict = {
+            'name': 'test map',
+            'modality': 'fMRI-BOLD',
+            'map_type': 'T',
+            'file': SimpleUploadedFile(fname, open(fname).read())
+        }
+
+        response = self.client.post(url, post_dict, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.assertEqual(response.data['collection'], self.coll.id)
+        self.assertRegexpMatches(response.data['file'], r'\.nii\.gz$')
+
+        exclude_keys = ('file',)
+        test_keys = set(post_dict.keys()) - set(exclude_keys)
+        for key in test_keys:
+            self.assertEqual(response.data[key], post_dict[key])
+
+    def test_upload_atlas(self):
+        self.client.force_authenticate(user=self.user)
+
+        url = '/api/collections/%s/atlases/' % self.coll.pk
+        nii_path = self.abs_file_path(
+            'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz')
+        xml_path = self.abs_file_path(
+            'test_data/api/VentralFrontal_thr75_summaryimage_2mm.xml')
+
+        post_dict = {
+            'name': 'test atlas',
+            'file': SimpleUploadedFile(nii_path, open(nii_path).read()),
+            'label_description_file': SimpleUploadedFile(xml_path,
+                                                         open(xml_path).read())
+        }
+
+        response = self.client.post(url, post_dict, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.assertEqual(response.data['collection'], self.coll.id)
+        self.assertRegexpMatches(response.data['file'], r'\.nii\.gz$')
+        self.assertRegexpMatches(response.data['label_description_file'],
+                                 r'\.xml$')
+
+        self.assertEqual(response.data['name'], post_dict['name'])
+
+    def test_upload_nidm_results(self):
+        self.client.force_authenticate(user=self.user)
+        url = '/api/collections/%s/nidm_results/' % self.coll.pk
+
+        for name, data in NIDM_TEST_FILES.items():
+            self._test_upload_nidm_results(url, name, data)
+
+    def _test_upload_nidm_results(self, url, name, data):
+        fname = os.path.basename(data['file'])
+
+        post_dict = {
+            'name': name,
+            'description': '{0} upload test'.format(name),
+            'zip_file': SimpleUploadedFile(fname,
+                                           open(data['file'], 'rb').read())
+        }
+
+        response = self.client.post(url, post_dict, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['collection'], self.coll.id)
+        self.assertRegexpMatches(response.data['zip_file'], r'\.nidm\.zip$')
+
+        nidm = NIDMResults.objects.get(pk=response.data['id'])
+        self.assertEquals(len(nidm.nidmresultstatisticmap_set.all()),
+                          data['num_statmaps'])
+
+        map_type = data['output_row']['type'][0]
+        map_img = nidm.nidmresultstatisticmap_set.filter(
+            map_type=map_type).first()
+
+        self.assertEquals(map_img.name, data['output_row']['name'])
+
+    def test_missing_required_fields(self):
+        self.client.force_authenticate(user=self.user)
+
+        url = '/api/collections/%s/images/' % self.coll.pk
+
+        post_dict = {
+            'name': 'test map',
+        }
+
+        response = self.client.post(url, post_dict, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        expect_dict = {'map_type': [u'This field is required.'],
+                       'modality': [u'This field is required.'],
+                       'file': [u'No file was submitted.']}
+
+        self.assertEqual(response.data, expect_dict)
+
+    def test_missing_required_authentication(self):
+        url = '/api/collections/%s/images/' % self.coll.pk
+        fname = self.abs_file_path('test_data/statmaps/motor_lips.nii.gz')
+
+        post_dict = {
+            'name': 'test map',
+            'modality': 'fMRI-BOLD',
+            'map_type': 'T',
+            'file': SimpleUploadedFile(fname, open(fname).read())
+        }
+
+        response = self.client.post(url, post_dict, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data, {
+            'detail': 'Authentication credentials were not provided.'
+        })
+
+    def test_missing_required_permissions(self):
+        self.client.force_authenticate(user=self.user)
+
+        other_user = User.objects.create_user('OtherGuy')
+        other_user.save()
+
+        other_collection = Collection(owner=other_user,
+                                      name="Another Test Collection")
+        other_collection.save()
+
+        url = '/api/collections/%s/images/' % other_collection.pk
+        fname = self.abs_file_path('test_data/statmaps/motor_lips.nii.gz')
+
+        post_dict = {
+            'name': 'test map',
+            'modality': 'fMRI-BOLD',
+            'map_type': 'T',
+            'file': SimpleUploadedFile(fname, open(fname).read())
+        }
+
+        response = self.client.post(url, post_dict, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, {
+            'detail': 'You do not have permission to perform this action.'
+        })
+
+
+class BaseTestCases:
+    class TestCollectionItemChange(APITestCase):
+
+        def abs_file_path(self, rel_path):
+            return os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                                rel_path)
+
+        def simple_uploaded_file(self, rel_path):
+            fname = self.abs_file_path(rel_path)
+            return SimpleUploadedFile(rel_path, open(fname).read())
+
+        def setUp(self):
+            self.user = User.objects.create_user('NeuroGuy')
+            self.user.save()
+            self.coll = Collection(owner=self.user, name="Test Collection")
+            self.coll.save()
+
+        def tearDown(self):
+            clearDB()
+
+        def test_collection_item_partial_update(self):
+            self.client.force_authenticate(user=self.user)
+
+            patch_dict = {
+                'description': "renamed %s" % uuid.uuid4(),
+            }
+
+            response = self.client.patch(self.item_url, patch_dict)
+
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(response.data['description'],
+                             patch_dict['description'])
+
+        def test_missing_required_permissions(self):
+            other_user = User.objects.create_user('OtherGuy')
+            self.client.force_authenticate(user=other_user)
+
+            patch_dict = {
+                'description': "renamed %s" % uuid.uuid4(),
+            }
+
+            response = self.client.patch(self.item_url, patch_dict)
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+            response = self.client.delete(self.item_url)
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        def _test_collection_item_destroy(self, model_class):
+            self.client.force_authenticate(user=self.user)
+
+            response = self.client.delete(self.item_url)
+            self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+            with self.assertRaises(model_class.DoesNotExist):
+                model_class.objects.get(pk=self.item.pk)
+
+
+class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
+    def setUp(self):
+        super(TestStatisticMapChange, self).setUp()
+        self.item = save_statmap_form(
+            image_path=self.abs_file_path(
+                'test_data/statmaps/motor_lips.nii.gz'
+            ),
+            collection=self.coll
+        )
+
+        self.item_url = '/api/images/%s/' % self.item.pk
+
+    def test_statistic_map_update(self):
+        self.client.force_authenticate(user=self.user)
+
+        file = self.simple_uploaded_file(
+            'test_data/statmaps/motor_lips.nii.gz'
+        )
+
+        put_dict = {
+            'name': "renamed %s" % uuid.uuid4(),
+            'modality': 'fMRI-BOLD',
+            'map_type': 'T',
+            'file': file
+        }
+
+        response = self.client.put(self.item_url, put_dict)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(response.data['name'], put_dict['name'])
+
+    def test_statistic_map_destroy(self):
+        self._test_collection_item_destroy(StatisticMap)
+
+
+class TestNIDMResultsChange(BaseTestCases.TestCollectionItemChange):
+    def setUp(self):
+        super(TestNIDMResultsChange, self).setUp()
+
+        self.item = save_nidm_form(
+            name='fsl_course_av',
+            zip_file=self.abs_file_path(
+                'test_data/nidm/fsl_course_av.nidm.zip'
+            ),
+            collection=self.coll
+        )
+
+        self.item_url = '/api/nidm_results/%s/' % self.item.pk
+
+    def test_nidm_results_update(self):
+        self.client.force_authenticate(user=self.user)
+
+        file = self.simple_uploaded_file(
+            'test_data/nidm/fsl_course_fluency2.nidm.zip'
+        )
+
+        put_dict = {
+            'name': 'fsl_course_fluency2',
+            'description': "renamed %s" % uuid.uuid4(),
+            'zip_file': file
+        }
+
+        response = self.client.put(self.item_url, put_dict)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(response.data['description'], put_dict['description'])
+        self.assertRegexpMatches(response.data['ttl_file'],
+                                 r'fsl_course_fluency2\.nidm\.ttl$')
+
+    def test_nidm_results_destroy(self):
+        self._test_collection_item_destroy(NIDMResults)
+
+
+class TestAtlasChange(BaseTestCases.TestCollectionItemChange):
+    def setUp(self):
+        super(TestAtlasChange, self).setUp()
+
+        nii_path = self.abs_file_path(
+            'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz'
+        )
+        xml_path = self.abs_file_path(
+            'test_data/api/unordered_VentralFrontal_thr75_summaryimage_2mm.xml'
+        )
+        self.item = save_atlas_form(nii_path=nii_path,
+                                    xml_path=xml_path,
+                                    collection=self.coll,
+                                    name="unorderedAtlas")
+
+        self.item_url = '/api/atlases/%s/' % self.item.pk
+
+    def test_atlas_update(self):
+        self.client.force_authenticate(user=self.user)
+
+        nii_file = self.simple_uploaded_file(
+            'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz')
+        xml_file = self.simple_uploaded_file(
+            'test_data/api/VentralFrontal_thr75_summaryimage_2mm.xml')
+
+        put_dict = {
+            'name': "renamed %s" % uuid.uuid4(),
+            'file': nii_file,
+            'label_description_file': xml_file
+        }
+
+        response = self.client.put(self.item_url, put_dict)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['name'], put_dict['name'])
+
+    def test_atlas_destroy(self):
+        self._test_collection_item_destroy(Atlas)

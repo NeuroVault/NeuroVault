@@ -1,25 +1,77 @@
 {% extends "base.html" %}
 {% load coffeescript %}
+{% load static from staticfiles %}
 {% block includes %}
-<title>{% block title %}NeuroVault: {{image.name}}{% endblock %}</title>
-<script type="text/javascript" src="{% static "scripts/papaya.js"%}"/>
+<script type="text/javascript" src="{% static "scripts/papaya.js"%}"></script>
+{% include "statmaps/_meta_image.html" %}
+<meta name="map_type" content="{{ image.map_type }}">
+<meta name="modality" content="{{ image.modality }}">
+{% if image.smoothness_fwhm %}
+<meta name="smoothness_fwhm" content="{{ image.smoothness_fwhm }}">
+{% endif %}
+{% if image.analysis_level %}
+<meta name="analysis_level" content="{{ image.analysis_level }}">
+{% endif %}
+{% if image.number_of_subjects %}
+<meta name="number_of_subjects" content="{{ image.number_of_subjects }}">
+{% endif %}
+{% if image.figure %}
+<meta name="figure" content="{{ image.figure }}">
+{% endif %}
+
+{% if image.map_type == 'Pa' %}
+<meta name="pagetype" content="atlas">
+{% else %}
+<meta name="pagetype" content="statmap">
+{% endif %}
+
+{% if image.not_mni == False %}
+<meta name="mni" content="true">
+{% else %}
+<meta name="mni" content="false">
+{% endif %}
+
+<!-- Cognitive Atlas -->
+{% if image.cognitive_contrast_cogatlas_id %}
+<meta name="cognitive_contrast_cogatlas_id" content="{{ image.cognitive_contrast_cogatlas_id }}">
+{% endif %}
+{% if image.cognitive_contrast_cogatlas %}
+<meta name="cognitive_contrast_cogatlas" content="{{ image.cognitive_contrast_cogatlas }}">
+{% endif %}
+{% if image.cognitive_paradigm_cogatlas_id %}
+<meta name="cognitive_paradigm_cogatlas_id" content="{{ image.cognitive_paradigm_cogatlas_id }}">
+{% endif %}
+{% if image.cognitive_paradigm_cogatlas %}
+<meta name="cognitive_paradigm_cogatlas" content="{{ image.cognitive_paradigm_cogatlas }}">
+{% endif %}
+
 {% endblock %}
 {% block head %}
+<title>{% block title %}NeuroVault: {{image.name}}{% endblock %}</title>
     :javascript
          var params = [];
          params["worldSpace"] = true;
          params["expandable"] = true;
          params["combineParametric"] = true;
-         params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ image.file.url }}"];
+         params["smoothDisplay"] = false;
          params["luts"] = [{"name":"PuBu", "data":[[0,1,0.968627,0.984314],[0.125,0.92549,0.905882,0.94902],[0.25,0.815686,0.819608,0.901961],[0.375,0.65098,0.741176,0.858824],[0.5,0.454902,0.662745,0.811765],[0.625,0.211765,0.564706,0.752941],[0.75,0.0196078,0.439216,0.690196],[0.875,0.0156863,0.352941,0.552941],[1,0.00784314,0.219608,0.345098]]},
          {"name":"OrRd", "data":[[0,1,0.968627,0.92549],[0.125,0.996078,0.909804,0.784314],[0.25,0.992157,0.831373,0.619608],[0.375,0.992157,0.733333,0.517647],[0.5,0.988235,0.552941,0.34902],[0.625,0.937255,0.396078,0.282353],[0.75,0.843137,0.188235,0.121569],[0.875,0.701961,0,0],[1,0.498039,0,0]]}];
 
          var filename = "{{ image.file.url }}".replace(/^.*[\\\/]/, '')
-    - if image.map_type == "R" or image.map_type == "Pa"
+    - if image.map_type == "Pa"
       :javascript
-         params[filename] = {"parametric": true,  "lut":"Spectrum", "alpha":"0.75"};
+         params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ image.file.url|urlencode }}"];
+         params[filename] = {"parametric": true,  "lut":"Spectrum", "alpha":"0.75", minPercent: 0.0, maxPercent: 1.0};
+    - elif image.map_type == "R"
+      :javascript
+         params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ image.file.url|urlencode }}"];
+         params[filename] = {"parametric": true,  "lut":"Overlay (Negatives)", "alpha":"0.75", minPercent: 0.0, maxPercent: 1.0};
+    - elif image.map_type == "A"
+      :javascript
+         params["images"] = ["{{ image.file.url|urlencode }}"];
     - else
       :javascript
+         params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ image.file.url|urlencode }}"];
          params[filename] = {"parametric": true,  "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric": true};
     :javascript
         {% inlinecoffeescript %}
@@ -28,7 +80,7 @@
                 $("table[class*=image-details-datatable]").dataTable
                     sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
                     sAjaxSource: "/api/images/" + "{{ api_cid }}" + "/datatable/?format=json"
-                    iDisplayLength: 10
+                    iDisplayLength: 25
 
                 $('#delete_image').click((e) ->
                     confirm("Are you sure you want to delete this image? This operation cannot be undone!")
@@ -61,10 +113,12 @@
                         %a{ href: "/images/tags/{{tag.name}}" }= tag.name
                         - if not forloop.last
 
-            %a.btn.btn-primary.btn-lg{href: "pycortex" } 3D View
+            - if image.cognitive_paradigm_cogatlas_id
+                %a.btn.btn-primary.btn{href: "{% url 'view_task' image.cognitive_paradigm_cogatlas_id %}"} Task View
+            %a.btn.btn-primary.btn{href: "pycortex" } 3D View
             - if image.nidm_results
                 .btn-group
-                    %a.btn.btn-primary.btn-lg.dropdown-toggle{"data-toggle" => "dropdown", :href => "#"}
+                    %a.btn.btn-primary.btn.dropdown-toggle{"data-toggle" => "dropdown", :href => "#"}
                         Downloads
                         %span.caret
                     %ul.dropdown-menu
@@ -92,24 +146,31 @@
                     %span.caret
                 %ul.dropdown-menu
                   %li
-                    %a{:href => "http://neurosynth.org/decode/?neurovault={{ api_cid }}"}
+                    %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: title: "Cognitive decoding using coordiante based data collected from thousands of papers."}
+                        %a{:href => "http://neurosynth.org/decode/?neurovault={{ api_cid }}"}
                       Decode with neurosynth
                   - if comparison_is_possible
                     %li
-                      %a{:href => "{% url 'find_similar' image.id %}"}
-                        Find similar
+                      %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: title: "Find maps with similar patters."}
+                        %a{:href => "{% url 'find_similar' image.id %}"}
+                          Find similar
+                  - else
+                     %li
+                      %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Find maps with similar patters. This function is only enabled for public group level unthresholded statistical maps."}
+                        %a{:href => "{% url 'find_similar' image.id %}"}
+                          Find similar
                     %li
                       %a{:href => "{% url 'spatial_regression_select' image.id %}"}
                         Tal's wet dream
             - if user_owns_image
-                %a.btn.btn-primary.btn-lg{href: "{% url 'edit_image' image.id %}" } Edit details
+                %a.btn.btn-primary.btn{href: "{% url 'edit_image' image.id %}" } Edit details
                 .float-right-wrapper
                     - if not image.nidm_results
-                        %a.btn.btn-danger.btn-lg{href: "{% url 'delete_image' image.id %}", id: 'delete_image' } Delete
+                        %a.btn.btn-danger.btn{href: "{% url 'delete_image' image.id %}", id: 'delete_image' } Delete
 
         - if warning
             .alert.alert-danger
-                {{ warning }}
+                {{ warning| safe }}
 
         %ul#collection-tabs.nav.nav-tabs
             %li
