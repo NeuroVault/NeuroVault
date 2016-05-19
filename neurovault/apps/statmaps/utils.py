@@ -280,7 +280,7 @@ def split_4D_to_3D(nii,with_labels=True,tmp_dir=None):
     labels = get_afni_subbrick_labels(nii)
     for n, slice in enumerate(slices):
         nifti = nib.Nifti1Image(np.squeeze(slice),nii.get_header().get_best_affine())
-        layer_nm = labels[n] if n < len(labels) else 'volume_%s' % n
+        layer_nm = labels[n] if n < len(labels) else '(volume %s)' % (n+1)
         outpath = os.path.join(out_dir, '%s__%s%s' % (fname, layer_nm, ext))
         nib.save(nifti,outpath)
         if with_labels:
@@ -481,6 +481,9 @@ def not_in_mni(nii, plot=False):
     # deals with AFNI files
     if len(excursion_set.shape) == 5:
         excursion_set = excursion_set[:, :, :, 0, 0]
+    # deal with 4D files
+    elif len(excursion_set.shape) == 4:
+        excursion_set = excursion_set[:, :, :, 0]
     in_brain_voxels = np.logical_and(excursion_set, brain_mask).sum()
     out_of_brain_voxels = np.logical_and(excursion_set, np.logical_not(brain_mask)).sum()
 

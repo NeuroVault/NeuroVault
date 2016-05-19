@@ -343,6 +343,11 @@ class OwnerCollectionForm(CollectionForm):
 
 class ImageValidationMixin(object):
 
+    def __init__(self, *args, **kwargs):
+        super(ImageValidationMixin, self).__init__()
+        self.afni_subbricks = []
+        self.afni_tmp = None
+
     def clean_and_validate(self, cleaned_data):
         file = cleaned_data.get('file')
 
@@ -459,12 +464,11 @@ class ImageForm(ModelForm, ImageValidationMixin):
         required=False, label='.hdr part of the map (if applicable)', widget=AdminResubmitFileWidget)
 
     def __init__(self, *args, **kwargs):
-        super(ImageForm, self).__init__(*args, **kwargs)
+        ImageValidationMixin.__init__(self, *args, **kwargs)
+        ModelForm.__init__(self, *args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
         self.helper.form_tag = False
-        self.afni_subbricks = []
-        self.afni_tmp = None
 
     class Meta:
         model = Image
