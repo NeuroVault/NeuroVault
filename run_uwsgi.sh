@@ -13,5 +13,7 @@ if [ ! -d "/var/www/image_data/images" ]; then
     python manage.py collectmedia --noinput
     echo "REMOVING"
     rm -R /code/neurovault/apps/statmaps/fixtures
+    echo "GENERATING GLASSBRAINS AND SIMILARITY MEASURES"
+    python manage.py trigger_comparisons
 fi
 uwsgi uwsgi.ini
