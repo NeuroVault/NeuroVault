@@ -1,7 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 import os.path
 from neurovault.apps import statmaps
-import urllib
 import zipfile
 import subprocess
 import tempfile
@@ -21,7 +20,7 @@ def copyTree(src, dst, symlinks=False, ignore=None):
 
 
 class Command(BaseCommand):
-    args = '<fixture_name fixture_name ...>'
+    rgs = '<fixture_name fixture_name ...>'
     help = 'downloads fixtures'
 
     def handle(self, *args, **options):
@@ -29,6 +28,19 @@ class Command(BaseCommand):
         fixturesDir = os.path.join(statmapsPath, 'fixtures')
         if not os.path.exists(fixturesDir):
             os.makedirs(fixturesDir)
+        print args
+        if args:
+            temp1 = tempfile.mkdtemp()
+            for fixtureName in args:
+                fileName = fixtureName + '.zip'
+                url = 'https://github.com/Neurocault/neurovault_data/trunk/fixtures/%s' % fileName
+                (path, _) = urllib.urlretrieve(url)
+                with zipfile.ZipFile(path, "r") as z:
+                    # extract everything except for _MACOSX folder, which contains redundant data
+                    z.extractall(temp1, [x for x in z.namelist() if not x.startswith('__MACOSX')])
+            for folder in os.listdir(temp1):
+                copyTree(os.path.join(temp1, folder), fixturesDir)
+            shutil.rmtree(temp1)
 
         temp1 = tempfile.mkdtemp()
         temp2 = tempfile.mkdtemp()
