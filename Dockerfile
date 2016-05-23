@@ -60,6 +60,7 @@ RUN pip install git+https://github.com/benkonrath/django-guardian.git@7cded90812
 RUN pip install 'git+git://github.com/vsoch/nidmviewer.git@0.1'
 
 RUN pip install tables
+RUN pip install xlrd
 
 RUN apt-get install -y npm
 RUN ln -s /usr/bin/nodejs /usr/bin/node
