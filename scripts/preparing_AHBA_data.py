@@ -61,7 +61,7 @@ del dfs
 
 # cleaning up the probe information file
 probe_info_df.drop(probe_info_df.index[probe_info_df['entrez_id_richardi'].isnull()], inplace=True)
-probe_info_df.to_csv(os.path.join(download_dir, 'probe_info.csv'), index_label=False)
+probe_info_df.to_csv(os.path.join(download_dir, 'probe_info.csv'), index=False)
 
 assert(all_dfs.index[0] in list(probe_info_df.probe_id_original))
 
