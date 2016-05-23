@@ -72,7 +72,7 @@ RUN apt-get autoremove -y
 RUN apt-get clean
 RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN pip install pytables
+RUN pip install tables
 ADD scripts/preparing_AHBA_data.py /code/scripts/preparing_AHBA_data.py
 RUN python /code/scripts/preparing_AHBA_data.py
 
