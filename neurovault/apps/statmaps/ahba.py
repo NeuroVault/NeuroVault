@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 import nibabel as nb
 import numpy.linalg as npl
-from scipy.stats.stats import pearsonr, ttest_1samp, percentileofscore,    linregress
+from scipy.stats.stats import pearsonr, ttest_1samp, percentileofscore, linregress
 
 #code from neurosynth
 def get_sphere(coords, r, vox_dims, dims):
