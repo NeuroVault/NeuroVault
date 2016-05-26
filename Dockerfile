@@ -28,11 +28,11 @@ RUN pip install django-filter
 RUN pip install django-form-utils
 RUN pip install 'django-hstore==1.4.1'
 RUN pip install 'django-oauth-toolkit==0.10.0'
-RUN pip install django-polymorphic==0.8.1
+RUN pip install django-polymorphic==0.9.2
 RUN pip install django-sendfile
 RUN pip install django-taggit
 RUN pip install django-taggit-templatetags
-RUN pip install djrill
+RUN pip install django-mailgun
 RUN pip install 'dropbox==1.6'
 RUN pip install hamlpy
 RUN pip install lxml

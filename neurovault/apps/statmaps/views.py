@@ -37,7 +37,7 @@ from xml.dom import minidom
 
 import neurovault
 from neurovault import settings
-from neurovault.apps.statmaps.forms import CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,\
+from neurovault.apps.statmaps.forms import CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,NeuropowerStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
 from neurovault.apps.statmaps.models import Collection, Image, Atlas, StatisticMap, NIDMResults, NIDMResultStatisticMap, \
@@ -272,7 +272,7 @@ def view_image(request, pk, collection_cid=None):
 
 
 def view_collection(request, cid):
-    '''view_collection returns main view to see an entire collection of images, meaning a viewer and list of images to load into it. 
+    '''view_collection returns main view to see an entire collection of images, meaning a viewer and list of images to load into it.
     :param cid: statmaps.models.Collection.pk the primary key of the collection
     '''
     collection = get_collection(cid,request)
@@ -413,7 +413,7 @@ def view_task(request, cog_atlas_id=None):
     if task:
         images = StatisticMap.objects.filter(cognitive_paradigm_cogatlas=cog_atlas_id,
                                              collection__private=False).order_by("pk")
-        
+
         if len(images) > 0:
             first_image = images[0]
             graph = get_task_graph(cog_atlas_id, images=images)
@@ -429,15 +429,12 @@ def view_task(request, cog_atlas_id=None):
 
             return render(request, 'cogatlas/cognitive_atlas_task.html', context)
 
-    # If task does not have images   
+    # If task does not have images
     context = {"no_task_images": True, # robots won't index page if defined
-               "task": task } 
+               "task": task }
     return render(request, 'cogatlas/cognitive_atlas_task.html', context)
 
-
-
-@login_required
-def add_image_for_neurosynth(request):
+def add_image_redirect(request,formclass,template_path,redirect_url,is_private):
     temp_collection_name = "%s's temporary collection" % request.user.username
     #this is a hack we need to make sure this collection can be only
     #owned by the same user
@@ -447,23 +444,34 @@ def add_image_for_neurosynth(request):
         priv_token = generate_url_token()
         temp_collection = Collection(name=temp_collection_name,
                                      owner=request.user,
-                                     private=False,
+                                     private=is_private,
                                      private_token=priv_token)
         temp_collection.save()
     image = StatisticMap(collection=temp_collection)
+    redirect = redirect_url % {'private_token': temp_collection.private_token,
+                               'image_id': image.id}
     if request.method == "POST":
-        form = SimplifiedStatisticMapForm(request.POST, request.FILES, instance=image, user=request.user)
+        form = formclass(request.POST, request.FILES, instance=image, user=request.user)
         if form.is_valid():
             image = form.save()
-            return HttpResponseRedirect("http://neurosynth.org/decode/?neurovault=%s-%s" % (
-                temp_collection.private_token,image.id))
+        return HttpResponseRedirect(redirect)
     else:
-        form = SimplifiedStatisticMapForm(user=request.user, instance=image)
-
+        form = formclass(user=request.user, instance=image)
     contrasts = get_contrast_lookup()
     context = {"form": form,"contrasts":json.dumps(contrasts)}
-    return render(request, "statmaps/add_image_for_neurosynth.html", context)
+    return render(request,template_path , context)
 
+@login_required
+def add_image_for_neurosynth(request):
+    redirect_url = "http://neurosynth.org/decode/?neurovault=%(private_token)s-%(image_id)s"
+    template_path = "statmaps/add_image_for_neurosynth.html"
+    return add_image_redirect(request,SimplifiedStatisticMapForm,template_path,redirect_url,False)
+
+@login_required
+def add_image_for_neuropower(request):
+    redirect_url = "http://neuropowertools.org/neuropowerinput/?neurovault=%(private_token)s-%(image_id)s"
+    template_path = "statmaps/add_image_for_neuropower.html"
+    return add_image_redirect(request,NeuropowerStatisticMapForm,template_path,redirect_url,True)
 
 @login_required
 def add_image(request, collection_cid):
