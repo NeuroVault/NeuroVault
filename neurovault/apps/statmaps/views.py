@@ -292,7 +292,7 @@ def view_collection(request, cid):
         context["messages"] = [msg]
 
     if not is_empty:
-        context["first_image"] = collection.basecollectionitem_set.order_by("pk")[0]
+        context["first_image"] = collection.basecollectionitem_set.not_instance_of(NIDMResults).order_by("pk")[0]
 
     if owner_or_contrib(request,collection):
         form = UploadFileForm()
@@ -1045,7 +1045,10 @@ class ImagesInCollectionJson(BaseDatatableView):
         elif column == 'polymorphic_ctype.name':
             return type
         elif column == 'is_valid':
-            return row.is_valid
+            if row.polymorphic_ctype.name == "nidm results":
+                return True
+            else:
+                return row.is_valid
         else:
             return super(ImagesInCollectionJson, self).render_column(row, column)
 
