@@ -354,7 +354,7 @@ def populate_feat_directory(request,collection,existing_dir=None):
     except:
         raise exc("Unable to unzip the FEAT directory: \n{0}.".format(get_traceback()))
     try:
-        fslnidm = FSLtoNIDMExporter(feat_dir=feat_dir, version="1.3.0")
+        fslnidm = FSLtoNIDMExporter(feat_dir=feat_dir, version="1.2.0")
         fslnidm.parse()
         export_dir = fslnidm.export()
     except:
