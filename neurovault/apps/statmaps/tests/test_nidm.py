@@ -16,14 +16,14 @@ NIDM_TEST_FILES = {
                              'test_data/nidm/spm_ds005_sub-01.nidm.zip'),
         'output_row': {'type': u'T',
                        'name': u'Statistic Map: Visual'},
-        'num_statmaps': 4,
+        'num_statmaps': 1,
     },
     'spm_ds005_group': {
         'file': os.path.join(TEST_PATH,
                              'test_data/nidm/spm_ds005_group.nidm.zip'),
         'output_row': {'type': u'F',
                        'name': u'Statistic Map: Generation F'},
-        'num_statmaps': 12,
+        'num_statmaps': 1,
     },
     'fsl_ds005_sub-01': {
         'file': os.path.join(TEST_PATH,
