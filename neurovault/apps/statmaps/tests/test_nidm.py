@@ -11,40 +11,33 @@ from .utils import clearDB
 
 TEST_PATH = os.path.abspath(os.path.dirname(__file__))
 NIDM_TEST_FILES = {
-    'fsl_course_av': {
+    'spm_ds005_sub-01': {
         'file': os.path.join(TEST_PATH,
-                             'test_data/nidm/fsl_course_av.nidm.zip'),
+                             'test_data/nidm/spm_ds005_sub-01.nidm.zip'),
         'output_row': {'type': u'T',
                        'name': u'Statistic Map: Visual'},
         'num_statmaps': 4,
     },
-    'fsl_course_fluency2': {
+    'spm_ds005_group': {
         'file': os.path.join(TEST_PATH,
-                             'test_data/nidm/fsl_course_fluency2.nidm.zip'),
+                             'test_data/nidm/spm_ds005_group.nidm.zip'),
         'output_row': {'type': u'F',
                        'name': u'Statistic Map: Generation F'},
         'num_statmaps': 12,
     },
-    'spm_example': {
+    'fsl_ds005_sub-01': {
         'file': os.path.join(TEST_PATH,
-                             'test_data/nidm/spm_example.nidm.zip'),
+                             'test_data/nidm/fsl_ds005_sub-01.nidm.zip'),
         'output_row': {'type': u'T',
                        'name': u'Statistic Map: passive listening > rest'},
         'num_statmaps': 1,
     },
-    'spm_auditory_v1.2.0': {
+    'fsl_ds005_group': {
         'file': os.path.join(TEST_PATH,
-                             'test_data/nidm/auditory.nidm.zip'),
+                             'test_data/nidm/fsl_ds005_group.nidm.zip'),
         'output_row': {'type': u'T',
                        'name': u'Statistic Map: passive listening > rest'},
         'num_statmaps': 1,
-    },
-    'fsl_course_ptt_ac_left': {
-        'file': os.path.join(TEST_PATH,
-                             'test_data/nidm/fsl_course_ptt_ac_left.nidm.zip'),
-        'output_row': {'type': u'F',
-                       'name': u'Statistic Map: index F'},
-        'num_statmaps': 12,
     },
 }
 
