@@ -88,7 +88,7 @@ class FeatDirectoryTest(TestCase):
                 if detect_feat_directory(root):
                     print 'Found FEAT directory at {}.'.format(root)
                     info['found_feat'] = True
-                    fslnidm = FSLtoNIDMExporter(feat_dir=root, version="1.2.0")
+                    fslnidm = FSLtoNIDMExporter(feat_dir=root, version="1.3.0")
                     fslnidm.parse()
                     export_dir = fslnidm.export()
                     ttl_file = os.path.join(export_dir,'nidm.ttl')
