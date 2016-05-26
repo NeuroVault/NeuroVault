@@ -78,4 +78,6 @@ RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 ADD scripts/preparing_AHBA_data.py /code/scripts/preparing_AHBA_data.py
 RUN python /code/scripts/preparing_AHBA_data.py
 
+RUN pip install statsmodels
+
 EXPOSE 3031

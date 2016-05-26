@@ -15,7 +15,7 @@ from .views import edit_collection, view_image, delete_image, edit_image, \
                 papaya_js_embed, view_images_by_tag, add_image_for_neuropower, \
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
                 view_nidm_results, find_similar, compare_images, edit_metadata, \
-                export_images_filenames, delete_nidm_results, view_task, search
+                export_images_filenames, delete_nidm_results, view_task, search, gene_expression
 
 urlpatterns = patterns('',
     url(r'^my_collections/$',
@@ -154,6 +154,9 @@ urlpatterns = patterns('',
     url(r'^images/(?P<pk>\d+)/find_similar$',
         find_similar,
         name='find_similar'),
+    url(r'^images/(?P<pk>\d+)/gene_expression',
+        gene_expression,
+        name='gene_expression'),
     url(r'^search$',
         search,
         name='search'),

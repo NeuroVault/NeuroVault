@@ -3,6 +3,7 @@ import os
 import shutil
 import pandas as pd
 import zipfile
+from scipy.stats.mstats import zscore
 # Downloading microarray data
 urls = ["http://human.brain-map.org/api/v2/well_known_file_download/178238387",
         "http://human.brain-map.org/api/v2/well_known_file_download/178238373",
@@ -18,6 +19,7 @@ os.makedirs(download_dir)
 for i, url in enumerate(urls):
     print "Downloading %s" % url
     urllib.urlretrieve(url, os.path.join(download_dir, "donor%d.zip" % (i + 1)))
+    zipfile.ZipFile(os.path.join(download_dir, "donor%d.zip" % (i + 1)))
 
 # Dowloading MNI coordinates
 urllib.urlretrieve(
@@ -49,6 +51,9 @@ for i, donor_id in enumerate(donors):
 
         # Dropping probes without entrez_id
         df.drop(probe_info_df['probe_id_original'][probe_info_df['entrez_id_richardi'].isnull()], inplace=True)
+
+        #zscoring for efficient correlation calculations later
+        df = pd.DataFrame(zscore(df, axis=1), columns=df.columns, index=df.index)
 
         with z.open("SampleAnnot.csv") as f:
             sample_annot_df = pd.read_csv(f, index_col=0)

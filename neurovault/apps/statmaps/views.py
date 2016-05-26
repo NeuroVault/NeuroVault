@@ -37,6 +37,7 @@ from xml.dom import minidom
 
 import neurovault
 from neurovault import settings
+from neurovault.apps.statmaps.ahba import calculate_gene_expression_similarity
 from neurovault.apps.statmaps.forms import CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,NeuropowerStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
@@ -997,6 +998,11 @@ def find_similar(request,pk):
         context = {'error_message': error_message}
         return render(request, 'statmaps/error_message.html', context)
 
+
+def gene_expression(request, pk):
+    image = get_image(pk, None, request)
+    expression_results = calculate_gene_expression_similarity(image.file.path)
+    return JSONResponse(expression_results.to_dict("split"))
 
 # Return search interface
 def search(request,error_message=None):
