@@ -248,7 +248,6 @@ def view_image(request, pk, collection_cid=None):
     if isinstance(image, NIDMResultStatisticMap):
         context['img_basename'] = os.path.basename(image.file.url)
         context['ttl_basename'] = os.path.basename(image.nidm_results.ttl_file.url)
-        context['provn_basename'] = os.path.basename(image.nidm_results.provn_file.url)
 
     if isinstance(image, Atlas):
         template = 'statmaps/atlas_details.html.haml'

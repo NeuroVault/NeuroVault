@@ -134,10 +134,6 @@
                             %a{:href => "{{ image.nidm_results.ttl_file.url }}"}
                                 Turtle File
                                 %span.muted [{{ ttl_basename }}]
-                        %li
-                            %a{:href => "{{ image.nidm_results.provn_file.url }}"}
-                                Provn File
-                                %span.muted [{{ provn_basename }}]
             - else
                 %a.btn.btn-primary.btn{href: "{{ image.file.url|urlencode }}" } Download
             %a.btn.btn-primary.btn{href: "http://neurosynth.org/decode/?neurovault={{ api_cid }}" } Decode with neurosynth
