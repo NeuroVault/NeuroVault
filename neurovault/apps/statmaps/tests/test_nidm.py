@@ -81,6 +81,8 @@ NIDM_TEST_FILES = OrderedDict({
 class NIDMResultsTest(TestCase):
 
     def setUp(self):
+        #rdflib required CWD to be real
+        os.chdir("/tmp")
         self.files = NIDM_TEST_FILES
 
         self.failing_files = {
