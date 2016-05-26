@@ -40,6 +40,41 @@ NIDM_TEST_FILES = OrderedDict({
                        'name': u'Statistic Map: group mean'},
         'num_statmaps': 2,
     },
+    'fsl_course_av': {
+        'file': os.path.join(TEST_PATH,
+                             'test_data/nidm/fsl_course_av.nidm.zip'),
+        'output_row': {'type': u'T',
+                       'name': u'Statistic Map: Visual'},
+        'num_statmaps': 4,
+    },
+    'fsl_course_fluency2': {
+        'file': os.path.join(TEST_PATH,
+                             'test_data/nidm/fsl_course_fluency2.nidm.zip'),
+        'output_row': {'type': u'F',
+                       'name': u'Statistic Map: Generation F'},
+        'num_statmaps': 12,
+    },
+    'spm_example': {
+        'file': os.path.join(TEST_PATH,
+                             'test_data/nidm/spm_example.nidm.zip'),
+        'output_row': {'type': u'T',
+                       'name': u'Statistic Map: passive listening > rest'},
+        'num_statmaps': 1,
+    },
+    'spm_auditory_v1.2.0': {
+        'file': os.path.join(TEST_PATH,
+                             'test_data/nidm/auditory.nidm.zip'),
+        'output_row': {'type': u'T',
+                       'name': u'Statistic Map: passive listening > rest'},
+        'num_statmaps': 1,
+    },
+    'fsl_course_ptt_ac_left': {
+        'file': os.path.join(TEST_PATH,
+                             'test_data/nidm/fsl_course_ptt_ac_left.nidm.zip'),
+        'output_row': {'type': u'F',
+                       'name': u'Statistic Map: index F'},
+        'num_statmaps': 12,
+    },
 })
 
 
