@@ -354,34 +354,20 @@ def populate_feat_directory(request,collection,existing_dir=None):
     except:
         raise exc("Unable to unzip the FEAT directory: \n{0}.".format(get_traceback()))
     try:
-        fslnidm = FSLtoNIDMExporter(feat_dir=feat_dir, version="0.2.0")
+        fslnidm = FSLtoNIDMExporter(feat_dir=feat_dir, version="1.2.0")
         fslnidm.parse()
-        export_dir = fslnidm.export()
+        nidm_file = fslnidm.export()
     except:
         raise exc("Unable to parse the FEAT directory: \n{0}.".format(get_traceback()))
 
-    if not os.path.exists(export_dir):
+    if not os.path.exists(nidm_file):
         raise exc("Unable find nidm export of FEAT directory.")
 
     try:
-        if existing_dir is not None:
-            dname = os.path.basename(feat_dir)
-            suffix = '.nidm.zip' if dname.endswith('feat') else '.feat.nidm.zip'
-            destname = dname + suffix
-        else:
-            destname = request.FILES['file'].name.replace('feat.zip','feat.nidm.zip')
-        destpath = os.path.join(tmp_dir,destname)
-        nidm_zip = zipfile.ZipFile(destpath, 'w', zipfile.ZIP_DEFLATED)
-        rootlen = len(feat_dir) + 1
-        for root, dirs, files in os.walk(export_dir):
-            for dfile in files:
-                filenm = os.path.join(root, dfile)
-                nidm_zip.write(filenm, filenm[rootlen:])
-        nidm_zip.close()
-        fh = open(destpath,'r')
+        fh = open(nidm_file,'r')
         request.FILES['file'] = InMemoryUploadedFile(
                                     ContentFile(fh.read()), "file", fh.name.split('/')[-1],
-                                    "application/zip", os.path.getsize(destpath), "utf-8")
+                                    "application/zip", os.path.getsize(nidm_file), "utf-8")
 
     except:
         raise exc("Unable to convert NIDM results for NeuroVault: \n{0}".format(get_traceback()))
