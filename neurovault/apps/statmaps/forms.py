@@ -759,7 +759,6 @@ class NIDMResultsValidationMixin(object):
         data['name'] = base_subdir if nres == 0 else safe_name
 
         ttl_name = os.path.split(self.nidm.ttl.filename)[-1]
-        provn_name = os.path.split(self.nidm.provn.filename)[-1]
 
         data['ttl_file'] = InMemoryUploadedFile(
             # fix ttl for spm12
@@ -769,15 +768,6 @@ class NIDMResultsValidationMixin(object):
             name=ttl_name,
             content_type='text/turtle',
             size=self.nidm.ttl.file_size,
-            charset='utf-8'
-        )
-
-        data['provn_file'] = InMemoryUploadedFile(
-            file=ContentFile(self.nidm.zip.read(self.nidm.provn)),
-            field_name='file',
-            name=provn_name,
-            content_type='text/provenance-notation',
-            size=self.nidm.provn.file_size,
             charset='utf-8'
         )
 
@@ -850,7 +840,7 @@ class NIDMResultsForm(forms.ModelForm, NIDMResultsValidationMixin):
     def __init__(self, *args, **kwargs):
         super(NIDMResultsForm, self).__init__(*args, **kwargs)
 
-        for fld in ['ttl_file', 'provn_file']:
+        for fld in ['ttl_file']:
             if self.instance.pk is None:
                 self.fields[fld].widget = HiddenInput()
             else:
@@ -905,7 +895,7 @@ class NIDMViewForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(NIDMViewForm, self).__init__(*args, **kwargs)
 
-        for fld in ['ttl_file', 'provn_file', 'zip_file']:
+        for fld in ['ttl_file', 'zip_file']:
             self.fields[fld].widget = PathOnlyWidget()
         for fld in self.fields:
             self.fields[fld].widget.attrs['readonly'] = 'readonly'
