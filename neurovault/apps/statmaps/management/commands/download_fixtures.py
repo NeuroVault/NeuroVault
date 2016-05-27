@@ -33,7 +33,7 @@ class Command(BaseCommand):
             temp1 = tempfile.mkdtemp()
             for fixtureName in args:
                 fileName = fixtureName + '.zip'
-                url = 'https://github.com/Neurocault/neurovault_data/trunk/fixtures/%s' % fileName
+                url = 'https://github.com/NeuroVault/neurovault_data/trunk/fixtures/%s' % fileName
                 (path, _) = urllib.urlretrieve(url)
                 with zipfile.ZipFile(path, "r") as z:
                     # extract everything except for _MACOSX folder, which contains redundant data
@@ -44,7 +44,7 @@ class Command(BaseCommand):
         else:
             temp1 = tempfile.mkdtemp()
             temp2 = tempfile.mkdtemp()
-            command = "wget https://raw.github.com/erramuzpe/neurovault_data/master/fixtures/dumpdata.zip -P %s " % temp1
+            command = "wget https://raw.github.com/NeuroVault/neurovault_data/master/fixtures/dumpdata.zip -P %s " % temp1
             p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
             (output, err) = p.communicate()
             for fileName in os.listdir(temp1):
