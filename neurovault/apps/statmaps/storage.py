@@ -109,7 +109,7 @@ class NIDMStorage(NiftiGzStorage):
     def url(self, name):
         rpath = super(NIDMStorage, self).url(name)
         rpath = rpath.replace(self.base_url, '/collections/').split('/')
-        for ext in ['.ttl', '.provn', '.zip']:
+        for ext in ['.ttl', '.zip']:
             if fnmatch(rpath[-1], '*{0}'.format(ext)):
                 rpath.pop()
                 return '/'.join(rpath) + ext
