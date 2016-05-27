@@ -275,11 +275,14 @@ class CollectionViewSet(viewsets.ModelViewSet):
         if request.method == 'POST':
             return self.add_item(request, pk, EditableStatisticMapSerializer)
 
+        return self._get_paginated_results(Image, pk, request, ImageSerializer)
+
+    def _get_paginated_results(self, obj_class, pk, request, serializer):
         collection = get_collection(pk, request, mode='api')
-        queryset = Image.objects.filter(collection=collection)
+        queryset = obj_class.objects.filter(collection=collection)
         paginator = StandardResultPagination()
         page = paginator.paginate_queryset(queryset, request)
-        serializer = ImageSerializer(
+        serializer = serializer(
             page, context={'request': request}, many=True)
         return paginator.get_paginated_response(serializer.data)
 
@@ -288,26 +291,14 @@ class CollectionViewSet(viewsets.ModelViewSet):
         if request.method == 'POST':
             return self.add_item(request, pk, EditableAtlasSerializer)
 
-        collection = get_collection(pk, request, mode='api')
-        queryset = Atlas.objects.filter(collection=collection)
-        paginator = StandardResultPagination()
-        page = paginator.paginate_queryset(queryset, request)
-        serializer = AtlasSerializer(
-            page, context={'request': request}, many=True)
-        return paginator.get_paginated_response(serializer.data)
+        return self._get_paginated_results(Atlas, pk, request, AtlasSerializer)
 
     @detail_route(methods=['get', 'post'])
     def nidm_results(self, request, pk):
         if request.method == 'POST':
             return self.add_item(request, pk, EditableNIDMResultsSerializer)
 
-        collection = get_collection(pk, request, mode='api')
-        queryset = NIDMResults.objects.filter(collection=collection)
-        paginator = StandardResultPagination()
-        page = paginator.paginate_queryset(queryset, request)
-        serializer = NIDMResultsSerializer(
-            page, context={'request': request}, many=True)
-        return paginator.get_paginated_response(serializer.data)
+        return self._get_paginated_results(NIDMResults, pk, request, NIDMResultsSerializer)
 
     def add_item(self, request, pk, obj_serializer):
         collection = get_collection(pk, request, mode='api')
