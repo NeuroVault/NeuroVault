@@ -41,17 +41,17 @@ class Command(BaseCommand):
             for folder in os.listdir(temp1):
                 copyTree(os.path.join(temp1, folder), fixturesDir)
             shutil.rmtree(temp1)
-
-        temp1 = tempfile.mkdtemp()
-        temp2 = tempfile.mkdtemp()
-        command = "wget https://raw.github.com/erramuzpe/neurovault_data/master/fixtures/dumpdata.zip -P %s " % temp1
-        p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
-        (output, err) = p.communicate()
-        for fileName in os.listdir(temp1):
-            # print os.path.join(temp1, fileName)
-            with zipfile.ZipFile(os.path.join(temp1, fileName), "r") as z:
-                # extract everything except for _MACOSX folder, which contains redundant data
-                z.extractall(temp2, [x for x in z.namelist() if not x.startswith('__MACOSX')])
-        for folder in os.listdir(temp2):
-            copyTree(os.path.join(temp2, folder), fixturesDir)
-        shutil.rmtree(temp1, temp2)
+        else:
+            temp1 = tempfile.mkdtemp()
+            temp2 = tempfile.mkdtemp()
+            command = "wget https://raw.github.com/erramuzpe/neurovault_data/master/fixtures/dumpdata.zip -P %s " % temp1
+            p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+            (output, err) = p.communicate()
+            for fileName in os.listdir(temp1):
+                # print os.path.join(temp1, fileName)
+                with zipfile.ZipFile(os.path.join(temp1, fileName), "r") as z:
+                    # extract everything except for _MACOSX folder, which contains redundant data
+                    z.extractall(temp2, [x for x in z.namelist() if not x.startswith('__MACOSX')])
+            for folder in os.listdir(temp2):
+                copyTree(os.path.join(temp2, folder), fixturesDir)
+            shutil.rmtree(temp1, temp2)
