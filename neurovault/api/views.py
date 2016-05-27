@@ -283,13 +283,31 @@ class CollectionViewSet(viewsets.ModelViewSet):
             page, context={'request': request}, many=True)
         return paginator.get_paginated_response(serializer.data)
 
-    @detail_route(methods=['post'])
+    @detail_route(methods=['get', 'post'])
     def atlases(self, request, pk):
-        return self.add_item(request, pk, EditableAtlasSerializer)
+        if request.method == 'POST':
+            return self.add_item(request, pk, EditableAtlasSerializer)
 
-    @detail_route(methods=['post'])
+        collection = get_collection(pk, request, mode='api')
+        queryset = Atlas.objects.filter(collection=collection)
+        paginator = StandardResultPagination()
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = AtlasSerializer(
+            page, context={'request': request}, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+    @detail_route(methods=['get', 'post'])
     def nidm_results(self, request, pk):
-        return self.add_item(request, pk, EditableNIDMResultsSerializer)
+        if request.method == 'POST':
+            return self.add_item(request, pk, EditableNIDMResultsSerializer)
+
+        collection = get_collection(pk, request, mode='api')
+        queryset = NIDMResults.objects.filter(collection=collection)
+        paginator = StandardResultPagination()
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = NIDMResultsSerializer(
+            page, context={'request': request}, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
     def add_item(self, request, pk, obj_serializer):
         collection = get_collection(pk, request, mode='api')
