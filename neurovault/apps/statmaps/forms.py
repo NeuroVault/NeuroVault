@@ -498,6 +498,7 @@ class StatisticMapForm(ImageForm):
         django_file = cleaned_data.get("file")
 
         cleaned_data["is_valid"] = True #This will be only saved if the form will validate
+        cleaned_data["tags"] = clean_tags(cleaned_data)
 
         if django_file and "file" not in self._errors and "hdr_file" not in self._errors:
             django_file.open()
