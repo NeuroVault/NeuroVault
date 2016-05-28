@@ -27,7 +27,7 @@ def get_sphere(coords, r, vox_dims, dims):
     return sphere[(np.min(sphere, 1) >= 0) & (np.max(np.subtract(sphere, dims), 1) <= -1),:].astype(int)
 
 
-def get_values_at_locations(nifti_file, locations, radius, mask, nii, data):
+def get_values_at_locations(locations, radius, mask, nii, data):
     values = []
 
         
@@ -78,8 +78,7 @@ def calculate_gene_expression_similarity(stat_map):
 
         print "Getting statmap values"
         mni_coordinates = list(mni_cordinates_df.ix[expression_data.columns].itertuples(index=False))
-        nifti_values = get_values_at_locations(
-            stat_map, mni_coordinates, 4, mask, nii, data)
+        nifti_values = get_values_at_locations(mni_coordinates, 5, mask, nii, data)
 
         print "Removing missing values"
         na_mask = np.isnan(nifti_values)
