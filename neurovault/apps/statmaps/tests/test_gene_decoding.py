@@ -1,83 +1,128 @@
-import uuid
-
-from neurovault.apps.statmaps.tests.utils import (clearDB, save_atlas_form,
-                                                  save_statmap_form,
-                                                  save_nidm_form)
-from neurovault.apps.statmaps.models import (Atlas, Collection,
-                                             StatisticMap, NIDMResults)
-from neurovault.apps.statmaps.urls import StandardResultPagination
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.contrib.auth.models import User, Permission
+from neurovault.apps.statmaps.tests.utils import (clearDB, save_statmap_form)
+from neurovault.apps.statmaps.models import (Collection)
+from django.contrib.auth.models import User
 from django.test import TestCase, Client
-from rest_framework.test import APITestCase
-from rest_framework import status
-import xml.etree.ElementTree as ET
-from operator import itemgetter
+import pandas as pd
 import os.path
 import json
 
-from .test_nidm import NIDM_TEST_FILES
-
 
 class TestGeneDecoding(TestCase):
-    def setUp(self):
-        self.test_path = os.path.abspath(os.path.dirname(__file__))
-        self.user = User.objects.create(username='neurovault')
-        self.client = Client()
-        self.client.login(username=self.user)
-        self.Collection1 = Collection(name='Collection1', owner=self.user)
-        self.Collection1.save()
+    _map = None
 
-    def tearDown(self):
+    @classmethod
+    def setUpClass(cls):
+        cls.test_path = os.path.abspath(os.path.dirname(__file__))
+        cls.user = User.objects.create(username='neurovault')
+        cls.client = Client()
+        cls.client.login(username=cls.user)
+        cls.Collection1 = Collection(name='Collection1', owner=cls.user)
+        cls.Collection1.save()
+
+        nii_path = os.path.join(
+            cls.test_path, cls._map)
+        map = save_statmap_form(
+            image_path=nii_path, collection=cls.Collection1)
+        response = json.loads(cls.client.get("/images/%d/gene_expression" % map.pk, follow=True).content)
+        cls.df = pd.DataFrame(response["data"], columns=response["columns"])
+
+    @classmethod
+    def tearDownClass(cls):
         clearDB()
 
-    # Atlas Query Tests
+    def _assess_gene(self, gene_name, positive):
+        p_value = self.df.loc[self.df['gene_symbol_richardi'] == gene_name]['p (FDR corrected)']
 
-    def test_validation(self):
-        gene_validators = [{"map": 'test_data/gene_validation/WAY_HC36_mean.nii.gz',
-                            "correct": ["HTR1A"]},
-                           {"map": 'test_data/gene_validation/CUMl_BP_MNI.nii.gz',
-                            "correct": ["HTR1A"],
-                            #"incorrect": "DRD2", # negative correlation
-                            },
-                           {"map": 'test_data/gene_validation/18FDOPA.nii.gz',
-                            "correct": ["DDC"]},
-                           {"map": 'test_data/gene_validation/MNI152_WaterContent_figureAlignedForPaper_resliceForSTOLTUSanalysis.nii.gz',
-                            "correct": [
-                                #"MBP", #mislabeled Richardi gene
-                                "MOG",
-                                "MOBP"]},
-                           {"map": 'test_data/gene_validation/RACLOPRIDE_TEMPLATE_inMNI_181_217_181.nii.gz',
-                            "correct": ["DRD2"]},
-                           {"map": 'test_data/gene_validation/123I-FP-CIT.nii.gz',
-                            "correct": ["SLC6A3"]},
-                           {"map": 'test_data/gene_validation/DASB_HC30_mean.nii.gz',
-                            "correct": ["SLC6A4"]},
-                           {"map": 'test_data/gene_validation/WAY_VT_MNI.nii.gz',
-                            "correct": ["HTR1A"]},
-                           {"map": 'test_data/gene_validation/P943_HC22_mean.nii.gz',
-                            "correct": ["HTR1B"]},
-                           {"map": 'test_data/gene_validation/ALT_HC19_mean.nii.gz',
-                            "correct": ["HTR2A"]},
-                           ]
+        self.assertEquals(len(p_value), 1)
 
-        for d in gene_validators:
-            nii_path = os.path.join(
-                self.test_path, d["map"])
-            map = save_statmap_form(
-                image_path=nii_path, collection=self.Collection1)
+        p_value = list(p_value)[0]
 
-            response = json.loads(self.client.get("/images/%d/gene_expression" % map.pk, follow=True).content)
+        if positive:
+            self.assertLess(p_value, 0.05)
+        else:
+            self.assertGreaterEqual(p_value, 0.05)
 
-            column_id = response["columns"].index("gene_symbol_richardi")
-            for row in response["data"]:
-                if row[column_id] in d["correct"]:
-                    print dict(zip(response["columns"], row))
-                    self.assertTrue(row[response["columns"].index('p (FDR corrected)')] < 0.05, msg=d["map"])
 
-            if "incorrect" in d.keys():
-                for row in response["data"]:
-                    if row[column_id] == d["incorrect"]:
-                        print row
-                        self.assertTrue(row[response["columns"].index('p (FDR corrected)')] > 0.05, msg=d["map"])
-                        break
+class TestWAY1(TestGeneDecoding):
+    _map = 'test_data/gene_validation/WAY_HC36_mean.nii.gz'
+
+    def test_positive_HTR1A(self):
+        self._assess_gene("HTR1A", True)
+
+
+class TestCUM1(TestGeneDecoding):
+    _map = 'test_data/gene_validation/CUMl_BP_MNI.nii.gz'
+
+    def test_positive_HTR1A(self):
+        self._assess_gene("HTR1A", True)
+
+    def test_negative_DDC(self):
+        self._assess_gene("DRD2", True)
+
+
+class TestFDOPA(TestGeneDecoding):
+    _map = 'test_data/gene_validation/18FDOPA.nii.gz'
+
+    def test_positive_DDC(self):
+        self._assess_gene("DDC", True)
+
+
+class TestWCM(TestGeneDecoding):
+    _map = 'test_data/gene_validation/MNI152_WaterContent_figureAlignedForPaper_resliceForSTOLTUSanalysis.nii.gz'
+
+    def test_positive_MBP(self):
+        self._assess_gene("MBP", True)
+
+    def test_positive_MOG(self):
+        self._assess_gene("MOG", True)
+
+    def test_positive_MOBP(self):
+        self._assess_gene("MOBP", True)
+
+    def test_negative_DDC(self):
+        self._assess_gene("DDC", False)
+
+
+class TestRACLOPRIDE(TestGeneDecoding):
+    _map = 'test_data/gene_validation/RACLOPRIDE_TEMPLATE_inMNI_181_217_181.nii.gz'
+
+    def test_positive_DRD2(self):
+        self._assess_gene("DRD2", True)
+
+
+class TestFP_CIT(TestGeneDecoding):
+    _map = 'test_data/gene_validation/123I-FP-CIT.nii.gz'
+
+    def test_positive_SLC6A3(self):
+        self._assess_gene("SLC6A3", True)
+
+    def test_negative_HTR1A(self):
+        self._assess_gene("HTR1A", False)
+
+
+class TestDASB(TestGeneDecoding):
+    _map = 'test_data/gene_validation/DASB_HC30_mean.nii.gz'
+
+    def test_positive_SLC6A4(self):
+        self._assess_gene("SLC6A4", True)
+
+
+class TestWAY2(TestGeneDecoding):
+    _map = 'test_data/gene_validation/WAY_VT_MNI.nii.gz'
+
+    def test_positive_HTR1A(self):
+        self._assess_gene("HTR1A", True)
+
+
+class TestP943(TestGeneDecoding):
+    _map = 'test_data/gene_validation/P943_HC22_mean.nii.gz'
+
+    def test_positive_HTR1B(self):
+        self._assess_gene("HTR1B", True)
+
+
+class TestALTANSERIN(TestGeneDecoding):
+    _map = 'test_data/gene_validation/ALT_HC19_mean.nii.gz'
+
+    def test_positive_HTR1B(self):
+        self._assess_gene("HTR2A", True)
