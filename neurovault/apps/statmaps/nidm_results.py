@@ -13,7 +13,6 @@ class NIDMUpload:
 
     def __init__(self, zip_path,tmp_dir=None,load=True):
         self.path = zip_path
-        self.provn = None
         self.ttl = None
         self.ttl_relpath = ''
         self.workdir = tempfile.mkdtemp() if tmp_dir is None else tmp_dir
@@ -39,7 +38,7 @@ class NIDMUpload:
         except Exception:
             raise self.ParseException("Unable to read the zip file.")
         metafiles = {}
-        for ext in ['.ttl','.provn']:
+        for ext in ['.ttl']:
             metafiles[ext] = [v for v in self.zip.infolist()
                               if fnmatch(v.filename, '*'+ext)
                               # strip OS X resource fork
@@ -53,7 +52,6 @@ class NIDMUpload:
                         "No {0} file found in zip.".format(ext))
 
         self.ttl = metafiles['.ttl'][0]
-        self.provn = metafiles['.provn'][0]
         # fix incorrect property format in earlier versions of SPM12 output
         self.raw_ttl = self.fix_spm12_ttl(self.zip.read(metafiles['.ttl'][0]))
         self.ttl_relpath = self.parse_ttl_relative_path(metafiles['.ttl'][0].filename)
@@ -105,7 +103,7 @@ class NIDMUpload:
         return self.contrasts
 
     def unpack_nidm_zip(self):
-        if not self.ttl or not self.provn:
+        if not self.ttl:
             self.parse_metafiles()
         if not self.contrasts:
             self.parse_contrasts()

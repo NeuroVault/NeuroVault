@@ -249,7 +249,6 @@ def view_image(request, pk, collection_cid=None):
     if isinstance(image, NIDMResultStatisticMap):
         context['img_basename'] = os.path.basename(image.file.url)
         context['ttl_basename'] = os.path.basename(image.nidm_results.ttl_file.url)
-        context['provn_basename'] = os.path.basename(image.nidm_results.provn_file.url)
 
     if isinstance(image, Atlas):
         template = 'statmaps/atlas_details.html.haml'
@@ -294,7 +293,7 @@ def view_collection(request, cid):
         context["messages"] = [msg]
 
     if not is_empty:
-        context["first_image"] = collection.basecollectionitem_set.order_by("pk")[0]
+        context["first_image"] = collection.basecollectionitem_set.not_instance_of(NIDMResults).order_by("pk")[0]
 
     if owner_or_contrib(request,collection):
         form = UploadFileForm()
@@ -738,7 +737,7 @@ def serve_nidm(request, collection_cid, nidmdir, sep, path):
     except ObjectDoesNotExist:
         return HttpResponseForbidden()
 
-    if path in ['zip', 'ttl', 'provn']:
+    if path in ['zip', 'ttl']:
         fieldf = getattr(nidmr, '{0}_file'.format(path))
         fpath = fieldf.path
     else:
@@ -1052,7 +1051,10 @@ class ImagesInCollectionJson(BaseDatatableView):
         elif column == 'polymorphic_ctype.name':
             return type
         elif column == 'is_valid':
-            return row.is_valid
+            if row.polymorphic_ctype.name == "nidm results":
+                return True
+            else:
+                return row.is_valid
         else:
             return super(ImagesInCollectionJson, self).render_column(row, column)
 

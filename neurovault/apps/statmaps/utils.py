@@ -280,7 +280,7 @@ def split_4D_to_3D(nii,with_labels=True,tmp_dir=None):
     labels = get_afni_subbrick_labels(nii)
     for n, slice in enumerate(slices):
         nifti = nib.Nifti1Image(np.squeeze(slice),nii.get_header().get_best_affine())
-        layer_nm = labels[n] if n < len(labels) else 'volume_%s' % n
+        layer_nm = labels[n] if n < len(labels) else '(volume %s)' % (n+1)
         outpath = os.path.join(out_dir, '%s__%s%s' % (fname, layer_nm, ext))
         nib.save(nifti,outpath)
         if with_labels:
@@ -354,34 +354,20 @@ def populate_feat_directory(request,collection,existing_dir=None):
     except:
         raise exc("Unable to unzip the FEAT directory: \n{0}.".format(get_traceback()))
     try:
-        fslnidm = FSLtoNIDMExporter(feat_dir=feat_dir, version="0.2.0")
+        fslnidm = FSLtoNIDMExporter(feat_dir=feat_dir, version="1.2.0")
         fslnidm.parse()
-        export_dir = fslnidm.export()
+        nidm_file = fslnidm.export()
     except:
         raise exc("Unable to parse the FEAT directory: \n{0}.".format(get_traceback()))
 
-    if not os.path.exists(export_dir):
+    if not os.path.exists(nidm_file):
         raise exc("Unable find nidm export of FEAT directory.")
 
     try:
-        if existing_dir is not None:
-            dname = os.path.basename(feat_dir)
-            suffix = '.nidm.zip' if dname.endswith('feat') else '.feat.nidm.zip'
-            destname = dname + suffix
-        else:
-            destname = request.FILES['file'].name.replace('feat.zip','feat.nidm.zip')
-        destpath = os.path.join(tmp_dir,destname)
-        nidm_zip = zipfile.ZipFile(destpath, 'w', zipfile.ZIP_DEFLATED)
-        rootlen = len(feat_dir) + 1
-        for root, dirs, files in os.walk(export_dir):
-            for dfile in files:
-                filenm = os.path.join(root, dfile)
-                nidm_zip.write(filenm, filenm[rootlen:])
-        nidm_zip.close()
-        fh = open(destpath,'r')
+        fh = open(nidm_file,'r')
         request.FILES['file'] = InMemoryUploadedFile(
                                     ContentFile(fh.read()), "file", fh.name.split('/')[-1],
-                                    "application/zip", os.path.getsize(destpath), "utf-8")
+                                    "application/zip", os.path.getsize(nidm_file), "utf-8")
 
     except:
         raise exc("Unable to convert NIDM results for NeuroVault: \n{0}".format(get_traceback()))
@@ -481,6 +467,9 @@ def not_in_mni(nii, plot=False):
     # deals with AFNI files
     if len(excursion_set.shape) == 5:
         excursion_set = excursion_set[:, :, :, 0, 0]
+    # deal with 4D files
+    elif len(excursion_set.shape) == 4:
+        excursion_set = excursion_set[:, :, :, 0]
     in_brain_voxels = np.logical_and(excursion_set, brain_mask).sum()
     out_of_brain_voxels = np.logical_and(excursion_set, np.logical_not(brain_mask)).sum()
 

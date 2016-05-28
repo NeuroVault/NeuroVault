@@ -26,6 +26,7 @@ RUN pip install 'django-dbbackup<2.3'
 RUN pip install django-dirtyfields
 RUN pip install django-file-resubmit==0.4.3
 RUN pip install django-filter
+RUN pip install django-fixture-media
 RUN pip install django-form-utils
 RUN pip install 'django-hstore==1.4.1'
 RUN pip install 'django-oauth-toolkit==0.10.0'
@@ -40,7 +41,7 @@ RUN pip install lxml
 RUN pip install markdown
 RUN pip install networkx
 RUN pip install nibabel
-RUN pip install nidmfsl==0.2.0
+RUN pip install nidmfsl==0.3.4
 RUN pip install nilearn
 RUN pip install numexpr
 RUN pip install opbeat
