@@ -1,5 +1,5 @@
 from neurovault.apps.statmaps.forms import StatisticMapForm, AtlasForm, NIDMResultsForm
-from neurovault.apps.statmaps.models import Collection, Image
+from neurovault.apps.statmaps.models import Collection, Image, User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 import shutil
@@ -9,6 +9,7 @@ import os
 def clearDB():
     Image.objects.all().delete()
     Collection.objects.all().delete()
+    User.objects.all().delete()
     if os.path.exists(PRIVATE_MEDIA_ROOT):
         for the_file in os.listdir(PRIVATE_MEDIA_ROOT):
             file_path = os.path.join(PRIVATE_MEDIA_ROOT, the_file)
