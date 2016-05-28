@@ -20,8 +20,7 @@ test:
   override:
     - docker-compose --verbose up -d && sleep 50
     - curl --retry 10 --retry-delay 15 -vkf http://localhost
-    - set -o pipefail && docker-compose run uwsgi python manage.py test 2>&1 | tee log.txt
-    - if grep -q "^OK" log.txt; then true; else cat log.txt; false; fi
+    - set -o pipefail && docker-compose run uwsgi python manage.py test -v 2
 
 deployment:
   hub:
