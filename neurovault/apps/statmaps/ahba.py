@@ -73,24 +73,24 @@ def calculate_gene_expression_similarity(stat_map):
 
     results_dfs = []
     for donor_id in store.keys():
-        print "Loading expression data"
+        # print "Loading expression data"
         expression_data = store.get(donor_id)
 
-        print "Getting statmap values"
+        # print "Getting statmap values"
         mni_coordinates = list(mni_cordinates_df.ix[expression_data.columns].itertuples(index=False))
         nifti_values = get_values_at_locations(mni_coordinates, 5, mask, nii, data)
 
-        print "Removing missing values"
+        # print "Removing missing values"
         na_mask = np.isnan(nifti_values)
         nifti_values = np.array(nifti_values)[np.logical_not(na_mask)]
         expression_data.drop(expression_data.columns[na_mask], axis=1, inplace=True)
 
-        print "z scoring"
+        # print "z scoring"
         expression_data = pd.DataFrame(zscore(expression_data, axis=1), columns=expression_data.columns,
                                        index=expression_data.index)
         nifti_values = zscore(nifti_values)
 
-        print "Calculating linear regressions"
+        # print "Calculating linear regressions"
         # results_df = expression_data.apply(regression, axis=1)
         regression_results = np.linalg.lstsq(np.c_[nifti_values, np.ones_like(nifti_values)], expression_data.T)
         results_df = pd.DataFrame({"slope": regression_results[0][0]}, index=expression_data.index)
@@ -100,7 +100,7 @@ def calculate_gene_expression_similarity(stat_map):
 
         results_dfs.append(results_df)
 
-    print "Concatenating results"
+    # print "Concatenating results"
     results_df = pd.concat(results_dfs, axis=1)
 
     # In[119]:
