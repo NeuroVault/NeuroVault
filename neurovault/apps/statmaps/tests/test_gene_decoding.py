@@ -30,17 +30,17 @@ class TestGeneDecoding(TestCase):
     def tearDownClass(cls):
         clearDB()
 
-    def _assess_gene(self, gene_name, positive):
-        p_value = self.df.loc[self.df['gene_symbol_richardi'] == gene_name]['p (FDR corrected)']
+    def _assess_gene(self, gene_name, positive, field='variance explained (mean)'):
+        value = self.df.loc[self.df['gene_symbol_richardi'] == gene_name][field]
 
-        self.assertEquals(len(p_value), 1)
+        self.assertEquals(len(value), 1)
 
-        p_value = list(p_value)[0]
+        value = list(value)[0]
 
         if positive:
-            self.assertLess(p_value, 0.05)
+            self.assertGreater(value, 10)
         else:
-            self.assertGreaterEqual(p_value, 0.05)
+            self.assertLessEqual(value, 10)
 
 
 class TestWAY1(TestGeneDecoding):
@@ -56,8 +56,8 @@ class TestCUM1(TestGeneDecoding):
     def test_positive_HTR1A(self):
         self._assess_gene("HTR1A", True)
 
-    def test_negative_DDC(self):
-        self._assess_gene("DRD2", True)
+    def test_negative_DRD2(self):
+        self._assess_gene("DRD2", False)
 
 
 class TestFDOPA(TestGeneDecoding):
@@ -67,7 +67,7 @@ class TestFDOPA(TestGeneDecoding):
         self._assess_gene("DDC", True)
 
 
-class TestWCM(TestGeneDecoding):
+class TestMWC(TestGeneDecoding):
     _map = 'test_data/gene_validation/MNI152_WaterContent_figureAlignedForPaper_resliceForSTOLTUSanalysis.nii.gz'
 
     def test_positive_MBP(self):
