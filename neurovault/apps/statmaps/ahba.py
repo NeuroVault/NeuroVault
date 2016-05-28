@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 import nibabel as nb
 import numpy.linalg as npl
-from scipy.stats.stats import pearsonr, ttest_1samp, percentileofscore, linregress
+from scipy.stats.stats import pearsonr, ttest_1samp, percentileofscore, linregress, zscore
 from statsmodels.sandbox.stats.multicomp import multipletests
 
 #code from neurosynth
@@ -86,10 +86,15 @@ def calculate_gene_expression_similarity(stat_map):
         nifti_values = np.array(nifti_values)[np.logical_not(na_mask)]
         expression_data.drop(expression_data.columns[na_mask], axis=1, inplace=True)
 
+        print "z scoring"
+        expression_data = pd.DataFrame(zscore(expression_data, axis=1), columns=expression_data.columns,
+                                       index=expression_data.index)
+        nifti_values = zscore(nifti_values)
+
         print "Calculating linear regressions"
-        #results_df = expression_data.apply(regression, axis=1)
-        regression_results = np.linalg.lstsq(np.c_[nifti_values, np.ones_like(nifti_values)], expression_data.T)[0]
-        results_df = pd.DataFrame({"slope": regression_results[0]}, index=expression_data.index)
+        # results_df = expression_data.apply(regression, axis=1)
+        regression_results = np.linalg.lstsq(np.c_[nifti_values, np.ones_like(nifti_values)], expression_data.T)
+        results_df = pd.DataFrame({"slope": regression_results[0][0]}, index=expression_data.index)
 
         results_df.columns = pd.MultiIndex.from_tuples([(donor_id[1:], c,) for c in results_df.columns],
                                                        names=['donor_id', 'parameter'])
@@ -108,8 +113,12 @@ def calculate_gene_expression_similarity(stat_map):
 
     group_results_df = results_df.xs('slope', axis=1, level=1).apply(onesample, axis=1)
     _, group_results_df["p (FDR corrected)"], _, _ = multipletests(group_results_df.p, method='fdr_bh')
-    #group_results_df["variance explained (mean)"] = (results_df.xs('rvalue', axis=1, level=1) ** 2 * 100).mean(axis=1)
+    group_results_df["variance explained (mean)"] = (results_df.xs('slope', axis=1, level=1) ** 2 * 100).mean(axis=1)
+    group_results_df["correlation (mean)"] = (results_df.xs('slope', axis=1, level=1)).mean(axis=1)
+    group_results_df["correlation (variance)"] = (results_df.xs('slope', axis=1, level=1)).var(axis=1)
     group_results_df = group_results_df.join(pd.read_csv("/ahba_data/probe_info.csv", index_col=0))
     group_results_df.sort_values(by=["p"], ascending=True, inplace=True)
+
+    store.close()
 
     return group_results_df
