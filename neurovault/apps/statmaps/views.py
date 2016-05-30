@@ -736,7 +736,7 @@ def serve_nidm(request, collection_cid, nidmdir, sep, path):
     except ObjectDoesNotExist:
         return HttpResponseForbidden()
 
-    if path in ['zip', 'ttl', 'provn']:
+    if path in ['zip', 'ttl']:
         fieldf = getattr(nidmr, '{0}_file'.format(path))
         fpath = fieldf.path
     else:

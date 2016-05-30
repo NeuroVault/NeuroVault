@@ -19,6 +19,7 @@ Easy to use web database for human brain statistical maps, atlases and parcellat
 docker-compose up -d
 ```
 The webpage will be available at 127.0.0.1 (unless you are using docker-machine - then run `docker-machine ip nv` to figure out which IP address you need to use; remember that your enviroment variables need to be properly configured by running `eval "$(docker-machine env nv)"`).
+Initially, some data will be available by default with _username/password_ neurovault/neurovault and neurovault2/neurovault2.
 
 You can also run the server in non detached mode (shows all the logs in realtime).
 ```

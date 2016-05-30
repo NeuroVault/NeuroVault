@@ -1,5 +1,19 @@
 #!/bin/bash
-# make sure tha db is up
+# make sure that db is up
 ./wait-for-it.sh db:5432 -- python manage.py migrate --noinput
 python manage.py collectstatic --noinput
+
+# if the /images dir does not exist, then populate db
+if [ ! -d "/var/www/image_data/images" ]; then
+    echo "DOWNLOADING"
+    python manage.py download_fixtures
+    echo "LOADING"
+    python manage.py loaddata dumpdata
+    echo "COLLECTING"
+    python manage.py collectmedia --noinput
+    echo "REMOVING"
+    rm -R /code/neurovault/apps/statmaps/fixtures
+    echo "GENERATING GLASSBRAINS AND SIMILARITY MEASURES"
+    python manage.py trigger_comparisons
+fi
 uwsgi uwsgi.ini

@@ -160,7 +160,8 @@ INSTALLED_APPS = (
     'django_mailgun',
     'django_hstore',
     'guardian',
-    'oauth2_provider'
+    'oauth2_provider',
+    'fixture_media'
 )
 
 # A sample logging configuration. The only tangible logging
@@ -355,3 +356,9 @@ if "test" in sys.argv:
 
 
 TAGGIT_CASE_INSENSITIVE=True
+
+FIXTURE_DIRS = (
+    'apps/statmaps/fixtures/',
+)
+
+MEDIA_ROOT = PRIVATE_MEDIA_ROOT
