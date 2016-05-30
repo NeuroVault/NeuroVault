@@ -1,12 +1,16 @@
 from django.core.management.base import BaseCommand, CommandError
-from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity
+from neurovault.apps.statmaps.tasks import save_voxelwise_pearson_similarity
 from neurovault.apps.statmaps.tests.utils import clearDB
 from neurovault.apps.statmaps.models import Comparison, Similarity, User, Collection, Image
 from neurovault.apps.statmaps.utils import get_images_to_compare_with, is_search_compatible
 from neurovault.apps.statmaps.tests.utils import  save_statmap_form
+from neurovault.apps.statmaps.tasks import get_images_by_ordered_id, save_resampled_transformation_single
 
+
+import os
 import gc
 import timeit
+import numpy as np
 
 class Timer:
     def __init__(self, timer=None, disable_gc=False, verbose=True):
@@ -30,6 +34,25 @@ class Timer:
         if self.verbose:
             print('time taken: %f seconds' % self.interval)
 
+
+def run_voxelwise_pearson_similarity(pk1):
+    from neurovault.apps.statmaps.models import Image
+    from neurovault.apps.statmaps.utils import get_images_to_compare_with
+
+    imgs_pks = get_images_to_compare_with(pk1, for_generation=True)
+    #print imgs_pks
+
+    if imgs_pks:
+        image = Image.objects.get(pk=pk1)
+        # added for improved performance
+        if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
+            image = save_resampled_transformation_single(pk1)
+
+        # exclude single subject maps from analysis
+        for pk in imgs_pks:
+            save_voxelwise_pearson_similarity.apply([pk, pk1])
+
+
 class Command(BaseCommand):
     args = '<times_to_run times_to_run ...>'
     help = 'bench'
@@ -39,19 +62,17 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         clearDB()
-        app_path = os.path.abspath(os.path.dirname(__file__))
-        u1 = User.objects.create(username='neurovault')
-        comparisonCollection1 = Collection(name='comparisonCollection1', owner=self.u1,
+        app_path = '/code/neurovault/apps/statmaps/tests'
+        u1 = User.objects.create(username='neurovault3')
+        comparisonCollection1 = Collection(name='comparisonCollection1', owner=u1,
                                                 DOI='10.3389/fninf.2015.00008')
         comparisonCollection1.save()
 
         save_statmap_form(
-            image_path=os.path.join(app_path, 'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz'),
-            collection=self.comparisonCollection1,
+            image_path=os.path.join(app_path, 'bench/unthres/0003.nii.gz'),
+            collection=comparisonCollection1,
             image_name="image1",
             ignore_file_warning=True)
-
-
 
 
         print args
@@ -59,32 +80,36 @@ class Command(BaseCommand):
             print args
             #TODO: program this with args, a loop will be enough
         else:
-            for root, dirs, filenames in os.walk(os.path.join(app_path,'test_data/bench/unthres/')):
-                print root
-                print dirs
-                print filenames
-                for file in filenames:
-                    print 'Adding subject ' + file
+            i = 0
+            num_files = len(os.listdir(os.path.join(app_path, 'bench/unthres/')))
+            bench_table = np.zeros(num_files)
+
+            for file in os.listdir(os.path.join(app_path, 'bench/unthres/')):
+
+                print 'Adding subject ' + file
+
+                randomCollection = Collection(name='random'+file, owner=u1, DOI='10.3389/fninf.2015.00008'+str(i))
+                randomCollection.save()
+
+                image = save_statmap_form(
+                    image_path=os.path.join(app_path, 'bench/unthres/', file),
+                    collection=randomCollection,
+                    image_name=file,
+                    ignore_file_warning=True)
+
+                # Similarity scores are generated when statmap_form is saved?
+                # comparison = Comparison.objects.filter(image1=self.image1, image2=image)
+                # self.assertAlmostEqual(comparison[0].similarity_score, 1.0)
+                # print comparison[0].similarity_score
+
+                t = Timer()
+                with t:
+                    run_voxelwise_pearson_similarity(
+                        image.pk)  # TODO: change this depending on the indexing function
+                #print "Time taken to index", i, " images: ", t.interval
+
+                bench_table[i] = t.interval
+                np.save(os.path.join(app_path, 'bench/results'), bench_table)
+                i += 1
 
 
-
-                    file = indir + file
-                    print file
-                    # save_resampled_transformation_single(file)
-                    # break
-
-
-
-
-
-
-            # imgs_pks = get_images_to_compare_with(image.pk)
-            # if imgs_pks:
-            #     imgs_pks.append(image.pk)
-            #     num_imgs = len(imgs_pks)
-            #     # Benchmark for 1/10 of the total images
-            #     t = Timer()
-            #     print "For 1/10 of the data (", num_imgs/10," images): "
-            #     with t:
-            #         for pk in imgs_pks[0:num_imgs/10]:
-            #             run_voxelwise_pearson_similarity.apply_sync(pk)
