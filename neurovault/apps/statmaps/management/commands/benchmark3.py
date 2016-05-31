@@ -2,8 +2,8 @@ from django.core.management.base import BaseCommand, CommandError
 from neurovault.apps.statmaps.tasks import save_voxelwise_pearson_similarity
 from neurovault.apps.statmaps.tests.utils import clearDB
 from neurovault.apps.statmaps.models import Comparison, Similarity, User, Collection, Image
-from neurovault.apps.statmaps.utils import get_images_to_compare_with, is_search_compatible
-from neurovault.apps.statmaps.tests.utils import  save_statmap_form
+from neurovault.apps.statmaps.utils import get_images_to_compare_with, is_search_compatible, get_existing_comparisons
+from neurovault.apps.statmaps.tests.utils import save_statmap_form
 from neurovault.apps.statmaps.tasks import get_images_by_ordered_id, save_resampled_transformation_single
 
 
@@ -82,8 +82,8 @@ class Command(BaseCommand):
         else:
             i = 0
             num_files = len(os.listdir(os.path.join(app_path, 'bench/unthres/')))
-            bench_table = np.zeros(num_files)
-            num_comp_table = np.zeros(num_files)
+            index_table = np.zeros(num_files)
+            query_table = np.zeros(num_files)
 
             for file in os.listdir(os.path.join(app_path, 'bench/unthres/')):
 
@@ -108,10 +108,16 @@ class Command(BaseCommand):
                         run_voxelwise_pearson_similarity(
                             image.pk)  # TODO: change this depending on the indexing function
                     #print "Time taken to index", i, " images: ", t.interval
-                    bench_table[i] = t.interval
-                    num_comp_table[i] = Comparison.objects.all().count()
-                    np.save(os.path.join(app_path, 'bench/results_bench3'), bench_table)
-                    np.save(os.path.join(app_path, 'bench/results_bench3_comptable'), num_comp_table)
+                    index_table[i] = t.interval
+                    np.save(os.path.join(app_path, 'bench/results_index_busy'), index_table)
+
+                    t = Timer()
+                    max_results = 100
+                    with t:
+                        get_existing_comparisons(image.pk).extra(select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[0:max_results]  # "-" indicates descending # TODO: change this depending on the indexing function
+                    query_table[i] = t.interval
+                    np.save(os.path.join(app_path, 'bench/results_query_busy'), query_table)
+
                 i += 1
 
 
