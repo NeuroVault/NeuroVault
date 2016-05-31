@@ -103,18 +103,17 @@ class Command(BaseCommand):
                 # self.assertAlmostEqual(comparison[0].similarity_score, 1.0)
                 # print comparison[0].similarity_score
 
-                t = Timer()
-                with t:
-                    run_voxelwise_pearson_similarity(
-                        image.pk)  # TODO: change this depending on the indexing function
-                #print "Time taken to index", i, " images: ", t.interval
-                index_table[i] = t.interval
-                np.save(os.path.join(app_path, 'bench/results_index_not_busy'), index_table)
+                # t = Timer()
+                # with t:
+                #     run_voxelwise_pearson_similarity(
+                #         image.pk)  # TODO: change this depending on the indexing function
+                # #print "Time taken to index", i, " images: ", t.interval
+                # index_table[i] = t.interval
+                # np.save(os.path.join(app_path, 'bench/results_index_not_busy'), index_table)
 
                 t = Timer()
-                max_results = 100
                 with t:
-                    get_existing_comparisons(image.pk).extra(select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[0:max_results]  # "-" indicates descending # TODO: change this depending on the indexing function
+                    get_existing_comparisons(image.pk).extra(select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[0:100]  # "-" indicates descending # TODO: change this depending on the indexing function
                 query_table[i] = t.interval
                 np.save(os.path.join(app_path, 'bench/results_query_not_busy'), query_table)
 
