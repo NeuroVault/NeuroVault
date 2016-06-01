@@ -80,46 +80,44 @@ class Command(BaseCommand):
         query_table = np.zeros(num_files)
 
         if args:
-            print args
-            if args == "full":
-                print "OK"
+            from django.conf import settings
+            if args[0] == "full":
+                for file in os.listdir(os.path.join(app_path, 'bench/unthres/')):
 
-                # for file in os.listdir(os.path.join(app_path, 'bench/unthres/')):
-                #
-                #     print 'Adding subject ' + file
-                #
-                #     randomCollection = Collection(name='random' + file, owner=u1,
-                #                                   DOI='10.3389/fninf.2015.00008' + str(i))
-                #     randomCollection.save()
-                #
-                #     image = save_statmap_form(
-                #         image_path=os.path.join(app_path, 'bench/unthres/', file),
-                #         collection=randomCollection,
-                #         image_name=file,
-                #         ignore_file_warning=True)
-                #
-                #     # Similarity scores are generated when statmap_form is saved?
-                #     # comparison = Comparison.objects.filter(image1=self.image1, image2=image)
-                #     # self.assertAlmostEqual(comparison[0].similarity_score, 1.0)
-                #     # print comparison[0].similarity_score
-                #     if i > 0 and i % 500 == 0:
-                #         t = Timer()
-                #         with t:
-                #             run_voxelwise_pearson_similarity(
-                #                 image.pk)  # TODO: change this depending on the indexing function
-                #         # print "Time taken to index", i, " images: ", t.interval
-                #         index_table[i] = t.interval
-                #         np.save(os.path.join(app_path, 'bench/results_index_busy'), index_table)
-                #
-                #         t = Timer()
-                #         with t:
-                #             get_existing_comparisons(image.pk).extra(
-                #                 select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[
-                #             0:100]  # "-" indicates descending # TODO: change this depending on the indexing function
-                #         query_table[i] = t.interval
-                #         np.save(os.path.join(app_path, 'bench/results_query_busy'), query_table)
-                #
-                #     i += 1
+                    print 'Adding subject ' + file
+
+                    randomCollection = Collection(name='random' + file, owner=u1,
+                                                  DOI='10.3389/fninf.2015.00008' + str(i))
+                    randomCollection.save()
+
+                    image = save_statmap_form(
+                        image_path=os.path.join(app_path, 'bench/unthres/', file),
+                        collection=randomCollection,
+                        image_name=file,
+                        ignore_file_warning=True)
+
+                    # Similarity scores are generated when statmap_form is saved?
+                    # comparison = Comparison.objects.filter(image1=self.image1, image2=image)
+                    # self.assertAlmostEqual(comparison[0].similarity_score, 1.0)
+                    # print comparison[0].similarity_score
+                    if i > 0 and i % 500 == 0:
+                        t = Timer()
+                        with t:
+                            run_voxelwise_pearson_similarity(
+                                image.pk)  # TODO: change this depending on the indexing function
+                        # print "Time taken to index", i, " images: ", t.interval
+                        index_table[i] = t.interval
+                        np.save(os.path.join(app_path, 'bench/results_index_busy'), index_table)
+
+                        t = Timer()
+                        with t:
+                            _dummy = get_existing_comparisons(image.pk).extra(
+                                select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[
+                            0:100]  # "-" indicates descending # TODO: change this depending on the query function
+                        query_table[i] = t.interval
+                        np.save(os.path.join(app_path, 'bench/results_query_busy'), query_table)
+
+                    i += 1
 
         else:
             for file in os.listdir(os.path.join(app_path, 'bench/unthres/')):
@@ -150,7 +148,7 @@ class Command(BaseCommand):
 
                 t = Timer()
                 with t:
-                    get_existing_comparisons(image.pk).extra(select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[0:100]  # "-" indicates descending # TODO: change this depending on the indexing function
+                    _dummy = get_existing_comparisons(image.pk).extra(select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[0:100]  # "-" indicates descending # TODO: change this depending on the indexing function
                 query_table[i] = t.interval
                 np.save(os.path.join(app_path, 'bench/results_query_not_busy'), query_table)
 
