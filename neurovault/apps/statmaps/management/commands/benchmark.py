@@ -153,3 +153,17 @@ class Command(BaseCommand):
                 np.save(os.path.join(app_path, 'bench/results_query_not_busy'), query_table)
 
                 i += 1
+
+# import matplotlib.pyplot as plt
+# import numpy as np
+# a = np.load('results_query_busy.npy')
+# b = np.load('results_query_not_busy.npy')
+# plt.plot(a,"ro",b,"bs")
+# plt.xlabel('Number of Images')
+# plt.ylabel('Seconds')
+# plt.title('Query benchmark for actual implementation')
+# plt.legend(['Busy server', 'Not busy'],loc=2)
+# plt.show()
+#
+#
+
