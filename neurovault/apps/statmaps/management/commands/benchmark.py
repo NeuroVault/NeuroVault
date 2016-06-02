@@ -1,11 +1,8 @@
 from django.core.management.base import BaseCommand, CommandError
-from neurovault.apps.statmaps.tasks import save_voxelwise_pearson_similarity
 from neurovault.apps.statmaps.tests.utils import clearDB
 from neurovault.apps.statmaps.models import Comparison, Similarity, User, Collection, Image
-from neurovault.apps.statmaps.utils import get_images_to_compare_with, is_search_compatible, get_existing_comparisons
+from neurovault.apps.statmaps.utils import get_existing_comparisons
 from neurovault.apps.statmaps.tests.utils import  save_statmap_form
-from neurovault.apps.statmaps.tasks import get_images_by_ordered_id, save_resampled_transformation_single
-
 
 import os
 import gc
@@ -33,25 +30,6 @@ class Timer:
         self.interval = self.end - self.start
         if self.verbose:
             print('time taken: %f seconds' % self.interval)
-
-
-def run_voxelwise_pearson_similarity(pk1):
-    from neurovault.apps.statmaps.models import Image
-    from neurovault.apps.statmaps.utils import get_images_to_compare_with
-
-    imgs_pks = get_images_to_compare_with(pk1, for_generation=True)
-    #print imgs_pks
-
-    if imgs_pks:
-        image = Image.objects.get(pk=pk1)
-        # added for improved performance
-        if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
-            image = save_resampled_transformation_single(pk1)
-
-        # exclude single subject maps from analysis
-        for pk in imgs_pks:
-            save_voxelwise_pearson_similarity.apply([pk, pk1])
-
 
 class Command(BaseCommand):
     args = '<times_to_run times_to_run ...>'
@@ -90,22 +68,14 @@ class Command(BaseCommand):
                                                   DOI='10.3389/fninf.2015.00008' + str(i))
                     randomCollection.save()
 
-                    image = save_statmap_form(
-                        image_path=os.path.join(app_path, 'bench/unthres/', file),
-                        collection=randomCollection,
-                        image_name=file,
-                        ignore_file_warning=True)
-
-                    # Similarity scores are generated when statmap_form is saved?
-                    # comparison = Comparison.objects.filter(image1=self.image1, image2=image)
-                    # self.assertAlmostEqual(comparison[0].similarity_score, 1.0)
-                    # print comparison[0].similarity_score
                     if i > 0 and i % 500 == 0:
                         t = Timer()
                         with t:
-                            run_voxelwise_pearson_similarity(
-                                image.pk)  # TODO: change this depending on the indexing function
-                        # print "Time taken to index", i, " images: ", t.interval
+                            image = save_statmap_form(
+                                image_path=os.path.join(app_path, 'bench/unthres/', file),
+                                collection=randomCollection,
+                                image_name=file,
+                                ignore_file_warning=True)
                         index_table[i] = t.interval
                         np.save(os.path.join(app_path, 'bench/results_index_busy'), index_table)
 
@@ -113,10 +83,15 @@ class Command(BaseCommand):
                         with t:
                             _dummy = get_existing_comparisons(image.pk).extra(
                                 select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[
-                            0:100]  # "-" indicates descending # TODO: change this depending on the query function
+                                     0:100]  # "-" indicates descending # TODO: change this depending on the query function
                         query_table[i] = t.interval
                         np.save(os.path.join(app_path, 'bench/results_query_busy'), query_table)
-
+                    else:
+                        image = save_statmap_form(
+                            image_path=os.path.join(app_path, 'bench/unthres/', file),
+                            collection=randomCollection,
+                            image_name=file,
+                            ignore_file_warning=True)
                     i += 1
 
         else:
@@ -127,21 +102,13 @@ class Command(BaseCommand):
                 randomCollection = Collection(name='random'+file, owner=u1, DOI='10.3389/fninf.2015.00008'+str(i))
                 randomCollection.save()
 
-                image = save_statmap_form(
-                    image_path=os.path.join(app_path, 'bench/unthres/', file),
-                    collection=randomCollection,
-                    image_name=file,
-                    ignore_file_warning=True)
-
-                # Similarity scores are generated when statmap_form is saved?
-                # comparison = Comparison.objects.filter(image1=self.image1, image2=image)
-                # self.assertAlmostEqual(comparison[0].similarity_score, 1.0)
-                # print comparison[0].similarity_score
-
                 t = Timer()
                 with t:
-                    run_voxelwise_pearson_similarity(
-                        image.pk)  # TODO: change this depending on the indexing function
+                    image = save_statmap_form(
+                        image_path=os.path.join(app_path, 'bench/unthres/', file),
+                        collection=randomCollection,
+                        image_name=file,
+                        ignore_file_warning=True)
                 #print "Time taken to index", i, " images: ", t.interval
                 index_table[i] = t.interval
                 np.save(os.path.join(app_path, 'bench/results_index_not_busy'), index_table)
