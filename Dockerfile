@@ -40,6 +40,7 @@ RUN pip install lxml
 RUN pip install markdown
 RUN pip install networkx
 RUN pip install nibabel
+RUN pip install nidmresults==0.3.2
 RUN pip install nidmfsl==0.3.4
 RUN pip install nilearn
 RUN pip install numexpr
