@@ -35,8 +35,6 @@ class Command(BaseCommand):
     args = '<times_to_run times_to_run ...>'
     help = 'bench'
 
-
-
     def handle(self, *args, **options):
 
         clearDB()
@@ -58,7 +56,6 @@ class Command(BaseCommand):
         query_table = np.zeros(num_files)
 
         if args:
-            from django.conf import settings
             if args[0] == "full":
                 for file in os.listdir(os.path.join(app_path, 'bench/unthres/')):
 
@@ -131,6 +128,3 @@ class Command(BaseCommand):
 # plt.title('Query benchmark for actual implementation')
 # plt.legend(['Busy server', 'Not busy'],loc=2)
 # plt.show()
-#
-#
-
