@@ -1003,7 +1003,7 @@ def gene_expression_json(request, pk):
     map_data = np.load(image.reduced_representation.file)
     expression_results = calculate_gene_expression_similarity(map_data)
     dict = expression_results.to_dict("split")
-    del dict["columns"]
+    del dict["index"]
     return JSONResponse(expression_results.to_dict("split"))
 
 # Return search interface

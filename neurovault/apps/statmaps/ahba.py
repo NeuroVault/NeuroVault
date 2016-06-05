@@ -51,11 +51,12 @@ def calculate_gene_expression_similarity(reduced_stat_map_data):
     group_results_df = pd.DataFrame({"t": t, "p": p}, columns=['t', 'p'], index=expression_data.index)
     _, group_results_df["p (FDR corrected)"], _, _ = multipletests(group_results_df.p, method='fdr_bh')
     group_results_df["variance explained (mean)"] = (results_df.xs('slope', axis=1, level=1) ** 2 * 100).mean(axis=1)
+    group_results_df["variance explained (std)"] = (results_df.xs('slope', axis=1, level=1) ** 2 * 100).std(axis=1)
     #group_results_df["correlation (mean)"] = (results_df.xs('slope', axis=1, level=1)).mean(axis=1)
     #group_results_df["correlation (variance)"] = (results_df.xs('slope', axis=1, level=1)).var(axis=1)
     probe_info = pd.read_csv("/ahba_data/probe_info_max1.csv", index_col=0).drop(['chromosome', "gene_id"], axis=1)
     group_results_df = group_results_df.join(probe_info)
     group_results_df.sort_values(by=["p"], ascending=True, inplace=True)
-    group_results_df = group_results_df[["gene_symbol", "entrez_id.1", "gene_name","t", "p", "p (FDR corrected)", "variance explained (mean) [%]"]]
+    group_results_df = group_results_df[["gene_symbol", "entrez_id.1", "gene_name","t", "p", "p (FDR corrected)", "variance explained (mean)", "variance explained (std)"]]
 
     return group_results_df

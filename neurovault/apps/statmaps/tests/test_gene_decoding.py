@@ -14,7 +14,7 @@ class TestGeneDecoding(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.test_path = os.path.abspath(os.path.dirname(__file__))
-        cls.user = User.objects.create(username='neurovault')
+        cls.user, _ = User.objects.get_or_create(username='neurovault')
         cls.client = Client()
         cls.client.login(username=cls.user)
         cls.Collection1 = Collection(name='Collection1', owner=cls.user)
@@ -31,7 +31,6 @@ class TestGeneDecoding(TestCase):
     @classmethod
     def tearDownClass(cls):
         clearDB()
-        cls.user.delete()
 
     def _assess_gene(self, gene_name, field='t'):
         value = self.df.loc[self.df['gene_symbol'] == gene_name][field]
