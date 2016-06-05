@@ -25,7 +25,7 @@ class TestGeneDecoding(TestCase):
         map = save_statmap_form(
             image_path=nii_path, collection=cls.Collection1)
         save_resampled_transformation_single(map.pk)
-        response = json.loads(cls.client.get("/images/%d/gene_expression" % map.pk, follow=True).content)
+        response = json.loads(cls.client.get("/images/%d/gene_expression/json" % map.pk, follow=True).content)
         cls.df = pd.DataFrame(response["data"], columns=response["columns"])
 
     @classmethod
@@ -33,7 +33,7 @@ class TestGeneDecoding(TestCase):
         clearDB()
         cls.user.delete()
 
-    def _assess_gene(self, gene_name, field='correlation (mean)'):
+    def _assess_gene(self, gene_name, field='t'):
         value = self.df.loc[self.df['gene_symbol'] == gene_name][field]
 
         self.assertEquals(len(value), 1)
