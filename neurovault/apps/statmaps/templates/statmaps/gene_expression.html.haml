@@ -7,7 +7,17 @@
        $(document).ready(function() {
           $('#collections-table').dataTable({
                     iDisplayLength: 25,
-        			"ajax": "{% url 'gene_expression_json' pk=pk %}"
+        			"ajax": "{% url 'gene_expression_json' pk=pk %}",
+        			"order": [[ 4, "asc" ]],
+        			"columnDefs": [
+										{
+											"render": function ( data, type, row ) {
+												return "<a href='http://www.ncbi.nlm.nih.gov/gene/" + row[1] +"'>" + data + "</a>";
+											},
+											"targets":[ 0 ]
+										},
+										{ "visible": false,  "targets": [ 1 ] }
+									]
            });
        });
     </script>
@@ -25,16 +35,11 @@
 		%table#collections-table.table.table-condensed.table-striped.table-hover
 			%thead
 				%tr
+					%th Symbol
+					%th entres_id
+					%th Name
 					%th t
 					%th p
 					%th p (FDR corrected)
 					%th variance explained (mean)
-					%th correlation (mean)
-					%th correlation (variance)
-					%th probe_name
-					%th gene_id
-					%th gene_symbol
-					%th gene_name
-					%th entrez_id.1
-
 {% endblock %}
