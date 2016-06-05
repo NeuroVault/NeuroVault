@@ -2,10 +2,10 @@
 {% load coffeescript %}
 
 {% block head %}
-<title>{% block title %}Collections{% endblock %}</title>
+<title>{% block title %}Gene expression decoding{% endblock %}</title>
     <script>
        $(document).ready(function() {
-          $('#collections-table').dataTable({
+          $('#genes-table').dataTable({
                     iDisplayLength: 25,
         			"ajax": "{% url 'gene_expression_json' pk=pk %}",
         			"order": [[ 4, "asc" ]],
@@ -15,6 +15,12 @@
 												return "<a href='http://www.ncbi.nlm.nih.gov/gene/" + row[1] +"'>" + data + "</a>";
 											},
 											"targets":[ 0 ]
+										},
+										{
+											"render": function ( data, type, row ) {
+												return data.toFixed(2) + " %";
+											},
+											"targets":[ 6 ]
 										},
 										{ "visible": false,  "targets": [ 1 ] }
 									]
@@ -27,12 +33,14 @@
 {% block content %}
 .row
 	.span11
-		%h2 Collections
+		%h2 Gene expression decoding
 		.lead
-			%p A collection is a set of images grouped together for some sensible reason.
-			%p Most commonly, a collection contains all of the images from a single study.
+			%p This map has been compared with gene expression data obtained from Allen Human Brain Atlas. For every
+			gene and each of the six brains donated to the Allen Brain Institute a linear model has been fitted to see
+			how similar they are to the evaluated map. A one sample t test has been used see how consistent the relation
+			between the gene expression and evaluated map values are across 6 donors.
 
-		%table#collections-table.table.table-condensed.table-striped.table-hover
+		%table#genes-table.table.table-condensed.table-striped.table-hover
 			%thead
 				%tr
 					%th Symbol
