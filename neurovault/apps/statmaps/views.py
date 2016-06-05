@@ -998,7 +998,7 @@ def find_similar(request,pk):
         return render(request, 'statmaps/error_message.html', context)
 
 
-def gene_expression(request, pk):
+def gene_expression_json(request, pk):
     image = get_image(pk, None, request)
     map_data = np.load(image.reduced_representation.file)
     expression_results = calculate_gene_expression_similarity(map_data)

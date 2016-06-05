@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load coffeescript %}
+
+{% block head %}
+<title>{% block title %}Collections{% endblock %}</title>
+    <script>
+       $(document).ready(function() {
+          $('#collections-table').dataTable({
+                    iDisplayLength: 25,
+        			"ajax": "{% url 'gene_expression_json' pk=pk %}"
+           });
+       });
+    </script>
+
+{% endblock %}
+
+{% block content %}
+.row
+	.span11
+		%h2 Collections
+		.lead
+			%p A collection is a set of images grouped together for some sensible reason.
+			%p Most commonly, a collection contains all of the images from a single study.
+
+		%table#collections-table.table.table-condensed.table-striped.table-hover
+			%thead
+				%tr
+					%th t
+					%th p
+					%th p (FDR corrected)
+					%th variance explained (mean)
+					%th correlation (mean)
+					%th correlation (variance)
+					%th probe_name
+					%th gene_id
+					%th gene_symbol
+					%th gene_name
+					%th entrez_id.1
+
+{% endblock %}
