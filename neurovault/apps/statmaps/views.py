@@ -1004,7 +1004,7 @@ def gene_expression_json(request, pk):
     expression_results = calculate_gene_expression_similarity(map_data)
     dict = expression_results.to_dict("split")
     del dict["index"]
-    return JSONResponse(expression_results.to_dict("split"))
+    return JSONResponse(dict)
 
 # Return search interface
 def search(request,error_message=None):
