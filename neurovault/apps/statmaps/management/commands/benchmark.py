@@ -32,11 +32,11 @@ class Timer:
             print('time taken: %f seconds' % self.interval)
 
 class Command(BaseCommand):
-    args = '<times_to_run times_to_run ...>'
+    args = '<times_to_run>'
     help = 'bench'
 
     def handle(self, *args, **options):
-
+        # TODO: check if /bench folder exists. If not, donwload the full dataset.
         clearDB()
         app_path = '/code/neurovault/apps/statmaps/tests'
         u1 = User.objects.create(username='neurovault3')
@@ -55,50 +55,20 @@ class Command(BaseCommand):
         index_table = np.zeros(num_files)
         query_table = np.zeros(num_files)
 
-        if args:
-            if args[0] == "full":
-                for file in os.listdir(os.path.join(app_path, 'bench/unthres/')):
-
-                    print 'Adding subject ' + file
-
-                    randomCollection = Collection(name='random' + file, owner=u1,
-                                                  DOI='10.3389/fninf.2015.00008' + str(i))
-                    randomCollection.save()
-
-                    if i > 0 and i % 500 == 0:
-                        t = Timer()
-                        with t:
-                            image = save_statmap_form(
-                                image_path=os.path.join(app_path, 'bench/unthres/', file),
-                                collection=randomCollection,
-                                image_name=file,
-                                ignore_file_warning=True)
-                        index_table[i] = t.interval
-                        np.save(os.path.join(app_path, 'bench/results_index_busy'), index_table)
-
-                        t = Timer()
-                        with t:
-                            _dummy = get_existing_comparisons(image.pk).extra(
-                                select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[
-                                     0:100]  # "-" indicates descending # TODO: change this depending on the query function
-                        query_table[i] = t.interval
-                        np.save(os.path.join(app_path, 'bench/results_query_busy'), query_table)
-                    else:
-                        image = save_statmap_form(
-                            image_path=os.path.join(app_path, 'bench/unthres/', file),
-                            collection=randomCollection,
-                            image_name=file,
-                            ignore_file_warning=True)
-                    i += 1
-
+        if args and args[0].isdigit():
+            loop = int(args[0])
         else:
-            for file in os.listdir(os.path.join(app_path, 'bench/unthres/')):
+            loop = 1
 
-                print 'Adding subject ' + file
+        print "Calculating benchmark every", loop, "images"
 
-                randomCollection = Collection(name='random'+file, owner=u1, DOI='10.3389/fninf.2015.00008'+str(i))
-                randomCollection.save()
+        for file in os.listdir(os.path.join(app_path, 'bench/unthres/')):
+            print 'Adding subject ' + file
 
+            randomCollection = Collection(name='random' + file, owner=u1, DOI='10.3389/fninf.2015.00008' + str(i))
+            randomCollection.save()
+
+            if i > 0 and i % loop == 0:
                 t = Timer()
                 with t:
                     image = save_statmap_form(
@@ -106,17 +76,23 @@ class Command(BaseCommand):
                         collection=randomCollection,
                         image_name=file,
                         ignore_file_warning=True)
-                #print "Time taken to index", i, " images: ", t.interval
                 index_table[i] = t.interval
-                np.save(os.path.join(app_path, 'bench/results_index_not_busy'), index_table)
+                np.save(os.path.join(app_path, 'bench/results_index_busy'), index_table)
 
                 t = Timer()
                 with t:
-                    _dummy = get_existing_comparisons(image.pk).extra(select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[0:100]  # "-" indicates descending # TODO: change this depending on the indexing function
+                    _dummy = get_existing_comparisons(image.pk).extra(
+                        select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[
+                             0:100]  # "-" indicates descending # TODO: change this depending on the query function
                 query_table[i] = t.interval
-                np.save(os.path.join(app_path, 'bench/results_query_not_busy'), query_table)
-
-                i += 1
+                np.save(os.path.join(app_path, 'bench/results_query_busy'), query_table)
+            else:
+                image = save_statmap_form(
+                    image_path=os.path.join(app_path, 'bench/unthres/', file),
+                    collection=randomCollection,
+                    image_name=file,
+                    ignore_file_warning=True)
+            i += 1
 
 # import matplotlib.pyplot as plt
 # import numpy as np
