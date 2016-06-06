@@ -97,6 +97,8 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer,
             serializer = NIDMResultsSerializer
             image_type = 'NIDM Results'
 
+        print image_type, obj.pk
+
         orderedDict = serializer(obj, context={
             'request': self.context['request']}).to_representation(obj)
         orderedDict['image_type'] = image_type
@@ -175,6 +177,7 @@ class StatisticMapSerializer(ImageSerializer):
 class NIDMResultStatisticMapSerializer(ImageSerializer):
 
     nidm_results = HyperlinkedRelatedURL(read_only=True)
+    nidm_results_ttl = serializers.SerializerMethodField()
     description = NIDMDescriptionSerializedField(source='get_absolute_url')
     map_type = serializers.SerializerMethodField()
     analysis_level = serializers.SerializerMethodField()
@@ -184,6 +187,9 @@ class NIDMResultStatisticMapSerializer(ImageSerializer):
 
     def get_analysis_level(self, obj):
         return obj.get_analysis_level_display()
+
+    def get_nidm_results_ttl(self, obj):
+        return self.context['request'].build_absolute_uri(obj.nidm_results.ttl_file.url)
 
     class Meta:
         model = NIDMResultStatisticMap
