@@ -31,6 +31,7 @@ class TestGeneDecoding(TestCase):
     @classmethod
     def tearDownClass(cls):
         clearDB()
+        cls.user.delete()
 
     def _assess_gene(self, gene_name, field='t'):
         value = self.df.loc[self.df['gene_symbol'] == gene_name][field]
