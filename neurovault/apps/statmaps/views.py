@@ -107,10 +107,11 @@ def edit_collection(request, cid=None):
     '''
     page_header = "Add new collection"
     if cid:
-        collection = get_collection(cid,request)
-        is_owner = collection.owner == request.user
+        collection = get_collection(cid, request)
+        edit_permission = request.user.has_perm('statmaps.change_collection', collection)
+        is_owner = request.user.has_perm('statmaps.delete_collection', collection)
         page_header = 'Edit collection'
-        if not owner_or_contrib(request,collection):
+        if not edit_permission:
             return HttpResponseForbidden()
     else:
         is_owner = True
