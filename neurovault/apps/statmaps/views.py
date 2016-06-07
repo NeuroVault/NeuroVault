@@ -368,7 +368,8 @@ def view_nidm_results(request, collection_cid, nidm_name):
 
     # We will remove these columns
     columns_to_remove = ["statmap_location","statmap",
-                         "statmap_type","coordinate_id"]
+                         "statmap_type","coordinate_id",
+                         "excsetmap_location"]
 
     # Text for the "Select image" button
     button_text = "Statistical Map"
