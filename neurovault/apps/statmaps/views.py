@@ -107,10 +107,11 @@ def edit_collection(request, cid=None):
     '''
     page_header = "Add new collection"
     if cid:
-        collection = get_collection(cid,request)
-        is_owner = collection.owner == request.user
+        collection = get_collection(cid, request)
+        edit_permission = request.user.has_perm('statmaps.change_collection', collection)
+        is_owner = request.user.has_perm('statmaps.delete_collection', collection)
         page_header = 'Edit collection'
-        if not owner_or_contrib(request,collection):
+        if not edit_permission:
             return HttpResponseForbidden()
     else:
         is_owner = True
@@ -367,7 +368,8 @@ def view_nidm_results(request, collection_cid, nidm_name):
 
     # We will remove these columns
     columns_to_remove = ["statmap_location","statmap",
-                         "statmap_type","coordinate_id"]
+                         "statmap_type","coordinate_id",
+                         "excsetmap_location"]
 
     # Text for the "Select image" button
     button_text = "Statistical Map"
