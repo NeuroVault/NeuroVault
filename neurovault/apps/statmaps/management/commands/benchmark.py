@@ -50,7 +50,6 @@ class Command(BaseCommand):
             image_name="image1",
             ignore_file_warning=True)
 
-        i = 0
         num_files = len(os.listdir(os.path.join(app_path, 'bench/unthres/')))
         index_table = np.zeros(num_files)
         query_table = np.zeros(num_files)
@@ -62,7 +61,7 @@ class Command(BaseCommand):
 
         print "Calculating benchmark every", loop, "images"
 
-        for file in os.listdir(os.path.join(app_path, 'bench/unthres/')):
+        for i, file in enumerate(os.listdir(os.path.join(app_path, 'bench/unthres/'))):
             print 'Adding subject ' + file
 
             randomCollection = Collection(name='random' + file, owner=u1, DOI='10.3389/fninf.2015.00008' + str(i))
@@ -92,7 +91,6 @@ class Command(BaseCommand):
                     collection=randomCollection,
                     image_name=file,
                     ignore_file_warning=True)
-            i += 1
 
 # import matplotlib.pyplot as plt
 # import numpy as np
