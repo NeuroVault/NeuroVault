@@ -45,8 +45,6 @@ for coord_mni in samples[['corrected_mni_x', 'corrected_mni_y', 'corrected_mni_z
     idx = out_vector.argmax()
     if idx == (out_vector == 1.0).sum() == 0:
         idx = np.nan
-        print coord_mni
-        print coord_data
     reduced_coord.append(idx)
 
 samples["reduced_coordinate"] = reduced_coord
