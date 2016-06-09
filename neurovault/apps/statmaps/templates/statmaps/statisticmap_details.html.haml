@@ -136,18 +136,40 @@
                                 %span.muted [{{ ttl_basename }}]
             - else
                 %a.btn.btn-primary.btn{href: "{{ image.file.url|urlencode }}" } Download
-            %a.btn.btn-primary.btn{href: "http://neurosynth.org/decode/?neurovault={{ api_cid }}" } Decode with neurosynth
-            %a.btn.btn-primary.btn{href: "http://neuropowertools.org/neuropowerinput/?neurovault={{ api_cid }}" } Perform power analysis
-            - if comparison_is_possible
-                %a.btn.btn-primary.btn{href: "{% url 'find_similar' image.id %}", data-toggle: "tooltip", title: "Find maps with similar patters."} Find similar
-            - else
-                %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Find maps with similar patters. This function is only enabled for public group level unthresholded statistical maps."}
-                    %a.btn.btn-primary.btn.disabled{href: "{% url 'find_similar' image.id %}"} Find similar
+
+            .btn-group
+                %a.btn.btn-primary.btn.dropdown-toggle{"data-toggle" => "dropdown", :href => "#"}
+                    Analysis
+                    %span.caret
+                %ul.dropdown-menu
+                    %li
+                        %a{:href => "http://neurosynth.org/decode/?neurovault={{ api_cid }}"}
+                            %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Cognitive decoding using coordiante based data collected from thousands of papers."}
+                                Cognitive decoding (neurosynth)
+                    - if comparison_is_possible
+                        %li
+                            %a{:href => "{% url 'find_similar' image.id %}"}
+                                %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Find maps with similar patters."}
+                                    Similar maps search
+                    - else
+                        %li
+                            %a.disabled-link{:href => "{% url 'find_similar' image.id %}"}
+                                %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Find maps with similar patters. This function is only enabled for public group level unthresholded statistical maps."}
+                                    Similar maps search
+                    %li
+                        %a{:href => "{% url 'gene_expression' image.id %}"}
+                            Gene expression decoding
+                    %li
+                        %a{:href => "http://neuropowertools.org/neuropowerinput/?neurovault={{ api_cid }}"}
+                            %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Use neuropower to estimate how many subjects would be required to find an effect of similar size as in this map."}
+                                Power analysis (neuropower)
+
             - if user_owns_image
                 %a.btn.btn-primary.btn{href: "{% url 'edit_image' image.id %}" } Edit details
                 .float-right-wrapper
                     - if not image.nidm_results
                         %a.btn.btn-danger.btn{href: "{% url 'delete_image' image.id %}", id: 'delete_image' } Delete
+
 
         - if warning
             .alert.alert-danger

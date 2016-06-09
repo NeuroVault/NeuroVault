@@ -4,6 +4,7 @@ RUN apt-get update && apt-get install -y \
     libopenblas-dev \
     gfortran \
     libhdf5-dev \
+    libhdf5-8 \
     libgeos-dev
 
 RUN pip install numpy
@@ -60,6 +61,8 @@ RUN pip install https://github.com/gallantlab/pycortex/archive/fe58400c8c3a3187d
 RUN pip install git+https://github.com/benkonrath/django-guardian.git@7cded9081249e9a4cd9f5cd85e67cf843c138b0c#egg=django-guardian
 RUN pip install nidmviewer==0.1.3
 
+RUN pip install tables
+RUN pip install xlrd
 
 RUN apt-get install -y npm
 RUN ln -s /usr/bin/nodejs /usr/bin/node
@@ -73,5 +76,10 @@ RUN apt-get remove -y gfortran
 RUN apt-get autoremove -y
 RUN apt-get clean
 RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+ADD scripts/preparing_AHBA_data.py /code/scripts/preparing_AHBA_data.py
+RUN python /code/scripts/preparing_AHBA_data.py
+
+RUN pip install statsmodels
 
 EXPOSE 3031

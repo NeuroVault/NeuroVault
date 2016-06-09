@@ -394,7 +394,7 @@ class ImageValidationMixin(object):
 
                 # check if it is really nifti
                 try:
-                    print file_map
+                    # print file_map
                     if "header" in file_map:
                         nii = nb.Nifti1Pair.from_file_map(file_map)
                     else:
@@ -447,7 +447,6 @@ class ImageValidationMixin(object):
                         # keep temp dir for AFNI slicing
                         self.afni_tmp = tmp_dir
                     else:
-                        print "removing %s"%tmp_dir
                         shutil.rmtree(tmp_dir)
                 except OSError as exc:
                     if exc.errno != 2:  # code 2 - no such file or directory
