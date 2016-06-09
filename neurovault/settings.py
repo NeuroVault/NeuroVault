@@ -39,7 +39,7 @@ DATABASES = {
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False
 # See https://docs.djangoproject.com/en/1.5/ref/settings/#allowed-hosts
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = "*"
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -67,6 +67,7 @@ USE_TZ = True
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/var/www/example.com/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR,'media')
+#MEDIA_ROOT = '/var/www/image_data'
 MEDIA_URL = '/public/media/'
 
 PRIVATE_MEDIA_ROOT = '/var/www/image_data'
@@ -279,9 +280,10 @@ CACHES = {
           }
 
 # Mandrill config
+
 EMAIL_BACKEND = 'django_mailgun.MailgunBackend'
-MAILGUN_ACCESS_KEY = 'key-3ax6xnjp29jd6fds4gc373sgvjxteol0' # replace with a real key in production
-MAILGUN_SERVER_NAME = 'samples.mailgun.org'# replace with 'neurovault.org' in production
+MAILGUN_ACCESS_KEY = '***REMOVED***' # replace with a real key in production
+MAILGUN_SERVER_NAME = 'neurovault.org'# replace with 'neurovault.org' in production
 DEFAULT_FROM_EMAIL = "noreply@neurovault.org"
 
 if os.path.exists('/usr/local/share/pycortex/db/fsaverage'):
@@ -360,5 +362,3 @@ TAGGIT_CASE_INSENSITIVE=True
 FIXTURE_DIRS = (
     'apps/statmaps/fixtures/',
 )
-
-MEDIA_ROOT = PRIVATE_MEDIA_ROOT

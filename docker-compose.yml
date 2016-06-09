@@ -1,21 +1,16 @@
 version: '2'
 services:
-  db:
-    image: postgres
-    volumes:
-      - ./create_hstore_extension.sh:/docker-entrypoint-initdb.d/create_hstore_extension.sh:ro
-
   uwsgi:
     restart: always
-    image: neurovault/neurovault
+    image: neurovault/neurovault_fs
     build: .
     command: /code/run_uwsgi.sh
     volumes:
       - .:/code
       - /var/www/static
-      - /var/www/image_data
+      - ./images:/var/www/image_data/images
+      - ./pycortex:/usr/local/share/pycortex
     depends_on:
-      - db
       - redis
 
   nginx:
@@ -42,5 +37,4 @@ services:
     volumes_from:
       - uwsgi
     depends_on:
-      - db
       - redis

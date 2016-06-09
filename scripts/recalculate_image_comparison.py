@@ -12,7 +12,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.settings")
 django.setup()
 
 from neurovault.apps.statmaps.models import Similarity, Comparison, Image, Collection
-from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity
+from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, save_resampled_transformation_single
 
 # Images should have the "transform" field after applying migrations (I think)
 
@@ -26,8 +26,15 @@ pearson_metric = Similarity.objects.update_or_create(similarity_metric="pearson 
 all_comparisons = Comparison.objects.all().delete()
 
 # Delete all reduced representations
+total_images = Image.objects.count()
+counter = 0
 for img in Image.objects.all():
-    img.reduced_representation.delete()
+    if not img.reduced_representation or not os.path.exists(img.reduced_representation.path):
+        if hasattr(img, "is_thresholded") and not img.is_thresholded:
+            print "Working on image %d"%img.pk
+    	    save_resampled_transformation_single(img.pk)
+    counter += 1
+    print "Recreated %d npys out of %d (pk = %d)"%(counter, total_images, img.pk)
 
 # Filter down to images that are not private, not thresholded
 # Now, we need to generate a "comparison" object for all files in the database
@@ -35,4 +42,4 @@ for img in Image.objects.all():
 for collection in Collection.objects.filter(DOI__isnull=False):
     for image in collection.basecollectionitem_set.instance_of(Image).all():
       print "Calculating pearson similarity for images %s" %image
-      run_voxelwise_pearson_similarity.apply_async([image.pk])
+      run_voxelwise_pearson_similarity(image.pk)
