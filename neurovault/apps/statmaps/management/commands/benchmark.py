@@ -6,7 +6,7 @@ from neurovault.apps.statmaps.tests.utils import  save_statmap_form
 
 import os
 import gc
-import timeit
+import timeit, datetime, tarfile
 import numpy as np
 
 class Timer:
@@ -31,66 +31,67 @@ class Timer:
         if self.verbose:
             print('time taken: %f seconds' % self.interval)
 
+def down_data():
+    import urllib, json
+    if not os.path.isdir('/code/neurovault/apps/statmaps/tests/bench'):
+        os.makedirs('/code/neurovault/apps/statmaps/tests/bench')
+        os.makedirs('/code/neurovault/apps/statmaps/tests/bench/images')
+    if len(os.listdir('/code/neurovault/apps/statmaps/tests/bench/images')) == 0:
+        (path, _) = urllib.urlretrieve("https://ndownloader.figshare.com/files/5360999")
+        archive = tarfile.open(path)
+        archive.extractall('/code/neurovault/apps/statmaps/tests/bench')
+        archive.close()
+        os.remove(path)
+
+
 class Command(BaseCommand):
     args = '<times_to_run>'
     help = 'bench'
 
     def handle(self, *args, **options):
-        # TODO: check if /bench folder exists. If not, donwload the full dataset.
+        down_data()
+
         clearDB()
-        app_path = '/code/neurovault/apps/statmaps/tests'
+        app_path = '/code/neurovault/apps/statmaps/tests/bench'
         u1 = User.objects.create(username='neurovault3')
-        comparisonCollection1 = Collection(name='comparisonCollection1', owner=u1,
-                                                DOI='10.3389/fninf.2015.00008')
-        comparisonCollection1.save()
+        # comparisonCollection1 = Collection(name='comparisonCollection1', owner=u1,
+        #                                         DOI='10.3389/fninf.2015.00008')
+        # comparisonCollection1.save()
+        #
+        # save_statmap_form(
+        #     image_path=os.path.join(app_path, 'images/0003.nii.gz'),
+        #     collection=comparisonCollection1,
+        #     image_name="image1",
+        #     ignore_file_warning=True)
 
-        save_statmap_form(
-            image_path=os.path.join(app_path, 'bench/unthres/0003.nii.gz'),
-            collection=comparisonCollection1,
-            image_name="image1",
-            ignore_file_warning=True)
-
-        num_files = len(os.listdir(os.path.join(app_path, 'bench/unthres/')))
+        num_files = len(os.listdir(os.path.join(app_path, 'images/')))
         index_table = np.zeros(num_files)
         query_table = np.zeros(num_files)
 
-        if args and args[0].isdigit():
-            loop = int(args[0])
-        else:
-            loop = 1
-
-        print "Calculating benchmark every", loop, "images"
-
-        for i, file in enumerate(os.listdir(os.path.join(app_path, 'bench/unthres/'))):
+        for i, file in enumerate(os.listdir(os.path.join(app_path, 'images/'))):
             print 'Adding subject ' + file
 
             randomCollection = Collection(name='random' + file, owner=u1, DOI='10.3389/fninf.2015.00008' + str(i))
             randomCollection.save()
 
-            if i > 0 and i % loop == 0:
-                t = Timer()
-                with t:
-                    image = save_statmap_form(
-                        image_path=os.path.join(app_path, 'bench/unthres/', file),
-                        collection=randomCollection,
-                        image_name=file,
-                        ignore_file_warning=True)
-                index_table[i] = t.interval
-                np.save(os.path.join(app_path, 'bench/results_index_busy'), index_table)
-
-                t = Timer()
-                with t:
-                    _dummy = get_existing_comparisons(image.pk).extra(
-                        select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[
-                             0:100]  # "-" indicates descending # TODO: change this depending on the query function
-                query_table[i] = t.interval
-                np.save(os.path.join(app_path, 'bench/results_query_busy'), query_table)
-            else:
+            t = Timer()
+            with t:
                 image = save_statmap_form(
-                    image_path=os.path.join(app_path, 'bench/unthres/', file),
+                    image_path=os.path.join(app_path, 'images/', file),
                     collection=randomCollection,
                     image_name=file,
                     ignore_file_warning=True)
+            index_table[i] = t.interval
+            np.save(os.path.join(app_path, 'results_index'), index_table)
+
+            t = Timer()
+            with t:
+                _dummy = get_existing_comparisons(image.pk).extra(
+                    select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[
+                         0:100]  # "-" indicates descending # TODO: change this depending on the query function
+            query_table[i] = t.interval
+            np.save(os.path.join(app_path, 'results_query' + datetime.datetime.utcnow()), query_table)
+
 
 # import matplotlib.pyplot as plt
 # import numpy as np
