@@ -1000,6 +1000,10 @@ def find_similar(request,pk):
 
 def gene_expression_json(request, pk):
     image = get_image(pk, None, request)
+
+    if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
+        image = save_resampled_transformation_single(image.id)
+
     map_data = np.load(image.reduced_representation.file)
     expression_results = calculate_gene_expression_similarity(map_data)
     dict = expression_results.to_dict("split")
