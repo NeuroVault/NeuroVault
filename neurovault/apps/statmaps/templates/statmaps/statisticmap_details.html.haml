@@ -151,14 +151,20 @@
                             %a{:href => "{% url 'find_similar' image.id %}"}
                                 %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Find maps with similar patters."}
                                     Similar maps search
+                        %li
+                            %a{:href => "{% url 'gene_expression' image.id %}"}
+                                %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Find genes with similar expression patters."}
+                                    Gene expression decoding
                     - else
                         %li
                             %a.disabled-link{:href => "{% url 'find_similar' image.id %}"}
                                 %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Find maps with similar patters. This function is only enabled for public group level unthresholded statistical maps."}
                                     Similar maps search
-                    %li
-                        %a{:href => "{% url 'gene_expression' image.id %}"}
-                            Gene expression decoding
+                        %li
+                            %a{:href => "{% url 'gene_expression' image.id %}"}
+                                %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Find genes with similar expression patters. This function is only enabled for public group level unthresholded statistical maps."}
+                                    Gene expression decoding
+
                     %li
                         %a{:href => "http://neuropowertools.org/neuropowerinput/?neurovault={{ api_cid }}"}
                             %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Use neuropower to estimate how many subjects would be required to find an effect of similar size as in this map."}
