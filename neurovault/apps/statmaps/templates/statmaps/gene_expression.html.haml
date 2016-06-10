@@ -24,25 +24,20 @@
 											"targets":[ 0 ]
 										},
 										{
-											type: 'natural',
-											"render": function ( data, type, row ) {
-												return data.toFixed(2) + "&nbsp;±&nbsp;" + row[7].toFixed(2) + "&nbsp;%";
-											},
-											"targets":[ 6 ]
-										},
-										{
 											"render": function ( data, type, row ) {
 												return data.toFixed(6);
 											},
-											"targets":[ 4, 5 ]
+											"searchable": false,
+											"targets":[ 4, 5]
 										},
 										{
 											"render": function ( data, type, row ) {
-												return data.toFixed(3);
+												return data.toFixed(2);
 											},
-											"targets":[ 3 ]
+											"searchable": false,
+											"targets":[ 3, 6, 7 ]
 										},
-										{ "visible": false,  "targets": [ 1, 7] }
+										{ "visible": false,  "targets": [ 1] }
 									],
         			"oSearch":{"sSearch":result},
 					"fnDrawCallback": function (oSettings) {
@@ -65,12 +60,13 @@
 			%thead
 				%tr
 					%th Symbol
-					%th entres_id
+					%th entrez_id
 					%th Name
 					%th t
 					%th p
 					%th p&nbsp;(corr)
-					%th Variance explained
+					%th Variance explained [%]
+					%th ± [%]
 .row
 	.span11
 		%p <strong>About</strong>
