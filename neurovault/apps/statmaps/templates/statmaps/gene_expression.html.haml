@@ -3,6 +3,7 @@
 
 {% block head %}
 <title>{% block title %}Gene expression decoding{% endblock %}</title>
+    <script src="//cdn.datatables.net/plug-ins/1.10.11/sorting/natural.js" type="text/javascript"></script>
     <script>
         $(document).ready(function() {
           var prevSearch;
@@ -28,6 +29,7 @@
 											"targets":[ 0 ]
 										},
 										{
+											type: 'natural',
 											"render": function ( data, type, row ) {
 												return data.toFixed(2) + "&nbsp;±&nbsp;" + row[7].toFixed(2) + "&nbsp;%";
 											},
