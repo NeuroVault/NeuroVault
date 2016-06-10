@@ -3,11 +3,23 @@
 
 {% block head %}
 <title>{% block title %}Gene expression decoding{% endblock %}</title>
+    <script src="//cdn.datatables.net/plug-ins/1.10.11/sorting/natural.js" type="text/javascript"></script>
     <script>
-       $(document).ready(function() {
+        $(document).ready(function() {
+          var prevSearch;
+    	  var saveState = true;
+    	  var captured = /q=([^&]+)/.exec(window.location.href);
+          var result = captured ? captured[1] : '';
+          var base_url = captured ? window.location.href.split("?")[0] : window.location.href;
           $('#genes-table').dataTable({
+                    "bJQueryUI": true,
+                    sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>",
                     iDisplayLength: 25,
-        			"ajax": "{% url 'gene_expression_json' pk=pk %}",
+                    aoColumns: [ { sWidth: '40%' }, { sWidth: '10%'}, { sWidth: '45%'}, { sWidth: '5%'}],
+        			"columnDefs": [
+    					{ "orderable": false, "targets": 1 },
+    					{ "orderable": false, "targets": 3 },
+  					],
         			"order": [[ 4, "asc" ]],
         			"columnDefs": [
 										{
@@ -17,6 +29,7 @@
 											"targets":[ 0 ]
 										},
 										{
+											type: 'natural',
 											"render": function ( data, type, row ) {
 												return data.toFixed(2) + "&nbsp;±&nbsp;" + row[7].toFixed(2) + "&nbsp;%";
 											},
@@ -35,9 +48,16 @@
 											"targets":[ 3 ]
 										},
 										{ "visible": false,  "targets": [ 1, 7] }
-									]
-           });
+									],
+        			"ajax": "{% url 'gene_expression_json' pk=pk %}",
+        			"oSearch":{"sSearch":result},
+					"fnDrawCallback": function (oSettings) {
+						var curSearch = oSettings.oPreviousSearch.sSearch;
+						history.replaceState({query:curSearch}, "title", base_url+"?q=" + curSearch);
+					}
+				});
        });
+
     </script>
 
 {% endblock %}
