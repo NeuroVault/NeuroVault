@@ -9,7 +9,7 @@
     	  var saveState = true;
     	  var captured = /q=([^&]+)/.exec(window.location.href);
           var result = captured ? captured[1] : '';
-          var base_url = captured ? window.location.href.split("?")[0] : window.location.href;
+          var base_url = captured  != '' ? window.location.href.split("?")[0] : window.location.href;
           $('#collections-table').dataTable({
                     "bJQueryUI": true,
                     sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>",
