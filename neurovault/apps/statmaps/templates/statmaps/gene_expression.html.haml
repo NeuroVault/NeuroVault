@@ -13,13 +13,7 @@
           var base_url = captured != '' ? window.location.href.split("?")[0] : window.location.href;
           $('#genes-table').dataTable({
                     "bJQueryUI": true,
-                    sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>",
                     iDisplayLength: 25,
-                    aoColumns: [ { sWidth: '40%' }, { sWidth: '10%'}, { sWidth: '45%'}, { sWidth: '5%'}],
-        			"columnDefs": [
-    					{ "orderable": false, "targets": 1 },
-    					{ "orderable": false, "targets": 3 },
-  					],
         			"ajax": "{% url 'gene_expression_json' pk=image.pk %}",
         			"order": [[ 4, "asc" ]],
         			"columnDefs": [
