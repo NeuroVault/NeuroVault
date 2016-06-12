@@ -54,7 +54,7 @@
 {% block content %}
 .row
 	.span11
-		%h2 Gene expression decoding of the <a href="{( image.get_absolute_url }}">{{ image.name }}</a> statistical map
+		%h2 Gene expression decoding of the <a href="{{ image.get_absolute_url }}">{{ image.name }}</a> statistical map
 
 		%table#genes-table.table.table-condensed.table-striped.table-hover
 			%thead
