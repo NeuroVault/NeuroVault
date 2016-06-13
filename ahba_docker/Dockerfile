@@ -4,8 +4,7 @@ ENV PYTHONUNBUFFERED 1
 RUN apt-get update && apt-get install -y \
     libhdf5-dev \
     libhdf5-8 && \
-    apt-get clean autoclean && \
-    rm -rf /var/lib/apt /var/lib/dpkg /var/lib/cache /var/lib/log
+    apt-get clean autoclean
 
 RUN pip install numpy
 RUN pip install nibabel
