@@ -48,6 +48,15 @@
 {% endblock %}
 {% block head %}
 <title>{% block title %}NeuroVault: {{image.name}}{% endblock %}</title>
+<style>
+a.disabled-link,
+a.disabled-link:visited ,
+a.disabled-link:active,
+a.disabled-link:hover {
+    background-color:#d9d9d9 !important;
+    color:#aaa !important;
+}
++</style>
     :javascript
          var params = [];
          params["worldSpace"] = true;
@@ -76,6 +85,9 @@
     :javascript
         {% inlinecoffeescript %}
             $(document).ready ->
+                $(".disabled-link").click((e) ->
+                   event.preventDefault()
+                )
                 $('#collection-tabs a:first').tab('show')
                 $("table[class*=image-details-datatable]").dataTable
                     sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
@@ -151,14 +163,20 @@
                             %a{:href => "{% url 'find_similar' image.id %}"}
                                 %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Find maps with similar patters."}
                                     Similar maps search
+                        %li
+                            %a{:href => "{% url 'gene_expression' image.id %}"}
+                                %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Find genes with similar expression patters."}
+                                    Gene expression decoding
                     - else
                         %li
                             %a.disabled-link{:href => "{% url 'find_similar' image.id %}"}
                                 %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Find maps with similar patters. This function is only enabled for public group level unthresholded statistical maps."}
                                     Similar maps search
-                    %li
-                        %a{:href => "{% url 'gene_expression' image.id %}"}
-                            Gene expression decoding
+                        %li
+                            %a.disabled-link{:href => "{% url 'gene_expression' image.id %}"}
+                                %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Find genes with similar expression patters. This function is only enabled for public group level unthresholded statistical maps."}
+                                    Gene expression decoding
+
                     %li
                         %a{:href => "http://neuropowertools.org/neuropowerinput/?neurovault={{ api_cid }}"}
                             %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Use neuropower to estimate how many subjects would be required to find an effect of similar size as in this map."}
