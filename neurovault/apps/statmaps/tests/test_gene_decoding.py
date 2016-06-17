@@ -62,70 +62,70 @@ class TestWAY1(TestGeneDecoding):
         self._assess_gene("HTR1A")
 
 
-class TestCUM1(TestGeneDecoding):
-    _map = 'test_data/gene_validation/CUMl_BP_MNI.nii.gz'
-
-    def test_HTR1A_greater_DRD2(self):
-        self._assess_gene_relation("HTR1A", "DRD2")
-
-
-class TestFDOPA(TestGeneDecoding):
-    _map = 'test_data/gene_validation/18FDOPA.nii.gz'
-
-    def test_positive_DDC(self):
-        self._assess_gene("DDC")
-
-
-class TestMWC(TestGeneDecoding):
-    _map = 'test_data/gene_validation/MNI152_WaterContent_figureAlignedForPaper_resliceForSTOLTUSanalysis.nii.gz'
-
-    def test_MBP_greater_DDC(self):
-        self._assess_gene_relation("MBP", "DDC")
-
-    def test_MOG_greater_DDC(self):
-        self._assess_gene_relation("MOG", "DDC")
-
-    def test_MOBP_greater_DDC(self):
-        self._assess_gene_relation("MOBP", "DDC")
-
-
-class TestRACLOPRIDE(TestGeneDecoding):
-    _map = 'test_data/gene_validation/RACLOPRIDE_TEMPLATE_inMNI_181_217_181.nii.gz'
-
-    def test_positive_DRD2(self):
-        self._assess_gene("DRD2")
-
-
-class TestFP_CIT(TestGeneDecoding):
-    _map = 'test_data/gene_validation/123I-FP-CIT.nii.gz'
-
-    def test_positive_SLC6A3_greater_HTR1A(self):
-        self._assess_gene_relation("SLC6A3", "HTR1A")
-
-
-class TestDASB(TestGeneDecoding):
-    _map = 'test_data/gene_validation/DASB_HC30_mean.nii.gz'
-
-    def test_positive_SLC6A4(self):
-        self._assess_gene("SLC6A4")
-
-
-class TestWAY2(TestGeneDecoding):
-    _map = 'test_data/gene_validation/WAY_VT_MNI.nii.gz'
-
-    def test_positive_HTR1A(self):
-        self._assess_gene("HTR1A")
-
-
-#class TestP943(TestGeneDecoding):
-#    _map = 'test_data/gene_validation/P943_HC22_mean.nii.gz'
+# class TestCUM1(TestGeneDecoding):
+#     _map = 'test_data/gene_validation/CUMl_BP_MNI.nii.gz'
 #
-#    def test_positive_HTR1B(self):
-#        self._assess_gene("HTR1B")
-
-
-class TestALTANSERIN(TestGeneDecoding):
-    _map = 'test_data/gene_validation/ALT_HC19_mean.nii.gz'
-
-    def test_positive_HTR1B(self):
-        self._assess_gene("HTR2A")
+#     def test_HTR1A_greater_DRD2(self):
+#         self._assess_gene_relation("HTR1A", "DRD2")
+#
+#
+# class TestFDOPA(TestGeneDecoding):
+#     _map = 'test_data/gene_validation/18FDOPA.nii.gz'
+#
+#     def test_positive_DDC(self):
+#         self._assess_gene("DDC")
+#
+#
+# class TestMWC(TestGeneDecoding):
+#     _map = 'test_data/gene_validation/MNI152_WaterContent_figureAlignedForPaper_resliceForSTOLTUSanalysis.nii.gz'
+#
+#     def test_MBP_greater_DDC(self):
+#         self._assess_gene_relation("MBP", "DDC")
+#
+#     def test_MOG_greater_DDC(self):
+#         self._assess_gene_relation("MOG", "DDC")
+#
+#     def test_MOBP_greater_DDC(self):
+#         self._assess_gene_relation("MOBP", "DDC")
+#
+#
+# class TestRACLOPRIDE(TestGeneDecoding):
+#     _map = 'test_data/gene_validation/RACLOPRIDE_TEMPLATE_inMNI_181_217_181.nii.gz'
+#
+#     def test_positive_DRD2(self):
+#         self._assess_gene("DRD2")
+#
+#
+# class TestFP_CIT(TestGeneDecoding):
+#     _map = 'test_data/gene_validation/123I-FP-CIT.nii.gz'
+#
+#     def test_positive_SLC6A3_greater_HTR1A(self):
+#         self._assess_gene_relation("SLC6A3", "HTR1A")
+#
+#
+# class TestDASB(TestGeneDecoding):
+#     _map = 'test_data/gene_validation/DASB_HC30_mean.nii.gz'
+#
+#     def test_positive_SLC6A4(self):
+#         self._assess_gene("SLC6A4")
+#
+#
+# class TestWAY2(TestGeneDecoding):
+#     _map = 'test_data/gene_validation/WAY_VT_MNI.nii.gz'
+#
+#     def test_positive_HTR1A(self):
+#         self._assess_gene("HTR1A")
+#
+#
+# #class TestP943(TestGeneDecoding):
+# #    _map = 'test_data/gene_validation/P943_HC22_mean.nii.gz'
+# #
+# #    def test_positive_HTR1B(self):
+# #        self._assess_gene("HTR1B")
+#
+#
+# class TestALTANSERIN(TestGeneDecoding):
+#     _map = 'test_data/gene_validation/ALT_HC19_mean.nii.gz'
+#
+#     def test_positive_HTR1B(self):
+#         self._assess_gene("HTR2A")
