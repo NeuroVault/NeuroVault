@@ -348,16 +348,6 @@ class NIDMResultsViewSet(mixins.RetrieveModelMixin,
 
 class ComparisonViewSet(viewsets.ModelViewSet):
 
-    # @detail_route()
-    # def datatable(self, request, pk=None):
-    #     collection = get_collection(pk, request, mode='api')
-    #     data = CollectionSerializer(
-    #         collection, context={'request': request}).data
-    #     if data and 'description' in data and data['description']:
-    #         data['description'] = data['description'].replace('\n', '<br />')
-    #     return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date',
-    #                                                 'images'])
-
     max_results = 100
     queryset = get_existing_comparisons(3).extra(select={"abs_score": "abs(similarity_score)"}).order_by(
         "-abs_score")[0:max_results]  # "-" indicates descending

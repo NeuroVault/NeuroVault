@@ -285,11 +285,9 @@ class CollectionSerializer(serializers.ModelSerializer):
 
 
 class ComparisonSerializer(serializers.Serializer):
-    # image2_id = serializers.CharField()
-    # similarity_score = serializers.ReadOnlyField()
-    # name = serializers.CharField(max_length=200)
-
-    score = serializers.SerializerMethodField('score')
-
-    def score(self, obj):
-        return obj.values()
+    # pk = serializers.ReadOnlyField()
+    abs_score = serializers.ReadOnlyField()
+    # image_id = serializers.ReadOnlyField(source='image2.basecollectionitem_ptr.name')
+    #
+    # def id_img(self, obj):
+    #     return obj.image2.basecollectionitem_ptr.name
