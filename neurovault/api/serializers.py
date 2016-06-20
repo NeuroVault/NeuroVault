@@ -285,9 +285,5 @@ class CollectionSerializer(serializers.ModelSerializer):
 
 
 class ComparisonSerializer(serializers.Serializer):
-    # pk = serializers.ReadOnlyField()
+    id = serializers.ReadOnlyField(source='image2.pk')
     abs_score = serializers.ReadOnlyField()
-    # image_id = serializers.ReadOnlyField(source='image2.basecollectionitem_ptr.name')
-    #
-    # def id_img(self, obj):
-    #     return obj.image2.basecollectionitem_ptr.name
