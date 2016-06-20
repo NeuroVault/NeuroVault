@@ -13,7 +13,8 @@ from neurovault.apps.statmaps.forms import (handle_update_ttl_urls,
 from neurovault.apps.statmaps.models import (Atlas, Collection, Image,
                                              NIDMResults,
                                              NIDMResultStatisticMap,
-                                             StatisticMap, BaseCollectionItem)
+                                             StatisticMap, BaseCollectionItem,
+                                             Comparison)
 
 
 class HyperlinkedFileField(serializers.FileField):
@@ -281,3 +282,14 @@ class CollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
         exclude = ['private_token', 'private', 'images']
+
+
+class ComparisonSerializer(serializers.Serializer):
+    # image2_id = serializers.CharField()
+    # similarity_score = serializers.ReadOnlyField()
+    # name = serializers.CharField(max_length=200)
+
+    score = serializers.SerializerMethodField('score')
+
+    def score(self, obj):
+        return obj.values()

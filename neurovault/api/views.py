@@ -14,6 +14,7 @@ from taggit.models import Tag
 from neurovault.apps.statmaps.models import (Atlas, Collection, Image,
                                              NIDMResults)
 from neurovault.apps.statmaps.urls import StandardResultPagination
+from neurovault.apps.statmaps.utils import get_existing_comparisons
 from neurovault.apps.statmaps.views import (get_collection, get_image,
                                             owner_or_contrib)
 from neurovault.apps.statmaps.voxel_query_functions import (getAtlasVoxels,
@@ -24,7 +25,7 @@ from .serializers import (UserSerializer, AtlasSerializer,
                           CollectionSerializer, EditableAtlasSerializer,
                           EditableNIDMResultsSerializer,
                           EditableStatisticMapSerializer, ImageSerializer,
-                          NIDMResultsSerializer)
+                          NIDMResultsSerializer, ComparisonSerializer)
 
 from .permissions import (ObjectOnlyPermissions,
                           ObjectOnlyPolymorphicPermissions)
@@ -343,6 +344,24 @@ class NIDMResultsViewSet(mixins.RetrieveModelMixin,
 
     queryset = NIDMResults.objects.filter(collection__private=False)
     serializer_class = NIDMResultsSerializer
+    permission_classes = (ObjectOnlyPolymorphicPermissions,)
+
+class ComparisonViewSet(viewsets.ModelViewSet):
+
+    # @detail_route()
+    # def datatable(self, request, pk=None):
+    #     collection = get_collection(pk, request, mode='api')
+    #     data = CollectionSerializer(
+    #         collection, context={'request': request}).data
+    #     if data and 'description' in data and data['description']:
+    #         data['description'] = data['description'].replace('\n', '<br />')
+    #     return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date',
+    #                                                 'images'])
+
+    max_results = 100
+    queryset = get_existing_comparisons(3).extra(select={"abs_score": "abs(similarity_score)"}).order_by(
+        "-abs_score")[0:max_results]  # "-" indicates descending
+    serializer_class = ComparisonSerializer
     permission_classes = (ObjectOnlyPolymorphicPermissions,)
 
 
