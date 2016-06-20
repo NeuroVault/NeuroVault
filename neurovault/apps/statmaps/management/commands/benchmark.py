@@ -53,6 +53,7 @@ class Command(BaseCommand):
         down_data()
 
         clearDB()
+        User.objects.all().delete()
         app_path = '/code/neurovault/apps/statmaps/tests/bench'
         u1 = User.objects.create(username='neurovault3')
 
