@@ -25,7 +25,7 @@ from .serializers import (UserSerializer, AtlasSerializer,
                           CollectionSerializer, EditableAtlasSerializer,
                           EditableNIDMResultsSerializer,
                           EditableStatisticMapSerializer, ImageSerializer,
-                          NIDMResultsSerializer, ComparisonSerializer)
+                          NIDMResultsSerializer)
 
 from .permissions import (ObjectOnlyPermissions,
                           ObjectOnlyPolymorphicPermissions)

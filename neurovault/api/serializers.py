@@ -13,8 +13,7 @@ from neurovault.apps.statmaps.forms import (handle_update_ttl_urls,
 from neurovault.apps.statmaps.models import (Atlas, Collection, Image,
                                              NIDMResults,
                                              NIDMResultStatisticMap,
-                                             StatisticMap, BaseCollectionItem,
-                                             Comparison)
+                                             StatisticMap, BaseCollectionItem)
 
 
 class HyperlinkedFileField(serializers.FileField):

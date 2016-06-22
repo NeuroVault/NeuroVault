@@ -2,7 +2,7 @@ from django.conf.urls import url
 from rest_framework import routers
 
 from .views import (AuthUserView, ImageViewSet, AtlasViewSet,
-                    CollectionViewSet, NIDMResultsViewSet, MyCollectionsViewSet, ComparisonViewSet)
+                    CollectionViewSet, NIDMResultsViewSet, MyCollectionsViewSet)
 
 router = routers.DefaultRouter()
 router.register(r'images', ImageViewSet)
