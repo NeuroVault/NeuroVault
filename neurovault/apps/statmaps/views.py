@@ -48,7 +48,8 @@ from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_vol
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
     get_file_ctime, detect_4D, split_4D_to_3D, splitext_nii_gz, mkdir_p, \
     send_email_notification, populate_nidm_results, get_server_url, populate_feat_directory, \
-    detect_feat_directory, format_image_collection_names, get_existing_comparisons, is_search_compatible
+    detect_feat_directory, format_image_collection_names, get_existing_comparisons, is_search_compatible, \
+    calculate_image_similarity
 from neurovault.apps.statmaps.voxel_query_functions import *
 from . import image_metadata
 
@@ -999,6 +1000,20 @@ def find_similar(request,pk):
         context = {'error_message': error_message}
         return render(request, 'statmaps/error_message.html', context)
 
+
+def find_similar_json(request, pk, collection_cid=None):
+
+    image1 = get_image(pk, None, request)
+
+    # Search only enabled if the image is not thresholded
+    if image1.is_thresholded == True:
+        return JSONResponse('error: region not in atlas or ontology', status=400)
+    else:
+        image_similarity = calculate_image_similarity(int(pk))
+
+    dict = image_similarity.to_dict("split")
+    del dict["index"]
+    return JSONResponse(dict)
 
 def gene_expression(request, pk, collection_cid=None):
     '''view_image returns main view to see an image and associated meta data. If the image is in a collection with a DOI and has a generated thumbnail, it is a contender for image comparison, and a find similar button is exposed.

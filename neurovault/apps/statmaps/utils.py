@@ -14,6 +14,7 @@ from subprocess import CalledProcessError
 
 import cortex
 import nibabel as nib
+import pandas as pd
 import numpy as np
 import pytz
 from django.conf import settings
@@ -554,3 +555,22 @@ def get_existing_comparisons(pk1):
                                      image2__id__in=possible_images_to_compare_with_pks)
     comparisons = comparisons.exclude(image1__pk=pk1, image2__pk=pk1)
     return comparisons
+
+# Returns existing comparisons for specific pk in pd format for
+def calculate_image_similarity(pk):
+
+    comparisons = get_existing_comparisons(pk).extra(select={"abs_score": "abs(similarity_score)"}).order_by(
+        "-abs_score")[0:100]  # "-" indicates descending
+
+    comparisons_pd = pd.DataFrame({'image_id': [pk],
+                               'abs_value': [1]})
+
+    for comp in comparisons:
+        # pick the image we are comparing with
+        image = [image for image in [comp.image1, comp.image2] if image.id != pk][0]
+        if hasattr(image, "map_type") and image.thumbnail:
+            df = pd.DataFrame({'image_id': [image.pk],
+                                           'abs_value': [comp.similarity_score]})
+            comparisons_pd = comparisons_pd.append(df, ignore_index=True)
+
+    return comparisons_pd
