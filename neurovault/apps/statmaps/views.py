@@ -1007,7 +1007,7 @@ def find_similar_json(request, pk, collection_cid=None):
 
     # Search only enabled if the image is not thresholded
     if image1.is_thresholded == True:
-        return JSONResponse('error: region not in atlas or ontology', status=400)
+        return JSONResponse('error: image not comparable', status=400)
     else:
         image_similarity = calculate_image_similarity(int(pk))
 
