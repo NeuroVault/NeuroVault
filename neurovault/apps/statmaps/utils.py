@@ -557,20 +557,29 @@ def get_existing_comparisons(pk1):
     return comparisons
 
 # Returns existing comparisons for specific pk in pd format for
-def calculate_image_similarity(pk):
-
+def get_similar_images(pk, max_results=100):
     comparisons = get_existing_comparisons(pk).extra(select={"abs_score": "abs(similarity_score)"}).order_by(
-        "-abs_score")[0:100]  # "-" indicates descending
+        "-abs_score")[0:max_results]  # "-" indicates descending
 
-    comparisons_pd = pd.DataFrame({'image_id': [pk],
-                               'abs_value': [1]})
+    comparisons_pd = pd.DataFrame({'image_id': [],
+                                   'score': [],
+                                   'png_img_path': [],
+                                   'tag': [],
+                                   'name': [],
+                                   'collection_name': []
+                                   })
 
     for comp in comparisons:
         # pick the image we are comparing with
         image = [image for image in [comp.image1, comp.image2] if image.id != pk][0]
         if hasattr(image, "map_type") and image.thumbnail:
             df = pd.DataFrame({'image_id': [image.pk],
-                                           'abs_value': [comp.similarity_score]})
-            comparisons_pd = comparisons_pd.append(df, ignore_index=True)
+                               'score': [comp.similarity_score],
+                               'png_img_path': [image.get_thumbnail_url()],
+                               'tag': [str(image.map_type)],
+                               'name': [image.name],
+                               'collection_name': [image.collection.name]
+                               })
+        comparisons_pd = comparisons_pd.append(df, ignore_index=True)
 
     return comparisons_pd
