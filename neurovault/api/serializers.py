@@ -282,8 +282,3 @@ class CollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
         exclude = ['private_token', 'private', 'images']
-
-
-class ComparisonSerializer(serializers.Serializer):
-    id = serializers.ReadOnlyField(source='image2.pk')
-    abs_score = serializers.ReadOnlyField()

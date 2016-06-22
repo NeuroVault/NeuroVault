@@ -347,22 +347,6 @@ class NIDMResultsViewSet(mixins.RetrieveModelMixin,
     permission_classes = (ObjectOnlyPolymorphicPermissions,)
 
 
-class ComparisonViewSet(viewsets.ModelViewSet):
-
-    max_results = 100
-    queryset = get_existing_comparisons(3).extra(select={"abs_score": "abs(similarity_score)"}).order_by(
-        "-abs_score")[0:max_results]  # "-" indicates descending
-    serializer_class = ComparisonSerializer
-    permission_classes = (ObjectOnlyPolymorphicPermissions,)
-
-    # def retrieve(self, request, pk=None):
-    #     max_results = 100
-    #     internal_queryset = get_existing_comparisons(3).extra(select={"abs_score": "abs(similarity_score)"}).order_by(
-    #         "-abs_score")[0:max_results]  # "-" indicates descending
-    #     serializer = ComparisonSerializer(internal_queryset)
-    #     return Response(serializer.data)
-
-
 class TagViewSet(viewsets.ModelViewSet):
 
     model = Tag
