@@ -14,7 +14,6 @@ from taggit.models import Tag
 from neurovault.apps.statmaps.models import (Atlas, Collection, Image,
                                              NIDMResults)
 from neurovault.apps.statmaps.urls import StandardResultPagination
-from neurovault.apps.statmaps.utils import get_existing_comparisons
 from neurovault.apps.statmaps.views import (get_collection, get_image,
                                             owner_or_contrib)
 from neurovault.apps.statmaps.voxel_query_functions import (getAtlasVoxels,
