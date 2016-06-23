@@ -576,7 +576,7 @@ def get_similar_images(pk, max_results=100):
             df = pd.DataFrame({'image_id': [image.pk],
                                'score': [comp.similarity_score],
                                'png_img_path': [image.get_thumbnail_url()],
-                               'tag': [str(image.map_type)],
+                               'tag': [[str(image.map_type)]],
                                'name': [image.name],
                                'collection_name': [image.collection.name]
                                })

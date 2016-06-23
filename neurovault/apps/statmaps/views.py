@@ -950,7 +950,7 @@ def find_similar(request, pk):
         image_ids = [image1.pk] + similar_images['image_id'].tolist()
         scores = [1] + similar_images['score'].tolist()
         png_img_paths = [image1.get_thumbnail_url()] + similar_images['png_img_path'].tolist()
-        tags = [str(image1.map_type)] + similar_images['tag'].tolist()
+        tags = [[str(image1.map_type)]] + similar_images['tag'].tolist()
         names = [image1.name] + similar_images['name'].tolist()
         collection_names = [image1.collection.name] + similar_images['collection_name'].tolist()
 
