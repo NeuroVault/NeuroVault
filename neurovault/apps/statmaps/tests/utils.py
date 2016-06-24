@@ -33,9 +33,9 @@ def save_statmap_form(image_path,collection,ignore_file_warning=False,image_name
     post_dict = {
         'name': image_name,
         'cognitive_paradigm_cogatlas': 'trm_4f24126c22011',
-        'modality':'fMRI-BOLD',
+        'modality': 'fMRI-BOLD',
         'map_type': 'T',
-        'collection':collection.pk,
+        'collection': collection.pk,
         'ignore_file_warning': ignore_file_warning
     }
     # If image path is a list, we have img/hdr
@@ -45,6 +45,8 @@ def save_statmap_form(image_path,collection,ignore_file_warning=False,image_name
     else:
         file_dict = {'file': SimpleUploadedFile(image_path, open(image_path).read())}
     form = StatisticMapForm(post_dict, file_dict)
+    # this is necessary to split 4D volumes
+    form.is_valid()
     return form.save()
 
 

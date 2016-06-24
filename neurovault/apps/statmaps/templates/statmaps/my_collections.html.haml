@@ -4,8 +4,14 @@
 {% block head %}
 <title>{% block title %}My Collections{% endblock %}</title>
     <script>
-       $(document).ready(function() {
+        $(document).ready(function() {
+          var prevSearch;
+    	  var saveState = true;
+    	  var captured = /q=([^&]+)/.exec(window.location.href);
+          var result = captured ? captured[1] : '';
+          var base_url = captured  != '' ? window.location.href.split("?")[0] : window.location.href;
           $('#collections-table').dataTable({
+                    "bJQueryUI": true,
                     sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>",
                     iDisplayLength: 25,
                     aoColumns: [ { sWidth: '40%' }, { sWidth: '10%'}, { sWidth: '45%'}, { sWidth: '5%'}],
@@ -16,8 +22,13 @@
     					{ "orderable": false, "targets": 3 },
   					],
         			"order": [[ 0, "asc" ]],
-        			"ajax": "{% url 'my_collections_json' %}"
-           });
+        			"ajax": "{% url 'my_collections_json' %}",
+        			"oSearch":{"sSearch":result},
+					"fnDrawCallback": function (oSettings) {
+						var curSearch = oSettings.oPreviousSearch.sSearch;
+						history.replaceState({query:curSearch}, "title", base_url+"?q=" + curSearch);
+					}
+				});
        });
     </script>
 {% endblock %}

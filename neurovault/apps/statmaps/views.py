@@ -37,6 +37,7 @@ from xml.dom import minidom
 
 import neurovault
 from neurovault import settings
+from neurovault.apps.statmaps.ahba import calculate_gene_expression_similarity
 from neurovault.apps.statmaps.forms import CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,NeuropowerStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
@@ -107,10 +108,11 @@ def edit_collection(request, cid=None):
     '''
     page_header = "Add new collection"
     if cid:
-        collection = get_collection(cid,request)
-        is_owner = collection.owner == request.user
+        collection = get_collection(cid, request)
+        edit_permission = request.user.has_perm('statmaps.change_collection', collection)
+        is_owner = request.user.has_perm('statmaps.delete_collection', collection)
         page_header = 'Edit collection'
-        if not owner_or_contrib(request,collection):
+        if not edit_permission:
             return HttpResponseForbidden()
     else:
         is_owner = True
@@ -248,7 +250,6 @@ def view_image(request, pk, collection_cid=None):
     if isinstance(image, NIDMResultStatisticMap):
         context['img_basename'] = os.path.basename(image.file.url)
         context['ttl_basename'] = os.path.basename(image.nidm_results.ttl_file.url)
-        context['provn_basename'] = os.path.basename(image.nidm_results.provn_file.url)
 
     if isinstance(image, Atlas):
         template = 'statmaps/atlas_details.html.haml'
@@ -293,7 +294,7 @@ def view_collection(request, cid):
         context["messages"] = [msg]
 
     if not is_empty:
-        context["first_image"] = collection.basecollectionitem_set.order_by("pk")[0]
+        context["first_image"] = collection.basecollectionitem_set.not_instance_of(NIDMResults).order_by("pk")[0]
 
     if owner_or_contrib(request,collection):
         form = UploadFileForm()
@@ -368,7 +369,8 @@ def view_nidm_results(request, collection_cid, nidm_name):
 
     # We will remove these columns
     columns_to_remove = ["statmap_location","statmap",
-                         "statmap_type","coordinate_id"]
+                         "statmap_type","coordinate_id",
+                         "excsetmap_location"]
 
     # Text for the "Select image" button
     button_text = "Statistical Map"
@@ -737,7 +739,7 @@ def serve_nidm(request, collection_cid, nidmdir, sep, path):
     except ObjectDoesNotExist:
         return HttpResponseForbidden()
 
-    if path in ['zip', 'ttl', 'provn']:
+    if path in ['zip', 'ttl']:
         fieldf = getattr(nidmr, '{0}_file'.format(path))
         fpath = fieldf.path
     else:
@@ -1004,6 +1006,34 @@ def spatial_regression_select(request, pk):
                'map_pk': pk}
     return render(request, 'statmaps/spatial_regression_select.html', context)
 
+def gene_expression(request, pk, collection_cid=None):
+    '''view_image returns main view to see an image and associated meta data. If the image is in a collection with a DOI and has a generated thumbnail, it is a contender for image comparison, and a find similar button is exposed.
+    :param pk: statmaps.models.Image.pk the primary key of the image
+    :param collection_cid: statmaps.models.Collection.pk the primary key of the collection. Default None
+    '''
+    image = get_image(pk, collection_cid, request)
+    api_cid = pk
+    if image.collection.private:
+        api_cid = '%s-%s' % (image.collection.private_token,pk)
+    context = {
+        'image': image,
+        'api_cid': api_cid,
+    }
+    template = 'statmaps/gene_expression.html.haml'
+    return render(request, template, context)
+
+def gene_expression_json(request, pk, collection_cid=None):
+    image = get_image(pk, collection_cid, request)
+
+    if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
+        image = save_resampled_transformation_single(image.id)
+
+    map_data = np.load(image.reduced_representation.file)
+    expression_results = calculate_gene_expression_similarity(map_data)
+    dict = expression_results.to_dict("split")
+    del dict["index"]
+    return JSONResponse(dict)
+
 # Return search interface
 def search(request,error_message=None):
     cogatlas_task = CognitiveAtlasTask.objects.all()
@@ -1025,9 +1055,6 @@ class JSONResponse(HttpResponse):
 class ImagesInCollectionJson(BaseDatatableView):
     columns = ['file.url', 'pk', 'name', 'polymorphic_ctype.name', 'is_valid']
     order_columns = ['','pk', 'name', 'polymorphic_ctype.name', '']
-
-    def get_initial_queryset(self):
-        return get_objects_for_user(self.request.user, 'statmaps.change_collection')
 
     def get_initial_queryset(self):
         # return queryset used as base for futher sorting/filtering
@@ -1052,7 +1079,10 @@ class ImagesInCollectionJson(BaseDatatableView):
         elif column == 'polymorphic_ctype.name':
             return type
         elif column == 'is_valid':
-            return row.is_valid
+            if row.polymorphic_ctype.name == "nidm results":
+                return True
+            else:
+                return row.is_valid
         else:
             return super(ImagesInCollectionJson, self).render_column(row, column)
 

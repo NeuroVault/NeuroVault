@@ -343,6 +343,11 @@ class OwnerCollectionForm(CollectionForm):
 
 class ImageValidationMixin(object):
 
+    def __init__(self, *args, **kwargs):
+        super(ImageValidationMixin, self).__init__()
+        self.afni_subbricks = []
+        self.afni_tmp = None
+
     def clean_and_validate(self, cleaned_data):
         file = cleaned_data.get('file')
 
@@ -389,7 +394,7 @@ class ImageValidationMixin(object):
 
                 # check if it is really nifti
                 try:
-                    print file_map
+                    # print file_map
                     if "header" in file_map:
                         nii = nb.Nifti1Pair.from_file_map(file_map)
                     else:
@@ -442,7 +447,6 @@ class ImageValidationMixin(object):
                         # keep temp dir for AFNI slicing
                         self.afni_tmp = tmp_dir
                     else:
-                        print "removing %s"%tmp_dir
                         shutil.rmtree(tmp_dir)
                 except OSError as exc:
                     if exc.errno != 2:  # code 2 - no such file or directory
@@ -459,12 +463,11 @@ class ImageForm(ModelForm, ImageValidationMixin):
         required=False, label='.hdr part of the map (if applicable)', widget=AdminResubmitFileWidget)
 
     def __init__(self, *args, **kwargs):
-        super(ImageForm, self).__init__(*args, **kwargs)
+        ImageValidationMixin.__init__(self, *args, **kwargs)
+        ModelForm.__init__(self, *args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
         self.helper.form_tag = False
-        self.afni_subbricks = []
-        self.afni_tmp = None
 
     class Meta:
         model = Image
@@ -476,6 +479,7 @@ class ImageForm(ModelForm, ImageValidationMixin):
 
     def clean(self, **kwargs):
         cleaned_data = super(ImageForm, self).clean()
+        cleaned_data["tags"] = clean_tags(cleaned_data)
         return self.clean_and_validate(cleaned_data)
 
 
@@ -759,7 +763,6 @@ class NIDMResultsValidationMixin(object):
         data['name'] = base_subdir if nres == 0 else safe_name
 
         ttl_name = os.path.split(self.nidm.ttl.filename)[-1]
-        provn_name = os.path.split(self.nidm.provn.filename)[-1]
 
         data['ttl_file'] = InMemoryUploadedFile(
             # fix ttl for spm12
@@ -769,15 +772,6 @@ class NIDMResultsValidationMixin(object):
             name=ttl_name,
             content_type='text/turtle',
             size=self.nidm.ttl.file_size,
-            charset='utf-8'
-        )
-
-        data['provn_file'] = InMemoryUploadedFile(
-            file=ContentFile(self.nidm.zip.read(self.nidm.provn)),
-            field_name='file',
-            name=provn_name,
-            content_type='text/provenance-notation',
-            size=self.nidm.provn.file_size,
             charset='utf-8'
         )
 
@@ -850,7 +844,7 @@ class NIDMResultsForm(forms.ModelForm, NIDMResultsValidationMixin):
     def __init__(self, *args, **kwargs):
         super(NIDMResultsForm, self).__init__(*args, **kwargs)
 
-        for fld in ['ttl_file', 'provn_file']:
+        for fld in ['ttl_file']:
             if self.instance.pk is None:
                 self.fields[fld].widget = HiddenInput()
             else:
@@ -873,6 +867,7 @@ class NIDMResultsForm(forms.ModelForm, NIDMResultsValidationMixin):
 
     def clean(self):
         cleaned_data = super(NIDMResultsForm, self).clean()
+        cleaned_data["tags"] = clean_tags(cleaned_data)
         # only process new uploads or replaced zips
         if self.instance.pk is None or 'zip_file' in self.changed_data:
             self.cleaned_data = self.clean_and_validate(cleaned_data)
@@ -905,7 +900,7 @@ class NIDMViewForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(NIDMViewForm, self).__init__(*args, **kwargs)
 
-        for fld in ['ttl_file', 'provn_file', 'zip_file']:
+        for fld in ['ttl_file', 'zip_file']:
             self.fields[fld].widget = PathOnlyWidget()
         for fld in self.fields:
             self.fields[fld].widget.attrs['readonly'] = 'readonly'

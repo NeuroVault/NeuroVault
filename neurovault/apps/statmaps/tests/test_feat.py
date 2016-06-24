@@ -1,15 +1,16 @@
-from django.test import TestCase, Client
-from neurovault.apps.statmaps.models import Collection,User
-import tempfile
 import os
 import shutil
-from django.core.files.uploadedfile import SimpleUploadedFile
-from neurovault.apps.statmaps.forms import NIDMResultsForm
-from neurovault.apps.statmaps.utils import detect_feat_directory, get_traceback
-from nidmfsl.fsl_exporter.fsl_exporter import FSLtoNIDMExporter
-from neurovault.apps.statmaps.nidm_results import NIDMUpload
+import tempfile
 import urllib
 import zipfile
+
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase, Client
+from nidmfsl.fsl_exporter.fsl_exporter import FSLtoNIDMExporter
+
+from neurovault.apps.statmaps.forms import NIDMResultsForm
+from neurovault.apps.statmaps.models import Collection,User
+from neurovault.apps.statmaps.utils import detect_feat_directory
 from .utils import clearDB
 
 
@@ -87,41 +88,25 @@ class FeatDirectoryTest(TestCase):
                 if detect_feat_directory(root):
                     print 'Found FEAT directory at {}.'.format(root)
                     info['found_feat'] = True
-                    try:
-                        fslnidm = FSLtoNIDMExporter(feat_dir=root, version="0.2.0")
-                        fslnidm.parse()
-                        export_dir = fslnidm.export()
-                        ttl_file = os.path.join(export_dir,'nidm.ttl')
-                    except:
-                        print("Unable to parse the FEAT directory: \n{0}.".format(get_traceback()))
+                    fslnidm = FSLtoNIDMExporter(feat_dir=root, version="1.2.0")
+                    fslnidm.parse()
+                    info['nidm_file'] = fslnidm.export()
 
                     # confirm results path and existence
-                    self.assertTrue(os.path.exists(export_dir))
-                    self.assertEquals(os.path.join(info['dir'],info['export_dir']),export_dir)
-
-                    # incomplete ttl = failure in processing
-                    self.assertGreaterEqual(os.path.getsize(ttl_file),info['ttl_fsize'])
+                    self.assertTrue(os.path.exists(info['nidm_file']))
 
         # test upload nidm
         for fname, info in self.testfiles.items():
 
-            nidm_zpath = os.path.join(self.tmpdir,'{}.nidm.zip'.format(fname.replace('.zip','')))
-            nidm_zip = zipfile.ZipFile(nidm_zpath, 'w')
-
-            for root, dirs, files in os.walk(os.path.join(info['dir'],info['export_dir'])):
-                for nfile in files:
-                    nidm_zip.write(os.path.join(root, nfile))
-            nidm_zip.close()
-
-            zname = os.path.basename(nidm_zip.filename)
+            zname = os.path.basename(info['nidm_file'])
             post_dict = {
                 'name': zname,
-                'description':'{0} upload test'.format(zname),
-                'collection':self.coll.pk,
+                'description': '{0} upload test'.format(zname),
+                'collection': self.coll.pk,
             }
             
 
-            file_dict = {'zip_file': SimpleUploadedFile(zname, open(nidm_zpath,'r').read())}
+            file_dict = {'zip_file': SimpleUploadedFile(zname, open(info['nidm_file'],'r').read())}
             form = NIDMResultsForm(post_dict, file_dict)
 
             # validate NIDM Results

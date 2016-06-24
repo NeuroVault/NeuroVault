@@ -574,11 +574,6 @@ class NIDMResults(BaseCollectionItem):
                     null=True, blank=True,
                     verbose_name='Turtle serialization of NIDM Results (.ttl)')
 
-    provn_file = models.FileField(upload_to=upload_nidm_to,
-                    storage=NIDMStorage(),
-                    null=False, blank=True,
-                    verbose_name='Provenance store serialization of NIDM Results (.provn)')
-
     zip_file = models.FileField(upload_to=upload_nidm_to,
                     storage=NIDMStorage(),
                     null=False, blank=False, verbose_name='NIDM Results zip file')
