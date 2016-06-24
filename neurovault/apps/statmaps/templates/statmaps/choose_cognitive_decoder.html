@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load static from staticfiles %}
+{% block head %}
+<script type="text/javascript" src="{% static "scripts/papaya.js"%}"/>
+<script src="{% static "scripts/jquery-1.10.2.min.js"%}" type="text/javascript"></script>
+<script src="{% static "scripts/bootstrap.min.js"%}" type="text/javascript"></script>
+<link href="http://netdna.bootstrapcdn.com/font-awesome/3.1.1/css/font-awesome.css" rel="stylesheet">
+
+<title>{% block title %}Atlases and parcellations{% endblock %}</title>
+
+<!-- Fix for dropdown menus -->
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+<script src="{% static "scripts/jquery.cookie.js"%}" type="text/javascript"></script>
+<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+<script src="//cdn.datatables.net/1.10.7/js/jquery.dataTables.min.js" type="text/javascript"></script>
+<script src="//cdn.datatables.net/plug-ins/1.10.7/integration/bootstrap/3/dataTables.bootstrap.js" type="text/javascript"></script>
+<link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+<link rel="stylesheet" href="{% static "css/style.css" %}" />
+<link rel="stylesheet" type="text/css" href="/static/css/papaya.css" />
+
+
+{% endblock %}
+
+{% block content %}
+<div class="fade"></div>
+
+<!-- Meta data and header row-->
+<div class="row">
+        <h2>Choose cognitive decoding method</h2>
+</div>
+<div class="row">
+<ul>
+    <li><a href="{% url 'cognitive_decoder' pk 'yarkoni' %}">Yarkoni et. al (submitted)</a> - 200 components
+        used to decode 5000 cognitive terms. Terms were derived in an automatic way from the literature and correspond
+        to the Neurosynth terms. Components were derived from the Neurosynth database.
+    <li><a href="{% url 'cognitive_decoder' pk 'yeo' %}">Yeo et. al (????)</a> - 12 components
+        used to decode 83 cognitive task. Task come from the Cognitive Paradigm Ontology (CogPO). Components were
+        derived from the BrainMap database.</li>
+</ul>
+</div>
+
+{% endblock %}

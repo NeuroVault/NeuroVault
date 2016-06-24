@@ -1034,6 +1034,17 @@ def gene_expression_json(request, pk, collection_cid=None):
     del dict["index"]
     return JSONResponse(dict)
 
+def cognitive_decoder_json(request, pk, method, collection_cid=None):
+    image = get_image(pk, collection_cid, request)
+
+    if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
+        image = save_resampled_transformation_single(image.id)
+
+    map_data = np.load(image.reduced_representation.file)
+    #expression_results = calculate_gene_expression_similarity(map_data)
+    #dict = expression_results.to_dict("split")
+    return ""#JSONResponse(dict)
+
 # Return search interface
 def search(request,error_message=None):
     cogatlas_task = CognitiveAtlasTask.objects.all()

@@ -16,7 +16,7 @@ from .views import edit_collection, view_image, delete_image, edit_image, \
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
                 view_nidm_results, find_similar, compare_images, edit_metadata, \
                 export_images_filenames, delete_nidm_results, view_task, search, gene_expression_json, \
-                gene_expression, spatial_regression_select
+                gene_expression, spatial_regression_select, cognitive_decoder_json
 
 urlpatterns = patterns('',
     url(r'^my_collections/$',
@@ -104,6 +104,15 @@ urlpatterns = patterns('',
     url(r'^images/add_for_neuropower$',
         add_image_for_neuropower,
         name='add_for_neuropower'),
+    url(r'^images/(?P<pk>\d+)/choose_cognitive_decoder$',
+        TemplateView.as_view(template_name="statmaps/choose_cognitive_decoder.html"),
+        name="choose_cognitive_decoder"),
+    url(r'^images/(?P<pk>\d+)/cognitive_decoder_(?P<method>[A-Za-z0-9]+)$',
+        TemplateView.as_view(template_name="statmaps/cognitive_decoder.html"),
+        name="cognitive_decoder"),
+    url(r'^images/(?P<pk>\d+)/cognitive_decoder_json_(?P<method>[A-Za-z0-9]+)$',
+        cognitive_decoder_json,
+        name="cognitive_decoder_json"),
     url(r'^images/(?P<pk>\d+)/js/embed$',
         papaya_js_embed,
         name='papaya_js_embed'),

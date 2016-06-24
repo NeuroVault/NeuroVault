@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load coffeescript %}
+
+{% block head %}
+<title>{% block title %}Cognitive decoding: ({ image.name }}{% endblock %}</title>
+    <script src="//cdn.datatables.net/plug-ins/1.10.11/sorting/natural.js" type="text/javascript"></script>
+    <script>
+        $(document).ready(function() {
+          var prevSearch;
+    	  var saveState = true;
+    	  var captured = /q=([^&]+)/.exec(window.location.href);
+          var result = captured ? captured[1] : '';
+          var base_url = captured != '' ? window.location.href.split("?")[0] : window.location.href;
+          $('#genes-table').dataTable({
+                    "bJQueryUI": true,
+                    iDisplayLength: 25,
+        			"ajax": "{% url 'cognitive_decoder_json' pk=image.pk method=method %}",
+        			"order": [[ 1, "dsc" ]],
+        			"oSearch":{"sSearch":result},
+					"fnDrawCallback": function (oSettings) {
+						var curSearch = oSettings.oPreviousSearch.sSearch;
+						history.replaceState({query:curSearch}, "title", base_url+"?q=" + curSearch);
+					}
+				});
+       });
+
+    </script>
+
+{% endblock %}
+
+{% block content %}
+.row
+	.span11
+		%h2 Cognitive decoding of the <a href="{{ image.get_absolute_url }}">{{ image.name }}</a> statistical map
+
+		%table#genes-table.table.table-condensed.table-striped.table-hover
+			%thead
+				%tr
+					%th Term
+					%th Strength
+.row
+	.span11
+		%p <strong>About</strong>
+		%div.well
+			This map has been compared with gene expression data obtained from <a href="http://human.brain-map.org/">Allen Human Brain Atlas</a>. For every
+			gene and each of the six brains donated to the Allen Brain Institute a linear model has been fitted to see
+			how similar they are to the evaluated map. A one sample t test has been used see how consistent the relation
+			between the gene expression and evaluated map values are across the six donated brains. To account for
+			the number of tested genes False Discovery Rate correction has been applied.
+{% endblock %}

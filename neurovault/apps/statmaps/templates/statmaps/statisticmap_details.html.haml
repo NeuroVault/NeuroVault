@@ -68,20 +68,20 @@ a.disabled-link:hover {
 
          var filename = "{{ image.file.url }}".replace(/^.*[\\\/]/, '')
     - if image.map_type == "Pa"
-      :javascript
-         params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ image.file.url|urlencode }}"];
-         params[filename] = {"parametric": true,  "lut":"Spectrum", "alpha":"0.75", minPercent: 0.0, maxPercent: 1.0};
+        :javascript
+          params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ image.file.url|urlencode }}"];
+          params[filename] = {"parametric": true,  "lut":"Spectrum", "alpha":"0.75", minPercent: 0.0, maxPercent: 1.0};
     - elif image.map_type == "R"
-      :javascript
-         params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ image.file.url|urlencode }}"];
-         params[filename] = {"parametric": true,  "lut":"Overlay (Negatives)", "alpha":"0.75", minPercent: 0.0, maxPercent: 1.0};
+        :javascript
+          params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ image.file.url|urlencode }}"];
+          params[filename] = {"parametric": true,  "lut":"Overlay (Negatives)", "alpha":"0.75", minPercent: 0.0, maxPercent: 1.0};
     - elif image.map_type == "A"
-      :javascript
-         params["images"] = ["{{ image.file.url|urlencode }}"];
+        :javascript
+          params["images"] = ["{{ image.file.url|urlencode }}"];
     - else
-      :javascript
-         params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ image.file.url|urlencode }}"];
-         params[filename] = {"parametric": true,  "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric": true};
+        :javascript
+          params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ image.file.url|urlencode }}"];
+          params[filename] = {"parametric": true,  "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric": true};
     :javascript
         {% inlinecoffeescript %}
             $(document).ready ->
@@ -155,9 +155,9 @@ a.disabled-link:hover {
                     %span.caret
                 %ul.dropdown-menu
                     %li
-                        %a{:href => "http://neurosynth.org/decode/?neurovault={{ api_cid }}"}
+                        %a{:href => "{% url 'choose_cognitive_decoder' image.id %}"}
                             %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Cognitive decoding using coordiante based data collected from thousands of papers."}
-                                Cognitive decoding (neurosynth)
+                                Cognitive decoding
                     - if comparison_is_possible
                         %li
                             %a{:href => "{% url 'find_similar' image.id %}"}
