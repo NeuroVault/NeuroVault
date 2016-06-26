@@ -43,6 +43,7 @@ from neurovault.apps.statmaps.forms import CollectionForm, UploadFileForm, Simpl
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
 from neurovault.apps.statmaps.models import Collection, Image, Atlas, StatisticMap, NIDMResults, NIDMResultStatisticMap, \
     CognitiveAtlasTask, CognitiveAtlasContrast, BaseStatisticMap
+from neurovault.apps.statmaps.neurovault_decoder import image_to_words
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
@@ -1041,6 +1042,14 @@ def cognitive_decoder_json(request, pk, method, collection_cid=None):
         image = save_resampled_transformation_single(image.id)
 
     map_data = np.load(image.reduced_representation.file)
+    if method == "yeo2015":
+        component_maps = []
+        term_probs = []
+        col = Collection.objects.get(name='Yeo et. al 12 components')
+        for map in col.basecollectionitem_set.all():
+            component_maps.append(np.load(map.reduced_representation.file))
+            term_probs.append(map.data)
+    image_to_words(map_data, component_maps, term_probs)
     #expression_results = calculate_gene_expression_similarity(map_data)
     #dict = expression_results.to_dict("split")
     return ""#JSONResponse(dict)

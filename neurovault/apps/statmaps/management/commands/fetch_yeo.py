@@ -14,7 +14,7 @@ class Command(BaseCommand):
 
         tmpdir = tempfile.mkdtemp()
         dst = os.path.join(tmpdir, "yeo.zip")
-        prind "downloading maps"
+        print "downloading maps"
         urllib.urlretrieve("ftp://surfer.nmr.mgh.harvard.edu/pub/data/Yeo_CerebCortex2015_Brainmap.zip", dst)
 
         z = zipfile.ZipFile(dst)
@@ -25,7 +25,7 @@ class Command(BaseCommand):
         weights_file = z.extract('YeoBrainmapMNI152/FSL/Yeo_12Comp_PrCompGivenTasks.csv',
                                         os.path.join(tmpdir, "12maps.csv"))
 
-        user = User.objects.get(username="test")
+        user = User.objects.get(username="neurovault")
         try:
             collection = Collection(name='Yeo et. al 12 components', owner=user)
             collection.save()
