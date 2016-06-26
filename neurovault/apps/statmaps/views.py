@@ -605,9 +605,7 @@ def upload_folder(request, collection_cid):
                     dname = name + ".nii.gz"
                     spaced_name = name.replace('_',' ').replace('-',' ')
 
-                    squeezable_dimensions = len(
-                        filter(lambda a: a not in [0, 1], nii.shape)
-                    )
+                    squeezable_dimensions = len([a for a in nii.shape if a not in [0, 1]])
 
                     if (ext.lower() != ".nii.gz" or squeezable_dimensions < len(nii.shape)):
 
