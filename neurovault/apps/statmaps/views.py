@@ -576,7 +576,7 @@ def upload_folder(request, collection_cid):
                             if detect_4D(nii):
                                 niftiFiles.extend(split_4D_to_3D(nii))
                             else:
-                                niftiFiles.append((fname,nii_path))
+                                niftiFiles.append((fname, nii_path))
 
                 for label,fpath in niftiFiles:
                     # Read nifti file information
@@ -605,7 +605,17 @@ def upload_folder(request, collection_cid):
                     dname = name + ".nii.gz"
                     spaced_name = name.replace('_',' ').replace('-',' ')
 
-                    if ext.lower() != ".nii.gz":
+                    squeezable_dimensions = len(
+                        filter(lambda a: a not in [0, 1], nii.shape)
+                    )
+
+                    if (ext.lower() != ".nii.gz" or squeezable_dimensions < len(nii.shape)):
+
+                        if squeezable_dimensions < len(nii.shape):
+                            new_data = np.squeeze(nii.get_data())
+                            nii = nib.Nifti1Image(new_data, nii.get_affine(),
+                                                  nii.get_header())
+
                         new_file_tmp_dir = tempfile.mkdtemp()
                         new_file_tmp = os.path.join(new_file_tmp_dir, name) + '.nii.gz'
                         nib.save(nii, new_file_tmp)
