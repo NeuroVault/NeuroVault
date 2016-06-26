@@ -1014,6 +1014,8 @@ def gene_expression(request, pk, collection_cid=None):
     :param collection_cid: statmaps.models.Collection.pk the primary key of the collection. Default None
     '''
     image = get_image(pk, collection_cid, request)
+    if image.is_thresholded:
+        raise Http404
     api_cid = pk
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
@@ -1026,6 +1028,8 @@ def gene_expression(request, pk, collection_cid=None):
 
 def gene_expression_json(request, pk, collection_cid=None):
     image = get_image(pk, collection_cid, request)
+    if image.is_thresholded:
+        raise Http404
 
     if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
         image = save_resampled_transformation_single(image.id)
