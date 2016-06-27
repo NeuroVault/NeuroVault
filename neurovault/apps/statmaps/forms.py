@@ -406,9 +406,7 @@ class ImageValidationMixin(object):
                 if nii is not None and detect_4D(nii):
                     self.afni_subbricks = split_4D_to_3D(nii, tmp_dir=tmp_dir)
                 else:
-                    squeezable_dimensions = len(
-                        filter(lambda a: a not in [0, 1], nii.shape)
-                    )
+                    squeezable_dimensions = len([a for a in nii.shape if a not in [0, 1]])
 
                     if squeezable_dimensions != 3:
                         self._errors["file"] = self.error_class(
