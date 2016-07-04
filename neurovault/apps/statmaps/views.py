@@ -1002,7 +1002,7 @@ def find_similar_json(request, pk, collection_cid=None):
 
     image1 = get_image(pk, None, request)
     pk = int(pk)
-    max_results = 100
+    max_results = float("inf")
 
     # Search only enabled if the image is not thresholded
     if image1.is_thresholded:
