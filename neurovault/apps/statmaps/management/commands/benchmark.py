@@ -1,9 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
-from django.test.client import RequestFactory
-from neurovault.apps.statmaps.tests.utils import clearDB
+from neurovault.apps.statmaps.tests.utils import clearDB, save_statmap_form
 from neurovault.apps.statmaps.models import User, Collection
-from neurovault.apps.statmaps.views import find_similar
-from neurovault.apps.statmaps.tests.utils import save_statmap_form
+from neurovault.apps.statmaps.utils import get_similar_images
 
 import os
 import gc
@@ -74,12 +72,12 @@ class Command(BaseCommand):
                     image_name=file,
                     ignore_file_warning=True)
             index_table[i] = t.interval
-            np.save(os.path.join(app_path, 'results_index'+ str(datetime.datetime.utcnow())[:10]), index_table)
+            np.savetxt(os.path.join(app_path, 'results_index'+ str(datetime.datetime.utcnow())[:10] + '.csv'),
+                       index_table, delimiter=",")
 
-            factory = RequestFactory()
-            request = factory.get('/images/' + str(i) + '/find_similar')
             t = Timer()
             with t:
-                _dummy = find_similar(request, image.pk)
+                _dummy = get_similar_images(int(image.pk))
             query_table[i] = t.interval
-            np.save(os.path.join(app_path, 'results_query' + str(datetime.datetime.utcnow())[:10]), query_table)
+            np.savetxt(os.path.join(app_path, 'results_query' + str(datetime.datetime.utcnow())[:10] + '.csv'),
+                       query_table, delimiter=",")
