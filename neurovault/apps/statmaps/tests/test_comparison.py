@@ -9,7 +9,7 @@ from numpy.testing import assert_almost_equal, assert_equal
 from neurovault.apps.statmaps.models import Comparison, Similarity, User, Collection, Image
 from neurovault.apps.statmaps.tasks import save_voxelwise_pearson_similarity, get_images_by_ordered_id, save_resampled_transformation_single
 from neurovault.apps.statmaps.tests.utils import clearDB, save_statmap_form
-from neurovault.apps.statmaps.utils import split_4D_to_3D
+from neurovault.apps.statmaps.utils import split_4D_to_3D, get_similar_images
 
 
 class ComparisonTestCase(TestCase):
@@ -163,7 +163,7 @@ class ComparisonTestCase(TestCase):
         comparison = Comparison.objects.filter(image1=private_image1,image2=private_image2)
         self.assertEqual(len(comparison), 1)
 
-    def test_add_DOI(self):
+    def test_add_DOI(self): # these collections are actually not private
         private_collection1 = Collection(name='privateCollection1', owner=self.u1, private=False)
         private_collection1.save()
         private_collection2 = Collection(name='privateCollection2', owner=self.u1, private=False)
@@ -187,3 +187,27 @@ class ComparisonTestCase(TestCase):
         print private_collection.basecollectionitem_set.instance_of(Image).all()
         comparison = Comparison.objects.filter(image1=private_image1,image2=private_image2)
         self.assertEqual(len(comparison), 1)
+
+    def test_get_similar_images(self):
+        collection1 = Collection(name='Collection1', owner=self.u1,
+                                 DOI='10.3389/fninf.2015.00099')
+
+        collection1.save()
+        collection2 = Collection(name='Collection2', owner=self.u1,
+                                 DOI='10.3389/fninf.2015.00089')
+        collection2.save()
+
+        app_path = os.path.abspath(os.path.dirname(__file__))
+        image1 = save_statmap_form(image_path=os.path.join(app_path, 'test_data/statmaps/all.nii.gz'),
+                                           collection=collection1,
+                                           image_name="image1")
+        image2 = save_statmap_form(image_path=os.path.join(app_path, 'test_data/statmaps/all.nii.gz'),
+                                           collection=collection2,
+                                           image_name="image2")
+
+
+        similar_images = get_similar_images(int(image1.pk))
+
+        print "Success for this test means the pandas DataFrame shows the copy in first position with score of 1"
+        self.assertEqual(similar_images['image_id'][0], int(image2.pk))
+        self.assertEqual(similar_images['score'][0], 1)
