@@ -163,29 +163,29 @@ class ComparisonTestCase(TestCase):
         comparison = Comparison.objects.filter(image1=private_image1,image2=private_image2)
         self.assertEqual(len(comparison), 1)
 
-    def test_add_DOI(self): # these collections are actually not private
-        private_collection1 = Collection(name='privateCollection1', owner=self.u1, private=False)
-        private_collection1.save()
-        private_collection2 = Collection(name='privateCollection2', owner=self.u1, private=False)
-        private_collection2.save()
+    def test_add_DOI(self):
+        collection1 = Collection(name='Collection1', owner=self.u1, private=False)
+        collection1.save()
+        collection2 = Collection(name='Collection2', owner=self.u1, private=False)
+        collection2.save()
 
         app_path = os.path.abspath(os.path.dirname(__file__))
-        private_image1 = save_statmap_form(image_path=os.path.join(app_path,'test_data/statmaps/all.nii.gz'),
-                                           collection=private_collection1,
-                                           image_name = "image1")
-        private_image2 = save_statmap_form(image_path=os.path.join(app_path,'test_data/statmaps/motor_lips.nii.gz'),
-                                           collection=private_collection2,
-                                           image_name = "image2")
-        comparison = Comparison.objects.filter(image1=private_image1,image2=private_image2)
+        image1 = save_statmap_form(image_path=os.path.join(app_path,'test_data/statmaps/all.nii.gz'),
+                                   collection=collection1,
+                                   image_name = "image1")
+        image2 = save_statmap_form(image_path=os.path.join(app_path,'test_data/statmaps/motor_lips.nii.gz'),
+                                   collection=collection2,
+                                   image_name = "image2")
+        comparison = Comparison.objects.filter(image1=image1,image2=image2)
         self.assertEqual(len(comparison), 0)
 
         print "without DOI: %s"%Comparison.objects.all().count()
-        private_collection = Collection.objects.get(pk=private_collection1.pk)
-        private_collection.DOI = '10.3389/fninf.2015.00020'
-        private_collection.save()
+        collection = Collection.objects.get(pk=collection1.pk)
+        collection.DOI = '10.3389/fninf.2015.00020'
+        collection.save()
         print "with DOI: %s"%Comparison.objects.all().count()
-        print private_collection.basecollectionitem_set.instance_of(Image).all()
-        comparison = Comparison.objects.filter(image1=private_image1,image2=private_image2)
+        print collection.basecollectionitem_set.instance_of(Image).all()
+        comparison = Comparison.objects.filter(image1=image1,image2=image2)
         self.assertEqual(len(comparison), 1)
 
     def test_get_similar_images(self):
@@ -204,7 +204,6 @@ class ComparisonTestCase(TestCase):
         image2 = save_statmap_form(image_path=os.path.join(app_path, 'test_data/statmaps/all.nii.gz'),
                                            collection=collection2,
                                            image_name="image2")
-
 
         similar_images = get_similar_images(int(image1.pk))
 
