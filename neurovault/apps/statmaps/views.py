@@ -1049,10 +1049,9 @@ def cognitive_decoder_json(request, pk, method, collection_cid=None):
         for map in col.basecollectionitem_set.all():
             component_maps.append(np.load(map.reduced_representation.file))
             term_probs.append(map.data)
-    image_to_words(map_data, component_maps, term_probs)
-    #expression_results = calculate_gene_expression_similarity(map_data)
-    #dict = expression_results.to_dict("split")
-    return ""#JSONResponse(dict)
+    results = image_to_words(map_data, component_maps, term_probs)
+    dict = results.to_dict()
+    return JSONResponse(dict)
 
 # Return search interface
 def search(request,error_message=None):

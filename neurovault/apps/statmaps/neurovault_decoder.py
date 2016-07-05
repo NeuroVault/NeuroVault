@@ -26,7 +26,7 @@ def image_to_words(target, act_probs, term_probs, prior=None, limit=None):
     # Convert inputs to 2-d format
     act_probs = list(map(lambda x: x[:, np.newaxis] if x.ndim == 1 else x, act_probs))
     act_probs = np.concatenate(act_probs, axis=1)
-    term_probs = pd.DataFrame.from_records(term_probs).T
+    term_probs = pd.DataFrame.from_dict(term_probs, dtype="float").T
 
     # Replace NaNs in act_probs, and remove any voxels missing in the target.
     # We might also want to track and return the number of valid voxels used.
@@ -48,8 +48,9 @@ def image_to_words(target, act_probs, term_probs, prior=None, limit=None):
 
     # Multiply topic weights by P(W|T) to get results, and return
     # as a pandas Series.
-    results = topic_weights.dot(term_probs.T.values)
-    results = pd.Series(results, index=term_probs.index)
+    results_dot = topic_weights.dot(term_probs.T.values)
+    results_series = pd.Series(results_dot, index=term_probs.index)
     if limit is not None:
-        results = results.sort_values(ascending=False)[:limit]
-    return results
+        results_series = results_series.sort_values(ascending=False)[:limit]
+    raise
+    return results_series

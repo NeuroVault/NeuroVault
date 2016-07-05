@@ -47,7 +47,7 @@ class Command(BaseCommand):
             c_id = int(map.name.split("volume ")[1][:-1])
             d = {}
             for j, name in enumerate(df['Tasks']):
-                d[name] = df['Pr(Comp %d | Task)'%c_id][j]
+                d[name] = float(df['Pr(Comp %d | Task)'%c_id][j])
             d['component number'] = c_id
             map.data = d
             map.save()

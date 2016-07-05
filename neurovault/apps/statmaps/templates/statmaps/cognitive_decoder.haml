@@ -14,7 +14,7 @@
           $('#genes-table').dataTable({
                     "bJQueryUI": true,
                     iDisplayLength: 25,
-        			"ajax": "{% url 'cognitive_decoder_json' pk=image.pk method=method %}",
+        			"ajax": "{% url 'cognitive_decoder_json' pk method %}",
         			"order": [[ 1, "dsc" ]],
         			"oSearch":{"sSearch":result},
 					"fnDrawCallback": function (oSettings) {
