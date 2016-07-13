@@ -178,7 +178,7 @@ def generate_glassbrain_image(image_pk):
 
 # Save 4mm, brain masked image vector in pkl file in image folder
 @shared_task
-def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
+def save_resampled_transformation_single(pk1, resample_dim=[16, 16, 16]):
     from neurovault.apps.statmaps.models import Image
     from six import BytesIO
     import numpy as np
