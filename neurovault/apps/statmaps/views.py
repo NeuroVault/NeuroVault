@@ -955,13 +955,12 @@ def find_similar(request, pk):
 
         # We will need lists of image ids, png paths, query id, query path, tags, names, scores
         similar_images = get_similar_images(pk, max_results)
-        image_ids = [image1.pk] + similar_images['image_id'].tolist()
+        image_ids = [image1.pk] + similar_images['image_id'].astype(int).tolist()
         scores = [1] + similar_images['score'].tolist()
         png_img_paths = [image1.get_thumbnail_url()] + similar_images['png_img_path'].tolist()
         tags = [[str(image1.map_type)]] + similar_images['tag'].tolist()
         names = [image1.name] + similar_images['name'].tolist()
         collection_names = [image1.collection.name] + similar_images['collection_name'].tolist()
-
 
         # The top text will be the collection name, the bottom text the image name
         bottom_text = names
@@ -1002,7 +1001,7 @@ def find_similar_json(request, pk, collection_cid=None):
 
     image1 = get_image(pk, None, request)
     pk = int(pk)
-    max_results = Image.objects.all().count()  # image number will always be higher than comparison number
+    max_results = 100
 
     # Search only enabled if the image is not thresholded
     if image1.is_thresholded:
