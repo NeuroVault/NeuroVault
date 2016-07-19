@@ -14,7 +14,7 @@ def change_resample_dim(apps, schema_editor):
 
         try:
             os.path.exists(str(image.reduced_representation.file))
-            image.reduced_representation = save_resampled_transformation_single(image.pk,  resample_dim=[4, 4, 4])
+            image.reduced_representation = save_resampled_transformation_single(image.pk,  resample_dim=[16, 16, 16])
         except ValueError:
             print "This image needs no resampling due to not previous resampled transformation"
 
