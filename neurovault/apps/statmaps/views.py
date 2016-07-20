@@ -999,9 +999,13 @@ def find_similar(request, pk):
 
 def find_similar_json(request, pk, collection_cid=None):
 
+    limit = 500 # maximum number of Comparisons allowed to retrieve
+    max_results = int(request.GET.get('q', '100'))
+    if max_results > limit:
+        max_results = limit
+
     image1 = get_image(pk, None, request)
     pk = int(pk)
-    max_results = 100
 
     # Search only enabled if the image is not thresholded
     if image1.is_thresholded:

@@ -156,7 +156,7 @@ urlpatterns = patterns('',
     url(r'^images/(?P<pk>\d+)/find_similar$',
         find_similar,
         name='find_similar'),
-    url(r'^images/(?P<pk>\d+)/find_similar/json$',
+    url(r'^images/(?P<pk>\d+)/find_similar/json/$',
         find_similar_json,
         name='find_similar_json'),
 
