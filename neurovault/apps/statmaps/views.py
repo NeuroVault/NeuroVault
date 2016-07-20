@@ -1007,8 +1007,17 @@ def find_similar2(request, pk):
         error_message = "Image comparison is not enabled for thresholded images."
         context = {'error_message': error_message}
         return render(request, 'statmaps/error_message.html', context)
+
+    image_title = format_image_collection_names(image_name=image1.name,
+                                                    collection_name=image1.collection.name,
+                                                    map_type=image1.map_type, total_length=50)
+    # Here is the query image
+    query_png = image1.thumbnail.url
+
     context = {
-        'image': image1
+        'image': image1,
+        'image_title': image_title,
+        'query_png': query_png
     }
     template = 'statmaps/compare_search2.html.haml'
     return render(request, template, context)

@@ -5,29 +5,31 @@
 <title>{% block title %} Similarity search {% endblock %}</title>
     <script>
        $(document).ready(function() {
-          var prevSearch;
-    	  var saveState = true;
-    	  var captured = /q=([^&]+)/.exec(window.location.href);
-          var result = captured ? captured[1] : '';
-          var base_url = captured  != '' ? window.location.href.split("?")[0] : window.location.href;
-          $('#collections-table').dataTable({
-                    "bJQueryUI": true,
+          $('#similarity-table').dataTable({
+          			bFilter: false,
+          			bInfo: false,
+          			lengthChange: false,
+          			paging: false,
                     sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>",
-                    iDisplayLength: 25,
-                    aoColumns: [ { sWidth: '40%' }, { sWidth: '10%'}, { sWidth: '45%'}, { sWidth: '5%'}],
-                    "processing": true,
-        			"serverSide": true,
+                    aoColumns: [ { sWidth: '40%' }, { sWidth: '0%'}, { sWidth: '20%'}, { sWidth: '30%'}, { sWidth: '10%'}, { sWidth: '5%'}],
         			"columnDefs": [
-    					{ "orderable": false, "targets": 1 },
-    					{ "orderable": false, "targets": 3 },
-  					],
-        			"order": [[ 0, "asc" ]],
-        			"ajax": "{% url 'collections_list_json' %}",
-        			"oSearch":{"sSearch":result},
-					"fnDrawCallback": function (oSettings) {
-						var curSearch = oSettings.oPreviousSearch.sSearch;
-						history.replaceState({query:curSearch}, "title", base_url+"?q=" + curSearch);
-					}
+									{
+										"render": function ( data, type, row ) {
+										return "<a href='http://www.neurovault.org/images/" + row[1] +"'>" + data + "</a>";
+										},
+										"targets":[ 2 ]
+									},
+									{
+										"render": function ( data, type, row ) {
+										return "<img src=" + data + " />";
+										},
+										"targets":[ 3 ]
+									},
+    								{ "orderable": false, "targets": 3 },
+    								{ "targets": [ 1 ], "visible": false },
+  									],
+        			"order": [[ 4, "desc" ]],
+        			"ajax": "{% url 'find_similar_json' pk=image.pk %}",
 				});
        });
     </script>
@@ -38,19 +40,20 @@
 {% block content %}
 .row
 	.span11
-		%h2 Similarity search of the <a href="{{ image.get_absolute_url }}">{{ image.name }}</a> statistical map
+		%h2 Similarity search
+		%h3 <a href="{{ image.get_absolute_url }}">{{ image_title }}</a> <img src="{{ query_png }} " />
 
-		%table#genes-table.table.table-condensed.table-striped.table-hover
+
+		%table#similarity-table.table.table-condensed.table-striped.table-hover
 			%thead
 				%tr
-					%th Symbol
-					%th entrez_id
+					%th Collection
+					%th ID
 					%th Name
-					%th t
-					%th p
-					%th p&nbsp;(corr)
-					%th Variance explained [%]
-					%th ± [%]
+					%th png
+					%th score
+					%th tag
+
 .row
 	.span11
 		%p <strong>About</strong>
