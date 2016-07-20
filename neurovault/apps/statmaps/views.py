@@ -997,6 +997,24 @@ def find_similar(request, pk):
         return render(request, 'statmaps/error_message.html', context)
 
 
+def find_similar2(request, pk):
+    image1 = get_image(pk, None, request)
+    pk = int(pk)
+    max_results = 10
+
+    # Search only enabled if the image is not thresholded
+    if image1.is_thresholded:
+        error_message = "Image comparison is not enabled for thresholded images."
+        context = {'error_message': error_message}
+        return render(request, 'statmaps/error_message.html', context)
+    context = {
+        'image': image1
+    }
+    template = 'statmaps/compare_search2.html.haml'
+    return render(request, template, context)
+
+
+
 def find_similar_json(request, pk, collection_cid=None):
 
     limit = 500 # maximum number of Comparisons allowed to retrieve
