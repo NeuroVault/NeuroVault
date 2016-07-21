@@ -48,9 +48,12 @@ def image_to_words(target, act_probs, term_probs, prior=None, limit=None):
 
     # Multiply topic weights by P(W|T) to get results, and return
     # as a pandas Series.
+    print np.isnan(term_probs.T.values).any()
+    print np.isnan(term_probs.T.values).sum()
+    for i in range(12):
+        print term_probs.T.values[i,:]
     results_dot = topic_weights.dot(term_probs.T.values)
     results_series = pd.Series(results_dot, index=term_probs.index)
     if limit is not None:
         results_series = results_series.sort_values(ascending=False)[:limit]
-    raise
     return results_series

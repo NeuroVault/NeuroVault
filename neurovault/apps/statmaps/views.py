@@ -34,6 +34,7 @@ from rest_framework.renderers import JSONRenderer
 from sendfile import sendfile
 from sklearn.externals import joblib
 from xml.dom import minidom
+import pandas as pd
 
 import neurovault
 from neurovault import settings
@@ -1045,12 +1046,19 @@ def cognitive_decoder_json(request, pk, method, collection_cid=None):
     if method == "yeo2015":
         component_maps = []
         term_probs = []
-        col = Collection.objects.get(name='Yeo et. al 12 components')
+        col = Collection.objects.get(name='Yeo et. al 14 components')
         for map in col.basecollectionitem_set.all():
+            print map
             component_maps.append(np.load(map.reduced_representation.file))
+            print map.data
+            d = map.data
+            del d["component number"]
             term_probs.append(map.data)
     results = image_to_words(map_data, component_maps, term_probs)
-    dict = results.to_dict()
+    df =  pd.DataFrame(results, columns=["weight"])
+    df["term"] = results.index
+    df = df[["term", "weight"]]
+    dict = df.to_dict("split")
     return JSONResponse(dict)
 
 # Return search interface
