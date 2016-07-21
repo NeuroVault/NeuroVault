@@ -278,6 +278,8 @@ def choose_cognitive_decoder(request, pk, collection_cid=None):
     image = get_image(pk, collection_cid, request)
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token, pk)
+    else:
+        api_cid = pk
 
     topic_sets = Collection.objects.filter(topic_set=True).filter(private=False)
     context = {

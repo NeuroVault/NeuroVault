@@ -2,7 +2,7 @@
 {% load coffeescript %}
 
 {% block head %}
-<title>{% block title %}Cognitive decoding: ({ image.name }}{% endblock %}</title>
+<title>{% block title %}Cognitive decoding: {{ image.name }}{% endblock %}</title>
     <script src="//cdn.datatables.net/plug-ins/1.10.11/sorting/natural.js" type="text/javascript"></script>
     <script>
         $(document).ready(function() {
