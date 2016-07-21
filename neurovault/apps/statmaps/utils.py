@@ -14,6 +14,7 @@ from subprocess import CalledProcessError
 
 import cortex
 import nibabel as nib
+import pandas as pd
 import numpy as np
 import pytz
 from django.conf import settings
@@ -555,7 +556,32 @@ def get_existing_comparisons(pk1):
     comparisons = comparisons.exclude(image1__pk=pk1, image2__pk=pk1)
     return comparisons
 
-def spatial_regregression(target_map, list_of_regressors):
-    pass
 
+# Returns existing comparisons for specific pk in pd format for
+def get_similar_images(pk, max_results=100):
+    comparisons = get_existing_comparisons(pk).extra(select={"abs_score": "abs(similarity_score)"}).order_by(
+        "-abs_score")[0:max_results]  # "-" indicates descending
+
+    comparisons_pd = pd.DataFrame({'image_id': [],
+                                   'score': [],
+                                   'png_img_path': [],
+                                   'tag': [],
+                                   'name': [],
+                                   'collection_name': []
+                                   })
+
+    for comp in comparisons:
+        # pick the image we are comparing with
+        image = [image for image in [comp.image1, comp.image2] if image.id != pk][0]
+        if hasattr(image, "map_type") and image.thumbnail:
+            df = pd.DataFrame({'image_id': [image.pk],
+                               'score': [comp.similarity_score],
+                               'png_img_path': [image.get_thumbnail_url()],
+                               'tag': [[str(image.map_type)]],
+                               'name': [image.name],
+                               'collection_name': [image.collection.name]
+                               })
+        comparisons_pd = comparisons_pd.append(df, ignore_index=True)
+
+    return comparisons_pd
 

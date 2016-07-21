@@ -50,7 +50,8 @@ from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_vol
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
     get_file_ctime, detect_4D, split_4D_to_3D, splitext_nii_gz, mkdir_p, \
     send_email_notification, populate_nidm_results, get_server_url, populate_feat_directory, \
-    detect_feat_directory, format_image_collection_names, get_existing_comparisons, is_search_compatible
+    detect_feat_directory, format_image_collection_names, is_search_compatible, \
+    get_similar_images
 from neurovault.apps.statmaps.voxel_query_functions import *
 from . import image_metadata
 
@@ -611,7 +612,7 @@ def upload_folder(request, collection_cid):
                             if detect_4D(nii):
                                 niftiFiles.extend(split_4D_to_3D(nii))
                             else:
-                                niftiFiles.append((fname,nii_path))
+                                niftiFiles.append((fname, nii_path))
 
                 for label,fpath in niftiFiles:
                     # Read nifti file information
@@ -640,7 +641,15 @@ def upload_folder(request, collection_cid):
                     dname = name + ".nii.gz"
                     spaced_name = name.replace('_',' ').replace('-',' ')
 
-                    if ext.lower() != ".nii.gz":
+                    squeezable_dimensions = len([a for a in nii.shape if a not in [0, 1]])
+
+                    if (ext.lower() != ".nii.gz" or squeezable_dimensions < len(nii.shape)):
+
+                        if squeezable_dimensions < len(nii.shape):
+                            new_data = np.squeeze(nii.get_data())
+                            nii = nib.Nifti1Image(new_data, nii.get_affine(),
+                                                  nii.get_header())
+
                         new_file_tmp_dir = tempfile.mkdtemp()
                         new_file_tmp = os.path.join(new_file_tmp_dir, name) + '.nii.gz'
                         nib.save(nii, new_file_tmp)
@@ -968,71 +977,48 @@ def compare_images(request,pk1,pk2):
 
 
 # Return search interface for one image vs rest
-def find_similar(request,pk):
-    image1 = get_image(pk,None,request)
+def find_similar(request, pk):
+    image1 = get_image(pk, None, request)
     pk = int(pk)
+    max_results = 10
 
     # Search only enabled if the image is not thresholded
-    if image1.is_thresholded == False:
-
-        # Count the number of comparisons that we have to determine max that we can return
-        # TODO: optimize this slow query
-        #number_comparisons = count_existing_comparisons(pk)
-
-        max_results = 100
-        #if number_comparisons < 100:
-        #    max_results = number_comparisons
-
-        # Get only # max_results similarity calculations for this image, and ids of other images
-        comparisons = get_existing_comparisons(pk).extra(select={"abs_score": "abs(similarity_score)"}).order_by("-abs_score")[0:max_results] # "-" indicates descending
-
-        images = [image1]
-        scores = [1] # pearsonr
-        for comp in comparisons:
-            # pick the image we are comparing with
-            image = [image for image in [comp.image1, comp.image2] if image.id != pk][0]
-            if hasattr(image, "map_type") and image.thumbnail:
-                images.append(image)
-                scores.append(comp.similarity_score)
-
-        # We will need lists of image ids, png paths, query id, query path, tags, names, scores
-        image_ids = [image.pk for image in images]
-        png_img_paths = [image.get_thumbnail_url() for image in images]
-        tags = [[str(image.map_type)] for image in images]
-
-        # The top text will be the collection name, the bottom text the image name
-        bottom_text = ["%s" % (image.name) for image in images]
-        top_text = ["%s" % (image.collection.name) for image in images]
-        compare_url = "/images/compare"  # format will be prefix/[query_id]/[other_id]
-        image_url = "/images"  # format will be prefix/[other_id]
-        image_title = format_image_collection_names(image_name=image1.name,
-                                                    collection_name=image1.collection.name,
-                                                    map_type=image1.map_type,total_length=50)
-
-        # Here is the query image
-        query_png = image1.thumbnail.url
-
-        # Do similarity search and return html to put in page, specify 100 max results, take absolute value of scores
-        html_snippet = similarity_search(image_scores=scores,tags=tags,png_paths=png_img_paths,
-                                    button_url=compare_url,image_url=image_url,query_png=query_png,
-                                    query_id=pk,top_text=top_text,image_ids=image_ids,
-                                    bottom_text=bottom_text,max_results=max_results,absolute_value=True,
-                                    remove_scripts=["BOOTSTRAP","BOOTSTRAP_MIN"],container_width=1200)
-
-        html = [h.strip("\n") for h in html_snippet]
-
-        # Get the number of images still processing
-        # TODO: improve performance of this calculation
-        # images_processing = count_processing_comparisons(pk)
-
-        context = {'html': html,
-                   #'images_processing':images_processing,
-                   'image_title':image_title, 'image_url': '/images/%s' % (image1.pk) }
-        return render(request, 'statmaps/compare_search.html', context)
-    else:
+    if image1.is_thresholded:
         error_message = "Image comparison is not enabled for thresholded images."
         context = {'error_message': error_message}
         return render(request, 'statmaps/error_message.html', context)
+
+    image_title = format_image_collection_names(image_name=image1.name,
+                                                    collection_name=image1.collection.name,
+                                                    map_type=image1.map_type, total_length=50)
+    # Here is the query image
+    query_png = image1.thumbnail.url
+
+    context = {
+        'image': image1,
+        'image_title': image_title,
+        'query_png': query_png
+    }
+    template = 'statmaps/compare_search.html.haml'
+    return render(request, template, context)
+
+
+def find_similar_json(request, pk, collection_cid=None):
+
+    limit = 500 # maximum number of Comparisons allowed to retrieve
+    max_results = int(request.GET.get('q', '100'))
+    if max_results > limit:
+        max_results = limit
+
+    image1 = get_image(pk, None, request)
+    pk = int(pk)
+
+    # Search only enabled if the image is not thresholded
+    if image1.is_thresholded:
+        return JSONResponse('error: Image comparison is not enabled for thresholded images.', status=400)
+    else:
+        similar_images = get_similar_images(pk, max_results)
+
 
 def spatial_regression_select(request, pk):
     public_collections = Collection.objects.exclude(private=False)
@@ -1041,12 +1027,15 @@ def spatial_regression_select(request, pk):
                'map_pk': pk}
     return render(request, 'statmaps/spatial_regression_select.html', context)
 
+
 def gene_expression(request, pk, collection_cid=None):
     '''view_image returns main view to see an image and associated meta data. If the image is in a collection with a DOI and has a generated thumbnail, it is a contender for image comparison, and a find similar button is exposed.
     :param pk: statmaps.models.Image.pk the primary key of the image
     :param collection_cid: statmaps.models.Collection.pk the primary key of the collection. Default None
     '''
     image = get_image(pk, collection_cid, request)
+    if image.is_thresholded:
+        raise Http404
     api_cid = pk
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
@@ -1059,6 +1048,8 @@ def gene_expression(request, pk, collection_cid=None):
 
 def gene_expression_json(request, pk, collection_cid=None):
     image = get_image(pk, collection_cid, request)
+    if image.is_thresholded:
+        raise Http404
 
     if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
         image = save_resampled_transformation_single(image.id)

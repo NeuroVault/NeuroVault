@@ -1,5 +1,5 @@
-FROM python:2.7
-ENV PYTHONUNBUFFERED 1
+FROM neurovault/ahba
+
 RUN apt-get update && apt-get install -y \
     libopenblas-dev \
     gfortran \
@@ -62,13 +62,13 @@ RUN pip install git+https://github.com/benkonrath/django-guardian.git@7cded90812
 RUN pip install nidmviewer==0.1.3
 
 RUN pip install tables
-RUN pip install xlrd
+RUN pip install statsmodels
 
 RUN apt-get install -y npm
 RUN ln -s /usr/bin/nodejs /usr/bin/node
 RUN npm install -g coffee-script
 
-RUN mkdir /code
+RUN mkdir -p /code
 WORKDIR /code
 RUN /usr/bin/yes | pip uninstall cython
 RUN apt-get remove -y gfortran
@@ -76,10 +76,5 @@ RUN apt-get remove -y gfortran
 RUN apt-get autoremove -y
 RUN apt-get clean
 RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-ADD scripts/preparing_AHBA_data.py /code/scripts/preparing_AHBA_data.py
-RUN python /code/scripts/preparing_AHBA_data.py
-
-RUN pip install statsmodels
 
 EXPOSE 3031

@@ -14,7 +14,7 @@ from .views import edit_collection, view_image, delete_image, edit_image, \
                 serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
                 papaya_js_embed, view_images_by_tag, add_image_for_neuropower, \
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
-                view_nidm_results, find_similar, compare_images, edit_metadata, \
+                view_nidm_results, find_similar, find_similar_json, compare_images, edit_metadata, \
                 export_images_filenames, delete_nidm_results, view_task, search, gene_expression_json, \
                 gene_expression, spatial_regression_select, cognitive_decoder_json, choose_cognitive_decoder, \
                 cognitive_decoder
@@ -174,6 +174,9 @@ urlpatterns = patterns('',
     url(r'^images/(?P<pk>\d+)/find_similar$',
         find_similar,
         name='find_similar'),
+    url(r'^images/(?P<pk>\d+)/find_similar/json/$',
+        find_similar_json,
+        name='find_similar_json'),
 
     url(r'^images/(?P<pk>\d+)/gene_expression$',
         gene_expression,
