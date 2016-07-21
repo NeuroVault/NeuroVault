@@ -42,6 +42,9 @@ class Collection(models.Model):
     add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
     doi_add_date = models.DateTimeField('date the DOI was added', editable=False, blank=True, null=True, db_index=True)
+    topic_set = models.BooleanField(choices=((False, 'Any collection of maps or parcellations'),
+                                             (True, 'Collection of topic maps (with weights) intended for cognintive decoding.')), default=False)
+
     type_of_design = models.CharField(choices=[('blocked', 'blocked'), ('eventrelated', 'event_related'), ('hybridblockevent', 'hybrid block/event'), ('other', 'other')], max_length=200, blank=True, help_text="Blocked, event-related, hybrid, or other", null=True, verbose_name="Type of design")
     number_of_imaging_runs = models.IntegerField(help_text="Number of imaging runs acquired", null=True, verbose_name="No. of imaging runs", blank=True)
     number_of_experimental_units = models.IntegerField(help_text="Number of blocks, trials or experimental units per imaging run", null=True, verbose_name="No. of experimental units", blank=True)

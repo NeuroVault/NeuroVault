@@ -274,6 +274,37 @@ def view_image(request, pk, collection_cid=None):
     return render(request, template, context)
 
 
+def choose_cognitive_decoder(request, pk, collection_cid=None):
+    image = get_image(pk, collection_cid, request)
+    if image.collection.private:
+        api_cid = '%s-%s' % (image.collection.private_token, pk)
+
+    topic_sets = Collection.objects.filter(topic_set=True).filter(private=False)
+    context = {
+        'image': image,
+        'user': image.collection.owner,
+        'pk': pk,
+        'topic_sets': topic_sets,
+        'api_cid': api_cid,
+        'collection_cid': collection_cid
+    }
+    template = "statmaps/choose_cognitive_decoder.html"
+    return render(request, template, context)
+
+
+def cognitive_decoder(request, topic_set_pk, pk, collection_cid=None):
+    image = get_image(pk, collection_cid, request)
+    context = {
+        'image': image,
+        'user': image.collection.owner,
+        'pk': pk,
+        'collection_cid': collection_cid,
+        'topic_set': Collection.objects.get(pk=topic_set_pk)
+    }
+    template = "statmaps/cognitive_decoder.html"
+    return render(request, template, context)
+
+
 def view_collection(request, cid):
     '''view_collection returns main view to see an entire collection of images, meaning a viewer and list of images to load into it.
     :param cid: statmaps.models.Collection.pk the primary key of the collection
@@ -1036,30 +1067,32 @@ def gene_expression_json(request, pk, collection_cid=None):
     del dict["index"]
     return JSONResponse(dict)
 
-def cognitive_decoder_json(request, pk, method, collection_cid=None):
+
+def cognitive_decoder_json(request, pk, topic_set_pk, collection_cid=None):
     image = get_image(pk, collection_cid, request)
 
     if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
         image = save_resampled_transformation_single(image.id)
 
     map_data = np.load(image.reduced_representation.file)
-    if method == "yeo2015":
-        component_maps = []
-        term_probs = []
-        col = Collection.objects.get(name='Yeo et. al 14 components')
-        for map in col.basecollectionitem_set.all():
-            print map
-            component_maps.append(np.load(map.reduced_representation.file))
-            print map.data
-            d = map.data
+    component_maps = []
+    term_probs = []
+    col = Collection.objects.get(pk=topic_set_pk)
+    for map in col.basecollectionitem_set.all():
+        print map
+        component_maps.append(np.load(map.reduced_representation.file))
+        print map.data
+        d = map.data
+        if "component number" in d:
             del d["component number"]
-            term_probs.append(map.data)
+        term_probs.append(map.data)
     results = image_to_words(map_data, component_maps, term_probs)
-    df =  pd.DataFrame(results, columns=["weight"])
+    df = pd.DataFrame(results, columns=["weight"])
     df["term"] = results.index
     df = df[["term", "weight"]]
     dict = df.to_dict("split")
     return JSONResponse(dict)
+
 
 # Return search interface
 def search(request,error_message=None):

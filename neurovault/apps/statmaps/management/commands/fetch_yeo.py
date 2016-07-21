@@ -34,7 +34,9 @@ class Command(BaseCommand):
             collection = Collection(name='Yeo et. al 14 components', owner=user)
             collection.save()
 
-
+        collection.description = "14 components used to decode 83 cognitive task. Task come from the Cognitive Paradigm Ontology (CogPO). Components were derived from the BrainMap database."
+        collection.name = "Yeo et al. (2015) - 14 components"
+        collection.save()
 
         saved = save_statmap_form(image_path=map_file,
                                   collection=collection,
@@ -43,19 +45,6 @@ class Command(BaseCommand):
         collection = Collection.objects.get(name='Yeo et. al 14 components')
         import pandas
         df = pandas.read_csv(weights_file)
-        for map in collection.basecollectionitem_set.all():
-            print map
-            c_id = int(map.name.split("volume ")[1][:-1])
-            d = {}
-            for j, name in enumerate(df['Tasks']):
-                d[name] = float(df['Pr(Comp %d | Task)' % c_id][j])
-            d['component number'] = c_id
-            map.data = d
-            map.save()
-            print map.data
-        collection.save()
-
-        collection = Collection.objects.get(name='Yeo et. al 14 components')
         for map in collection.basecollectionitem_set.all():
             print map
             c_id = int(map.name.split("volume ")[1][:-1])

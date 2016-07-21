@@ -14,7 +14,7 @@
           $('#genes-table').dataTable({
                     "bJQueryUI": true,
                     iDisplayLength: 25,
-        			"ajax": "{% url 'cognitive_decoder_json' pk method %}",
+        			"ajax": "{% url 'cognitive_decoder_json' pk topic_set.pk %}",
         			"order": [[ 1, "dsc" ]],
         			"oSearch":{"sSearch":result},
 					"fnDrawCallback": function (oSettings) {
@@ -42,9 +42,8 @@
 	.span11
 		%p <strong>About</strong>
 		%div.well
-			This map has been compared with gene expression data obtained from <a href="http://human.brain-map.org/">Allen Human Brain Atlas</a>. For every
-			gene and each of the six brains donated to the Allen Brain Institute a linear model has been fitted to see
-			how similar they are to the evaluated map. A one sample t test has been used see how consistent the relation
-			between the gene expression and evaluated map values are across the six donated brains. To account for
-			the number of tested genes False Discovery Rate correction has been applied.
+			This map has been decoding using a set of topic maps and terms weights from
+			<a href="{% url 'collection_details' topic_set.pk %}">{{ topic_set.name }}</a>.
+			The	decoding was performed by an algorithm described in
+			<a href="http://biorxiv.org/content/early/2016/06/18/059618">Rubin et al. (submitted)</a>.
 {% endblock %}
