@@ -945,61 +945,6 @@ def compare_images(request,pk1,pk2):
 def find_similar(request, pk):
     image1 = get_image(pk, None, request)
     pk = int(pk)
-    max_results = 100
-
-    # Search only enabled if the image is not thresholded
-    if not image1.is_thresholded:
-        # Count the number of comparisons that we have to determine max that we can return
-        # TODO: optimize this slow query
-        #number_comparisons = count_existing_comparisons(pk)
-
-        # We will need lists of image ids, png paths, query id, query path, tags, names, scores
-        similar_images = get_similar_images(pk, max_results)
-        image_ids = [image1.pk] + similar_images['image_id'].astype(int).tolist()
-        scores = [1] + similar_images['score'].tolist()
-        png_img_paths = [image1.get_thumbnail_url()] + similar_images['png_img_path'].tolist()
-        tags = [[str(image1.map_type)]] + similar_images['tag'].tolist()
-        names = [image1.name] + similar_images['name'].tolist()
-        collection_names = [image1.collection.name] + similar_images['collection_name'].tolist()
-
-        # The top text will be the collection name, the bottom text the image name
-        bottom_text = names
-        top_text = collection_names
-        compare_url = "/images/compare"  # format will be prefix/[query_id]/[other_id]
-        image_url = "/images"  # format will be prefix/[other_id]
-        image_title = format_image_collection_names(image_name=image1.name,
-                                                    collection_name=image1.collection.name,
-                                                    map_type=image1.map_type,total_length=50)
-
-        # Here is the query image
-        query_png = image1.thumbnail.url
-
-        # Do similarity search and return html to put in page, specify 100 max results, take absolute value of scores
-        html_snippet = similarity_search(image_scores=scores,tags=tags,png_paths=png_img_paths,
-                                    button_url=compare_url,image_url=image_url,query_png=query_png,
-                                    query_id=pk,top_text=top_text,image_ids=image_ids,
-                                    bottom_text=bottom_text,max_results=max_results,absolute_value=True,
-                                    remove_scripts=["BOOTSTRAP","BOOTSTRAP_MIN"],container_width=1200)
-
-        html = [h.strip("\n") for h in html_snippet]
-
-        # Get the number of images still processing
-        # TODO: improve performance of this calculation
-        # images_processing = count_processing_comparisons(pk)
-
-        context = {'html': html,
-                   #'images_processing':images_processing,
-                   'image_title':image_title, 'image_url': '/images/%s' % (image1.pk) }
-        return render(request, 'statmaps/compare_search.html', context)
-    else:
-        error_message = "Image comparison is not enabled for thresholded images."
-        context = {'error_message': error_message}
-        return render(request, 'statmaps/error_message.html', context)
-
-
-def find_similar2(request, pk):
-    image1 = get_image(pk, None, request)
-    pk = int(pk)
     max_results = 10
 
     # Search only enabled if the image is not thresholded
@@ -1019,9 +964,8 @@ def find_similar2(request, pk):
         'image_title': image_title,
         'query_png': query_png
     }
-    template = 'statmaps/compare_search2.html.haml'
+    template = 'statmaps/compare_search.html.haml'
     return render(request, template, context)
-
 
 
 def find_similar_json(request, pk, collection_cid=None):
