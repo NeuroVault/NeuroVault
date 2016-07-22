@@ -155,9 +155,15 @@ a.disabled-link:hover {
                     %span.caret
                 %ul.dropdown-menu
                     %li
-                        %a{:href => "{% url 'choose_cognitive_decoder' image.id %}"}
-                            %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Cognitive decoding using coordiante based data collected from thousands of papers."}
-                                Cognitive decoding
+                        - if image.collection.private
+                            %a{:href => "{% url 'private_choose_cognitive_decoder' image.collection.private_token image.id %}"}
+                                %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Cognitive decoding using coordiante based data collected from thousands of papers."}
+                                    Cognitive decoding
+                        - else
+                            %a{:href => "{% url 'choose_cognitive_decoder' image.id %}"}
+                                %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Cognitive decoding using coordiante based data collected from thousands of papers."}
+                                    Cognitive decoding
+
                     - if comparison_is_possible
                         %li
                             %a{:href => "{% url 'find_similar' image.id %}"}

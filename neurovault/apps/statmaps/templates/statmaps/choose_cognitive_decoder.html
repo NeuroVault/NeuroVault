@@ -32,7 +32,11 @@
 <ul>
     <li><a href="http://neurosynth.org/decode/?neurovault={{ api_cid }}">Neurosynth.org</a> - decode over 3000 terms derived derived from the literature using neurosynth.org (external website).</li>
     {% for topic_set in topic_sets %}
-        <li><a href="{% url 'cognitive_decoder' pk topic_set.pk %}">{{ topic_set.name }}</a> - {{ topic_set.description }}</li>
+        {% if image.collection.private %}
+            <li><a href="{% url 'private_cognitive_decoder' image.collection.private_token pk topic_set.pk %}">{{ topic_set.name }}</a> - {{ topic_set.description }}</li>
+        {% else %}
+            <li><a href="{% url 'cognitive_decoder' pk topic_set.pk %}">{{ topic_set.name }}</a> - {{ topic_set.description }}</li>
+        {% endif %}
     {% endfor %}
 
 </ul>

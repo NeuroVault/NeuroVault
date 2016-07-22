@@ -14,7 +14,11 @@
           $('#genes-table').dataTable({
                     "bJQueryUI": true,
                     iDisplayLength: 25,
+                    {% if image.collection.private %}
+        			"ajax": "{% url 'private_cognitive_decoder_json' image.collection.private_token pk topic_set.pk %}",
+        			{% else %}
         			"ajax": "{% url 'cognitive_decoder_json' pk topic_set.pk %}",
+        			{% endif %}
         			"order": [[ 1, "dsc" ]],
         			"oSearch":{"sSearch":result},
 					"fnDrawCallback": function (oSettings) {
