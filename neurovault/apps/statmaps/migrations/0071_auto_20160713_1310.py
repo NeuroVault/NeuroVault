@@ -6,6 +6,7 @@ from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
 import os
 import nearpy
 import numpy as np
+import pickle
 #import redis
 
 
@@ -102,7 +103,8 @@ def build_nearpy(apps, schema_editor):
         except ValueError:
             print "This image (%s) has no reduced representation" % image.pk
 
-
+    pickle.dump(nearpy_engine,
+                open('/code/neurovault/apps/statmaps/tests/nearpy_engine.p', "wb"))
 
 
 class Migration(migrations.Migration):

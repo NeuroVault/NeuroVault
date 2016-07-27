@@ -27,7 +27,7 @@ from django.template.loader import render_to_string
 from lxml import etree
 
 from neurovault.apps.statmaps.models import Collection, NIDMResults, StatisticMap, Comparison, NIDMResultStatisticMap, \
-    BaseStatisticMap
+    BaseStatisticMap, Image
 
 
 # see CollectionRedirectMiddleware
@@ -556,11 +556,23 @@ def get_existing_comparisons(pk1):
     comparisons = comparisons.exclude(image1__pk=pk1, image2__pk=pk1)
     return comparisons
 
+def get_existing_comparisons2(pk1):
+    import pickle
+
+    nearpy_engine = pickle.load(open('/code/neurovault/apps/statmaps/tests/nearpy_engine.p', "rb"))
+
+    image = Image.objects.get(pk=pk1)
+    feature = np.load(image.reduced_representation.file)
+    results = nearpy_engine.neighbours(feature)
+    return results
+
 # Returns existing comparisons for specific pk in pd format for
 def get_similar_images(pk, max_results=100):
-    comparisons = get_existing_comparisons(pk).extra(select={"abs_score": "abs(similarity_score)"}).order_by(
-        "-abs_score")[0:max_results]  # "-" indicates descending
+    comparisons = get_existing_comparisons2(pk)
+    # .extra(select={"abs_score": "abs(similarity_score)"}).order_by(
+    #     "-abs_score")[0:max_results]  # "-" indicates descending
 
+    # TODO: Solve problem with NaN features
     comparisons_pd = pd.DataFrame({'image_id': [],
                                    'score': [],
                                    'png_img_path': [],
@@ -569,17 +581,50 @@ def get_similar_images(pk, max_results=100):
                                    'collection_name': []
                                    })
 
-    for comp in comparisons:
+    results = zip(*comparisons)[1][1:]
+    scores = zip(*comparisons)[2][1:]
+    for i, id in enumerate(results):
+        image = Image.objects.get(pk=int(id))
         # pick the image we are comparing with
-        image = [image for image in [comp.image1, comp.image2] if image.id != pk][0]
-        if hasattr(image, "map_type") and image.thumbnail:
-            df = pd.DataFrame({'image_id': [image.pk],
-                               'score': [comp.similarity_score],
-                               'png_img_path': [image.get_thumbnail_url()],
-                               'tag': [[str(image.map_type)]],
-                               'name': [image.name],
-                               'collection_name': [image.collection.name]
-                               })
+        # image = [image for image in [comp.image1, comp.image2] if image.id != pk][0]
+        # if hasattr(image, "map_type") and image.thumbnail:
+        df = pd.DataFrame({'image_id': [id],
+                           'score': [scores[i]],
+                           'png_img_path': [image.get_thumbnail_url()],
+                           'tag': [[str(image.map_type)]],
+                           'name': [image.name],
+                           'collection_name': [image.collection.name]
+                           })
         comparisons_pd = comparisons_pd.append(df, ignore_index=True)
 
     return comparisons_pd
+
+
+#  OLD VERSION
+# Returns existing comparisons for specific pk in pd format for
+# def get_similar_images(pk, max_results=100):
+#     comparisons = get_existing_comparisons(pk).extra(select={"abs_score": "abs(similarity_score)"}).order_by(
+#          "-abs_score")[0:max_results]  # "-" indicates descending
+#
+#     comparisons_pd = pd.DataFrame({'image_id': [],
+#                                    'score': [],
+#                                    'png_img_path': [],
+#                                    'tag': [],
+#                                    'name': [],
+#                                    'collection_name': []
+#                                    })
+#
+#     for comp in comparisons:
+#         # pick the image we are comparing with
+#         image = [image for image in [comp.image1, comp.image2] if image.id != pk][0]
+#         if hasattr(image, "map_type") and image.thumbnail:
+#             df = pd.DataFrame({'image_id': [image.pk],
+#                                'score': [comp.similarity_score],
+#                                'png_img_path': [image.get_thumbnail_url()],
+#                                'tag': [[str(image.map_type)]],
+#                                'name': [image.name],
+#                                'collection_name': [image.collection.name]
+#                                })
+#         comparisons_pd = comparisons_pd.append(df, ignore_index=True)
+#
+#     return comparisons_pd
