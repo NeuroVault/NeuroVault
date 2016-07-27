@@ -98,7 +98,8 @@ def build_nearpy(apps, schema_editor):
         try: #TODO: Look carefully if the image has to go into the engine or not
             os.path.exists(str(image.reduced_representation.file))
             feature = np.load(image.reduced_representation.file)
-            print len(feature.tolist()), image.pk
+            print "Length:", len(feature.tolist()), "Image:", image.pk
+            feature[np.isnan(feature)] = 0
             nearpy_engine.store_vector(feature.tolist(), image.pk)
         except ValueError:
             print "This image (%s) has no reduced representation" % image.pk

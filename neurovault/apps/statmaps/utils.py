@@ -563,6 +563,7 @@ def get_existing_comparisons2(pk1):
 
     image = Image.objects.get(pk=pk1)
     feature = np.load(image.reduced_representation.file)
+    feature[np.isnan(feature)] = 0
     results = nearpy_engine.neighbours(feature)
     return results
 
