@@ -5,6 +5,7 @@ from django.db import migrations, models
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
 import os
 import nearpy
+import numpy as np
 #import redis
 
 
@@ -17,7 +18,7 @@ def change_resample_dim(apps, schema_editor):
         try:
             os.path.exists(str(image.reduced_representation.file))
             image.reduced_representation = save_resampled_transformation_single(image.pk,  resample_dim=[16, 16, 16])
-            os.remove(str(image.reduced_representation.file))
+            #os.remove(str(image.reduced_representation.file)) # TODO: remove old reduced_representation files
         except ValueError:
             print "This image needs no resampling due to not previous resampled transformation"
 
@@ -28,6 +29,24 @@ def build_nearpy(apps, schema_editor):
     n_bits = 7
     hash_counts = 40
     distance = nearpy.distances.EuclideanDistance()
+
+    Image = apps.get_model("statmaps", "Image")
+
+    # Get 100 features, for dimension selection and in case PCA is selected
+    i = 0
+    for image in Image.objects.all():
+        try: #TODO: Look carefully if the image has to go into the engine or not
+            os.path.exists(str(image.reduced_representation.file))
+            feature = np.load(image.reduced_representation.file)
+            if i == 0:
+                features = np.empty([99,feature.shape[0]])
+                features[i,:] = feature
+            else:
+                features[i, :] = feature
+            if i == 99:
+                break
+        except ValueError:
+            print "This image (%s) has no reduced representation" %image.pk
 
     #########
     # REDIS #
@@ -67,32 +86,23 @@ def build_nearpy(apps, schema_editor):
         #     nearpy_rbp = nearpy.hashes.PCABinaryProjections('rbp_%d' % k, n_bits, features[:99, :].T)
         #     lshash.append(nearpy_rbp)
 
-
     ## Filter
     filter_N = nearpy.filters.NearestFilter(100)
-
-
 
     ## Create Engine
     nearpy_engine = nearpy.Engine(features.shape[1], lshashes=lshash, distance=distance, vector_filters=[filter_N]) #storage=redis_storage
 
-
     ## Fill the Engine
-
-    # get images
-    Image = apps.get_model("statmaps", "Image")
-    count = Image.objects.count()
-    # populate engine
-    for i, image in enumerate(Image.objects.all()):
-        #
-
-        print "Fixing image %d (%d/%d)"%(image.pk, i+1, count)
-
-        try:
-            for i, x in enumerate(features):
-                nearpy_engine.store_vector(stats.zscore(x).tolist(), dict_feat[i])
+    for image in Image.objects.all():
+        try: #TODO: Look carefully if the image has to go into the engine or not
+            os.path.exists(str(image.reduced_representation.file))
+            feature = np.load(image.reduced_representation.file)
+            print len(feature.tolist()), image.pk
+            nearpy_engine.store_vector(feature.tolist(), image.pk)
         except ValueError:
-            print "This image needs no resampling due to not previous resampled transformation"
+            print "This image (%s) has no reduced representation" % image.pk
+
+
 
 
 class Migration(migrations.Migration):
