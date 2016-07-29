@@ -14,4 +14,3 @@ class Command(BaseCommand):
                 if image.pk:
                     print "Generating glassbrain and similarity for %s" %image.name
                     generate_glassbrain_image.apply([image.pk])
-                    run_voxelwise_pearson_similarity.apply([image.pk])

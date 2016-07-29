@@ -947,9 +947,9 @@ def find_similar(request, pk):
     pk = int(pk)
     max_results = 10
 
-    # Search only enabled if the image is not thresholded
-    if image1.is_thresholded:
-        error_message = "Image comparison is not enabled for thresholded images."
+    # Search only enabled if the image is not thresholded and some other constraints
+    if not is_search_compatible(image1.pk):
+        error_message = "Image comparison is not enabled for this image."
         context = {'error_message': error_message}
         return render(request, 'statmaps/error_message.html', context)
 
@@ -978,9 +978,9 @@ def find_similar_json(request, pk, collection_cid=None):
     image1 = get_image(pk, None, request)
     pk = int(pk)
 
-    # Search only enabled if the image is not thresholded
-    if image1.is_thresholded:
-        return JSONResponse('error: Image comparison is not enabled for thresholded images.', status=400)
+    # Search only enabled if the image is not thresholded and some other constraints
+    if not is_search_compatible(image1.pk):
+        return JSONResponse('error: Image comparison is not enabled for this image.', status=400)
     else:
         similar_images = get_similar_images(pk, max_results)
 

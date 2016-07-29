@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 from django.db import migrations, models
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
+from neurovault.apps.statmaps.utils import is_search_compatible
 import os
 import nearpy
 import numpy as np
@@ -97,10 +98,13 @@ def build_nearpy(apps, schema_editor):
     for image in Image.objects.all():
         try: #TODO: Look carefully if the image has to go into the engine or not
             os.path.exists(str(image.reduced_representation.file))
-            feature = np.load(image.reduced_representation.file)
-            print "Length:", len(feature.tolist()), "Image:", image.pk
-            feature[np.isnan(feature)] = 0
-            nearpy_engine.store_vector(feature.tolist(), image.pk)
+            if is_search_compatible(image.pk):
+                feature = np.load(image.reduced_representation.file)
+                print "Length:", len(feature.tolist()), "Image:", image.pk
+                feature[np.isnan(feature)] = 0
+                nearpy_engine.store_vector(feature.tolist(), image.pk)
+            else:
+                print "Image with PK %s has reduced representation but is not search compatible" % image.pk
         except ValueError:
             print "This image (%s) has no reduced representation" % image.pk
 
@@ -117,6 +121,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(change_resample_dim),
         migrations.RunPython(build_nearpy),
-        migrations.DeleteModel('Similarity'),
-        migrations.DeleteModel('Comparison')
+        #migrations.DeleteModel('Similarity'),
+        #migrations.DeleteModel('Comparison')
     ]
