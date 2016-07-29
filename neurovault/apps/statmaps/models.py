@@ -500,13 +500,11 @@ class BaseStatisticMap(Image):
             if self.reduced_representation: # not applicable for private collections
                 self.reduced_representation.delete()
 
-                # If more than one metric is added to NeuroVault, this must also filter based on metric
-                comparisons = Comparison.objects.filter(Q(image1=self) | Q(image2=self))
-                if comparisons:
-                    comparisons.delete()
+                # TODO: Update Engine
+
         super(BaseStatisticMap, self).save()
 
-        # Calculate comparisons
+        # Calculate comparisons # TODO: Update Engine
         if do_update or new_image:
             run_voxelwise_pearson_similarity.apply_async([self.pk])
 
@@ -618,36 +616,3 @@ class Atlas(Image):
         verbose_name_plural = "Atlases"
 
 post_save.connect(basecollectionitem_created, sender=Atlas, weak=True)
-
-class Similarity(models.Model):
-    similarity_metric = models.CharField(max_length=200, null=False, blank=False, db_index=True,help_text="the name of the similarity metric to describe a relationship between two or more images.",verbose_name="similarity metric name")
-    transformation = models.CharField(max_length=200, blank=True, db_index=True,help_text="the name of the transformation of the data relevant to the metric",verbose_name="transformation of images name")
-    metric_ontology_iri = models.URLField(max_length=200, blank=True, db_index=True,help_text="If defined, a url of an ontology IRI to describe the similarity metric",verbose_name="similarity metric ontology IRI")
-    transformation_ontology_iri = models.URLField(max_length=200, blank=True, db_index=True,help_text="If defined, a url of an ontology IRI to describe the transformation metric",verbose_name="image transformation ontology IRI")
-
-    class Meta:
-        verbose_name = "similarity metric"
-        verbose_name_plural = "similarity metrics"
-        unique_together = ("similarity_metric","transformation")
-
-    def __unicode__(self):
-        return "<metric:%s><transformation:%s>" %(self.similarity_metric,self.transformation)
-
-
-class Comparison(models.Model):
-    image1 = models.ForeignKey(Image,related_name="image1",db_index=True)
-    image2 = models.ForeignKey(Image,related_name="image2",db_index=True)
-    similarity_metric = models.ForeignKey(Similarity)
-    similarity_score = models.FloatField(help_text="the comparison score between two or more statistical maps", verbose_name="the comparison score between two or more statistical maps")
-
-    def __unicode__(self):
-      return "<%s><%s><score:%s>" %(self.image1,self.image2,self.similarity_score)
-
-    class Meta:
-        unique_together = ("image1","image2")
-        index_together = [["image1", "image2", "similarity_metric"],
-                          ["image2", "similarity_metric"],
-                          ["image1", "similarity_metric"]]
-
-        verbose_name = "pairwise image comparison"
-        verbose_name_plural = "pairwise image comparisons"

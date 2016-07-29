@@ -223,6 +223,7 @@ def save_voxelwise_pearson_similarity(pk1,pk2,resample_dim=[4,4,4],reduced_repre
 
 
 # Calculate pearson correlation from pickle files with brain masked vectors of image values
+# TODO: Change all this stuff
 def save_voxelwise_pearson_similarity_reduced_representation(pk1, pk2):
     from neurovault.apps.statmaps.models import Similarity, Comparison
     import numpy as np
