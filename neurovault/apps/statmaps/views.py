@@ -873,6 +873,9 @@ def atlas_query_voxel(request):
 # Compare Two Images
 def compare_images(request,pk1,pk2):
     import numpy as np
+    from pybraincompare.mr.transformation import make_resampled_transformation_vector
+    resample_dim = [4, 4, 4]
+
     image1 = get_image(pk1,None,request)
     image2 = get_image(pk2,None,request)
     images = [image1,image2]
@@ -899,9 +902,13 @@ def compare_images(request,pk1,pk2):
     if not image2.reduced_representation or not os.path.exists(image2.reduced_representation.path):
         image2 = save_resampled_transformation_single(image2.id) # cannot run this async
 
-    # Load image vectors from npy files
-    image_vector1 = np.load(image1.reduced_representation.file)
-    image_vector2 = np.load(image2.reduced_representation.file)
+    # Generate image vectos from file
+    nii_obj = nib.load(image1.file.path)   # standard_mask=True is default
+    image_vector1 = make_resampled_transformation_vector(nii_obj,resample_dim)
+
+    nii_obj = nib.load(image2.file.path)   # standard_mask=True is default
+    image_vector2 = make_resampled_transformation_vector(nii_obj,resample_dim)
+
 
     # Load atlas pickle, containing vectors of atlas labels, colors, and values for same voxel dimension (4mm)
     this_path = os.path.abspath(os.path.dirname(__file__))

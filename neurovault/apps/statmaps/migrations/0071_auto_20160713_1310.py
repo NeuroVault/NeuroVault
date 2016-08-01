@@ -43,8 +43,10 @@ def build_nearpy(apps, schema_editor):
             if i == 0:
                 features = np.empty([99,feature.shape[0]])
                 features[i,:] = feature
+                i += 1
             else:
                 features[i, :] = feature
+                i += 1
             if i == 99:
                 break
         except ValueError:
@@ -121,6 +123,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(change_resample_dim),
         migrations.RunPython(build_nearpy),
-        #migrations.DeleteModel('Similarity'),
-        #migrations.DeleteModel('Comparison')
+        migrations.DeleteModel('Similarity'),
+        migrations.DeleteModel('Comparison')
     ]
