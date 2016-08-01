@@ -896,11 +896,11 @@ def compare_images(request,pk1,pk2):
             "IMAGE_2_LINK":"/images/%s" % (image2.pk)
     }
 
-    # create reduced representation in case it's not there
-    if not image1.reduced_representation or not os.path.exists(image1.reduced_representation.path):
-        image1 = save_resampled_transformation_single(image1.id) # cannot run this async
-    if not image2.reduced_representation or not os.path.exists(image2.reduced_representation.path):
-        image2 = save_resampled_transformation_single(image2.id) # cannot run this async
+    # # create reduced representation in case it's not there
+    # if not image1.reduced_representation or not os.path.exists(image1.reduced_representation.path):
+    #     image1 = save_resampled_transformation_single(image1.id) # cannot run this async
+    # if not image2.reduced_representation or not os.path.exists(image2.reduced_representation.path):
+    #     image2 = save_resampled_transformation_single(image2.id) # cannot run this async
 
     # Generate image vectos from file
     nii_obj = nib.load(image1.file.path)   # standard_mask=True is default
@@ -989,6 +989,10 @@ def find_similar_json(request, pk, collection_cid=None):
     if not is_search_compatible(image1.pk):
         return JSONResponse('error: Image comparison is not enabled for this image.', status=400)
     else:
+        # Make sure we have a transforms for pks in question
+        if not image1.reduced_representation or not os.path.exists(image1.reduced_representation.path):
+            image1 = save_resampled_transformation_single(pk) # cannot run this async
+
         similar_images = get_similar_images(pk, max_results)
 
     dict = similar_images.to_dict("split")
@@ -1019,7 +1023,7 @@ def gene_expression_json(request, pk, collection_cid=None):
         raise Http404
 
     if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
-        image = save_resampled_transformation_single(image.id)
+        image = save_resampled_transformation_single.apply(image.id)
 
     map_data = np.load(image.reduced_representation.file)
     expression_results = calculate_gene_expression_similarity(map_data)

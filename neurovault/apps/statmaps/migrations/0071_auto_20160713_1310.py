@@ -121,8 +121,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(change_resample_dim),
-        migrations.RunPython(build_nearpy),
-        migrations.DeleteModel('Similarity'),
-        migrations.DeleteModel('Comparison')
+         migrations.RunPython(change_resample_dim),
+         migrations.RunPython(build_nearpy),
+         migrations.DeleteModel('Similarity'),
+         migrations.DeleteModel('Comparison')
     ]

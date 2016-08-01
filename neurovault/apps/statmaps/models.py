@@ -22,7 +22,7 @@ from taggit.models import GenericTaggedItemBase, TagBase
 
 from neurovault.apps.statmaps.storage import NiftiGzStorage, NIDMStorage,\
     OverwriteStorage
-from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, generate_glassbrain_image
+from neurovault.apps.statmaps.tasks import save_resampled_transformation_single, generate_glassbrain_image
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 
 
@@ -162,7 +162,7 @@ class Collection(models.Model):
             for image in self.basecollectionitem_set.instance_of(Image).all():
                 if image.pk:
                     generate_glassbrain_image.apply_async([image.pk])
-                    run_voxelwise_pearson_similarity.apply_async([image.pk])
+                    save_resampled_transformation_single.apply([image.pk])
 
     class Meta:
         app_label = 'statmaps'
@@ -392,6 +392,7 @@ class Image(BaseCollectionItem):
         if (do_update or new_image) and self.collection and self.collection.private == False:
             # Generate glass brain image
             generate_glassbrain_image.apply_async([self.pk])
+            save_resampled_transformation_single.apply([self.pk])
 
         if collection_changed:
             for field_name in self._meta.get_all_field_names():
@@ -506,7 +507,7 @@ class BaseStatisticMap(Image):
 
         # Calculate comparisons # TODO: Update Engine
         if do_update or new_image:
-            run_voxelwise_pearson_similarity.apply_async([self.pk])
+            save_resampled_transformation_single.apply([self.pk])
 
         self.file.close()
 
