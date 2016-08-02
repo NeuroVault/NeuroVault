@@ -162,7 +162,7 @@ class Collection(models.Model):
             for image in self.basecollectionitem_set.instance_of(Image).all():
                 if image.pk:
                     generate_glassbrain_image.apply_async([image.pk])
-                    save_resampled_transformation_single.apply([image.pk])
+                    save_resampled_transformation_single.apply(image.pk)
 
     class Meta:
         app_label = 'statmaps'
@@ -392,7 +392,7 @@ class Image(BaseCollectionItem):
         if (do_update or new_image) and self.collection and self.collection.private == False:
             # Generate glass brain image
             generate_glassbrain_image.apply_async([self.pk])
-            save_resampled_transformation_single.apply([self.pk])
+            save_resampled_transformation_single.apply(self.pk)
 
         if collection_changed:
             for field_name in self._meta.get_all_field_names():
