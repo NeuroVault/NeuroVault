@@ -309,6 +309,14 @@ def view_collection(request, cid):
 @login_required
 def delete_collection(request, cid):
     collection = get_collection(cid,request)
+
+    # TODO: Key has to be deleted also in the engine for every image in collection
+    # nearpy_engine = pickle.load(open('/code/neurovault/apps/statmaps/tests/nearpy_engine.p', "rb"))
+    # for img in col.basecollectionitem_set.all()::
+    #       nearpy_engine.delete_vector(img.pk)
+    # pickle.dump(nearpy_engine,
+    #             open('/code/neurovault/apps/statmaps/tests/nearpy_engine.p', "wb"))
+
     if not request.user.has_perm('statmaps.delete_collection', collection):
         return HttpResponseForbidden()
     collection.delete()
@@ -661,6 +669,13 @@ def upload_folder(request, collection_cid):
 @login_required
 def delete_image(request, pk):
     image = get_object_or_404(Image,pk=pk)
+
+    # TODO: Key has to be deleted also in the engine
+    # nearpy_engine = pickle.load(open('/code/neurovault/apps/statmaps/tests/nearpy_engine.p', "rb"))
+    # nearpy_engine.delete_vector(img.pk)
+    # pickle.dump(nearpy_engine,
+    #             open('/code/neurovault/apps/statmaps/tests/nearpy_engine.p', "wb"))
+
     cid = image.collection.pk
     if not request.user.has_perm("statmaps.delete_basecollectionitem", image):
         return HttpResponseForbidden()
