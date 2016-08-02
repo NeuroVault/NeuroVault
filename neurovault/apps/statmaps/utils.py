@@ -587,6 +587,8 @@ def get_similar_images(pk, max_results=100):
     results = zip(*comparisons)[1][1:]
     scores = zip(*comparisons)[2][1:]
 
+    print results
+
     #TODO: get_images_to_compare_with and check with the ones retrieved
 
 
@@ -641,9 +643,9 @@ def get_similar_images(pk, max_results=100):
 def delete_vector(data):
     nearpy_engine = pickle.load(open('/code/neurovault/apps/statmaps/tests/nearpy_engine.p', "rb"))
 
-    for lshash in engine.lshashes:
-        for bucket_key in engine.storage.buckets[lshash.hash_name]:
-            engine.storage.buckets[lshash.hash_name][bucket_key] = \
-                [(v, id) for v, id in engine.storage.buckets[lshash.hash_name][bucket_key] if id != data]
+    for lshash in nearpy_engine.lshashes:
+        for bucket_key in nearpy_engine.storage.buckets[lshash.hash_name]:
+            nearpy_engine.storage.buckets[lshash.hash_name][bucket_key] = \
+                [(v, id) for v, id in nearpy_engine.storage.buckets[lshash.hash_name][bucket_key] if id != data]
 
     pickle.dump(nearpy_engine, open('/code/neurovault/apps/statmaps/tests/nearpy_engine.p', "wb"))
