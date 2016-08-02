@@ -311,9 +311,10 @@ def delete_collection(request, cid):
     collection = get_collection(cid,request)
 
     # TODO: Key has to be deleted also in the engine for every image in collection
+    from neurovault.apps.statmaps.utils import delete_vector
     # nearpy_engine = pickle.load(open('/code/neurovault/apps/statmaps/tests/nearpy_engine.p', "rb"))
-    # for img in col.basecollectionitem_set.all()::
-    #       nearpy_engine.delete_vector(img.pk)
+    for img in collection.basecollectionitem_set.all():
+          delete_vector(img.pk)
     # pickle.dump(nearpy_engine,
     #             open('/code/neurovault/apps/statmaps/tests/nearpy_engine.p', "wb"))
 
@@ -672,9 +673,12 @@ def delete_image(request, pk):
 
     # TODO: Key has to be deleted also in the engine
     # nearpy_engine = pickle.load(open('/code/neurovault/apps/statmaps/tests/nearpy_engine.p', "rb"))
-    # nearpy_engine.delete_vector(img.pk)
+    # nearpy_engine.delete_vector(image.pk)
     # pickle.dump(nearpy_engine,
     #             open('/code/neurovault/apps/statmaps/tests/nearpy_engine.p', "wb"))
+
+    from neurovault.apps.statmaps.utils import delete_vector
+    delete_vector(image.pk)
 
     cid = image.collection.pk
     if not request.user.has_perm("statmaps.delete_basecollectionitem", image):

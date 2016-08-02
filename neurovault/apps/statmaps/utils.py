@@ -635,3 +635,15 @@ def get_similar_images(pk, max_results=100):
 #         comparisons_pd = comparisons_pd.append(df, ignore_index=True)
 #
 #     return comparisons_pd
+
+
+# TODO: Remove this when NearPy upgrades
+def delete_vector(data):
+    nearpy_engine = pickle.load(open('/code/neurovault/apps/statmaps/tests/nearpy_engine.p', "rb"))
+
+    for lshash in engine.lshashes:
+        for bucket_key in engine.storage.buckets[lshash.hash_name]:
+            engine.storage.buckets[lshash.hash_name][bucket_key] = \
+                [(v, id) for v, id in engine.storage.buckets[lshash.hash_name][bucket_key] if id != data]
+
+    pickle.dump(nearpy_engine, open('/code/neurovault/apps/statmaps/tests/nearpy_engine.p', "wb"))

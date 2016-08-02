@@ -67,7 +67,7 @@ def edit_user(request):
 
 @login_required
 def delete_profile(request):
-    if(request.GET.get('delete-btn')):
+    if request.GET.get('delete-btn'):
         if request.user.username == (request.GET.get('delete-text')):
             request.user.delete()
 
@@ -75,17 +75,20 @@ def delete_profile(request):
             # nearpy_engine = pickle.load(open('/code/neurovault/apps/statmaps/tests/nearpy_engine.p', "rb"))
             #
             # for col in user.collection_set.all():
-            #     for img in col.basecollectionitem_set.all()::
+            #     for img in col.basecollectionitem_set.all():
             #           nearpy_engine.delete_vector(img.pk)
             #
             # pickle.dump(nearpy_engine,
             #             open('/code/neurovault/apps/statmaps/tests/nearpy_engine.p', "wb"))
 
-
-        else: messages.warning(request,'Username did not match, deletion not completed')
+            from neurovault.apps.statmaps.utils import delete_vector
+            for col in request.user.collection_set.all():
+                for img in col.basecollectionitem_set.all():
+                    delete_vector(img.pk)
+        else:
+            messages.warning(request,'Username did not match, deletion not completed')
         return HttpResponseRedirect(reverse("delete_profile"))
-    return render_to_response("registration/delete_profile.html",
-                              context_instance=RequestContext(request))
+    return render_to_response("registration/delete_profile.html", context_instance=RequestContext(request))
 
 @login_required
 def password_change_done(request):
