@@ -201,7 +201,7 @@ def save_resampled_transformation_single(pk1, resample_dim=[16,16,16]):
         feature = image_vector
         feature[np.isnan(feature)] = 0
 
-        # TODO: This procedure creates duplicate keys in the engine. The old feature has to be deleted before indexing
+        # TODO: Remove this when NearPy updates
         from neurovault.apps.statmaps.utils import delete_vector
         delete_vector(img.pk)
 
