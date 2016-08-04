@@ -74,6 +74,7 @@ class Command(BaseCommand):
             for i, image in enumerate(Image.objects.all()):
                 try:
                     os.path.exists(str(image.reduced_representation.file))
+                    os.path.exists(str(image.thumbnail.file))
                     if is_search_compatible(image.pk):
                         feature = np.load(image.reduced_representation.file)
                         print "Length:", len(feature.tolist()), "Image:", image.pk
@@ -82,7 +83,7 @@ class Command(BaseCommand):
                     else:
                         print "Image with PK %s has reduced representation but is not search compatible" % image.pk
                 except ValueError:
-                    print "This image (%s) has no reduced representation" % image.pk
+                    print "This image (%s) has no reduced representation or thumbnail" % image.pk
 
             pickle.dump(nearpy_engine,
                         open('/code/neurovault/apps/statmaps/tests/nearpy_engine.p', "wb"))
@@ -118,7 +119,7 @@ class Command(BaseCommand):
 # # Get 100 features, for dimension selection and in case PCA is selected
 # i = 0
 # for image in Image.objects.all():
-#     try:  # TODO: Look carefully if the image has to go into the engine or not
+#     try:
 #         os.path.exists(str(image.reduced_representation.file))
 #         feature = np.load(image.reduced_representation.file)
 #         if i == 0:
