@@ -18,6 +18,8 @@ from django.views.generic import (View, CreateView, UpdateView, DeleteView,
                                   ListView)
 from braces.views import LoginRequiredMixin
 
+from neurovault.apps.statmaps.tasks import delete_vector_engine
+
 
 def view_profile(request, username=None):
     if not username:
@@ -71,20 +73,9 @@ def delete_profile(request):
         if request.user.username == (request.GET.get('delete-text')):
             request.user.delete()
 
-            # TODO: Key has to be deleted also in the engine for every image in collection
-            # nearpy_engine = pickle.load(open('/code/neurovault/apps/statmaps/tests/nearpy_engine.p', "rb"))
-            #
-            # for col in user.collection_set.all():
-            #     for img in col.basecollectionitem_set.all():
-            #           nearpy_engine.delete_vector(img.pk)
-            #
-            # pickle.dump(nearpy_engine,
-            #             open('/code/neurovault/apps/statmaps/tests/nearpy_engine.p', "wb"))
-
-            from neurovault.apps.statmaps.utils import delete_vector
             for col in request.user.collection_set.all():
                 for img in col.basecollectionitem_set.all():
-                    delete_vector(img.pk)
+                    delete_vector_engine.apply(img.pk)
         else:
             messages.warning(request,'Username did not match, deletion not completed')
         return HttpResponseRedirect(reverse("delete_profile"))

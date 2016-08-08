@@ -22,7 +22,8 @@ from taggit.models import GenericTaggedItemBase, TagBase
 
 from neurovault.apps.statmaps.storage import NiftiGzStorage, NIDMStorage,\
     OverwriteStorage
-from neurovault.apps.statmaps.tasks import save_resampled_transformation_single, generate_glassbrain_image
+from neurovault.apps.statmaps.tasks import save_resampled_transformation_single, generate_glassbrain_image, \
+    delete_vector_engine
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 
 
@@ -171,6 +172,7 @@ class Collection(models.Model):
         cid = self.pk
         for image in self.basecollectionitem_set.instance_of(Image):
             image.delete()
+            delete_vector_engine(image.pk)
         for nidmresult in self.basecollectionitem_set.instance_of(NIDMResults):
             nidmresult.delete()
         ret = super(Collection, self).delete(using=using)
@@ -501,11 +503,9 @@ class BaseStatisticMap(Image):
             if self.reduced_representation: # not applicable for private collections
                 self.reduced_representation.delete()
 
-                # TODO: Update Engine
-
         super(BaseStatisticMap, self).save()
 
-        # Calculate comparisons # TODO: Update Engine
+        # Calculate comparisons
         if do_update or new_image:
             save_resampled_transformation_single.apply([self.pk])
 

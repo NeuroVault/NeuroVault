@@ -23,7 +23,8 @@ from django.db import IntegrityError
 from django.core.files.uploadedfile import SimpleUploadedFile
 import re
 from django.conf import settings
-
+import pickle
+import numpy as np
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'neurovault.settings')
 app = Celery('neurovault')
@@ -182,7 +183,7 @@ def save_resampled_transformation_single(pk1, resample_dim=[16,16,16]):
     from neurovault.apps.statmaps.models import Image
     from neurovault.apps.statmaps.utils import is_search_compatible
     from six import BytesIO
-    import numpy as np
+
     import pickle
 
     img = get_object_or_404(Image, pk=pk1)
@@ -197,146 +198,36 @@ def save_resampled_transformation_single(pk1, resample_dim=[16,16,16]):
 
     # add to the engine
     if is_search_compatible(img.pk):
-        nearpy_engine = pickle.load(open('/code/neurovault/apps/statmaps/tests/nearpy_engine.p', "rb"))
-        feature = image_vector
-        feature[np.isnan(feature)] = 0
-
-        # TODO: Remove this when NearPy updates
-        from neurovault.apps.statmaps.utils import delete_vector
-        delete_vector(img.pk)
-
-        nearpy_engine.store_vector(feature.tolist(), img.pk)
-        pickle.dump(nearpy_engine,
-                    open('/code/neurovault/apps/statmaps/tests/nearpy_engine.p', "wb"))
+        insert_vector_engine(img.pk, image_vector)
 
     return img
 
-
-# SIMILARITY CALCULATION ##############################################################################
-
-# @shared_task
-# def run_voxelwise_pearson_similarity(pk1):
-#     from neurovault.apps.statmaps.models import Image
-#     from neurovault.apps.statmaps.utils import get_images_to_compare_with
-#
-#     imgs_pks = get_images_to_compare_with(pk1, for_generation=True)
-#     if imgs_pks:
-#         image = Image.objects.get(pk=pk1)
-#         # added for improved performance
-#         if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
-#             image = save_resampled_transformation_single(pk1)
-#
-#         # exclude single subject maps from analysis
-#         for pk in imgs_pks:
-#             save_voxelwise_pearson_similarity.apply_async([pk, pk1])  # Default uses reduced_representaion, reduced_representation = True
-#
-# @shared_task
-# def save_voxelwise_pearson_similarity(pk1,pk2,resample_dim=[16,16,16],reduced_representaion=True):
-#     if reduced_representaion == False:
-#         save_voxelwise_pearson_similarity_resample(pk1,pk2,resample_dim)
-#     else:
-#         save_voxelwise_pearson_similarity_reduced_representation(pk1,pk2)
+# ENGINE FUNCTIONS ####################################################################################
 
 
-# # Calculate pearson correlation from pickle files with brain masked vectors of image values
-# # TODO: Change all this stuff
-# def save_voxelwise_pearson_similarity_reduced_representation(pk1, pk2):
-#     from neurovault.apps.statmaps.models import Similarity, Comparison
-#     import numpy as np
-#
-#     # We will always calculate Comparison 1 vs 2, never 2 vs 1
-#     if pk1 != pk2:
-#         try:
-#             sorted_images = get_images_by_ordered_id(pk1, pk2)
-#         except Http404:
-#             # files have been deleted in the meantime
-#             return
-#         image1 = sorted_images[0]
-#         image2 = sorted_images[1]
-#         pearson_metric = Similarity.objects.get(similarity_metric="pearson product-moment correlation coefficient",
-#                                                 transformation="voxelwise")
-#
-#         # Make sure we have a transforms for pks in question
-#         if not image1.reduced_representation or not os.path.exists(image1.reduced_representation.path):
-#             image1 = save_resampled_transformation_single(pk1) # cannot run this async
-#
-#         if not image2.reduced_representation or not os.path.exists(image1.reduced_representation.path):
-#             image2 = save_resampled_transformation_single(pk2) # cannot run this async
-#
-#         # Load image pickles
-#         image_vector1 = np.load(image1.reduced_representation.file)
-#         image_vector2 = np.load(image2.reduced_representation.file)
-#
-#         # Calculate binary deletion vector mask (find 0s and nans)
-#         mask = make_binary_deletion_vector([image_vector1,image_vector2])
-#
-#         # Calculate pearson
-#         pearson_score = calculate_pairwise_correlation(image_vector1[mask==1],
-#                                                        image_vector2[mask==1],
-#                                                        corr_type="pearson")
-#
-#         # Only save comparison if is not nan
-#         if not numpy.isnan(pearson_score):
-#             Comparison.objects.update_or_create(image1=image1, image2=image2,
-#                                                 defaults={'similarity_metric': pearson_metric,
-#                                                           'similarity_score': pearson_score})
-#             return image1.pk,image2.pk,pearson_score
-#         else:
-#             print "Comparison returned NaN."
-#     else:
-#         raise Exception("You are trying to compare an image with itself!")
+# TODO: Remove this when NearPy upgrades
+@shared_task
+def delete_vector_engine(data):
+    engine = pickle.load(open('/code/neurovault/apps/statmaps/tests/engine.p', "rb"))
+
+    for lshash in engine.lshashes:
+        for bucket_key in engine.storage.buckets[lshash.hash_name]:
+            engine.storage.buckets[lshash.hash_name][bucket_key] = \
+                [(v, id) for v, id in engine.storage.buckets[lshash.hash_name][bucket_key] if id != data]
+
+    pickle.dump(engine, open('/code/neurovault/apps/statmaps/tests/engine.p', "wb"))
 
 
-# def save_voxelwise_pearson_similarity_resample(pk1, pk2,resample_dim=[16,16,16]):
-#     from neurovault.apps.statmaps.models import Similarity, Comparison
-#
-#     # We will always calculate Comparison 1 vs 2, never 2 vs 1
-#     if pk1 != pk2:
-#         try:
-#             sorted_images = get_images_by_ordered_id(pk1, pk2)
-#         except Http404:
-#             # files have been deleted in the meantime
-#             return
-#         image1 = sorted_images[0]
-#         image2 = sorted_images[1]
-#         pearson_metric = Similarity.objects.get(
-#                            similarity_metric="pearson product-moment correlation coefficient",
-#                            transformation="voxelwise")
-#
-#         # Get standard space brain
-#         mr_directory = get_data_directory()
-#         reference = "%s/MNI152_T1_2mm_brain_mask.nii.gz" %(mr_directory)
-#         image_paths = [image.file.path for image in [image1, image2]]
-#         images_resamp, _ = resample_images_ref(images=image_paths,
-#                                                reference=reference,
-#                                                interpolation="continuous",
-#                                                resample_dim=resample_dim)
-#         # resample_images_ref will "squeeze" images, but we should keep error here for now
-#         for image_nii, image_obj in zip(images_resamp, [image1, image2]):
-#             if len(numpy.squeeze(image_nii.get_data()).shape) != 3:
-#                 raise Exception("Image %s (id=%d) has incorrect number of dimensions %s"%(image_obj.name,
-#                                                                                           image_obj.id,
-#                                                                                           str(image_nii.get_data().shape)))
-#
-#         # Calculate correlation only on voxels that are in both maps (not zero, and not nan)
-#         image1_res = images_resamp[0]
-#         image2_res = images_resamp[1]
-#         binary_mask = make_binary_deletion_mask(images_resamp)
-#         binary_mask = nib.Nifti1Image(binary_mask,header=image1_res.get_header(),affine=image1_res.get_affine())
-#
-#         # Will return nan if comparison is not possible
-#         pearson_score = calculate_correlation([image1_res,image2_res],mask=binary_mask,corr_type="pearson")
-#
-#         # Only save comparison if is not nan
-#         if not numpy.isnan(pearson_score):
-#             Comparison.objects.update_or_create(image1=image1, image2=image2,
-#                                                 defaults={'similarity_metric': pearson_metric,
-#                                                           'similarity_score': pearson_score})
-#
-#             return image1.pk,image2.pk,pearson_score
-#         else:
-#             raise Exception("You are trying to compare an image with itself!")
+@shared_task
+def insert_vector_engine(pk, feature):
+    delete_vector_engine.apply([pk])
 
+    engine = pickle.load(open('/code/neurovault/apps/statmaps/tests/engine.p', "rb"))
+
+    feature[np.isnan(feature)] = 0
+    engine.store_vector(feature.tolist(), pk)
+
+    pickle.dump(engine, open('/code/neurovault/apps/statmaps/tests/engine.p', "wb"))
 
 # COGNITIVE ATLAS
 ###########################################################################

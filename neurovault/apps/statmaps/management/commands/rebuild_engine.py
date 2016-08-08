@@ -31,6 +31,7 @@ class Timer:
         if self.verbose:
             print('time taken: %f seconds' % self.interval)
 
+
 class Command(BaseCommand):
     args = '<times_to_run>'
     help = 'bench'
@@ -65,7 +66,7 @@ class Command(BaseCommand):
 
 
         ## Create Engine
-        nearpy_engine = nearpy.Engine(feature_dimension, lshashes=lshash, distance=distance,
+        engine = nearpy.Engine(feature_dimension, lshashes=lshash, distance=distance,
                                       vector_filters=[filter_N])  # storage=redis_storage
 
         ## Fill the Engine
@@ -79,14 +80,14 @@ class Command(BaseCommand):
                         feature = np.load(image.reduced_representation.file)
                         print "Length:", len(feature.tolist()), "Image:", image.pk
                         feature[np.isnan(feature)] = 0
-                        nearpy_engine.store_vector(feature.tolist(), image.pk)
+                        engine.store_vector(feature.tolist(), image.pk)
                     else:
                         print "Image with PK %s has reduced representation but is not search compatible" % image.pk
                 except ValueError:
                     print "This image (%s) has no reduced representation or thumbnail" % image.pk
 
-            pickle.dump(nearpy_engine,
-                        open('/code/neurovault/apps/statmaps/tests/nearpy_engine.p', "wb"))
+            pickle.dump(engine,
+                        open('/code/neurovault/apps/statmaps/tests/engine.p', "wb"))
 
         print "Engine built for %s images in %s seconds" % (i, t.interval)
 
