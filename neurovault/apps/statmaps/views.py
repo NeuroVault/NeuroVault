@@ -961,10 +961,10 @@ def find_similar(request, pk):
         return render(request, 'statmaps/error_message.html', context)
 
     # Make sure we have a transforms for pks in question
-    if not image1.reduced_representation or not os.path.exists(image1.reduced_representation.path) \
-            or not image1.thumbnail or not os.path.exists(image1.thumbnail.url):
-        generate_glassbrain_image.apply([image1.pk])
+    if not image1.reduced_representation or not os.path.exists(image1.reduced_representation.path):
         save_resampled_transformation_single.apply([image1.pk])
+    if not image1.thumbnail or not os.path.exists(image1.thumbnail.url):
+        generate_glassbrain_image.apply([image1.pk])
 
     image_title = format_image_collection_names(image_name=image1.name,
                                                 collection_name=image1.collection.name,

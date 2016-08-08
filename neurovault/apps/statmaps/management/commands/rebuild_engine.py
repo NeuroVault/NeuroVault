@@ -89,7 +89,7 @@ class Command(BaseCommand):
             pickle.dump(engine,
                         open('/code/neurovault/apps/statmaps/tests/engine.p', "wb"))
 
-        print "Engine built for %s images in %s seconds" % (i, t.interval)
+        print "Engine built for %s images in %s seconds" % (i+1, t.interval)
 
 
 

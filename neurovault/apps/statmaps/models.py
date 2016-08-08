@@ -23,7 +23,7 @@ from taggit.models import GenericTaggedItemBase, TagBase
 from neurovault.apps.statmaps.storage import NiftiGzStorage, NIDMStorage,\
     OverwriteStorage
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single, generate_glassbrain_image, \
-    delete_vector_engine
+    delete_vector_engine, insert_vector_engine
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 
 
@@ -159,11 +159,18 @@ class Collection(models.Model):
 
         super(Collection, self).save(*args, **kwargs)
 
+        # If changed Privacy or DOI, delete vector.
+        if (privacy_changed and self.private) or (DOI_changed and self.DOI is None):
+            for image in self.basecollectionitem_set.instance_of(Image).all():
+                if image.pk:
+                    delete_vector_engine.apply([image.pk])
+
+        # If changed Privacy or DOI, store vector.
         if (privacy_changed and not self.private) or (DOI_changed and self.DOI is not None):
             for image in self.basecollectionitem_set.instance_of(Image).all():
                 if image.pk:
-                    generate_glassbrain_image.apply_async([image.pk])
                     save_resampled_transformation_single.apply([image.pk])
+
 
     class Meta:
         app_label = 'statmaps'

@@ -547,7 +547,6 @@ def count_possible_comparisons(pk1):
 def count_processing_comparisons(pk1):
     return count_possible_comparisons(pk1) - count_existing_comparisons(pk1)
 
-
 # TODO: Should be this function @shared_task ?
 # Returns existing comparisons for specific pk, or entire database
 def get_existing_comparisons(pk1):
