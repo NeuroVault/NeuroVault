@@ -64,6 +64,8 @@ RUN pip install nidmviewer==0.1.3
 RUN pip install tables
 RUN pip install statsmodels
 
+RUN pip install nearpy bitarray redis
+
 RUN apt-get install -y npm
 RUN ln -s /usr/bin/nodejs /usr/bin/node
 RUN npm install -g coffee-script
