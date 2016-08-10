@@ -45,24 +45,33 @@ class Command(BaseCommand):
         ## Filter
         filter_N = nearpy.filters.NearestFilter(100)
 
-
-        # Get the size of the reduced representation atm
+        # Get 100 features, for dimension selection and in case PCA is selected
+        i = 0
         for image in Image.objects.all():
             try:
                 os.path.exists(str(image.reduced_representation.file))
                 feature = np.load(image.reduced_representation.file)
-                feature_dimension = feature.shape[0]
-                break
+                feature[np.isnan(feature)] = 0
+                if i == 0:
+                    features = np.empty([99, feature.shape[0]])
+                    features[i, :] = feature
+                    i += 1
+                else:
+                    features[i, :] = feature
+                    i += 1
+                if i == 99:
+                    feature_dimension = feature.shape[0]
+                    break
             except ValueError:
                 print "This image (%s) has no reduced representation" % image.pk
+
 
         # Create hash from scratch
         lshash = []
         ## Hash building
-        # Random binary projections
         for k in xrange(hash_counts):
-            nearpy_rbp = nearpy.hashes.RandomBinaryProjections('rbp_%d' % k, n_bits)
-            lshash.append(nearpy_rbp)
+            nearpy_PCAbp = nearpy.hashes.PCABinaryProjections('PCAbp_%d' % k, n_bits, features[:99, :].T)
+            lshash.append(nearpy_PCAbp)
 
 
         ## Create Engine
