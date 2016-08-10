@@ -41,11 +41,12 @@ class Command(BaseCommand):
         ## Main parameters
         n_bits = 7
         hash_counts = 40
-        distance = nearpy.distances.EuclideanDistance()
+        distance = nearpy.distances.CosineDistance()
         ## Filter
         filter_N = nearpy.filters.NearestFilter(100)
 
-        # Get 100 features, for dimension selection and in case PCA is selected
+        # Get 100 features, for dimension selection
+        feature_num_for_PCA = 99
         i = 0
         for image in Image.objects.all():
             try:
@@ -53,13 +54,13 @@ class Command(BaseCommand):
                 feature = np.load(image.reduced_representation.file)
                 feature[np.isnan(feature)] = 0
                 if i == 0:
-                    features = np.empty([99, feature.shape[0]])
+                    features = np.empty([feature_num_for_PCA, feature.shape[0]])
                     features[i, :] = feature
                     i += 1
                 else:
                     features[i, :] = feature
                     i += 1
-                if i == 99:
+                if i == feature_num_for_PCA:
                     feature_dimension = feature.shape[0]
                     break
             except ValueError:
@@ -70,7 +71,7 @@ class Command(BaseCommand):
         lshash = []
         ## Hash building
         for k in xrange(hash_counts):
-            nearpy_PCAbp = nearpy.hashes.PCABinaryProjections('PCAbp_%d' % k, n_bits, features[:99, :].T)
+            nearpy_PCAbp = nearpy.hashes.PCABinaryProjections('PCAbp_%d' % k, n_bits, features.T)
             lshash.append(nearpy_PCAbp)
 
 
