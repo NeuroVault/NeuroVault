@@ -498,7 +498,6 @@ def not_in_mni(nii, plot=False):
 # QUERY FUNCTIONS -------------------------------------------------------------------------------
 
 def is_search_compatible(pk):
-    from neurovault.apps.statmaps.models import Image
     try:
         img = Image.objects.get(pk=pk)
     except ObjectDoesNotExist:
@@ -515,8 +514,6 @@ def is_search_compatible(pk):
 
 
 def get_images_to_compare_with(pk1, for_generation=False):
-    from neurovault.apps.statmaps.models import StatisticMap, NIDMResultStatisticMap, Image
-
     # if the map in question is invalid do not generate any comparisons
     if not is_search_compatible(pk1):
         return []
@@ -534,7 +531,9 @@ def get_images_to_compare_with(pk1, for_generation=False):
 
 # Returns number of total comparisons, with public, not thresholded maps
 def count_existing_comparisons(pk1):
-    return get_existing_comparisons(pk1).count()
+    comparisons = get_existing_comparisons(pk1)
+    results = zip(*comparisons)[1][1:]
+    return len(results)
 
 # Returns number of total comparisons possible
 def count_possible_comparisons(pk1):

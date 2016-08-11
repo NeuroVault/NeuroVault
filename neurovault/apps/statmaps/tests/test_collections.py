@@ -68,7 +68,7 @@ class DeleteCollectionsTest(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
         self.test_path = os.path.abspath(os.path.dirname(__file__))
-        self.user = User.objects.create(username='neurovault')
+        self.user = User.objects.create(username='neuro_vault')
         self.client = Client()
         self.client.login(username=self.user)
         self.Collection1 = Collection(name='Collection1',owner=self.user)
@@ -87,6 +87,7 @@ class DeleteCollectionsTest(TestCase):
 
     def tearDown(self):
         clearDB()
+        self.user.delete()
 
     def testDeleteCollection(self):
         self.client.login(username=self.user)

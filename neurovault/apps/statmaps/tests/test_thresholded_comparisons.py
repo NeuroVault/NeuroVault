@@ -5,10 +5,11 @@ import tempfile
 from django.test import TestCase
 from numpy.testing import assert_equal
 
-from neurovault.apps.statmaps.models import Image, Comparison, Similarity, User, Collection
+from neurovault.apps.statmaps.models import Image, User, Collection
 from neurovault.apps.statmaps.tests.utils import clearDB
 from neurovault.apps.statmaps.tests.utils import save_statmap_form, save_atlas_form
-from neurovault.apps.statmaps.utils import count_existing_comparisons, get_existing_comparisons
+from neurovault.apps.statmaps.utils import count_existing_comparisons, is_search_compatible, get_existing_comparisons
+from neurovault.apps.statmaps.management.commands.rebuild_engine import Command
 
 
 class QueryTestCase(TestCase):
@@ -19,10 +20,11 @@ class QueryTestCase(TestCase):
     pearson_metric = None
     
     def setUp(self):
+        clearDB()
         print "\n#### TESTING THRESHOLDED IMAGES IN COMPARISON\n"
         self.tmpdir = tempfile.mkdtemp()
         self.app_path = os.path.abspath(os.path.dirname(__file__))
-        self.u1 = User.objects.create(username='neurovault')
+        self.u1 = User.objects.create(username='neuro_vault2')
         self.comparisonCollection1 = Collection(name='comparisonCollection1', owner=self.u1,
                                                 DOI='10.3389/fninf.2015.00008')
         self.comparisonCollection1.save()
@@ -35,7 +37,11 @@ class QueryTestCase(TestCase):
         self.comparisonCollection4 = Collection(name='comparisonCollection4', owner=self.u1,
                                                 DOI='10.3389/fninf.2015.00011')
         self.comparisonCollection4.save()
-        
+
+        # Building Engine
+        com = Command()
+        com.handle()
+
         # Image 1 is an atlas
         print "Adding atlas image..."
         nii_path = os.path.join(self.app_path,"test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz")
@@ -56,58 +62,58 @@ class QueryTestCase(TestCase):
         image3 = save_statmap_form(image_path=image_paths, collection = self.comparisonCollection3,ignore_file_warning=True)
         self.pk3 = image3.id
 
-        # Create similarity object
-        Similarity.objects.update_or_create(similarity_metric="pearson product-moment correlation coefficient",
-                                         transformation="voxelwise",
-                                         metric_ontology_iri="http://webprotege.stanford.edu/RCS8W76v1MfdvskPLiOdPaA",
-                                         transformation_ontology_iri="http://webprotege.stanford.edu/R87C6eFjEftkceScn1GblDL")
-        self.pearson_metric = Similarity.objects.filter(similarity_metric="pearson product-moment correlation coefficient",
-                                         transformation="voxelwise",
-                                         metric_ontology_iri="http://webprotege.stanford.edu/RCS8W76v1MfdvskPLiOdPaA",
-                                         transformation_ontology_iri="http://webprotege.stanford.edu/R87C6eFjEftkceScn1GblDL")        
-        
+
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
         clearDB()
+        self.u1.delete()
+
+    def counter(self, pk):
+        if not is_search_compatible(pk):
+            return 0
+        else:
+            return count_existing_comparisons(pk)
 
     def test_thresholded_image_comparison(self):
         # There should be no comparisons for a thresholded image
         print "testing comparisons for thresholded images"
-        assert_equal(count_existing_comparisons(self.pk3), 0)
+        assert_equal(self.counter(self.pk3), 0)
 
         # There should be no comparisons for an atlas
         print "testing comparisons for atlases"
-        assert_equal(count_existing_comparisons(self.pk1), 0)
+        assert_equal(self.counter(self.pk1), 0)
+
 
         # There should be no comparisons for statistical map because no other statistical maps
         print "testing comparisons for statistical maps"
-        assert_equal(count_existing_comparisons(self.pk2), 0)
+        assert_equal(self.counter(self.pk2), 0)
 
-        # Add another statistical map   
-        image_path = os.path.join(self.app_path,'test_data/statmaps/motor_lips.nii.gz')
+
+        # Add another statistical map (the same, to ensure they fall in the same bucket)
+        image_path = os.path.join(self.app_path,'test_data/statmaps/beta_0001.nii.gz')
         image4 = save_statmap_form(image_path=image_path, collection=self.comparisonCollection4)
         self.pk4 = image4.id
-          
+
         # There should STILL be no comparisons for a thresholded image
         print "testing comparisons for thresholded images"
-        assert_equal(count_existing_comparisons(self.pk3), 0)
+        assert_equal(self.counter(self.pk3), 0)
+
 
         # There should STILL be no comparisons for an of the atlas
         print "testing comparisons for atlases"
-        assert_equal(count_existing_comparisons(self.pk1), 0)
+        assert_equal(self.counter(self.pk1), 0)
+
 
         # There should now be one comparison for each statistical map, two total
         print "testing comparisons for statistical maps"
-        print Comparison.objects.all()
-        assert_equal(count_existing_comparisons(self.pk2), 1)
-        assert_equal(count_existing_comparisons(self.pk4), 1)
+        assert_equal(self.counter(self.pk2), 1)
+        assert_equal(self.counter(self.pk4), 1)
+
 
         # This is the call that find_similar users to get images
         comparisons = get_existing_comparisons(self.pk4)
-        for comp in comparisons:
-            pk1=comp.image1.pk
-            pk2=comp.image2.pk          
-            im1 = Image.objects.get(pk=pk1)
-            im2 = Image.objects.get(pk=pk2)
-            assert_equal(im1.is_thresholded,False)
-            assert_equal(im2.is_thresholded,False)
+        pks = zip(*comparisons)[1]
+
+        for pk in pks:
+            im = Image.objects.get(pk=pk)
+            assert_equal(im.is_thresholded,False)

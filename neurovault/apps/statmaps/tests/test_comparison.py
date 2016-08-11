@@ -7,8 +7,7 @@ from django.test import TestCase
 from numpy.testing import assert_almost_equal, assert_equal
 
 from neurovault.apps.statmaps.models import User, Collection, Image
-from neurovault.apps.statmaps.tasks import delete_vector_engine, get_images_by_ordered_id, \
-    save_resampled_transformation_single
+from neurovault.apps.statmaps.tasks import delete_vector_engine, save_resampled_transformation_single
 from neurovault.apps.statmaps.tests.utils import clearDB, save_statmap_form
 from neurovault.apps.statmaps.utils import get_existing_comparisons
 from neurovault.apps.statmaps.management.commands.rebuild_engine import Command
@@ -22,7 +21,7 @@ class ComparisonTestCase(TestCase):
         print "Preparing to test image comparison..."
         self.tmpdir = tempfile.mkdtemp()
         app_path = os.path.abspath(os.path.dirname(__file__))
-        self.u1 = User.objects.create(username='neurovault')
+        self.u1 = User.objects.create(username='neuro_vault')
         self.comparisonCollection1 = Collection(name='comparisonCollection1', owner=self.u1,
                                                 DOI='10.3389/fninf.2015.00008')
         self.comparisonCollection1.save()
@@ -39,6 +38,9 @@ class ComparisonTestCase(TestCase):
                                                 DOI='10.3389/fninf.2015.00012')
         self.comparisonCollection5.save()
 
+        # Building Engine
+        com = Command()
+        com.handle()
 
         image1 = save_statmap_form(image_path=os.path.join(app_path,'test_data/statmaps/all.nii.gz'),
                               collection=self.comparisonCollection1,
@@ -52,9 +54,6 @@ class ComparisonTestCase(TestCase):
                               ignore_file_warning=True)
         self.pk1_copy = image2.id
 
-        com = Command()
-        com.handle()
-
         # This last image is a statmap with NaNs to test that transformation doesn't eliminate them
         image_nan = save_statmap_form(image_path=os.path.join(app_path,'test_data/statmaps/motor_lips_nan.nii.gz'),
                                       collection=self.comparisonCollection5,
@@ -65,6 +64,7 @@ class ComparisonTestCase(TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
         clearDB()
+        self.u1.delete()
 
     # When generating transformations for comparison, NaNs should be maintained in the map
     # (and not replaced with zero / interpolated to "almost zero" values.
@@ -90,7 +90,7 @@ class ComparisonTestCase(TestCase):
         private_image1 = save_statmap_form(image_path=os.path.join(app_path,'test_data/statmaps/all.nii.gz'),
                                            collection=private_collection1,
                                            image_name = "image1")
-        private_image2 = save_statmap_form(image_path=os.path.join(app_path,'test_data/statmaps/motor_lips.nii.gz'),
+        private_image2 = save_statmap_form(image_path=os.path.join(app_path,'test_data/statmaps/all.nii.gz'),
                                            collection=private_collection2,
                                            image_name = "image2")
         comparisons = get_existing_comparisons(private_image1.pk)
@@ -105,7 +105,7 @@ class ComparisonTestCase(TestCase):
         private_collection2.save()
         comparisons = get_existing_comparisons(private_image1.pk)
         print "after private: %s"%len(comparisons)
-        self.assertEqual(len(comparisons), 1)
+        self.assertEqual(len(comparisons), 2)
 
     def test_add_DOI(self):
         # Clean Engine
@@ -121,7 +121,7 @@ class ComparisonTestCase(TestCase):
         image1 = save_statmap_form(image_path=os.path.join(app_path,'test_data/statmaps/all.nii.gz'),
                                    collection=collection1,
                                    image_name = "image1")
-        image2 = save_statmap_form(image_path=os.path.join(app_path,'test_data/statmaps/motor_lips.nii.gz'),
+        image2 = save_statmap_form(image_path=os.path.join(app_path,'test_data/statmaps/all.nii.gz'),
                                    collection=collection2,
                                    image_name = "image2")
         comparisons = get_existing_comparisons(image1.pk)
@@ -136,7 +136,7 @@ class ComparisonTestCase(TestCase):
         collection.save()
         comparisons = get_existing_comparisons(image1.pk)
         print "with DOI: %s"%len(comparisons)
-        self.assertEqual(len(comparisons), 1)
+        self.assertEqual(len(comparisons), 2)
 
     def test_get_existing_comparisons(self):
         # Clean Engine
@@ -159,7 +159,7 @@ class ComparisonTestCase(TestCase):
                                            collection=collection2,
                                            image_name="image2")
 
-        image3 = save_statmap_form(image_path=os.path.join(app_path, 'test_data/statmaps/motor_lips.nii.gz'),
+        image3 = save_statmap_form(image_path=os.path.join(app_path, 'test_data/statmaps/all.nii.gz'),
                                    collection=collection2,
                                    image_name="image2")
 
@@ -172,6 +172,6 @@ class ComparisonTestCase(TestCase):
         self.assertEqual(results[0], int(image2.pk))
         self.assertEqual(scores[0], 0)
 
-        print "Success for this test means showing the other image in second position with score of 1.16"
+        print "Success for this test means showing the other image in second position with score of 0 too"
         self.assertEqual(results[1], int(image3.pk))
-        assert_almost_equal(scores[1], 1.1621980949117918, decimal=5)
+        self.assertEqual(scores[1], 0)

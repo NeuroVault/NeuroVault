@@ -45,7 +45,7 @@ class Command(BaseCommand):
         ## Filter
         filter_N = nearpy.filters.NearestFilter(100)
 
-
+        feature_dimension = None
         # Get the size of the reduced representation atm
         for image in Image.objects.all():
             try:
@@ -55,6 +55,11 @@ class Command(BaseCommand):
                 break
             except ValueError:
                 print "This image (%s) has no reduced representation" % image.pk
+
+        # This is an exceptional case, for situations that there is not images in the DB (tests)
+        if not feature_dimension:
+            feature_dimension = 450
+            i = 0
 
         # Create hash from scratch
         lshash = []

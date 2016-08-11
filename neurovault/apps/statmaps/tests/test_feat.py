@@ -78,6 +78,7 @@ class FeatDirectoryTest(TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
         clearDB()
+        self.user.delete()
 
     def testFEAT_NIDM(self):
 

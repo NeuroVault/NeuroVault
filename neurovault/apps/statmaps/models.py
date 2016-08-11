@@ -23,7 +23,7 @@ from taggit.models import GenericTaggedItemBase, TagBase
 from neurovault.apps.statmaps.storage import NiftiGzStorage, NIDMStorage,\
     OverwriteStorage
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single, generate_glassbrain_image, \
-    delete_vector_engine, insert_vector_engine
+    delete_vector_engine
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 
 
@@ -398,9 +398,17 @@ class Image(BaseCollectionItem):
         new_image = True if self.pk is None else False
         super(Image, self).save()
 
-        if (do_update or new_image) and self.collection and self.collection.private == False:
+        # If it's a new image, no need of deleting it from the Engine
+        if new_image and self.collection and self.collection.private == False:
             # Generate glass brain image
-            generate_glassbrain_image.apply_async([self.pk])
+            generate_glassbrain_image.apply([self.pk])
+            save_resampled_transformation_single.apply([self.pk])
+
+        # If it's an update, before saving it again, delete the old one from the Engine
+        if do_update and self.collection and self.collection.private == False:
+            # Generate glass brain image
+            generate_glassbrain_image.apply([self.pk])
+            delete_vector_engine.apply([self.pk])
             save_resampled_transformation_single.apply([self.pk])
 
         if collection_changed:

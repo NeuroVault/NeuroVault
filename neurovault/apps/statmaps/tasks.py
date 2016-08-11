@@ -9,6 +9,7 @@ from pybraincompare.compare.mrutils import resample_images_ref, make_binary_dele
 from pybraincompare.mr.datasets import get_data_directory
 from pybraincompare.mr.transformation import make_resampled_transformation_vector
 
+
 nilearn.EXPAND_PATH_WILDCARDS = False
 from nilearn.plotting import plot_glass_brain
 from celery import shared_task, Celery
@@ -208,20 +209,21 @@ def save_resampled_transformation_single(pk1, resample_dim=[16,16,16]):
 # TODO: Remove this when NearPy upgrades
 @shared_task
 def delete_vector_engine(data):
-    engine = pickle.load(open('/code/neurovault/apps/statmaps/tests/engine.p', "rb"))
+    from neurovault.apps.statmaps.utils import is_search_compatible
 
-    for lshash in engine.lshashes:
-        for bucket_key in engine.storage.buckets[lshash.hash_name]:
-            engine.storage.buckets[lshash.hash_name][bucket_key] = \
-                [(v, id) for v, id in engine.storage.buckets[lshash.hash_name][bucket_key] if id != data]
+    if is_search_compatible(data):
+        engine = pickle.load(open('/code/neurovault/apps/statmaps/tests/engine.p', "rb"))
 
-    pickle.dump(engine, open('/code/neurovault/apps/statmaps/tests/engine.p', "wb"))
+        for lshash in engine.lshashes:
+            for bucket_key in engine.storage.buckets[lshash.hash_name]:
+                engine.storage.buckets[lshash.hash_name][bucket_key] = \
+                    [(v, id) for v, id in engine.storage.buckets[lshash.hash_name][bucket_key] if id != data]
+
+        pickle.dump(engine, open('/code/neurovault/apps/statmaps/tests/engine.p', "wb"))
 
 
 @shared_task
 def insert_vector_engine(pk, feature):
-    delete_vector_engine.apply([pk])
-
     engine = pickle.load(open('/code/neurovault/apps/statmaps/tests/engine.p', "rb"))
 
     feature[np.isnan(feature)] = 0

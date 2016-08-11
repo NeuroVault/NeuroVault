@@ -22,6 +22,7 @@ class AddStatmapsTests(TestCase):
         
     def tearDown(self):
         clearDB()
+        self.user.delete()
 
     def testaddNiiGz(self):
 
