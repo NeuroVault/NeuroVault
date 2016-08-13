@@ -8,7 +8,7 @@ from django.core.urlresolvers import reverse
 from django.test import TestCase, Client, override_settings, RequestFactory
 from uuid import uuid4
 
-from neurovault.apps.statmaps.models import Collection, User, Image, Atlas, Image
+from neurovault.apps.statmaps.models import Collection, User, Image, Atlas
 from neurovault.apps.statmaps.utils import detect_4D, split_4D_to_3D
 from neurovault.apps.statmaps.views import delete_collection
 from neurovault.settings import PRIVATE_MEDIA_ROOT
