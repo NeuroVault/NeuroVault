@@ -1,4 +1,5 @@
 import os
+import json
 import pandas as pd
 from django.contrib.auth.models import User
 from django.forms.utils import ErrorDict, ErrorList
@@ -10,8 +11,7 @@ from neurovault.apps.statmaps.forms import (handle_update_ttl_urls,
                                             ImageValidationMixin,
                                             NIDMResultsValidationMixin,
                                             save_nidm_statmaps)
-from neurovault.apps.statmaps.models import (Atlas, Collection, Image,
-                                             NIDMResults,
+from neurovault.apps.statmaps.models import (Atlas, Collection, NIDMResults,
                                              NIDMResultStatisticMap,
                                              StatisticMap, BaseCollectionItem)
 
@@ -121,7 +121,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer,
         return cleaned_data
 
 
-class EditableImageSerializer(serializers.ModelSerializer,
+class EditableImageSerializer(ImageSerializer,
                               ImageValidationMixin):
 
     def validate(self, data):
@@ -139,6 +139,22 @@ class EditableImageSerializer(serializers.ModelSerializer,
 
 
 class EditableStatisticMapSerializer(EditableImageSerializer):
+    def __init__(self, *args, **kwargs):
+        super(EditableStatisticMapSerializer, self).__init__(*args, **kwargs)
+        self._metadata_dict = self.extract_metadata_fields(
+            self.initial_data, self._writable_fields
+        )
+
+    def extract_metadata_fields(self, initial_data, writable_fields):
+        field_name_set = set(f.field_name for f in writable_fields)
+        metadata_field_set = initial_data.viewkeys() - field_name_set
+        return {key: initial_data[key] for key in metadata_field_set}
+
+    def save(self, *args, **kwargs):
+        if self._metadata_dict:
+            kwargs['data'] = self._metadata_dict
+
+        super(EditableStatisticMapSerializer, self).save(*args, **kwargs)
 
     class Meta:
         model = StatisticMap
@@ -166,11 +182,19 @@ class StatisticMapSerializer(ImageSerializer):
         model = StatisticMap
         exclude = ['polymorphic_ctype', 'ignore_file_warning', 'data']
 
+    def value_to_python(self, value):
+        if not value:
+            return value
+        try:
+            return json.loads(value)
+        except (TypeError, ValueError):
+            return value
+
     def to_representation(self, obj):
         ret = super(ImageSerializer, self).to_representation(obj)
         for field_name, value in obj.data.items():
             if field_name not in ret:
-                ret[field_name] = value
+                ret[field_name] = self.value_to_python(value)
         return ret
 
 
@@ -274,7 +298,7 @@ class CollectionSerializer(serializers.ModelSerializer):
 
     def num_im(self, obj):
         return obj.basecollectionitem_set.count()
-        
+
     def get_owner_name(self, obj):
         return obj.owner.username
 

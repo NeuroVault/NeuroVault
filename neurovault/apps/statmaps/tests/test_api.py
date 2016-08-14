@@ -398,7 +398,7 @@ class TestCollectionItemUpload(APITestCase):
         response = self.client.post(url, post_dict, format='multipart')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        self.assertEqual(response.data['collection'], self.coll.id)
+        self.assertEqual(response.data['collection_id'], self.coll.id)
         self.assertRegexpMatches(response.data['file'], r'\.nii\.gz$')
 
         exclude_keys = ('file',)
@@ -424,11 +424,12 @@ class TestCollectionItemUpload(APITestCase):
         response = self.client.post(url, post_dict, format='multipart')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        self.assertEqual(response.data['collection'], self.coll.id)
+        self.assertEqual(response.data['collection_id'], self.coll.id)
         self.assertRegexpMatches(response.data['file'], r'\.nii\.gz$')
 
         exclude_keys = (
             'file',
+            'map_type',
             'custom_metadata_numeric_field',
             'custom_metadata_string_field'
         )
@@ -437,14 +438,17 @@ class TestCollectionItemUpload(APITestCase):
         for key in test_keys:
             self.assertEqual(response.data[key], post_dict[key])
 
-        statmap = StatisticMap.objects.get(pk=response.data['id'])
+        self.assertEqual(response.data['custom_metadata_numeric_field'], 42)
 
-        for key in ('custom_metadata_numeric_field',
-                    'custom_metadata_string_field'):
-            self.assertEqual(
-                statmap.data['custom_metadata_numeric_field'],
-                post_dict[key]
-            )
+        statmap = StatisticMap.objects.get(pk=response.data['id'])
+        self.assertEqual(
+            statmap.map_type, 'T'
+        )
+        self.assertEqual(statmap.data['custom_metadata_numeric_field'], '42')
+        self.assertEqual(
+            statmap.data['custom_metadata_string_field'],
+            'forty two'
+        )
 
     def test_upload_atlas(self):
         self.client.force_authenticate(user=self.user)
@@ -465,7 +469,7 @@ class TestCollectionItemUpload(APITestCase):
         response = self.client.post(url, post_dict, format='multipart')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        self.assertEqual(response.data['collection'], self.coll.id)
+        self.assertEqual(response.data['collection_id'], self.coll.id)
         self.assertRegexpMatches(response.data['file'], r'\.nii\.gz$')
         self.assertRegexpMatches(response.data['label_description_file'],
                                  r'\.xml$')
