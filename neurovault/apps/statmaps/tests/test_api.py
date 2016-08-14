@@ -406,6 +406,46 @@ class TestCollectionItemUpload(APITestCase):
         for key in test_keys:
             self.assertEqual(response.data[key], post_dict[key])
 
+    def test_upload_statmap_with_metadata(self):
+        self.client.force_authenticate(user=self.user)
+
+        url = '/api/collections/%s/images/' % self.coll.pk
+        fname = self.abs_file_path('test_data/statmaps/motor_lips.nii.gz')
+
+        post_dict = {
+            'name': 'test map',
+            'modality': 'fMRI-BOLD',
+            'map_type': 'T',
+            'file': SimpleUploadedFile(fname, open(fname).read()),
+            'custom_metadata_numeric_field': 42,
+            'custom_metadata_string_field': 'forty two',
+        }
+
+        response = self.client.post(url, post_dict, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.assertEqual(response.data['collection'], self.coll.id)
+        self.assertRegexpMatches(response.data['file'], r'\.nii\.gz$')
+
+        exclude_keys = (
+            'file',
+            'custom_metadata_numeric_field',
+            'custom_metadata_string_field'
+        )
+
+        test_keys = set(post_dict.keys()) - set(exclude_keys)
+        for key in test_keys:
+            self.assertEqual(response.data[key], post_dict[key])
+
+        statmap = StatisticMap.objects.get(pk=response.data['id'])
+
+        for key in ('custom_metadata_numeric_field',
+                    'custom_metadata_string_field'):
+            self.assertEqual(
+                statmap.data['custom_metadata_numeric_field'],
+                post_dict[key]
+            )
+
     def test_upload_atlas(self):
         self.client.force_authenticate(user=self.user)
 
