@@ -401,8 +401,8 @@ class TestCollectionItemUpload(APITestCase):
         self.assertEqual(response.data['collection_id'], self.coll.id)
         self.assertRegexpMatches(response.data['file'], r'\.nii\.gz$')
 
-        exclude_keys = ('file',)
-        test_keys = set(post_dict.keys()) - set(exclude_keys)
+        exclude_keys = set(['file', 'map_type'])
+        test_keys = post_dict.viewkeys() - exclude_keys
         for key in test_keys:
             self.assertEqual(response.data[key], post_dict[key])
 
@@ -427,14 +427,14 @@ class TestCollectionItemUpload(APITestCase):
         self.assertEqual(response.data['collection_id'], self.coll.id)
         self.assertRegexpMatches(response.data['file'], r'\.nii\.gz$')
 
-        exclude_keys = (
+        exclude_keys = set([
             'file',
             'map_type',
             'custom_metadata_numeric_field',
             'custom_metadata_string_field'
-        )
+        ])
 
-        test_keys = set(post_dict.keys()) - set(exclude_keys)
+        test_keys = post_dict.viewkeys() - exclude_keys
         for key in test_keys:
             self.assertEqual(response.data[key], post_dict[key])
 
