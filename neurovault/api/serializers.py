@@ -79,7 +79,6 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer,
 
     def __init__(self, *args, **kwargs):
         super(ImageSerializer, self).__init__(*args, **kwargs)
-        # import pudb; pudb.set_trace()
         initial_data = getattr(self, 'initial_data', None)
         if initial_data:
             self._metadata_dict = self.extract_metadata_fields(
@@ -137,7 +136,9 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer,
     def save(self, *args, **kwargs):
         metadata_dict = getattr(self, '_metadata_dict', None)
         if metadata_dict:
-            kwargs['data'] = self._metadata_dict
+            data = self.instance.data.copy()
+            data.update(self._metadata_dict)
+            kwargs['data'] = data
 
         super(ImageSerializer, self).save(*args, **kwargs)
 
