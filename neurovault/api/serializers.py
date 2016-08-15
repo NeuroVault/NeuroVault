@@ -77,6 +77,15 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer,
         model = BaseCollectionItem
         exclude = ['polymorphic_ctype']
 
+    def __init__(self, *args, **kwargs):
+        super(ImageSerializer, self).__init__(*args, **kwargs)
+        # import pudb; pudb.set_trace()
+        initial_data = getattr(self, 'initial_data', None)
+        if initial_data:
+            self._metadata_dict = self.extract_metadata_fields(
+                self.initial_data, self._writable_fields
+            )
+
     def get_file_size(self, obj):
         return obj.file.size
 
@@ -107,6 +116,11 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer,
                 orderedDict[key] = None
         return orderedDict
 
+    def extract_metadata_fields(self, initial_data, writable_fields):
+        field_name_set = set(f.field_name for f in writable_fields)
+        metadata_field_set = initial_data.viewkeys() - field_name_set
+        return {key: initial_data[key] for key in metadata_field_set}
+
     def validate(self, data):
         self.afni_subbricks = []
         self.afni_tmp = None
@@ -120,24 +134,15 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer,
 
         return cleaned_data
 
-
-class EditableStatisticMapSerializer(ImageSerializer):
-    def __init__(self, *args, **kwargs):
-        super(EditableStatisticMapSerializer, self).__init__(*args, **kwargs)
-        self._metadata_dict = self.extract_metadata_fields(
-            self.initial_data, self._writable_fields
-        )
-
-    def extract_metadata_fields(self, initial_data, writable_fields):
-        field_name_set = set(f.field_name for f in writable_fields)
-        metadata_field_set = initial_data.viewkeys() - field_name_set
-        return {key: initial_data[key] for key in metadata_field_set}
-
     def save(self, *args, **kwargs):
-        if self._metadata_dict:
+        metadata_dict = getattr(self, '_metadata_dict', None)
+        if metadata_dict:
             kwargs['data'] = self._metadata_dict
 
-        super(EditableStatisticMapSerializer, self).save(*args, **kwargs)
+        super(ImageSerializer, self).save(*args, **kwargs)
+
+
+class EditableStatisticMapSerializer(ImageSerializer):
 
     class Meta:
         model = StatisticMap
