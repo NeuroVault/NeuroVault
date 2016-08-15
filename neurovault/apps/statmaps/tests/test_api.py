@@ -670,7 +670,7 @@ class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
         patch_dict = {
             'name': "renamed %s" % uuid.uuid4(),
             'custom_metadata_field_b': 'override b with %s' % uuid.uuid4(),
-            'custom_metadata_field_c': 42,
+            'custom_metadata_field_c': 42
         }
 
         response = self.client.patch(self.item_url, patch_dict)
@@ -684,6 +684,15 @@ class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
             patch_dict['custom_metadata_field_b']
         )
         self.assertEqual(response.data['custom_metadata_field_c'], 42)
+
+        statmap = StatisticMap.objects.get(pk=response.data['id'])
+        self.assertEqual(statmap.data['custom_metadata_field_a'], 'a text')
+        self.assertEqual(
+            statmap.data['custom_metadata_field_b'],
+            patch_dict['custom_metadata_field_b']
+        )
+        self.assertEqual(statmap.data['custom_metadata_field_c'], '42')
+        self.assertEqual(statmap.data['custom_metadata_field_d'], '42')
 
     def test_statistic_map_destroy(self):
         self._test_collection_item_destroy(StatisticMap)
