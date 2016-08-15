@@ -692,7 +692,6 @@ class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
             patch_dict['custom_metadata_field_b']
         )
         self.assertEqual(statmap.data['custom_metadata_field_c'], '42')
-        self.assertEqual(statmap.data['custom_metadata_field_d'], '42')
 
     def test_statistic_map_destroy(self):
         self._test_collection_item_destroy(StatisticMap)
