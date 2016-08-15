@@ -121,24 +121,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer,
         return cleaned_data
 
 
-class EditableImageSerializer(ImageSerializer,
-                              ImageValidationMixin):
-
-    def validate(self, data):
-        self.afni_subbricks = []
-        self.afni_tmp = None
-        self._errors = ErrorDict()
-        self.error_class = ErrorList
-
-        cleaned_data = self.clean_and_validate(data)
-
-        if self.errors:
-            raise serializers.ValidationError(self.errors)
-
-        return cleaned_data
-
-
-class EditableStatisticMapSerializer(EditableImageSerializer):
+class EditableStatisticMapSerializer(ImageSerializer):
     def __init__(self, *args, **kwargs):
         super(EditableStatisticMapSerializer, self).__init__(*args, **kwargs)
         self._metadata_dict = self.extract_metadata_fields(
@@ -235,7 +218,7 @@ class AtlasSerializer(ImageSerializer):
         return super(ImageSerializer, self).to_representation(obj)
 
 
-class EditableAtlasSerializer(EditableImageSerializer):
+class EditableAtlasSerializer(ImageSerializer):
 
     class Meta:
         model = Atlas
