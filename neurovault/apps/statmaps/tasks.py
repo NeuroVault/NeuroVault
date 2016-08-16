@@ -180,12 +180,10 @@ def generate_glassbrain_image(image_pk):
 
 # Save 4mm, brain masked image vector in pkl file in image folder
 @shared_task
-def save_resampled_transformation_single(pk1, resample_dim=[16,16,16]):
+def save_resampled_transformation_single(pk1, resample_dim=[4,4,4]):
     from neurovault.apps.statmaps.models import Image
     from neurovault.apps.statmaps.utils import is_search_compatible
     from six import BytesIO
-
-    import pickle
 
     img = get_object_or_404(Image, pk=pk1)
     nii_obj = nib.load(img.file.path)   # standard_mask=True is default
@@ -197,9 +195,18 @@ def save_resampled_transformation_single(pk1, resample_dim=[16,16,16]):
     content_file = ContentFile(f.read())
     img.reduced_representation.save("transform_%smm_%s.npy" %(resample_dim[0],img.pk), content_file)
 
+    resample_dim_engine = [16,16,16]
+    image_vector_engine = make_resampled_transformation_vector(nii_obj, resample_dim_engine)
+
+    f = BytesIO()
+    np.save(f, image_vector_engine)
+    f.seek(0)
+    content_file = ContentFile(f.read())
+    img.reduced_representation_engine.save("transform_%smm_%s.npy" % (resample_dim_engine[0], img.pk), content_file)
+
     # add to the engine
     if is_search_compatible(img.pk):
-        insert_vector_engine(img.pk, image_vector)
+        insert_vector_engine(img.pk, image_vector_engine)
 
     return img
 

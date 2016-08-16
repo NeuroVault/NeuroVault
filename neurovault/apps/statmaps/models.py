@@ -332,6 +332,11 @@ class Image(BaseCollectionItem):
                                               verbose_name="Reduced representation of the image",
                                               null=True, blank=True, upload_to=upload_img_to,
                                               storage=OverwriteStorage())
+    reduced_representation_engine = models.FileField(
+        help_text=("Binary file with the vector of in brain values resampled to lower resolution to be used in the Engine"),
+        verbose_name="Reduced representation of the image, 16x16x16",
+        null=True, blank=True, upload_to=upload_img_to,
+        storage=OverwriteStorage())
     data = hstore.DictionaryField(blank=True, null=True)
     hstore_objects = hstore.HStoreManager()
 
@@ -517,6 +522,7 @@ class BaseStatisticMap(Image):
         if do_update and self.collection:
             if self.reduced_representation: # not applicable for private collections
                 self.reduced_representation.delete()
+                self.reduced_representation_engine.delete()
 
         super(BaseStatisticMap, self).save()
 

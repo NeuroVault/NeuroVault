@@ -904,13 +904,15 @@ def compare_images(request,pk1,pk2):
             "IMAGE_2_LINK":"/images/%s" % (image2.pk)
     }
 
-    # Generate image vectos from file
-    nii_obj = nib.load(image1.file.path)   # standard_mask=True is default
-    image_vector1 = make_resampled_transformation_vector(nii_obj,resample_dim)
+    # create reduced representation in case it's not there
+    if not image1.reduced_representation or not os.path.exists(image1.reduced_representation.path):
+        image1 = save_resampled_transformation_single(image1.id)  # cannot run this async
+    if not image2.reduced_representation or not os.path.exists(image2.reduced_representation.path):
+        image2 = save_resampled_transformation_single(image2.id)  # cannot run this async
 
-    nii_obj = nib.load(image2.file.path)   # standard_mask=True is default
-    image_vector2 = make_resampled_transformation_vector(nii_obj,resample_dim)
-
+    # Load image vectors from npy files
+    image_vector1 = np.load(image1.reduced_representation.file)
+    image_vector2 = np.load(image2.reduced_representation.file)
 
     # Load atlas pickle, containing vectors of atlas labels, colors, and values for same voxel dimension (4mm)
     this_path = os.path.abspath(os.path.dirname(__file__))

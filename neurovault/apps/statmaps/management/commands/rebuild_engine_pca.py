@@ -50,8 +50,8 @@ class Command(BaseCommand):
         i = 0
         for image in Image.objects.all():
             try:
-                os.path.exists(str(image.reduced_representation.file))
-                feature = np.load(image.reduced_representation.file)
+                os.path.exists(str(image.reduced_representation_engine.file))
+                feature = np.load(image.reduced_representation_engine.file)
                 feature[np.isnan(feature)] = 0
                 if i == 0:
                     features = np.empty([feature_num_for_PCA, feature.shape[0]])
@@ -84,10 +84,10 @@ class Command(BaseCommand):
         with t:
             for i, image in enumerate(Image.objects.all()):
                 try:
-                    os.path.exists(str(image.reduced_representation.file))
+                    os.path.exists(str(image.reduced_representation_engine.file))
                     os.path.exists(str(image.thumbnail.file))
                     if is_search_compatible(image.pk):
-                        feature = np.load(image.reduced_representation.file)
+                        feature = np.load(image.reduced_representation_engine.file)
                         print "Length:", len(feature.tolist()), "Image:", image.pk
                         feature[np.isnan(feature)] = 0
                         engine.store_vector(feature.tolist(), image.pk)

@@ -49,8 +49,8 @@ class Command(BaseCommand):
         # Get the size of the reduced representation atm
         for image in Image.objects.all():
             try:
-                os.path.exists(str(image.reduced_representation.file))
-                feature = np.load(image.reduced_representation.file)
+                os.path.exists(str(image.reduced_representation_engine.file))
+                feature = np.load(image.reduced_representation_engine.file)
                 feature_dimension = feature.shape[0]
                 break
             except ValueError:
@@ -79,10 +79,10 @@ class Command(BaseCommand):
         with t:
             for i, image in enumerate(Image.objects.all()):
                 try:
-                    os.path.exists(str(image.reduced_representation.file))
+                    os.path.exists(str(image.reduced_representation_engine.file))
                     os.path.exists(str(image.thumbnail.file))
                     if is_search_compatible(image.pk):
-                        feature = np.load(image.reduced_representation.file)
+                        feature = np.load(image.reduced_representation_engine.file)
                         print "Length:", len(feature.tolist()), "Image:", image.pk
                         feature[np.isnan(feature)] = 0
                         engine.store_vector(feature.tolist(), image.pk)

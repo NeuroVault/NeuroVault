@@ -554,7 +554,7 @@ def get_existing_comparisons(pk1):
     engine = pickle.load(open('/code/neurovault/apps/statmaps/tests/engine.p', "rb"))
 
     image = Image.objects.get(pk=pk1)
-    feature = np.load(image.reduced_representation.file)
+    feature = np.load(image.reduced_representation_engine.file)
     feature[np.isnan(feature)] = 0
     results = engine.neighbours(feature)
     return results

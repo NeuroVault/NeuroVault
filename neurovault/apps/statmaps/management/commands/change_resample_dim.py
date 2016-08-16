@@ -44,7 +44,7 @@ def change_resample_dim(resample_dim):
 
             try:
                 os.path.exists(str(image.reduced_representation.file)) # Is there any reduced_representation?
-                path_of_red_rep = str(image.reduced_representation.file)
+                #path_of_red_rep = str(image.reduced_representation_engine.file)
 
                 nii_obj = nib.load(image.file.path)
                 image_vector = make_resampled_transformation_vector(nii_obj, resample_dim)
@@ -54,9 +54,9 @@ def change_resample_dim(resample_dim):
                 f.seek(0)
                 content_file = ContentFile(f.read())
                 # and save a new one:
-                image.reduced_representation.save("transform_%smm_%s.npy" % (resample_dim[0], image.pk), content_file)
+                image.reduced_representation_engine.save("transform_%smm_%s.npy" % (resample_dim[0], image.pk), content_file)
                 print "Resampled!"
-                os.remove(path_of_red_rep)  # delete the previous one
+                #os.remove(path_of_red_rep)  # delete the previous one
 
             except ValueError or IOError:
                 print "This image needs no resampling due to not previous resampled transformation"

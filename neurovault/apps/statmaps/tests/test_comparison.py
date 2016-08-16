@@ -69,7 +69,7 @@ class ComparisonTestCase(TestCase):
     # When generating transformations for comparison, NaNs should be maintained in the map
     # (and not replaced with zero / interpolated to "almost zero" values.
     def test_interpolated_transform_zeros(self):
-        img = save_resampled_transformation_single(self.pknan, resample_dim=[16, 16, 16])
+        img = save_resampled_transformation_single(self.pknan, resample_dim=[4,4,4])
         data = numpy.load(img.reduced_representation.file)
         print "Does transformation calculation maintain NaN values?: %s" %(numpy.isnan(data).any())
         assert_equal(numpy.isnan(data).any(),True)
