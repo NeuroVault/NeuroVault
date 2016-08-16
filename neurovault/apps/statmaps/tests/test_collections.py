@@ -8,7 +8,7 @@ from django.core.urlresolvers import reverse
 from django.test import TestCase, Client, override_settings, RequestFactory
 from uuid import uuid4
 
-from neurovault.apps.statmaps.models import Collection, User, Image, Atlas, Image
+from neurovault.apps.statmaps.models import Collection, User, Image, Atlas
 from neurovault.apps.statmaps.utils import detect_4D, split_4D_to_3D
 from neurovault.apps.statmaps.views import delete_collection
 from neurovault.settings import PRIVATE_MEDIA_ROOT
@@ -158,8 +158,9 @@ class CollectionMetaDataTest(TestCase):
         password = 'pwd'
         test_path = os.path.abspath(os.path.dirname(__file__))
 
-        self.user = User.objects.create_user("%s_%s" % (base_username,
-                                                        self.uniqid()), None, password)
+        self.user = User.objects.create_user(
+            "%s_%s" % (base_username, self.uniqid()), None, password
+        )
         self.user.save()
 
         self.client = Client()
@@ -223,6 +224,28 @@ class CollectionMetaDataTest(TestCase):
         self.assertEqual(image2.cognitive_paradigm_cogatlas.name,
                          cognitive_paradigms[1])
 
+    def test_empty_string_value_in_fixed_numeric_field(self):
+        test_data = [
+            ['Filename', 'Subject ID', 'number_of_subjects'],
+            ['motor_lips.nii.gz', '12', ''],
+            ['beta_0001.nii.gz', '13', None]
+        ]
+
+        url = reverse('edit_metadata',
+                      kwargs={'collection_cid': self.coll.pk})
+
+        resp = self.client.post(url,
+                                data=json.dumps(test_data),
+                                content_type='application/json; charset=utf-8')
+
+        self.assertEqual(resp.status_code, 200)
+
+        image1 = Image.objects.get(id=self.image1.id)
+        self.assertIsNone(image1.number_of_subjects)
+
+        image2 = Image.objects.get(id=self.image2.id)
+        self.assertIsNone(image2.number_of_subjects)
+
     def test_metadata_for_files_missing_in_the_collection(self):
         test_data = [
             ['Filename', 'Subject ID', 'Sex'],
@@ -267,7 +290,9 @@ class CollectionMetaDataTest(TestCase):
         resp_json = json.loads(resp.content)
 
         self.assertEqual(resp_json['messages'], {'beta_0001.nii.gz': [{
-            'Modality & acquisition type': ["Value '-*NOT-EXISTING-MOD*-' is not a valid choice."]
+            'Modality & acquisition type': [
+                "Value '-*NOT-EXISTING-MOD*-' is not a valid choice."
+            ]
         }]})
 
     def test_incorrect_value_in_fixed_foreign_field(self):
@@ -292,5 +317,7 @@ class CollectionMetaDataTest(TestCase):
         resp_json = json.loads(resp.content)
 
         self.assertEqual(resp_json['messages'], {'motor_lips.nii.gz': [{
-            'Cognitive paradigm': ["Value '-*NOT-EXISTING-PARADIGM*-' is not a valid choice."]
+            'Cognitive paradigm': [
+                "Value '-*NOT-EXISTING-PARADIGM*-' is not a valid choice."
+            ]
         }]})

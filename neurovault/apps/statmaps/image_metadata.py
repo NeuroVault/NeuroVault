@@ -101,16 +101,16 @@ def set_object_attribute(obj, key, value):
                                 "get_fixed_fields. Field %s "
                                 "doesn't exist." % key)
 
-    if isinstance(field_type, ForeignKey):
-        if not value:
-            # explicit None for empty strings
-            value = None
-        else:
-            model = field_type.related_field.model
-            try:
-                value = model.objects.get(name=value)
-            except model.DoesNotExist:
-                raise ValidationError({key: wrap_error(value)})
+    if not value and not field_type.empty_strings_allowed:
+        # explicit None for empty strings
+        value = None
+
+    if isinstance(field_type, ForeignKey) and value:
+        model = field_type.related_field.model
+        try:
+            value = model.objects.get(name=value)
+        except model.DoesNotExist:
+            raise ValidationError({key: wrap_error(value)})
 
     elif field_type.choices:
         try:

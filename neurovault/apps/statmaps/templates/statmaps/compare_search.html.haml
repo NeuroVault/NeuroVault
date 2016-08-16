@@ -21,14 +21,30 @@
 									},
 									{
 										"render": function ( data, type, row ) {
+										return "<a href='http://www.neurovault.org/images/compare/" + {{ image.pk }} + "/" + row[1] +"' class='btn btn-info' role='button' >" + {{ image.pk }} + " vs " + row[1] + "</a>";
+										},
+										"targets":[ 5 ]
+									},
+									{
+										"render": function ( data, type, row ) {
 										return "<img src=" + data + " />";
 										},
 										"targets":[ 3 ]
 									},
+                  {
+                    render: function ( data, type, row ) {
+                        return Math.abs(row[4].toFixed(4));
+                    },
+                    targets: 4
+                  },
+                  {
+                    render: $('#similarity-table').dataTable.render.number( ',', '.', 4 ),
+                  },
+
     								{ "orderable": false, "targets": 3 },
     								{ "targets": [ 1 ], "visible": false },
   									],
-        			"order": [[ 4, "asc" ]],
+        			"order": [[ 4, "desc" ]],
         			"ajax": "{% url 'find_similar_json' pk=image.pk %}",
 				});
        });
@@ -51,8 +67,8 @@
 					%th ID
 					%th Name
 					%th png
-					%th distance
-					%th tag
+					%th score
+					%th Comparison
 
 .row
 	.span11
