@@ -18,7 +18,7 @@ from neurovault.api.tests.base import BaseTestCases
 from neurovault.api.tests.base import STATMAPS_TESTS_PATH
 
 
-class Test_Atlas_APIs(TestCase):
+class TestAtlas(TestCase):
 
     def setUp(self):
         self.test_path = os.path.abspath(os.path.dirname(__file__))
@@ -92,7 +92,7 @@ class Test_Atlas_APIs(TestCase):
     def tearDown(self):
         clearDB()
 
-# Atlas Query Tests
+    # Atlas Query Tests
 
     def test_query_region_out_of_order_indices(self):
 
@@ -155,8 +155,7 @@ class Test_Atlas_APIs(TestCase):
                 responseText = eval(response.content)
                 self.assertEqual(responseText, region)
 
-
-# General API Tests
+    # General API Tests
 
     def test_atlases(self):
         print "\nChecking that atlas images are returned by atlas api..."
