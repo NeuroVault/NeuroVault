@@ -35,8 +35,10 @@ class TestNIDMResults(APITestCase):
         response = self.client.get('/api/nidm_results/')
         descriptions = [item[u'description']
                         for item in response.data['results'][0][u'statmaps']]
-        self.assertTrue(
-            'NIDM Results: spm_example.nidm.zip > TStatistic.nii.gz' in descriptions)
+        self.assertIn(
+            'NIDM Results: spm_example.nidm.zip > TStatistic.nii.gz',
+            descriptions
+        )
 
     def test_nidm_results_pk(self):
         url = '/api/nidm_results/%d/' % self.nidm.pk
