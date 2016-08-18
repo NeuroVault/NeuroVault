@@ -189,12 +189,6 @@ class Test_Atlas_APIs(TestCase):
         self.assertEqual(response['aaData'][2][1], u'fop')
         self.assertEqual(response['aaData'][11][1], u'46')
 
-    def test_collections_pk(self):
-        url = '/api/collections/%d/' % self.Collection1.pk
-        response = json.loads(self.client.get(url, follow=True).content)
-        self.assertTrue('-' in response['add_date'])
-        self.assertTrue(isinstance(response['id'], int))
-
     def test_collections_datatable(self):
         url = '/api/collections/%d/datatable/' % self.Collection1.pk
         response = json.loads(self.client.get(url, follow=True).content)
