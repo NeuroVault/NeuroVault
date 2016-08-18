@@ -189,16 +189,6 @@ class Test_Atlas_APIs(TestCase):
         self.assertEqual(response['aaData'][2][1], u'fop')
         self.assertEqual(response['aaData'][11][1], u'46')
 
-    def test_collections_datatable(self):
-        url = '/api/collections/%d/datatable/' % self.Collection1.pk
-        response = json.loads(self.client.get(url, follow=True).content)
-        collection_name = "not found"
-        for prop in response['aaData']:
-            if prop[0] == 'name':
-                collection_name = prop[1]
-                break
-        self.assertEqual(collection_name, u'Collection1')
-
     def test_images(self):
         print "\nTesting images API...."
         url = '/api/images/'

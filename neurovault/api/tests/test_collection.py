@@ -109,3 +109,15 @@ class TestCollection(APITestCase):
         self.assertEqual(response.data, {
             'detail': 'You do not have permission to perform this action.'
         })
+
+    def test_collections_datatable(self):
+        url = '/api/collections/%d/datatable/' % self.coll.pk
+        response = self.client.get(url, follow=True)
+
+        aa_data = response.data['aaData']
+
+        self.assertIsInstance(aa_data, list)
+        key_map = dict(aa_data)
+
+        self.assertEqual(key_map['name'], self.coll.name)
+        self.assertEqual(key_map['id'], self.coll.pk)
