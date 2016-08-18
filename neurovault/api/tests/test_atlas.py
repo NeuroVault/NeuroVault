@@ -189,21 +189,6 @@ class Test_Atlas_APIs(TestCase):
         self.assertEqual(response['aaData'][2][1], u'fop')
         self.assertEqual(response['aaData'][11][1], u'46')
 
-    def test_nidm_results(self):
-        print "\nTesting NIDM results API...."
-        url = '/api/nidm_results/'
-        response = json.loads(self.client.get(url, follow=True).content)
-        descriptions = [item[u'description']
-                        for item in response['results'][0][u'statmaps']]
-        self.assertTrue(
-            'NIDM Results: spm_example.nidm.zip > TStatistic.nii.gz' in descriptions)
-
-    def test_nidm_results_pk(self):
-        url = '/api/nidm_results/%d/' % self.nidm.pk
-        response = json.loads(self.client.get(url, follow=True).content)
-        self.assertTrue('spm_example.nidm.ttl' in response['ttl_file'])
-        self.assertEqual(response['statmaps'][0][u'figure'], None)
-
 
 # Pagination
 
