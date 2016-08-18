@@ -189,31 +189,6 @@ class Test_Atlas_APIs(TestCase):
         self.assertEqual(response['aaData'][2][1], u'fop')
         self.assertEqual(response['aaData'][11][1], u'46')
 
-    def test_images(self):
-        print "\nTesting images API...."
-        url = '/api/images/'
-        response = json.loads(self.client.get(url, follow=True).content)
-        names = [item[u'name'] for item in response['results']]
-        self.assertTrue(u'unorderedAtlas' in names)
-        self.assertTrue(u'Statistic Map: passive listening > rest' in names)
-
-    def test_images_pk(self):
-        url = '/api/images/%d/' % self.Image1.pk
-        response = json.loads(self.client.get(url, follow=True).content)
-        self.assertTrue('http' in response['collection'])
-        image_path = os.path.join(
-            self.test_path,
-            STATMAPS_TESTS_PATH,
-            'test_data/statmaps/motor_lips.nii.gz'
-        )
-        self.assertEqual(response['name'], image_path)
-
-    def test_images_datatable(self):
-        url = '/api/images/%d/datatable/' % self.Image2.pk
-        response = json.loads(self.client.get(url, follow=True).content)
-        resp_dict = dict(response['aaData'])
-        assert('http' in resp_dict['url'])
-
     def test_nidm_results(self):
         print "\nTesting NIDM results API...."
         url = '/api/nidm_results/'
