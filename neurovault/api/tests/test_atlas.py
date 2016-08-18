@@ -16,7 +16,7 @@ from neurovault.apps.statmaps.tests.utils import (
 from neurovault.apps.statmaps.models import Collection
 from neurovault.api.tests.base import BaseTestCases
 from neurovault.api.tests.base import STATMAPS_TESTS_PATH
-from .pagination import StandardResultPagination
+from neurovault.api.pagination import StandardResultPagination
 
 
 class Test_Atlas_APIs(TestCase):
