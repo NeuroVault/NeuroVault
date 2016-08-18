@@ -11,6 +11,7 @@ neurovault/static/
 
 # test data
 neurovault/apps/statmaps/tests/test_data/feat/*
+neurovault/apps/statmaps/tests/bench/*
 
 # celery generated schedule
 celerybeat-schedule
