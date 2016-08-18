@@ -16,7 +16,6 @@ from neurovault.apps.statmaps.tests.utils import (
 from neurovault.apps.statmaps.models import Collection
 from neurovault.api.tests.base import BaseTestCases
 from neurovault.api.tests.base import STATMAPS_TESTS_PATH
-from neurovault.api.pagination import StandardResultPagination
 
 
 class Test_Atlas_APIs(TestCase):
@@ -188,25 +187,6 @@ class Test_Atlas_APIs(TestCase):
         response = json.loads(self.client.get(url, follow=True).content)
         self.assertEqual(response['aaData'][2][1], u'fop')
         self.assertEqual(response['aaData'][11][1], u'46')
-
-
-# Pagination
-
-    def test_pagination(self):
-        print "\nTesting API pagination..."
-        print "Max limit is set to %s" % (StandardResultPagination.max_limit)
-        self.assertEqual(1000, StandardResultPagination.max_limit)
-        print "Default limit is set to %s" % (StandardResultPagination.default_limit)
-        self.assertEqual(100, StandardResultPagination.default_limit)
-        print "Page size (equal to default) is set to %s" % (StandardResultPagination.PAGE_SIZE)
-        self.assertEqual(100, StandardResultPagination.PAGE_SIZE)
-
-        url = '/api/images/?limit=1'
-        response = json.loads(self.client.get(url, follow=True).content)
-        self.assertEqual(1, len(response['results']))
-        url = '/api/images/?limit=2'
-        response = json.loads(self.client.get(url, follow=True).content)
-        self.assertEqual(2, len(response['results']))
 
 
 class TestAtlasChange(BaseTestCases.TestCollectionItemChange):

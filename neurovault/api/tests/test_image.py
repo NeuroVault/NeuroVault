@@ -9,6 +9,7 @@ from neurovault.apps.statmaps.tests.utils import (
     save_atlas_form, save_nidm_form, save_statmap_form, clearDB
 )
 from neurovault.api.tests.base import STATMAPS_TESTS_PATH
+from neurovault.api.pagination import StandardResultPagination
 
 
 class TestImage(APITestCase):
@@ -91,3 +92,23 @@ class TestImage(APITestCase):
         resp_dict = dict(response.data['aaData'])
         self.assertIn('http', resp_dict['url'])
         self.assertEqual(resp_dict['id'], self.image2.pk)
+
+    def test_pagination(self):
+        print "\nTesting API pagination..."
+        print "Max limit is set to %s" % StandardResultPagination.max_limit
+        self.assertEqual(1000, StandardResultPagination.max_limit)
+        print "Default limit is set to %s" % (
+            StandardResultPagination.default_limit
+        )
+        self.assertEqual(100, StandardResultPagination.default_limit)
+        print "Page size (equal to default) is set to %s" % (
+            StandardResultPagination.PAGE_SIZE
+        )
+        self.assertEqual(100, StandardResultPagination.PAGE_SIZE)
+
+        url = '/api/images/?limit=1'
+        response = self.client.get(url)
+        self.assertEqual(1, len(response.data['results']))
+        url = '/api/images/?limit=2'
+        response = self.client.get(url)
+        self.assertEqual(2, len(response.data['results']))
