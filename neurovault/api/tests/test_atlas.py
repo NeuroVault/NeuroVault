@@ -189,12 +189,6 @@ class Test_Atlas_APIs(TestCase):
         self.assertEqual(response['aaData'][2][1], u'fop')
         self.assertEqual(response['aaData'][11][1], u'46')
 
-    def test_collections(self):
-        print "\nTesting collections API...."
-        url = '/api/collections/'
-        response = json.loads(self.client.get(url, follow=True).content)
-        self.assertEqual(response['results'][0][u'echo_time'], None)
-
     def test_collections_pk(self):
         url = '/api/collections/%d/' % self.Collection1.pk
         response = json.loads(self.client.get(url, follow=True).content)

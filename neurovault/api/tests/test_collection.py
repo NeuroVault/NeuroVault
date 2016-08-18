@@ -18,6 +18,12 @@ class TestCollection(APITestCase):
 
         self.item_url = '/api/collections/%s/' % self.coll.id
 
+    def test_fetch_collection_list(self):
+        response = self.client.get('/api/collections/', follow=True)
+        self.assertEqual(response.data['results'][0]['echo_time'], None)
+        self.assertEqual(response.data['results'][0]['id'], self.coll.id)
+        self.assertEqual(response.data['results'][0]['name'], self.coll.name)
+
     def test_fetch_collection(self):
         response = self.client.get('/api/collections/%s/' % self.coll.id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
