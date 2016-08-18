@@ -10,12 +10,13 @@ from rest_framework import status
 
 from neurovault.apps.statmaps.models import Atlas
 
-from neurovault.apps.statmaps.tests.utils import clearDB, save_atlas_form
-from neurovault.apps.statmaps.tests.utils import save_nidm_form, save_statmap_form
+from neurovault.apps.statmaps.tests.utils import (
+    clearDB, save_atlas_form, save_nidm_form, save_statmap_form
+)
 from neurovault.apps.statmaps.models import Collection
 from neurovault.api.tests.base import BaseTestCases
 from neurovault.api.tests.base import STATMAPS_TESTS_PATH
-from neurovault.apps.statmaps.urls import StandardResultPagination
+from .pagination import StandardResultPagination
 
 
 class Test_Atlas_APIs(TestCase):
