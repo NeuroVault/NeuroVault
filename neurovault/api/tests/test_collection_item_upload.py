@@ -3,7 +3,6 @@ import os
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from rest_framework.test import APITestCase
 from rest_framework import status
 
 from neurovault.apps.statmaps.models import (
@@ -11,8 +10,7 @@ from neurovault.apps.statmaps.models import (
 )
 from neurovault.apps.statmaps.tests.utils import clearDB
 from neurovault.apps.statmaps.tests.test_nidm import NIDM_TEST_FILES
-
-from neurovault.api.tests.base import STATMAPS_TESTS_PATH
+from neurovault.api.base import APITestCase
 
 
 class TestCollectionItemUpload(APITestCase):
@@ -25,17 +23,11 @@ class TestCollectionItemUpload(APITestCase):
     def tearDown(self):
         clearDB()
 
-    def abs_file_path(self, rel_path):
-        return os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                            rel_path)
-
     def test_upload_statmap(self):
         self.client.force_authenticate(user=self.user)
 
         url = '/api/collections/%s/images/' % self.coll.pk
-        fname = self.abs_file_path(
-            STATMAPS_TESTS_PATH + 'test_data/statmaps/motor_lips.nii.gz'
-        )
+        fname = self.abs_data_path('statmaps/motor_lips.nii.gz')
 
         post_dict = {
             'name': 'test map',
@@ -59,9 +51,7 @@ class TestCollectionItemUpload(APITestCase):
         self.client.force_authenticate(user=self.user)
 
         url = '/api/collections/%s/images/' % self.coll.pk
-        fname = self.abs_file_path(
-            STATMAPS_TESTS_PATH + 'test_data/statmaps/motor_lips.nii.gz'
-        )
+        fname = self.abs_data_path('statmaps/motor_lips.nii.gz')
 
         post_dict = {
             'name': 'test map',
@@ -105,11 +95,12 @@ class TestCollectionItemUpload(APITestCase):
         self.client.force_authenticate(user=self.user)
 
         url = '/api/collections/%s/atlases/' % self.coll.pk
-        nii_path = self.abs_file_path(
-            STATMAPS_TESTS_PATH + 'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz'
+        nii_path = self.abs_data_path(
+            'api/VentralFrontal_thr75_summaryimage_2mm.nii.gz'
         )
-        xml_path = self.abs_file_path(
-            STATMAPS_TESTS_PATH + 'test_data/api/VentralFrontal_thr75_summaryimage_2mm.xml')
+        xml_path = self.abs_data_path(
+            'api/VentralFrontal_thr75_summaryimage_2mm.xml'
+        )
 
         post_dict = {
             'name': 'test atlas',
@@ -180,9 +171,7 @@ class TestCollectionItemUpload(APITestCase):
 
     def test_missing_required_authentication(self):
         url = '/api/collections/%s/images/' % self.coll.pk
-        fname = self.abs_file_path(
-            STATMAPS_TESTS_PATH + 'test_data/statmaps/motor_lips.nii.gz'
-        )
+        fname = self.abs_data_path('statmaps/motor_lips.nii.gz')
 
         post_dict = {
             'name': 'test map',
@@ -208,9 +197,7 @@ class TestCollectionItemUpload(APITestCase):
         other_collection.save()
 
         url = '/api/collections/%s/images/' % other_collection.pk
-        fname = self.abs_file_path(
-            STATMAPS_TESTS_PATH + 'test_data/statmaps/motor_lips.nii.gz'
-        )
+        fname = self.abs_data_path('statmaps/motor_lips.nii.gz')
 
         post_dict = {
             'name': 'test map',

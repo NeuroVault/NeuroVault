@@ -5,7 +5,6 @@ from operator import itemgetter
 import xml.etree.ElementTree as ET
 
 from django.contrib.auth.models import User
-from rest_framework.test import APITestCase
 from rest_framework import status
 
 from neurovault.apps.statmaps.models import Atlas
@@ -14,14 +13,12 @@ from neurovault.apps.statmaps.tests.utils import (
     clearDB, save_atlas_form, save_nidm_form, save_statmap_form
 )
 from neurovault.apps.statmaps.models import Collection
-from neurovault.api.tests.base import BaseTestCases
-from neurovault.api.tests.base import STATMAPS_TESTS_PATH
+from neurovault.api.tests.base import APITestCase, BaseTestCases
 
 
 class TestAtlas(APITestCase):
 
     def setUp(self):
-        self.test_path = os.path.abspath(os.path.dirname(__file__))
         self.user = User.objects.create(username='neurovault')
         self.client.login(username=self.user)
         self.Collection1 = Collection(name='Collection1', owner=self.user)
@@ -31,62 +28,59 @@ class TestAtlas(APITestCase):
 
         # Save new atlas object, unordered
         print "Adding unordered and ordered atlas..."
-        nii_path = os.path.join(
-            self.test_path,
-            STATMAPS_TESTS_PATH,
-            'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz'
+        nii_path = self.abs_data_path(
+            'api/VentralFrontal_thr75_summaryimage_2mm.nii.gz'
         )
-        xml_path = os.path.join(
-            self.test_path,
-            STATMAPS_TESTS_PATH,
-            'test_data/api/unordered_VentralFrontal_thr75_summaryimage_2mm.xml'
+        xml_path = self.abs_data_path(
+            'api/unordered_VentralFrontal_thr75_summaryimage_2mm.xml'
         )
-        self.unorderedAtlas = save_atlas_form(nii_path=nii_path,
-                                              xml_path=xml_path,
-                                              collection=self.Collection1,
-                                              name="unorderedAtlas")
+        self.unorderedAtlas = save_atlas_form(
+            nii_path=nii_path,
+            xml_path=xml_path,
+            collection=self.Collection1,
+            name="unorderedAtlas"
+        )
         # Ordered
-        nii_path = os.path.join(
-            self.test_path,
-            STATMAPS_TESTS_PATH,
-            'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz'
+        nii_path = self.abs_data_path(
+            'api/VentralFrontal_thr75_summaryimage_2mm.nii.gz'
         )
-        xml_path = os.path.join(
-            self.test_path,
-            STATMAPS_TESTS_PATH,
-            'test_data/api/VentralFrontal_thr75_summaryimage_2mm.xml'
+        xml_path = self.abs_data_path(
+            'api/VentralFrontal_thr75_summaryimage_2mm.xml'
         )
-        self.orderedAtlas = save_atlas_form(nii_path=nii_path,
-                                            xml_path=xml_path,
-                                            collection=self.Collection1,
-                                            name="orderedAtlas")
+        self.orderedAtlas = save_atlas_form(
+            nii_path=nii_path,
+            xml_path=xml_path,
+            collection=self.Collection1,
+            name="orderedAtlas"
+        )
 
         # Statistical Map 1 and 2
         print "Adding statistical maps..."
-        nii_path = os.path.join(
-            self.test_path,
-            STATMAPS_TESTS_PATH,
-            'test_data/statmaps/motor_lips.nii.gz'
+        nii_path = self.abs_data_path(
+            'statmaps/motor_lips.nii.gz'
         )
         self.Image1 = save_statmap_form(
-            image_path=nii_path, collection=self.Collection1)
-        nii_path = os.path.join(
-            self.test_path,
-            STATMAPS_TESTS_PATH,
-            'test_data/statmaps/beta_0001.nii.gz'
+            image_path=nii_path,
+            collection=self.Collection1
+        )
+
+        nii_path = self.abs_data_path(
+            'statmaps/beta_0001.nii.gz'
         )
         self.Image2 = save_statmap_form(
-            image_path=nii_path, collection=self.Collection1)
+            image_path=nii_path,
+            collection=self.Collection1
+        )
 
         # Zip file with nidm results
         print "Adding nidm results..."
-        zip_file = os.path.join(
-            self.test_path,
-            STATMAPS_TESTS_PATH,
-            'test_data/nidm/spm_example.nidm.zip'
+        zip_file = self.abs_data_path(
+            'nidm/spm_example.nidm.zip'
         )
         self.nidm = save_nidm_form(
-            zip_file=zip_file, collection=self.Collection1)
+            zip_file=zip_file,
+            collection=self.Collection1
+        )
 
     def tearDown(self):
         clearDB()
@@ -96,11 +90,7 @@ class TestAtlas(APITestCase):
     def test_query_region_out_of_order_indices(self):
 
         print "\nAssessing equality of ordered vs. unordered atlas query..."
-        atlas_dir = os.path.join(
-            self.test_path,
-            STATMAPS_TESTS_PATH,
-            'test_data/api'
-        )
+        atlas_dir = self.abs_data_path('api')
         tree = ET.parse(os.path.join(
             atlas_dir, 'VentralFrontal_thr75_summaryimage_2mm.xml'
         ))
@@ -188,17 +178,15 @@ class TestAtlas(APITestCase):
 
 
 class TestAtlasChange(BaseTestCases.TestCollectionItemChange):
+
     def setUp(self):
         super(TestAtlasChange, self).setUp()
 
-        nii_path = self.abs_file_path(
-            STATMAPS_TESTS_PATH
-            + 'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz'
+        nii_path = self.abs_data_path(
+            'api/VentralFrontal_thr75_summaryimage_2mm.nii.gz'
         )
-        xml_path = self.abs_file_path(
-            STATMAPS_TESTS_PATH
-            + 'test_data/api/'
-            + 'unordered_VentralFrontal_thr75_summaryimage_2mm.xml'
+        xml_path = self.abs_data_path(
+            'api/unordered_VentralFrontal_thr75_summaryimage_2mm.xml'
         )
         self.item = save_atlas_form(nii_path=nii_path,
                                     xml_path=xml_path,
@@ -211,12 +199,10 @@ class TestAtlasChange(BaseTestCases.TestCollectionItemChange):
         self.client.force_authenticate(user=self.user)
 
         nii_file = self.simple_uploaded_file(
-            STATMAPS_TESTS_PATH
-            + 'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz'
+            'api/VentralFrontal_thr75_summaryimage_2mm.nii.gz'
         )
         xml_file = self.simple_uploaded_file(
-            STATMAPS_TESTS_PATH
-            + 'test_data/api/VentralFrontal_thr75_summaryimage_2mm.xml'
+            'api/VentralFrontal_thr75_summaryimage_2mm.xml'
         )
 
         put_dict = {

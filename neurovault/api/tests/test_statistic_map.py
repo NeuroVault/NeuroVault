@@ -6,16 +6,13 @@ from neurovault.apps.statmaps.models import StatisticMap
 from neurovault.apps.statmaps.tests.utils import save_statmap_form
 
 from neurovault.api.tests.base import BaseTestCases
-from neurovault.api.tests.base import STATMAPS_TESTS_PATH
 
 
 class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
     def setUp(self):
         super(TestStatisticMapChange, self).setUp()
         self.item = save_statmap_form(
-            image_path=self.abs_file_path(
-                STATMAPS_TESTS_PATH + 'test_data/statmaps/motor_lips.nii.gz'
-            ),
+            image_path=self.abs_data_path('statmaps/motor_lips.nii.gz'),
             collection=self.coll
         )
 
@@ -24,9 +21,7 @@ class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
     def test_statistic_map_update(self):
         self.client.force_authenticate(user=self.user)
 
-        file = self.simple_uploaded_file(
-            STATMAPS_TESTS_PATH + 'test_data/statmaps/motor_lips.nii.gz'
-        )
+        file = self.simple_uploaded_file('statmaps/motor_lips.nii.gz')
 
         put_dict = {
             'name': "renamed %s" % uuid.uuid4(),

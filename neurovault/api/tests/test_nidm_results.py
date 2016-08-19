@@ -1,32 +1,24 @@
-import os
 import uuid
 
 from django.contrib.auth.models import User
 
 from rest_framework import status
-from rest_framework.test import APITestCase
 
 from neurovault.apps.statmaps.models import NIDMResults, Collection
 from neurovault.apps.statmaps.tests.utils import save_nidm_form, clearDB
 from neurovault.api.tests.base import BaseTestCases
 
-from neurovault.api.tests.base import STATMAPS_TESTS_PATH
+from neurovault.api.tests.base import APITestCase
 
 
 class TestNIDMResults(APITestCase):
     def setUp(self):
-        self.test_path = os.path.abspath(os.path.dirname(__file__))
-
         self.user = User.objects.create_user('NeuroGuy')
         self.user.save()
         self.collection = Collection(owner=self.user, name="Test Collection")
         self.collection.save()
 
-        zip_file = os.path.join(
-            self.test_path,
-            STATMAPS_TESTS_PATH,
-            'test_data/nidm/spm_example.nidm.zip'
-        )
+        zip_file = self.abs_data_path('nidm/spm_example.nidm.zip')
         self.nidm = save_nidm_form(
             zip_file=zip_file, collection=self.collection)
 
@@ -56,10 +48,7 @@ class TestNIDMResultsChange(BaseTestCases.TestCollectionItemChange):
 
         self.item = save_nidm_form(
             name='fsl_course_av',
-            zip_file=self.abs_file_path(
-                STATMAPS_TESTS_PATH
-                + 'test_data/nidm/fsl_course_av.nidm.zip'
-            ),
+            zip_file=self.abs_data_path('nidm/fsl_course_av.nidm.zip'),
             collection=self.coll
         )
 
@@ -68,9 +57,7 @@ class TestNIDMResultsChange(BaseTestCases.TestCollectionItemChange):
     def test_nidm_results_update(self):
         self.client.force_authenticate(user=self.user)
 
-        file = self.simple_uploaded_file(
-            STATMAPS_TESTS_PATH + 'test_data/nidm/fsl_course_fluency2.nidm.zip'
-        )
+        file = self.simple_uploaded_file('nidm/fsl_course_fluency2.nidm.zip')
 
         put_dict = {
             'name': 'fsl_course_fluency2',

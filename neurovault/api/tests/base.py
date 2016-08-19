@@ -4,7 +4,7 @@ import uuid
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from rest_framework.test import APITestCase
+from rest_framework import test as rest_framework_test
 from rest_framework import status
 
 from neurovault.apps.statmaps.models import Collection
@@ -13,15 +13,24 @@ from neurovault.apps.statmaps.tests.utils import clearDB
 STATMAPS_TESTS_PATH = '../../apps/statmaps/tests/'
 
 
+class APITestCase(rest_framework_test.APITestCase):
+    def abs_file_path(self, rel_path):
+        return os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                            rel_path)
+
+    def abs_data_path(self, relative_filename_path):
+        return self.abs_file_path(os.path.join(
+            STATMAPS_TESTS_PATH,
+            'test_data',
+            relative_filename_path
+        ))
+
+
 class BaseTestCases:
     class TestCollectionItemChange(APITestCase):
 
-        def abs_file_path(self, rel_path):
-            return os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                rel_path)
-
         def simple_uploaded_file(self, rel_path):
-            fname = self.abs_file_path(rel_path)
+            fname = self.abs_data_path(rel_path)
             return SimpleUploadedFile(rel_path, open(fname).read())
 
         def setUp(self):
