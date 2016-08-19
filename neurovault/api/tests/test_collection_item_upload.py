@@ -10,7 +10,7 @@ from neurovault.apps.statmaps.models import (
 )
 from neurovault.apps.statmaps.tests.utils import clearDB
 from neurovault.apps.statmaps.tests.test_nidm import NIDM_TEST_FILES
-from neurovault.api.base import APITestCase
+from neurovault.api.tests.base import APITestCase
 
 
 class TestCollectionItemUpload(APITestCase):
