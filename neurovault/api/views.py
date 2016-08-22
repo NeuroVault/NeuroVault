@@ -355,4 +355,3 @@ class TagViewSet(viewsets.ModelViewSet):
         from django.db.models import Count
         data = Tag.objects.annotate(action_count=Count('action'))
         return APIHelper.wrap_for_datatables(data)
-
