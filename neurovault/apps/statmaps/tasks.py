@@ -58,7 +58,7 @@ def crawl_anima():
         
         version = xml_obj.find(".").find(".//Element[@name='Version']").text.strip()
         study_description = xml_obj.find(".//Element[@name='Description']").text.strip()
-        study_description += " This dataset was automatically imported from the ANIMA <http://anima.modelgui.org/> database. Version: %s"%version
+        study_description += " This dataset was automatically imported from the ANIMA <http://anima.fz-juelich.de/> database. Version: %s"%version
         study_name = xml_obj.find(".").attrib['name']
         
         tags = xml_obj.find(".//Element[@name='Keywords']").text.strip().split(";")
@@ -69,7 +69,7 @@ def crawl_anima():
         post_dict = {
             'name': study_name,
             'description': study_description,
-            'full_dataset_url': "http://anima.fz-juelich.de/api/studies/" + os.path.split(url)[1].replace(".study", "")
+            'full_dataset_url': "http://anima.fz-juelich.de/studies/" + os.path.split(url)[1].replace(".study", "")
         }
         if doi != None:
             post_dict['DOI'] = doi.text.strip()
