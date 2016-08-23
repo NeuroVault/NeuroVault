@@ -26,8 +26,8 @@ from django.db.models import Q
 from django.template.loader import render_to_string
 from lxml import etree
 
-from neurovault.apps.statmaps.models import Collection, NIDMResults, StatisticMap, Comparison, NIDMResultStatisticMap, \
-    BaseStatisticMap
+from neurovault.apps.statmaps.models import Collection, NIDMResults, StatisticMap, NIDMResultStatisticMap, \
+    BaseStatisticMap, Image
 
 
 # see CollectionRedirectMiddleware
@@ -498,7 +498,6 @@ def not_in_mni(nii, plot=False):
 # QUERY FUNCTIONS -------------------------------------------------------------------------------
 
 def is_search_compatible(pk):
-    from neurovault.apps.statmaps.models import Image
     try:
         img = Image.objects.get(pk=pk)
     except ObjectDoesNotExist:
@@ -507,15 +506,14 @@ def is_search_compatible(pk):
     if img.polymorphic_ctype.model in ['image', 'atlas'] or \
        img.is_thresholded or \
        img.analysis_level == 'S' or \
-       img.map_type in ['R', 'Pa', 'A'] or img.collection.private:
+       img.map_type in ['R', 'Pa', 'A'] or img.collection.private \
+       or img.collection.DOI is None:
         return False
     else:
         return True
 
 
 def get_images_to_compare_with(pk1, for_generation=False):
-    from neurovault.apps.statmaps.models import StatisticMap, NIDMResultStatisticMap, Image
-
     # if the map in question is invalid do not generate any comparisons
     if not is_search_compatible(pk1):
         return []
@@ -533,7 +531,9 @@ def get_images_to_compare_with(pk1, for_generation=False):
 
 # Returns number of total comparisons, with public, not thresholded maps
 def count_existing_comparisons(pk1):
-    return get_existing_comparisons(pk1).count()
+    comparisons = get_existing_comparisons(pk1)
+    results = zip(*comparisons)[1][1:]
+    return len(results)
 
 # Returns number of total comparisons possible
 def count_possible_comparisons(pk1):
@@ -546,20 +546,25 @@ def count_possible_comparisons(pk1):
 def count_processing_comparisons(pk1):
     return count_possible_comparisons(pk1) - count_existing_comparisons(pk1)
 
-
+# TODO: Should be this function @shared_task ?
 # Returns existing comparisons for specific pk, or entire database
 def get_existing_comparisons(pk1):
-    possible_images_to_compare_with_pks = get_images_to_compare_with(pk1) + [pk1]
-    comparisons = Comparison.objects.filter(Q(image1__pk=pk1) | Q(image2__pk=pk1))
-    comparisons = comparisons.filter(image1__id__in=possible_images_to_compare_with_pks,
-                                     image2__id__in=possible_images_to_compare_with_pks)
-    comparisons = comparisons.exclude(image1__pk=pk1, image2__pk=pk1)
-    return comparisons
+    import pickle
+
+    engine = pickle.load(open('/code/neurovault/apps/statmaps/tests/engine.p', "rb"))
+
+    image = Image.objects.get(pk=pk1)
+    feature = np.load(image.reduced_representation_engine.file)
+    feature[np.isnan(feature)] = 0
+    results = engine.neighbours(feature)
+    return results
+
 
 # Returns existing comparisons for specific pk in pd format for
 def get_similar_images(pk, max_results=100):
-    comparisons = get_existing_comparisons(pk).extra(select={"abs_score": "abs(similarity_score)"}).order_by(
-        "-abs_score")[0:max_results]  # "-" indicates descending
+    comparisons = get_existing_comparisons(pk)
+    # .extra(select={"abs_score": "abs(similarity_score)"}).order_by(
+    #     "-abs_score")[0:max_results]  # "-" indicates descending
 
     comparisons_pd = pd.DataFrame({'image_id': [],
                                    'score': [],
@@ -569,17 +574,23 @@ def get_similar_images(pk, max_results=100):
                                    'collection_name': []
                                    })
 
-    for comp in comparisons:
+    results = zip(*comparisons)[1][1:]
+    scores = zip(*comparisons)[2][1:]
+
+    print results
+
+    for i, id in enumerate(results):
+        image = Image.objects.get(pk=int(id))
         # pick the image we are comparing with
-        image = [image for image in [comp.image1, comp.image2] if image.id != pk][0]
-        if hasattr(image, "map_type") and image.thumbnail:
-            df = pd.DataFrame({'image_id': [image.pk],
-                               'score': [comp.similarity_score],
-                               'png_img_path': [image.get_thumbnail_url()],
-                               'tag': [[str(image.map_type)]],
-                               'name': [image.name],
-                               'collection_name': [image.collection.name]
-                               })
+        # image = [image for image in [comp.image1, comp.image2] if image.id != pk][0]
+        # if hasattr(image, "map_type") and image.thumbnail:
+        df = pd.DataFrame({'image_id': [id],
+                           'score': [scores[i]],
+                           'png_img_path': [image.get_thumbnail_url()],
+                           'tag': [[str(image.map_type)]],
+                           'name': [image.name],
+                           'collection_name': [image.collection.name]
+                           })
         comparisons_pd = comparisons_pd.append(df, ignore_index=True)
 
     return comparisons_pd

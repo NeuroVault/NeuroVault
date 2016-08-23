@@ -18,6 +18,8 @@ from django.views.generic import (View, CreateView, UpdateView, DeleteView,
                                   ListView)
 from braces.views import LoginRequiredMixin
 
+from neurovault.apps.statmaps.tasks import delete_vector_engine
+
 
 def view_profile(request, username=None):
     if not username:
@@ -67,13 +69,17 @@ def edit_user(request):
 
 @login_required
 def delete_profile(request):
-    if(request.GET.get('delete-btn')):
+    if request.GET.get('delete-btn'):
         if request.user.username == (request.GET.get('delete-text')):
             request.user.delete()
-        else: messages.warning(request,'Username did not match, deletion not completed')
+
+            for col in request.user.collection_set.all():
+                for img in col.basecollectionitem_set.all():
+                    delete_vector_engine.apply(img.pk)
+        else:
+            messages.warning(request,'Username did not match, deletion not completed')
         return HttpResponseRedirect(reverse("delete_profile"))
-    return render_to_response("registration/delete_profile.html",
-                              context_instance=RequestContext(request))
+    return render_to_response("registration/delete_profile.html", context_instance=RequestContext(request))
 
 @login_required
 def password_change_done(request):

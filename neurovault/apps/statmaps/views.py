@@ -29,7 +29,6 @@ from fnmatch import fnmatch
 from guardian.shortcuts import get_objects_for_user
 from nidmviewer.viewer import generate
 from pybraincompare.compare.scatterplot import scatterplot_compare_vector
-from pybraincompare.compare.search import similarity_search
 from rest_framework.renderers import JSONRenderer
 from sendfile import sendfile
 from sklearn.externals import joblib
@@ -38,12 +37,13 @@ from xml.dom import minidom
 import neurovault
 from neurovault import settings
 from neurovault.apps.statmaps.ahba import calculate_gene_expression_similarity
-from neurovault.apps.statmaps.forms import CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,NeuropowerStatisticMapForm,\
-    StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
-    EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
-from neurovault.apps.statmaps.models import Collection, Image, Atlas, StatisticMap, NIDMResults, NIDMResultStatisticMap, \
-    CognitiveAtlasTask, CognitiveAtlasContrast, BaseStatisticMap
-from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
+from neurovault.apps.statmaps.forms import CollectionForm, UploadFileForm, SimplifiedStatisticMapForm, \
+    NeuropowerStatisticMapForm, StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, \
+    EditAtlasForm, AtlasForm, EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
+from neurovault.apps.statmaps.models import Collection, Image, Atlas, StatisticMap, NIDMResults,\
+    NIDMResultStatisticMap, CognitiveAtlasTask, CognitiveAtlasContrast, BaseStatisticMap
+from neurovault.apps.statmaps.tasks import save_resampled_transformation_single, delete_vector_engine, \
+    generate_glassbrain_image
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
     get_file_ctime, detect_4D, split_4D_to_3D, splitext_nii_gz, mkdir_p, \
@@ -309,6 +309,11 @@ def view_collection(request, cid):
 @login_required
 def delete_collection(request, cid):
     collection = get_collection(cid,request)
+
+    # TODO: Check in Models if this is redundant
+    for img in collection.basecollectionitem_set.all():
+          delete_vector_engine.apply([img.pk])
+
     if not request.user.has_perm('statmaps.delete_collection', collection):
         return HttpResponseForbidden()
     collection.delete()
@@ -661,6 +666,9 @@ def upload_folder(request, collection_cid):
 @login_required
 def delete_image(request, pk):
     image = get_object_or_404(Image,pk=pk)
+
+    delete_vector_engine.apply([image.pk])
+
     cid = image.collection.pk
     if not request.user.has_perm("statmaps.delete_basecollectionitem", image):
         return HttpResponseForbidden()
@@ -873,6 +881,9 @@ def atlas_query_voxel(request):
 # Compare Two Images
 def compare_images(request,pk1,pk2):
     import numpy as np
+    from pybraincompare.mr.transformation import make_resampled_transformation_vector
+    resample_dim = [4, 4, 4]
+
     image1 = get_image(pk1,None,request)
     image2 = get_image(pk2,None,request)
     images = [image1,image2]
@@ -895,9 +906,9 @@ def compare_images(request,pk1,pk2):
 
     # create reduced representation in case it's not there
     if not image1.reduced_representation or not os.path.exists(image1.reduced_representation.path):
-        image1 = save_resampled_transformation_single(image1.id) # cannot run this async
+        image1 = save_resampled_transformation_single(image1.id)  # cannot run this async
     if not image2.reduced_representation or not os.path.exists(image2.reduced_representation.path):
-        image2 = save_resampled_transformation_single(image2.id) # cannot run this async
+        image2 = save_resampled_transformation_single(image2.id)  # cannot run this async
 
     # Load image vectors from npy files
     image_vector1 = np.load(image1.reduced_representation.file)
@@ -944,18 +955,22 @@ def compare_images(request,pk1,pk2):
 # Return search interface for one image vs rest
 def find_similar(request, pk):
     image1 = get_image(pk, None, request)
-    pk = int(pk)
-    max_results = 10
 
-    # Search only enabled if the image is not thresholded
-    if image1.is_thresholded:
-        error_message = "Image comparison is not enabled for thresholded images."
+    # Search only enabled if the image is not thresholded and some other constraints
+    if not is_search_compatible(image1.pk):
+        error_message = "Image comparison is not enabled for this image."
         context = {'error_message': error_message}
         return render(request, 'statmaps/error_message.html', context)
 
+    # Make sure we have a transforms for pks in question
+    if not image1.reduced_representation or not os.path.exists(image1.reduced_representation.path):
+        save_resampled_transformation_single.apply([image1.pk])
+    if not image1.thumbnail or not os.path.exists(image1.thumbnail.url):
+        generate_glassbrain_image.apply([image1.pk])
+
     image_title = format_image_collection_names(image_name=image1.name,
-                                                    collection_name=image1.collection.name,
-                                                    map_type=image1.map_type, total_length=50)
+                                                collection_name=image1.collection.name,
+                                                map_type=image1.map_type, total_length=50)
     # Here is the query image
     query_png = image1.thumbnail.url
 
@@ -978,15 +993,18 @@ def find_similar_json(request, pk, collection_cid=None):
     image1 = get_image(pk, None, request)
     pk = int(pk)
 
-    # Search only enabled if the image is not thresholded
-    if image1.is_thresholded:
-        return JSONResponse('error: Image comparison is not enabled for thresholded images.', status=400)
+    # Search only enabled if the image is not thresholded and some other constraints
+    if not is_search_compatible(image1.pk):
+        return JSONResponse('error: Image comparison is not enabled for this image.', status=400)
     else:
+        # Make sure we have a transforms for pks in question
+        if not image1.reduced_representation or not os.path.exists(image1.reduced_representation.path) :
+            save_resampled_transformation_single.apply([image1.pk])
         similar_images = get_similar_images(pk, max_results)
 
-    dict = similar_images.to_dict("split")
-    del dict["index"]
-    return JSONResponse(dict)
+    images_dict = similar_images.to_dict("split")
+    del images_dict["index"]
+    return JSONResponse(images_dict)
 
 def gene_expression(request, pk, collection_cid=None):
     '''view_image returns main view to see an image and associated meta data. If the image is in a collection with a DOI and has a generated thumbnail, it is a contender for image comparison, and a find similar button is exposed.
@@ -1012,7 +1030,7 @@ def gene_expression_json(request, pk, collection_cid=None):
         raise Http404
 
     if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
-        image = save_resampled_transformation_single(image.id)
+        image = save_resampled_transformation_single.apply([image.id])
 
     map_data = np.load(image.reduced_representation.file)
     expression_results = calculate_gene_expression_similarity(map_data)

@@ -14,7 +14,7 @@ class TestGeneDecoding(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.test_path = os.path.abspath(os.path.dirname(__file__))
-        cls.user, _ = User.objects.get_or_create(username='neurovault')
+        cls.user, _ = User.objects.get_or_create(username='neuro_vault')
         cls.client = Client()
         cls.client.login(username=cls.user)
         cls.Collection1 = Collection(name='Collection1', owner=cls.user)

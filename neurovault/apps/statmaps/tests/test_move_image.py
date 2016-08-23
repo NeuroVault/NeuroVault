@@ -32,6 +32,7 @@ class MoveImageTest(TestCase):
     
     def tearDown(self):
         clearDB()
+        self.user.delete()
 
     def testCollectionSharing(self):
 

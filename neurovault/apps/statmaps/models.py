@@ -22,7 +22,8 @@ from taggit.models import GenericTaggedItemBase, TagBase
 
 from neurovault.apps.statmaps.storage import NiftiGzStorage, NIDMStorage,\
     OverwriteStorage
-from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, generate_glassbrain_image
+from neurovault.apps.statmaps.tasks import save_resampled_transformation_single, generate_glassbrain_image, \
+    delete_vector_engine
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 
 
@@ -158,11 +159,18 @@ class Collection(models.Model):
 
         super(Collection, self).save(*args, **kwargs)
 
+        # If changed Privacy or DOI, delete vector.
+        if (privacy_changed and self.private) or (DOI_changed and self.DOI is None):
+            for image in self.basecollectionitem_set.instance_of(Image).all():
+                if image.pk:
+                    delete_vector_engine.apply([image.pk])
+
+        # If changed Privacy or DOI, store vector.
         if (privacy_changed and not self.private) or (DOI_changed and self.DOI is not None):
             for image in self.basecollectionitem_set.instance_of(Image).all():
                 if image.pk:
-                    generate_glassbrain_image.apply_async([image.pk])
-                    run_voxelwise_pearson_similarity.apply_async([image.pk])
+                    save_resampled_transformation_single.apply([image.pk])
+
 
     class Meta:
         app_label = 'statmaps'
@@ -171,6 +179,7 @@ class Collection(models.Model):
         cid = self.pk
         for image in self.basecollectionitem_set.instance_of(Image):
             image.delete()
+            delete_vector_engine(image.pk)
         for nidmresult in self.basecollectionitem_set.instance_of(NIDMResults):
             nidmresult.delete()
         ret = super(Collection, self).delete(using=using)
@@ -323,6 +332,11 @@ class Image(BaseCollectionItem):
                                               verbose_name="Reduced representation of the image",
                                               null=True, blank=True, upload_to=upload_img_to,
                                               storage=OverwriteStorage())
+    reduced_representation_engine = models.FileField(
+        help_text=("Binary file with the vector of in brain values resampled to lower resolution to be used in the Engine"),
+        verbose_name="Reduced representation of the image, 16x16x16",
+        null=True, blank=True, upload_to=upload_img_to,
+        storage=OverwriteStorage())
     data = hstore.DictionaryField(blank=True, null=True)
     hstore_objects = hstore.HStoreManager()
 
@@ -389,9 +403,18 @@ class Image(BaseCollectionItem):
         new_image = True if self.pk is None else False
         super(Image, self).save()
 
-        if (do_update or new_image) and self.collection and self.collection.private == False:
+        # If it's a new image, no need of deleting it from the Engine
+        if new_image and self.collection and self.collection.private == False:
             # Generate glass brain image
-            generate_glassbrain_image.apply_async([self.pk])
+            generate_glassbrain_image.apply([self.pk])
+            save_resampled_transformation_single.apply([self.pk])
+
+        # If it's an update, before saving it again, delete the old one from the Engine
+        if do_update and self.collection and self.collection.private == False:
+            # Generate glass brain image
+            generate_glassbrain_image.apply([self.pk])
+            delete_vector_engine.apply([self.pk])
+            save_resampled_transformation_single.apply([self.pk])
 
         if collection_changed:
             for field_name in self._meta.get_all_field_names():
@@ -499,16 +522,13 @@ class BaseStatisticMap(Image):
         if do_update and self.collection:
             if self.reduced_representation: # not applicable for private collections
                 self.reduced_representation.delete()
+                self.reduced_representation_engine.delete()
 
-                # If more than one metric is added to NeuroVault, this must also filter based on metric
-                comparisons = Comparison.objects.filter(Q(image1=self) | Q(image2=self))
-                if comparisons:
-                    comparisons.delete()
         super(BaseStatisticMap, self).save()
 
         # Calculate comparisons
         if do_update or new_image:
-            run_voxelwise_pearson_similarity.apply_async([self.pk])
+            save_resampled_transformation_single.apply([self.pk])
 
         self.file.close()
 
@@ -618,36 +638,3 @@ class Atlas(Image):
         verbose_name_plural = "Atlases"
 
 post_save.connect(basecollectionitem_created, sender=Atlas, weak=True)
-
-class Similarity(models.Model):
-    similarity_metric = models.CharField(max_length=200, null=False, blank=False, db_index=True,help_text="the name of the similarity metric to describe a relationship between two or more images.",verbose_name="similarity metric name")
-    transformation = models.CharField(max_length=200, blank=True, db_index=True,help_text="the name of the transformation of the data relevant to the metric",verbose_name="transformation of images name")
-    metric_ontology_iri = models.URLField(max_length=200, blank=True, db_index=True,help_text="If defined, a url of an ontology IRI to describe the similarity metric",verbose_name="similarity metric ontology IRI")
-    transformation_ontology_iri = models.URLField(max_length=200, blank=True, db_index=True,help_text="If defined, a url of an ontology IRI to describe the transformation metric",verbose_name="image transformation ontology IRI")
-
-    class Meta:
-        verbose_name = "similarity metric"
-        verbose_name_plural = "similarity metrics"
-        unique_together = ("similarity_metric","transformation")
-
-    def __unicode__(self):
-        return "<metric:%s><transformation:%s>" %(self.similarity_metric,self.transformation)
-
-
-class Comparison(models.Model):
-    image1 = models.ForeignKey(Image,related_name="image1",db_index=True)
-    image2 = models.ForeignKey(Image,related_name="image2",db_index=True)
-    similarity_metric = models.ForeignKey(Similarity)
-    similarity_score = models.FloatField(help_text="the comparison score between two or more statistical maps", verbose_name="the comparison score between two or more statistical maps")
-
-    def __unicode__(self):
-      return "<%s><%s><score:%s>" %(self.image1,self.image2,self.similarity_score)
-
-    class Meta:
-        unique_together = ("image1","image2")
-        index_together = [["image1", "image2", "similarity_metric"],
-                          ["image2", "similarity_metric"],
-                          ["image1", "similarity_metric"]]
-
-        verbose_name = "pairwise image comparison"
-        verbose_name_plural = "pairwise image comparisons"

@@ -23,7 +23,7 @@ class Test_Atlas_APIs(TestCase):
 
     def setUp(self):
         self.test_path = os.path.abspath(os.path.dirname(__file__))
-        self.user = User.objects.create(username='neurovault')
+        self.user = User.objects.create(username='neuro_vault')
         self.client = Client()
         self.client.login(username=self.user)
         self.Collection1 = Collection(name='Collection1', owner=self.user)
@@ -71,6 +71,7 @@ class Test_Atlas_APIs(TestCase):
 
     def tearDown(self):
         clearDB()
+        self.user.delete()
 
 # Atlas Query Tests
 
