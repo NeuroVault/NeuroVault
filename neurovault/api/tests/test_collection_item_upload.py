@@ -91,6 +91,28 @@ class TestCollectionItemUpload(APITestCase):
             'forty two'
         )
 
+    def test_upload_statmap_with_metadata_data_property(self):
+        self.client.force_authenticate(user=self.user)
+
+        url = '/api/collections/%s/images/' % self.coll.pk
+        fname = self.abs_data_path('statmaps/motor_lips.nii.gz')
+
+        post_dict = {
+            'name': 'test map',
+            'modality': 'fMRI-BOLD',
+            'map_type': 'T',
+            'file': SimpleUploadedFile(fname, open(fname).read()),
+            'data': 42
+        }
+
+        response = self.client.post(url, post_dict, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.assertEqual(response.data['data'], 42)
+
+        statmap = StatisticMap.objects.get(pk=response.data['id'])
+        self.assertEqual(statmap.data['data'], '42')
+
     def test_upload_atlas(self):
         self.client.force_authenticate(user=self.user)
 

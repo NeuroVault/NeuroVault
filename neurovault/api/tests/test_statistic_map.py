@@ -70,5 +70,18 @@ class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
         )
         self.assertEqual(statmap.data['custom_metadata_field_c'], '42')
 
+    def test_statistic_map_data_property_update(self):
+        self.client.force_authenticate(user=self.user)
+
+        patch_dict = {
+            'data': 42
+        }
+        response = self.client.patch(self.item_url, patch_dict)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(response.data['data'], 42)
+        statmap = StatisticMap.objects.get(pk=response.data['id'])
+        self.assertEqual(statmap.data['data'], '42')
+
     def test_statistic_map_destroy(self):
         self._test_collection_item_destroy(StatisticMap)
