@@ -228,7 +228,7 @@ REST_FRAMEWORK = {
     # LimitOffsetPagination will allow to set a ?limit= and ?offset=
     # variable in the URL.
     'DEFAULT_PAGINATION_CLASS':
-         'neurovault.apps.statmaps.urls.StandardResultPagination',
+        'neurovault.api.pagination.StandardResultPagination',
 
     # Use Django's standard `django.contrib.auth` permissions,
     # or allow read-only access for unauthenticated users.

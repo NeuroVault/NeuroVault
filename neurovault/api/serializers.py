@@ -148,6 +148,7 @@ class EditableStatisticMapSerializer(ImageSerializer):
     class Meta:
         model = StatisticMap
         read_only_fields = ('collection',)
+        exclude = ['polymorphic_ctype', 'ignore_file_warning', 'data']
 
 
 class StatisticMapSerializer(ImageSerializer):

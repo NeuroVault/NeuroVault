@@ -2,7 +2,6 @@ from django.conf.urls import patterns, url
 from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView, TemplateView
 from django.views.generic.base import RedirectView
-from rest_framework.pagination import LimitOffsetPagination
 
 from neurovault import settings
 from neurovault.apps.statmaps.models import KeyValueTag
@@ -183,9 +182,3 @@ urlpatterns = patterns('',
         name='view_task')
 
 )
-
-# Pagination Custom Function to modify LimitedResultPagination
-class StandardResultPagination(LimitOffsetPagination):
-    PAGE_SIZE = 100  # this also sets default_limit to same value
-    max_limit = 1000 # we need to set this, default is None
-    default_limit = 100

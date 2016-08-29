@@ -13,7 +13,6 @@ from taggit.models import Tag
 
 from neurovault.apps.statmaps.models import (Atlas, Collection, Image,
                                              NIDMResults)
-from neurovault.apps.statmaps.urls import StandardResultPagination
 from neurovault.apps.statmaps.views import (get_collection, get_image,
                                             owner_or_contrib)
 from neurovault.apps.statmaps.voxel_query_functions import (getAtlasVoxels,
@@ -28,6 +27,8 @@ from .serializers import (UserSerializer, AtlasSerializer,
 
 from .permissions import (ObjectOnlyPermissions,
                           ObjectOnlyPolymorphicPermissions)
+
+from .pagination import StandardResultPagination
 
 
 class JSONResponse(HttpResponse):
