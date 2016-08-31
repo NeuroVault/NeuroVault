@@ -33,6 +33,7 @@ class TestCollectionItemUpload(APITestCase):
             'name': 'test map',
             'modality': 'fMRI-BOLD',
             'map_type': 'T',
+            'cognitive_paradigm_cogatlas': 'trm_4f24126c22011',
             'file': SimpleUploadedFile(fname, open(fname).read())
         }
 
