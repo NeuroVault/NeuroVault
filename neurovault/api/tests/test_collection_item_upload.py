@@ -33,7 +33,8 @@ class TestCollectionItemUpload(APITestCase):
             'name': 'test map',
             'modality': 'fMRI-BOLD',
             'map_type': 'T',
-            'cognitive_paradigm_cogatlas': 'trm_4f24126c22011',
+            'cognitive_paradigm_cogatlas': 'tsk_4a57abb949846',
+            'cognitive_contrast_cogatlas': 'cnt_4e08fefbf0382',
             'file': SimpleUploadedFile(fname, open(fname).read())
         }
 
@@ -43,10 +44,17 @@ class TestCollectionItemUpload(APITestCase):
         self.assertEqual(response.data['collection_id'], self.coll.id)
         self.assertRegexpMatches(response.data['file'], r'\.nii\.gz$')
 
-        exclude_keys = set(['file', 'map_type'])
-        test_keys = post_dict.viewkeys() - exclude_keys
-        for key in test_keys:
+        self.assertEqual(response.data['cognitive_paradigm_cogatlas'],
+                         'action observation task')
+
+        for key in ('name', 'modality'):
             self.assertEqual(response.data[key], post_dict[key])
+
+        statmap = StatisticMap.objects.get(pk=response.data['id'])
+        self.assertEqual(statmap.cognitive_paradigm_cogatlas.name,
+                         'action observation task')
+        self.assertEqual(statmap.cognitive_contrast_cogatlas.name,
+                         'standard deviation from the mean accuracy score')
 
     def test_upload_statmap_with_metadata(self):
         self.client.force_authenticate(user=self.user)
