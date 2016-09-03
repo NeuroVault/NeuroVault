@@ -7,13 +7,23 @@ from django.utils.http import urlquote
 from rest_framework import serializers
 from rest_framework.relations import PrimaryKeyRelatedField, StringRelatedField
 
-from neurovault.apps.statmaps.forms import (handle_update_ttl_urls,
-                                            ImageValidationMixin,
-                                            NIDMResultsValidationMixin,
-                                            save_nidm_statmaps)
-from neurovault.apps.statmaps.models import (Atlas, Collection, NIDMResults,
-                                             NIDMResultStatisticMap,
-                                             StatisticMap, BaseCollectionItem)
+from neurovault.apps.statmaps.forms import (
+    handle_update_ttl_urls,
+    ImageValidationMixin,
+    NIDMResultsValidationMixin,
+    save_nidm_statmaps
+)
+
+from neurovault.apps.statmaps.models import (
+    Atlas,
+    BaseCollectionItem,
+    CognitiveAtlasTask,
+    CognitiveAtlasContrast,
+    Collection,
+    NIDMResults,
+    NIDMResultStatisticMap,
+    StatisticMap
+)
 
 
 class HyperlinkedFileField(serializers.FileField):
@@ -57,6 +67,7 @@ class NIDMDescriptionSerializedField(serializers.CharField):
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
+
     class Meta:
         model = User
         fields = ('id', 'username', 'email', 'first_name', 'last_name')
@@ -144,6 +155,16 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer,
 
 
 class EditableStatisticMapSerializer(ImageSerializer):
+    cognitive_paradigm_cogatlas = PrimaryKeyRelatedField(
+        queryset=CognitiveAtlasTask.objects.all(),
+        allow_null=True,
+        required=False
+    )
+    cognitive_contrast_cogatlas = PrimaryKeyRelatedField(
+        queryset=CognitiveAtlasContrast.objects.all(),
+        allow_null=True,
+        required=False
+    )
 
     class Meta:
         model = StatisticMap
@@ -203,7 +224,9 @@ class NIDMResultStatisticMapSerializer(ImageSerializer):
         return obj.get_analysis_level_display()
 
     def get_nidm_results_ttl(self, obj):
-        return self.context['request'].build_absolute_uri(obj.nidm_results.ttl_file.url)
+        return self.context['request'].build_absolute_uri(
+            obj.nidm_results.ttl_file.url
+        )
 
     class Meta:
         model = NIDMResultStatisticMap
@@ -261,6 +284,7 @@ class NIDMResultsSerializer(serializers.ModelSerializer,
 
 class EditableNIDMResultsSerializer(serializers.ModelSerializer,
                                     NIDMResultsValidationMixin):
+
     def validate(self, data):
         data['collection'] = self.instance.collection
         return self.clean_and_validate(data)

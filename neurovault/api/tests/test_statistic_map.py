@@ -28,6 +28,8 @@ class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
             'modality': 'fMRI-BOLD',
             'map_type': 'T',
             'file': file,
+            'cognitive_paradigm_cogatlas': 'tsk_4a57abb949846',
+            'cognitive_contrast_cogatlas': 'cnt_4e08fefbf0382',
             'custom_metadata_numeric_field': 42
         }
 
@@ -36,6 +38,12 @@ class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
 
         self.assertEqual(response.data['name'], put_dict['name'])
         self.assertEqual(response.data['custom_metadata_numeric_field'], 42)
+
+        statmap = StatisticMap.objects.get(pk=response.data['id'])
+        self.assertEqual(statmap.cognitive_paradigm_cogatlas.name,
+                         'action observation task')
+        self.assertEqual(statmap.cognitive_contrast_cogatlas.name,
+                         'standard deviation from the mean accuracy score')
 
     def test_statistic_map_metadata_partial_update(self):
         self.client.force_authenticate(user=self.user)

@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from taggit.models import Tag
 
 from neurovault.apps.statmaps.models import (Atlas, Collection, Image,
-                                             NIDMResults)
+                                             StatisticMap, NIDMResults)
 from neurovault.apps.statmaps.views import (get_collection, get_image,
                                             owner_or_contrib)
 from neurovault.apps.statmaps.voxel_query_functions import (getAtlasVoxels,
@@ -108,6 +108,26 @@ class ImageViewSet(mixins.RetrieveModelMixin,
         image = self._get_api_image(request, pk)
         data = ImageSerializer(image, context={'request': request}).data
         return Response(data)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        if isinstance(instance, StatisticMap):
+            serializer = EditableStatisticMapSerializer(
+                data=request.data,
+                instance=instance,
+                context={'request': request},
+                partial=partial
+            )
+        else:
+            serializer = self.get_serializer(
+                instance,
+                data=request.data,
+                partial=partial
+            )
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
 
 
 class AtlasViewSet(ImageViewSet):
