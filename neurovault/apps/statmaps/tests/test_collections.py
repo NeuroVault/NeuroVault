@@ -316,7 +316,7 @@ class CollectionMetaDataTest(TestCase):
         resp_json = json.loads(resp.content)
 
         self.assertEqual(resp_json['messages'], {'motor_lips.nii.gz': [{
-            'Cognitive paradigm': [
+            'Cognitive atlas paradigm': [
                 "Value '-*NOT-EXISTING-PARADIGM*-' is not a valid choice."
             ]
         }]})
