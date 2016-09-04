@@ -25,6 +25,9 @@ from neurovault.apps.statmaps.models import (
     StatisticMap
 )
 
+from neurovault.utils import strip, logical_xor
+from neurovault.apps.statmaps.utils import get_paper_properties
+
 
 class HyperlinkedFileField(serializers.FileField):
 
@@ -316,6 +319,30 @@ class CollectionSerializer(serializers.ModelSerializer):
     def get_owner_name(self, obj):
         return obj.owner.username
 
+    def validate(self, data):
+        doi = strip(data.get('DOI'))
+        name = strip(data.get('name'))
+
+        if not self.instance:
+            if not (logical_xor(doi, name)):
+                raise serializers.ValidationError(
+                    'Specify either "name" or "DOI"'
+                )
+
+        if doi:
+            try:
+                (name, authors,
+                 paper_url, _, journal_name) = get_paper_properties(doi)
+                data['name'] = name
+                data['authors'] = authors
+                data['paper_url'] = paper_url
+                data['journal_name'] = journal_name
+            except:
+                raise serializers.ValidationError('Could not resolve DOI')
+        return data
+
     class Meta:
         model = Collection
         exclude = ['private_token', 'private', 'images']
+        # Override `required` to allow name fetching by DOI
+        extra_kwargs = {'name': {'required': False}}
