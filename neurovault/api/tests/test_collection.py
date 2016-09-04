@@ -45,16 +45,35 @@ class TestCollection(APITestCase):
         self.client.force_authenticate(user=self.user)
 
         post_dict = {
-            'doi': '10.3389/fninf.2015.00008',
+            'DOI': '10.3389/fninf.2015.00008',
         }
 
         response = self.client.post('/api/collections/', post_dict)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(
-            response.data['name'],
-            'NeuroVault.org: a web-based repository for collecting '
-            'and sharing unthresholded statistical maps of the human brain'
-        )
+
+        self.assertEqual(response.data['DOI'], post_dict['DOI'])
+
+        doi_properties = {
+            'name': 'NeuroVault.org: a web-based repository for collecting '
+                    'and sharing unthresholded statistical maps '
+                    'of the human brain',
+            'authors': 'Krzysztof J. Gorgolewski, Gael Varoquaux, '
+                       'Gabriel Rivera, Yannick Schwarz, Satrajit S. Ghosh, '
+                       'Camille Maumet, Vanessa V. Sochat, '
+                       'Thomas E. Nichols, Russell A. Poldrack, '
+                       'Jean-Baptiste Poline, Tal Yarkoni '
+                       'and Daniel S. Margulies',
+            'paper_url': 'http://journal.frontiersin.org/article'
+                         '/10.3389/fninf.2015.00008/abstract',
+            'journal_name': 'Frontiers in Neuroinformatics',
+            'DOI': post_dict['DOI']
+        }
+
+        collection = Collection.objects.get(pk=response.data['id'])
+
+        for key in doi_properties.keys():
+            self.assertEqual(response.data[key], doi_properties[key])
+            self.assertEqual(getattr(collection, key), doi_properties[key])
 
     def test_missing_required_authentication(self):
         url = '/api/collections/%s/' % self.coll.id
