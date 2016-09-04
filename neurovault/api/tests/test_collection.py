@@ -41,6 +41,21 @@ class TestCollection(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['name'], post_dict['name'])
 
+    def test_create_collection_with_doi(self):
+        self.client.force_authenticate(user=self.user)
+
+        post_dict = {
+            'doi': '10.3389/fninf.2015.00008',
+        }
+
+        response = self.client.post('/api/collections/', post_dict)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(
+            response.data['name'],
+            'NeuroVault.org: a web-based repository for collecting '
+            'and sharing unthresholded statistical maps of the human brain'
+        )
+
     def test_missing_required_authentication(self):
         url = '/api/collections/%s/' % self.coll.id
 
