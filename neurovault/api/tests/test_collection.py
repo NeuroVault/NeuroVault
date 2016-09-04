@@ -127,6 +127,21 @@ class TestCollection(APITestCase):
         self.assertEqual(response.data['description'],
                          patch_dict['description'])
 
+    def test_partial_update_whitespace_name(self):
+        self.client.force_authenticate(user=self.user)
+
+        whitespace = ' '
+
+        patch_dict = {
+            'name': whitespace,
+            'description': "renamed %s" % uuid.uuid4()
+        }
+        response = self.client.patch(self.item_url, patch_dict)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {
+            'name': [u'This field may not be blank.']
+        })
+
     def test_update_collection(self):
         self.client.force_authenticate(user=self.user)
 
