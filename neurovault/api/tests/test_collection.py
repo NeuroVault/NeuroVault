@@ -41,6 +41,70 @@ class TestCollection(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['name'], post_dict['name'])
 
+    def test_create_collection_with_doi(self):
+        self.client.force_authenticate(user=self.user)
+
+        post_dict = {
+            'DOI': '10.3389/fninf.2015.00008',
+        }
+
+        response = self.client.post('/api/collections/', post_dict)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.assertEqual(response.data['DOI'], post_dict['DOI'])
+
+        doi_properties = {
+            'name': 'NeuroVault.org: a web-based repository for collecting '
+                    'and sharing unthresholded statistical maps '
+                    'of the human brain',
+            'authors': 'Krzysztof J. Gorgolewski, Gael Varoquaux, '
+                       'Gabriel Rivera, Yannick Schwarz, Satrajit S. Ghosh, '
+                       'Camille Maumet, Vanessa V. Sochat, '
+                       'Thomas E. Nichols, Russell A. Poldrack, '
+                       'Jean-Baptiste Poline, Tal Yarkoni '
+                       'and Daniel S. Margulies',
+            'paper_url': 'http://journal.frontiersin.org/article'
+                         '/10.3389/fninf.2015.00008/abstract',
+            'journal_name': 'Frontiers in Neuroinformatics',
+            'DOI': post_dict['DOI']
+        }
+
+        collection = Collection.objects.get(pk=response.data['id'])
+
+        for key in doi_properties.keys():
+            self.assertEqual(response.data[key], doi_properties[key])
+            self.assertEqual(getattr(collection, key), doi_properties[key])
+
+    def test_create_collection_with_incorrect_doi(self):
+        self.client.force_authenticate(user=self.user)
+
+        post_dict = {
+            'DOI': '-*-INCORRECT*-'
+        }
+
+        response = self.client.post('/api/collections/', post_dict)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data, {'non_field_errors': ['Could not resolve DOI']}
+        )
+
+    def test_create_collection_with_both_name_and_doi(self):
+        self.client.force_authenticate(user=self.user)
+
+        post_dict = {
+            'DOI': '10.3389/fninf.2015.00008',
+            'name': 'NeuroVault'
+        }
+
+        response = self.client.post('/api/collections/', post_dict)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data,
+            {
+                'non_field_errors': ['Specify either "name" or "DOI"']
+            }
+        )
+
     def test_missing_required_authentication(self):
         url = '/api/collections/%s/' % self.coll.id
 
@@ -62,6 +126,21 @@ class TestCollection(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['description'],
                          patch_dict['description'])
+
+    def test_partial_update_whitespace_name(self):
+        self.client.force_authenticate(user=self.user)
+
+        whitespace = ' '
+
+        patch_dict = {
+            'name': whitespace,
+            'description': "renamed %s" % uuid.uuid4()
+        }
+        response = self.client.patch(self.item_url, patch_dict)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {
+            'name': [u'This field may not be blank.']
+        })
 
     def test_update_collection(self):
         self.client.force_authenticate(user=self.user)
