@@ -321,9 +321,18 @@ class CollectionSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         doi = strip(data.get('DOI'))
+        name = strip(data.get('name'))
 
-        if not (logical_xor(doi, data.get('name'))):
-            raise serializers.ValidationError('Specify either "name" or "DOI"')
+        if self.instance:
+            if 'name' in data and not name:
+                raise serializers.ValidationError({
+                    'name': 'Empty value is not allowed'
+                })
+        else:
+            if not (logical_xor(doi, name)):
+                raise serializers.ValidationError(
+                    'Specify either "name" or "DOI"'
+                )
 
         if doi:
             try:
