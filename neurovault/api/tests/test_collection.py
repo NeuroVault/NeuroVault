@@ -75,6 +75,19 @@ class TestCollection(APITestCase):
             self.assertEqual(response.data[key], doi_properties[key])
             self.assertEqual(getattr(collection, key), doi_properties[key])
 
+    def test_create_collection_with_incorrect_doi(self):
+        self.client.force_authenticate(user=self.user)
+
+        post_dict = {
+            'DOI': '-*-INCORRECT*-',
+        }
+
+        response = self.client.post('/api/collections/', post_dict)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data, {'non_field_errors': ['Could not resolve DOI']}
+        )
+
     def test_missing_required_authentication(self):
         url = '/api/collections/%s/' % self.coll.id
 
