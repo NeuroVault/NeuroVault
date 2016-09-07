@@ -540,7 +540,7 @@ class StatisticMapForm(ImageForm):
     class Meta(ImageForm.Meta):
         model = StatisticMap
         fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
-                  'cognitive_contrast_cogatlas', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
+                  'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
                   'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels', 'is_valid')
         widgets = {
@@ -642,7 +642,7 @@ class AddStatisticMapForm(StatisticMapForm):
 
     class Meta(StatisticMapForm.Meta):
         fields = ('name', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
-                  'cognitive_contrast_cogatlas', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
+                  'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
                   'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels')
 
@@ -669,7 +669,7 @@ class SimplifiedStatisticMapForm(EditStatisticMapForm):
 
     class Meta(EditStatisticMapForm.Meta):
         fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
-                  'cognitive_contrast_cogatlas', 'file', 'ignore_file_warning', 'hdr_file', 'tags', 'is_thresholded',
+                  'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url', 'file', 'ignore_file_warning', 'hdr_file', 'tags', 'is_thresholded',
                   'perc_bad_voxels')
 
 class NeuropowerStatisticMapForm(EditStatisticMapForm):
@@ -680,7 +680,7 @@ class NeuropowerStatisticMapForm(EditStatisticMapForm):
 
     class Meta(EditStatisticMapForm.Meta):
         fields = ('name', 'collection', 'description', 'map_type', 'modality', 'map_type','analysis_level','number_of_subjects','cognitive_paradigm_cogatlas',
-                  'cognitive_contrast_cogatlas', 'file', 'ignore_file_warning', 'hdr_file', 'tags', 'is_thresholded',
+                  'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url', 'file', 'ignore_file_warning', 'hdr_file', 'tags', 'is_thresholded',
                   'perc_bad_voxels')
 
 class UploadFileForm(Form):
