@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='image',
             name='thumbnail',
-            field=models.FileField(storage=neurovault.apps.statmaps.storage.NiftiGzStorage(), upload_to=neurovault.apps.statmaps.models.upload_img_to, blank=True, help_text=b'The orthogonal view thumbnail path of the nifti image', null=True, verbose_name=b'Image orthogonal view thumbnail (.png)'),
+            field=models.FileField(storage=neurovault.apps.statmaps.storage.DoubleExtensionStorage(), upload_to=neurovault.apps.statmaps.models.upload_img_to, blank=True, help_text=b'The orthogonal view thumbnail path of the nifti image', null=True, verbose_name=b'Image orthogonal view thumbnail (.png)'),
             preserve_default=True,
         ),
     ]

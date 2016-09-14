@@ -893,7 +893,7 @@ class NIDMViewForm(forms.ModelForm):
 
     class Meta:
         model = NIDMResults
-        exclude = []
+        exclude = ['is_valid']
 
     def __init__(self, *args, **kwargs):
         super(NIDMViewForm, self).__init__(*args, **kwargs)
