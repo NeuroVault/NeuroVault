@@ -171,6 +171,7 @@ class TestCollectionItemUpload(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['collection'], self.coll.id)
         self.assertRegexpMatches(response.data['zip_file'], r'\.nidm\.zip$')
+        self.assertRegexpMatches(response.data['url'], r'\.nidm$')
 
         nidm = NIDMResults.objects.get(pk=response.data['id'])
         self.assertEquals(len(nidm.nidmresultstatisticmap_set.all()),
