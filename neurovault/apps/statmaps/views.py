@@ -3,6 +3,7 @@ import functools
 import gzip
 import json
 import nibabel as nib
+import nidmresults
 import numpy as np
 import os
 import re
@@ -29,7 +30,7 @@ from fnmatch import fnmatch
 from guardian.shortcuts import get_objects_for_user
 from nidmviewer.viewer import generate
 from pybraincompare.compare.scatterplot import scatterplot_compare_vector
-from pybraincompare.compare.search import similarity_search
+from nidmresults.graph import Graph
 from rest_framework.renderers import JSONRenderer
 from sendfile import sendfile
 from sklearn.externals import joblib
@@ -295,7 +296,7 @@ def view_collection(request, cid):
         context["messages"] = [msg]
 
     if not is_empty:
-        context["first_image"] = collection.basecollectionitem_set.not_instance_of(NIDMResults).order_by("pk")[0]
+        context["first_image"] = collection.basecollectionitem_set.order_by("pk")[0]
 
     if owner_or_contrib(request,collection):
         form = UploadFileForm()
@@ -1061,7 +1062,15 @@ class ImagesInCollectionJson(BaseDatatableView):
             if isinstance(row, Image):
                 return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>'%(filepath_to_uri(row.file.url), type)
             elif isinstance(row, NIDMResults):
-                return ""
+                excursion_sets = Graph(row.zip_file.path).get_excursion_set_maps().values()
+                if excursion_sets:
+                    map_url = row.get_absolute_url() + "/" + str(excursion_sets[0].file.path)
+                else:
+                    maps = Graph(
+                        row.zip_file.path).get_statistic_maps().values()
+                    map_url = row.get_absolute_url() + "/" + str(
+                        maps[0].file.path)
+                return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>' % (map_url, type)
         elif column == 'polymorphic_ctype.name':
             return type
         elif column == 'is_valid':
