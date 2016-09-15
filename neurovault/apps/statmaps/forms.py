@@ -750,15 +750,15 @@ class NIDMResultsValidationMixin(object):
             if os.path.isdir(cdir):
                 shutil.rmtree(cdir)
 
-        base_subdir = os.path.split(data['zip_file'].name)[-1].replace('.zip',
+        base_subdir = os.path.split(data['zip_file'].name)[-1].replace('.nidm.zip',
                                                                        '')
         nres = NIDMResults.objects.filter(collection=data['collection'],
-                                          name__startswith=base_subdir).count()
+                                          name__startswith=base_subdir + ".nidm").count()
         # don't count current instance
         if self.instance.pk is not None and nres != 0:
             nres -= 1
-        safe_name = '{0}_{1}'.format(base_subdir, nres)
-        data['name'] = base_subdir if nres == 0 else safe_name
+        safe_name = '{0}_{1}.nidm'.format(base_subdir, nres)
+        data['name'] = base_subdir + ".nidm" if nres == 0 else safe_name
 
         ttl_name = os.path.split(self.nidm.ttl.filename)[-1]
 
