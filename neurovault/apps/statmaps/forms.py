@@ -857,7 +857,7 @@ class NIDMResultsForm(forms.ModelForm, NIDMResultsValidationMixin):
         self.helper.add_input(Submit('submit', 'Submit'))
         self.helper.add_input(
             Button('delete', 'Delete',
-                   onclick='window.location.href="{}"'.format('delete')))
+                   onclick='window.location.href=window.location.href+"/delete"'))
         self.nidm = None
         self.new_statmaps = []
 
