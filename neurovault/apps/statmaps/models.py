@@ -246,14 +246,8 @@ class CognitiveAtlasContrast(models.Model):
 
 def upload_nidm_to(instance, filename):
 
-    base_subdir = os.path.split(instance.zip_file.name)[-1].replace('.nidm.zip','')
-    nres = NIDMResults.objects.filter(collection=instance.collection,
-                                      name__startswith=base_subdir+".nidm").count()
-    if instance.pk is not None and nres != 0:  # don't count current instance
-        nres -= 1
-    use_subdir = base_subdir + ".nidm" if nres == 0 else '{0}_{1}.nidm'.format(base_subdir,nres)
-
-    return os.path.join('images',str(instance.collection.id), use_subdir,filename)
+    base_subdir = os.path.split(instance.zip_file.name)[-1].replace('.zip','')
+    return os.path.join('images',str(instance.collection.id), base_subdir, filename)
 
 
 def upload_img_to(instance, filename):
