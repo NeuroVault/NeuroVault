@@ -184,7 +184,6 @@
 
             {% if edit_permission %}
 
-                {% if not is_empty %}
                 <a class="btn btn-primary" href="{% url 'add_image' cid %}">Add image</a>
 
                 <div class="btn-group">
@@ -208,7 +207,6 @@
                         <!-- <![endif]-->
                     </ul>
                 </div>
-                {% endif %}<!-- close if images -->
 
                 {% if delete_permission %}
                 <a class="btn btn-danger" href="{% url 'delete_collection' cid %}" id="delete_collection"> Delete collection</a>
@@ -240,21 +238,32 @@
 
 <!-- Content-->
 <div class="row">
-
+{% if is_empty and edit_permission %}
+<div class="center-text" style="margin-top:60px;">
+<div style="font-size:34px;" style="margin-bottom:30px">
+    This collection is empty. You can:
+</div>
+<br><br>
+<ul class="list-group">
+<li class="list-group-item"><a href="{% url 'add_image' cid %}">Add images one by one</a></li>
+<li class="list-group-item"><a id="upload_archive" href="#">Upload an archive with images (.zip or .tar.gz)</a></li>
+<li class="list-group-item"><a id="upload_archive" href="#">Upload a NIDM-Results file (.nidm.zip)</a></li>
+<!--[if !IE]> -->
+<li class="list-group-item"><a  id="upload_folder" href="#">Upload a folder with images</a></li>
+<!-- <![endif]-->
+</div>
+{% elif not is_empty %} <!-- close if not empty -->
 <div class="col-md-6" style="margin-top:20px" id="for_papaya">
 </div>
 <div class="col-md-6">
-        {% if not is_empty %}
         <!-- COLLECTION TABS -->
         <ul id='collection-tabs' class='nav nav-tabs'>
               <li><a data-toggle='tab' href='#images'>Images</a></li>
               <li><a data-toggle='tab' href='#details'>Details</a></li>
         </ul>
-        {% endif %}
 
         <div class='tab-content'>
                <div id='images' class='tab-pane active'>
-               {% if not is_empty or not edit_permission %}
                <table id="collection-images-datatable" class="compact">
                <thead>
                       <tr>
@@ -265,26 +274,11 @@
                       </tr>
                </thead>
                </table>
-               {% else %}
-               <div class="center-text" style="margin-top:60px;">
-                    <div style="font-size:34px;" style="margin-bottom:30px">
-                        This collection is empty. You can:
-                    </div>
-                    <br><br>
-                    <ul class="list-group">
-                    <li class="list-group-item"><a href="{% url 'add_image' cid %}">Add images one by one</a></li>
-                    <li class="list-group-item"><a id="upload_archive" href="#">Upload an archive with images (.zip or .tar.gz)</a></li>
-                    <li class="list-group-item"><a id="upload_archive" href="#">Upload a NIDM-Results file (.nidm.zip)</a></li>
-                    <!--[if !IE]> -->
-                    <li class="list-group-item"><a  id="upload_folder" href="#">Upload a folder with images</a></li>
-                    <!-- <![endif]-->
-                    </div>
-              {% endif %} <!-- close if not empty -->
+
               </form>
 
               </div><!-- Close images tab-->
 
-              {% if not is_empty %}
               <div id="details" class="tab-pane">
                   <table id="collection-details-datatable" class="compact">
                   <thead>
@@ -305,10 +299,10 @@
                   </tbody>
                   </table>
               </div><!-- close details tab-->
-              {% endif %}
               <div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false"></div>
          </div><!-- close tab content-->
     </div>
+{% endif %}
 </div>
 </div>
 
