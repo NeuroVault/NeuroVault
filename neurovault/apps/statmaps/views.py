@@ -12,6 +12,7 @@ import tarfile
 import tempfile
 import traceback
 import zipfile
+import zipstream
 import StringIO
 from collections import OrderedDict
 from django.contrib import messages
@@ -1200,11 +1201,11 @@ class MyCollectionsJson(PublicCollectionsJson):
 
 
 def download_collection(request, cid):
-    # From https://stackoverflow.com/questions/67454/serving-dynamically-generated-zip-archives-in-django
+    from django.http import StreamingHttpResponse
 
     # Files (local path) to put in the .zip
     collection = get_collection(cid, request)
-    filenames = [ img.file.path for img in collection.basecollectionitem_set.all()]
+    filenames = [img.file.path for img in collection.basecollectionitem_set.all()]
 
     # Folder name in ZIP archive which contains the above files
     # E.g [collection.name.zip]/collection.name/img.id.nii.gz
@@ -1214,8 +1215,7 @@ def download_collection(request, cid):
     # Open StringIO to grab in-memory ZIP contents
     s = StringIO.StringIO()
 
-    # The zip compressor
-    zf = zipfile.ZipFile(s, "w")
+    zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
 
     for fpath in filenames:
         # Calculate path for file in zip
@@ -1225,12 +1225,6 @@ def download_collection(request, cid):
         # Add file, at correct path
         zf.write(fpath, zip_path)
 
-    # Must close zip for all contents to be written
-    zf.close()
-
-    # Grab ZIP file from in-memory, make response with correct MIME-type
-    resp = HttpResponse(s.getvalue(), content_type = "application/x-zip-compressed")
-    # ..and correct content-disposition
-    resp['Content-Disposition'] = 'attachment; filename=%s' % zip_filename
-
-    return resp
+    response = StreamingHttpResponse(zf, content_type='application/zip')
+    response['Content-Disposition'] = 'attachment; filename=%s' % zip_filename
+    return response

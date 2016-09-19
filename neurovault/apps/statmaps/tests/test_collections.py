@@ -10,7 +10,7 @@ from uuid import uuid4
 
 from neurovault.apps.statmaps.models import Collection, User, Image, Atlas
 from neurovault.apps.statmaps.utils import detect_4D, split_4D_to_3D
-from neurovault.apps.statmaps.views import delete_collection
+from neurovault.apps.statmaps.views import delete_collection, download_collection
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 from .utils import clearDB, save_statmap_form
 
@@ -320,3 +320,31 @@ class CollectionMetaDataTest(TestCase):
                 "Value '-*NOT-EXISTING-PARADIGM*-' is not a valid choice."
             ]
         }]})
+
+
+class DownloadCollectionsTest(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.test_path = os.path.abspath(os.path.dirname(__file__))
+        self.user = User.objects.create(username='neurovault')
+        self.client = Client()
+        self.client.login(username=self.user)
+        self.Collection1 = Collection(name='Collection1',owner=self.user)
+        self.Collection1.save()
+        self.unorderedAtlas = Atlas(name='unorderedAtlas', description='',collection=self.Collection1)
+        self.unorderedAtlas.file = SimpleUploadedFile('VentralFrontal_thr75_summaryimage_2mm.nii.gz', file(os.path.join(self.test_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz')).read())
+        self.unorderedAtlas.label_description_file = SimpleUploadedFile('test_VentralFrontal_thr75_summaryimage_2mm.xml', file(os.path.join(self.test_path,'test_data/api/unordered_VentralFrontal_thr75_summaryimage_2mm.xml')).read())
+        self.unorderedAtlas.save()
+
+    def tearDown(self):
+        clearDB()
+        self.user.delete()
+
+    def testDownloadCollection(self):
+        self.client.login(username=self.user)
+        pk1 = self.Collection1.pk
+        request = self.factory.get('/collections/%s/download' %pk1)
+        request.user = self.user
+        response = download_collection(request, str(pk1))
+
+        self.assertTrue(len(response.getvalue())) # If there is something in the response, the file was generated. 
