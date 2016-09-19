@@ -20,7 +20,7 @@ from polymorphic.models import PolymorphicModel
 from taggit.managers import TaggableManager
 from taggit.models import GenericTaggedItemBase, TagBase
 
-from neurovault.apps.statmaps.storage import NiftiGzStorage, NIDMStorage,\
+from neurovault.apps.statmaps.storage import DoubleExtensionStorage, NIDMStorage,\
     OverwriteStorage
 from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, generate_glassbrain_image
 from neurovault.settings import PRIVATE_MEDIA_ROOT
@@ -247,13 +247,7 @@ class CognitiveAtlasContrast(models.Model):
 def upload_nidm_to(instance, filename):
 
     base_subdir = os.path.split(instance.zip_file.name)[-1].replace('.zip','')
-    nres = NIDMResults.objects.filter(collection=instance.collection,
-                                      name__startswith=base_subdir).count()
-    if instance.pk is not None and nres != 0:  # don't count current instance
-        nres -= 1
-    use_subdir = base_subdir if nres == 0 else '{0}_{1}'.format(base_subdir,nres)
-
-    return os.path.join('images',str(instance.collection.id), use_subdir,filename)
+    return os.path.join('images',str(instance.collection.id), base_subdir, filename)
 
 
 def upload_img_to(instance, filename):
@@ -313,12 +307,12 @@ def basecollectionitem_created(sender, instance, created, **kwargs):
 
 
 class Image(BaseCollectionItem):
-    file = models.FileField(upload_to=upload_img_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='File with the unthresholded map (.img, .nii, .nii.gz)')
+    file = models.FileField(upload_to=upload_img_to, null=False, blank=False, storage=DoubleExtensionStorage(), verbose_name='File with the unthresholded map (.img, .nii, .nii.gz)')
     figure = models.CharField(help_text="Which figure in the corresponding paper was this map displayed in?", verbose_name="Corresponding figure", max_length=200, null=True, blank=True)
     thumbnail = models.FileField(help_text="The orthogonal view thumbnail path of the nifti image",
                                  null=True, blank=True, upload_to=upload_img_to,
                                  verbose_name='Image orthogonal view thumbnail 2D bitmap',
-                                 storage=NiftiGzStorage())
+                                 storage=DoubleExtensionStorage())
     reduced_representation = models.FileField(help_text=("Binary file with the vector of in brain values resampled to lower resolution"),
                                               verbose_name="Reduced representation of the image",
                                               null=True, blank=True, upload_to=upload_img_to,
@@ -614,7 +608,7 @@ class Atlas(Image):
     label_description_file = models.FileField(
                                 upload_to=upload_img_to,
                                 null=False, blank=False,
-                                storage=NiftiGzStorage(),
+                                storage=DoubleExtensionStorage(),
                                 verbose_name='FSL compatible label description file (.xml)')
 
     class Meta:
