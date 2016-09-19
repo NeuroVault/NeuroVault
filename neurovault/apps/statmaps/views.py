@@ -1062,10 +1062,11 @@ class ImagesInCollectionJson(BaseDatatableView):
             if isinstance(row, Image):
                 return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>'%(filepath_to_uri(row.file.url), type)
             elif isinstance(row, NIDMResults):
-                excursion_sets = Graph(row.zip_file.path).get_excursion_set_maps().values()
-                if excursion_sets:
+                try:
+                    excursion_sets = Graph(
+                        row.zip_file.path).get_excursion_set_maps().values()
                     map_url = row.get_absolute_url() + "/" + str(excursion_sets[0].file.path)
-                else:
+                except KeyError:
                     maps = Graph(
                         row.zip_file.path).get_statistic_maps().values()
                     map_url = row.get_absolute_url() + "/" + str(
