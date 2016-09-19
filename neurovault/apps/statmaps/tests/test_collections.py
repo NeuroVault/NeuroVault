@@ -348,3 +348,4 @@ class DownloadCollectionsTest(TestCase):
         response = download_collection(request, str(pk1))
 
         self.assertTrue(len(response.getvalue())) # If there is something in the response, the file was generated. 
+        self.assertEqual(response.status_code, 200)
