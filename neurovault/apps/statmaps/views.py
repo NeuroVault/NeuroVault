@@ -1068,7 +1068,7 @@ class ImagesInCollectionJson(BaseDatatableView):
                     map_url = row.get_absolute_url() + "/" + str(excursion_sets[0].file.path)
                 except KeyError:
                     maps = Graph(
-                        row.zip_file.path).get_statistic_maps().values()
+                        row.zip_file.path).get_statistic_maps()
                     map_url = row.get_absolute_url() + "/" + str(
                         maps[0].file.path)
                 return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>' % (map_url, type)
