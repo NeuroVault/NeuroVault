@@ -12,6 +12,8 @@ import tarfile
 import tempfile
 import traceback
 import zipfile
+import zipstream
+import StringIO
 from collections import OrderedDict
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -1197,3 +1199,33 @@ class MyCollectionsJson(PublicCollectionsJson):
 
     def get_initial_queryset(self):
         return get_objects_for_user(self.request.user, 'statmaps.change_collection')
+
+
+def download_collection(request, cid):
+    from django.http import StreamingHttpResponse
+
+    # Files (local path) to put in the .zip
+    collection = get_collection(cid, request)
+    filenames = [img.file.path for img in collection.basecollectionitem_set.all()]
+
+    # Folder name in ZIP archive which contains the above files
+    # E.g [collection.name.zip]/collection.name/img.id.nii.gz
+    zip_subdir = collection.name
+    zip_filename = "%s.zip" % collection.name
+
+    # Open StringIO to grab in-memory ZIP contents
+    s = StringIO.StringIO()
+
+    zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
+
+    for fpath in filenames:
+        # Calculate path for file in zip
+        fdir, fname = os.path.split(fpath)
+        zip_path = os.path.join(zip_subdir, fname)
+
+        # Add file, at correct path
+        zf.write(fpath, zip_path)
+
+    response = StreamingHttpResponse(zf, content_type='application/zip')
+    response['Content-Disposition'] = 'attachment; filename=%s' % zip_filename
+    return response
