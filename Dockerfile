@@ -56,6 +56,7 @@ RUN pip install requests
 RUN pip install requests-oauthlib
 RUN pip install shapely
 RUN pip install uwsgi
+RUN pip install zipstream
 
 RUN pip install https://github.com/gallantlab/pycortex/archive/fe58400c8c3a3187d930b8a696cda8fec62c0f19.zip --egg
 RUN pip install git+https://github.com/benkonrath/django-guardian.git@7cded9081249e9a4cd9f5cd85e67cf843c138b0c#egg=django-guardian
@@ -64,6 +65,7 @@ RUN pip install nidmviewer==0.1.3
 RUN pip install tables
 RUN pip install statsmodels
 
+RUN apt-get update
 RUN apt-get install -y npm
 RUN ln -s /usr/bin/nodejs /usr/bin/node
 RUN npm install -g coffee-script

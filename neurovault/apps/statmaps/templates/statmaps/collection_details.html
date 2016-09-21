@@ -180,6 +180,7 @@
 
             {% if not is_empty %}
             <a class="btn btn-primary" href="pycortex">3D View</a>
+            <a class="btn btn-primary" href="{% url 'download_collection' cid %}">Download</a>
             {% endif %}
 
             {% if edit_permission %}

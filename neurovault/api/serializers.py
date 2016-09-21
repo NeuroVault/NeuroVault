@@ -37,6 +37,14 @@ class HyperlinkedFileField(serializers.FileField):
             return request.build_absolute_uri(urlquote(value.url))
 
 
+class HyperlinkedDownloadURL(serializers.RelatedField):
+
+    def to_representation(self, value):
+        if value:
+            request = self.context.get('request', None)
+            return request.build_absolute_uri(value + "download")
+
+
 class HyperlinkedRelatedURL(serializers.RelatedField):
 
     def to_representation(self, value):
@@ -310,11 +318,13 @@ class EditableNIDMResultsSerializer(serializers.ModelSerializer,
 
 class CollectionSerializer(serializers.ModelSerializer):
     url = HyperlinkedImageURL(source='get_absolute_url', read_only=True)
+    download_url = HyperlinkedDownloadURL(source='get_absolute_url', read_only=True)
     owner = serializers.ReadOnlyField(source='owner.id')
     images = ImageSerializer(many=True, source='basecollectionitem_set')
     contributors = SerializedContributors(required=False)
     owner_name = serializers.SerializerMethodField()
     number_of_images = serializers.SerializerMethodField('num_im')
+
 
     def num_im(self, obj):
         return obj.basecollectionitem_set.count()
