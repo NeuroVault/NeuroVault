@@ -21,7 +21,7 @@ from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Q
 from django.db.models.aggregates import Count
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, StreamingHttpResponse
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from django.template.context import RequestContext
@@ -1202,16 +1202,19 @@ class MyCollectionsJson(PublicCollectionsJson):
 
 
 def download_collection(request, cid):
-    from django.http import StreamingHttpResponse
-
     # Files (local path) to put in the .zip
     collection = get_collection(cid, request)
-    filenames = [img.file.path for img in collection.basecollectionitem_set.all()]
+
+    if collection.is_statisticmap_set:
+        filenames = [img.file.path for img in collection.basecollectionitem_set.all()]
+    else: # case NIDM Results
+        filenames = [img.zip_file.path for img in collection.basecollectionitem_set.all()
+                     if isinstance(img, NIDMResults)]
 
     # Folder name in ZIP archive which contains the above files
     # E.g [collection.name.zip]/collection.name/img.id.nii.gz
     zip_subdir = collection.name
-    zip_filename = "%s.zip" % collection.name
+    zip_filename = '%s.zip' % collection.name
 
     # Open StringIO to grab in-memory ZIP contents
     s = StringIO.StringIO()

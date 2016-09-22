@@ -2,12 +2,13 @@ import os
 import shutil
 import tempfile
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase, Client
+from django.test import TestCase, Client, RequestFactory
 from collections import OrderedDict
 
 from neurovault.apps.statmaps.forms import NIDMResultsForm
 from neurovault.apps.statmaps.models import Collection, User
 from neurovault.apps.statmaps.nidm_results import NIDMUpload
+from neurovault.apps.statmaps.views import download_collection
 from .utils import clearDB
 
 TEST_PATH = os.path.abspath(os.path.dirname(__file__))
@@ -165,3 +166,35 @@ class NIDMResultsTest(TestCase):
                 map_type=map_type).first()
 
             self.assertEquals(map_img.name, info['output_row']['name'])
+
+
+    def testDownloadCollection_NIDM_results(self):
+
+        coll2 = Collection(owner=self.user,
+                               name="Test Collection2")
+        coll2.save()
+
+        for name, info in self.files.items():
+            zip_file = open(info['file'], 'rb')
+            post_dict = {
+                'name': name,
+                'description': '{0} upload test'.format(name),
+                'collection': self.coll.pk,
+            }
+
+            fname = os.path.basename(info['file'])
+            file_dict = {
+                'zip_file': SimpleUploadedFile(fname, zip_file.read())}
+            form = NIDMResultsForm(post_dict, file_dict)
+
+            form.save()
+
+        factory = RequestFactory()
+        self.client.login(username=self.user)
+        pk = coll2.pk
+        request = factory.get('/collections/%s/download' % pk)
+        request.user = self.user
+        response = download_collection(request, str(pk))
+
+        self.assertTrue(len(response.getvalue()))  # If there is something in the response, the file was generated.
+        self.assertEqual(response.status_code, 200)
