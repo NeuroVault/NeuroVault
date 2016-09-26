@@ -1205,11 +1205,10 @@ def download_collection(request, cid):
     # Files (local path) to put in the .zip
     collection = get_collection(cid, request)
 
-    if collection.is_statisticmap_set:
-        filenames = [img.file.path for img in collection.basecollectionitem_set.all()]
-    else: # case NIDM Results
-        filenames = [img.zip_file.path for img in collection.basecollectionitem_set.all()
-                     if isinstance(img, NIDMResults)]
+    filenames =[img.zip_file.path for img in collection.basecollectionitem_set.all()
+                if isinstance(img, NIDMResults)] + \
+               [img.file.path for img in collection.basecollectionitem_set.all()
+                if (isinstance(img, Image) and not isinstance(img, NIDMResultStatisticMap))]
 
     # Folder name in ZIP archive which contains the above files
     # E.g [collection.name.zip]/collection.name/img.id.nii.gz
