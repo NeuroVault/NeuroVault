@@ -3,6 +3,9 @@ import nibabel
 import os
 import shutil
 import tempfile
+import io
+import zipfile
+
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.urlresolvers import reverse
 from django.test import TestCase, Client, override_settings, RequestFactory
@@ -347,5 +350,11 @@ class DownloadCollectionsTest(TestCase):
         request.user = self.user
         response = download_collection(request, str(pk1))
 
-        self.assertTrue(len(response.getvalue())) # If there is something in the response, the file was generated. 
+        self.assertTrue(response.streaming_content)
         self.assertEqual(response.status_code, 200)
+
+        zf = zipfile.ZipFile(io.BytesIO(''.join(response.streaming_content)))
+
+        self.assertEqual(len(zf.filelist), 1)  # 1 Atlas
+        self.assertIsNone(zf.testzip())
+        self.assertIn("Collection1/VentralFrontal_thr75_summaryimage_2mm.nii.gz", zf.namelist())

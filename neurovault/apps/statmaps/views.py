@@ -13,7 +13,6 @@ import tempfile
 import traceback
 import zipfile
 import zipstream
-import StringIO
 from collections import OrderedDict
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -1207,15 +1206,12 @@ def download_collection(request, cid):
 
     filenames = [img.zip_file.path for img in collection.basecollectionitem_set.instance_of(NIDMResults)] + \
                 [img.file.path for img in
-                 (collection.basecollectionitem_set.instance_of(Image).exclude().instance_of(NIDMResultStatisticMap))]
+                 (collection.basecollectionitem_set.instance_of(Image).not_instance_of(NIDMResultStatisticMap))]
 
     # Folder name in ZIP archive which contains the above files
     # E.g [collection.name.zip]/collection.name/img.id.nii.gz
     zip_subdir = collection.name
     zip_filename = '%s.zip' % collection.name
-
-    # Open StringIO to grab in-memory ZIP contents
-    s = StringIO.StringIO()
 
     zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
 
