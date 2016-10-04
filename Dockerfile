@@ -1,4 +1,4 @@
-FROM neurovault/ahba
+FROM neurovault/ahba:conda
 
 RUN conda install numpy
 RUN conda install cython scipy
