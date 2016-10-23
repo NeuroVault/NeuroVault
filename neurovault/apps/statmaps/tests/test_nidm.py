@@ -2,13 +2,16 @@ import os
 import shutil
 import tempfile
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase, Client
+from django.test import TestCase, Client, RequestFactory
 from collections import OrderedDict
+import io
+import zipfile
 
 from neurovault.apps.statmaps.forms import NIDMResultsForm
 from neurovault.apps.statmaps.models import Collection, User
 from neurovault.apps.statmaps.nidm_results import NIDMUpload
-from .utils import clearDB
+from neurovault.apps.statmaps.views import download_collection
+from neurovault.apps.statmaps.tests.utils import clearDB, save_statmap_form
 
 TEST_PATH = os.path.abspath(os.path.dirname(__file__))
 NIDM_TEST_FILES = OrderedDict({
@@ -165,3 +168,46 @@ class NIDMResultsTest(TestCase):
                 map_type=map_type).first()
 
             self.assertEquals(map_img.name, info['output_row']['name'])
+
+
+    def testDownloadCollection_NIDM_results(self):
+
+        collection = Collection(owner=self.user, name="Collection2")
+        collection.save()
+
+        # Upload NIMDResult zip file
+        zip_file = open(os.path.join(TEST_PATH, 'test_data/nidm/auditory.nidm.zip'), 'rb')
+        post_dict = {
+            'name': 'auditory',
+            'description': '{0} upload test'.format('spm_auditory_v1.2.0'),
+            'collection': collection.pk,
+        }
+        fname = os.path.basename(os.path.join(TEST_PATH, 'test_data/nidm/auditory.nidm.zip'))
+        file_dict = {
+            'zip_file': SimpleUploadedFile(fname, zip_file.read())}
+        form = NIDMResultsForm(post_dict, file_dict)
+        form.save()
+
+        # Upload Statistic Map
+        image = save_statmap_form(image_path=os.path.join(TEST_PATH, 'test_data/statmaps/all.nii.gz'),
+                                   collection=collection,
+                                   image_name="all.nii.gz")
+
+        factory = RequestFactory()
+        self.client.login(username=self.user)
+        request = factory.get('/collections/%s/download' % collection.pk, {'format': 'img.zip'})
+        request.user = self.user
+        response = download_collection(request, str(collection.pk))
+
+        self.assertTrue(response.streaming_content)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get('Content-Disposition'), "attachment; filename=" + collection.name + ".zip")
+
+        zf = zipfile.ZipFile(io.BytesIO(''.join(response.streaming_content)))
+
+        self.assertEqual(len(zf.filelist),2)  # 1 NIDMResult, 1 Statmap
+        self.assertIsNone(zf.testzip())
+        self.assertIn("Collection2/all.nii.gz", zf.namelist())
+        self.assertIn("Collection2/auditory.nidm.zip", zf.namelist())
+
+
