@@ -151,8 +151,6 @@ INSTALLED_APPS = (
     'crispy_forms',
     'coffeescript',
     'taggit_templatetags',
-    #'south',
-    'dbbackup',
     'polymorphic',
     'djcelery',
     'django_cleanup',

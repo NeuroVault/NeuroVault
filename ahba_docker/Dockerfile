@@ -1,4 +1,4 @@
-FROM python:2.7
+FROM continuumio/miniconda:4.1.11
 ENV PYTHONUNBUFFERED 1
 
 RUN apt-get update && apt-get install -y \
@@ -6,12 +6,24 @@ RUN apt-get update && apt-get install -y \
     libhdf5-8 && \
     apt-get clean autoclean
 
-RUN pip install numpy
+RUN conda update conda
+RUN conda config --add channels intel
+ENV ACCEPT_INTEL_PYTHON_EULA=yes
+RUN conda install intelpython2_core
+RUN conda install numpy
 RUN pip install nibabel
-RUN pip install tables
-RUN pip install h5py
-RUN pip install pandas
-RUN pip install pybraincompare
+RUN conda install pytables
+RUN conda install h5py
+RUN conda install pandas
+RUN conda install cython
+RUN conda install scikit-learn
+RUN conda install scikit-image
+RUN conda install matplotlib
+RUN pip install pydicom
+RUN conda install networkx
+RUN conda install dask
+RUN conda install toolz
+RUN pip install pybraincompare==0.1.18
 
 RUN mkdir /code
 WORKDIR /code
