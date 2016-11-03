@@ -15,7 +15,7 @@ RUN pip install celery[redis]
 RUN pip install certifi==2015.04.28
 RUN pip install cognitiveatlas
 RUN pip install 'Django==1.8.8'
-RUN pip install djangorestframework
+RUN pip install djangorestframework==3.4.7
 RUN pip install django-celery
 RUN pip install django-chosen
 RUN pip install django-cleanup==0.4.2
