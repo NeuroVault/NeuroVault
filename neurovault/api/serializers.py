@@ -161,7 +161,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer,
             data = self.instance.data.copy()
             data.update(self._metadata_dict)
             kwargs['data'] = data
-
+        self.is_valid = True
         super(ImageSerializer, self).save(*args, **kwargs)
 
 
