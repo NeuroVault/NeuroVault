@@ -1,6 +1,8 @@
 import os
 import re
 import shutil
+import subprocess
+from subprocess import CalledProcessError
 from cStringIO import StringIO
 
 import nibabel as nb
@@ -349,9 +351,82 @@ class ImageValidationMixin(object):
         self.afni_tmp = None
 
     def clean_and_validate(self, cleaned_data):
+        print "enter clean_and_validate"
         file = cleaned_data.get('file')
+        surface_left_file = cleaned_data.get('surface_left_file')
+        surface_right_file = cleaned_data.get('surface_right_file')
 
-        if file:
+        if surface_left_file and surface_right_file and not file:
+            if "file" in self._errors.keys():
+                del self._errors["file"]
+            cleaned_data["is_thresholded"] = False
+            cleaned_data["ignore_file_warning"] = True
+            cleaned_data["not_mni"] = False
+            tmp_dir = tempfile.mkdtemp()
+            try:
+                new_name = cleaned_data["name"] + ".nii.gz"
+                ribbon_projection_file = os.path.join(tmp_dir, new_name)
+
+                print "write left"
+                print surface_left_file.file
+                surface_left_file.open()
+                surface_left_data = StringIO(surface_left_file.read())
+                with open(os.path.join(tmp_dir, 'lh.mgh'), 'w') as fd_l:
+                    surface_left_file.seek(0)
+                    shutil.copyfileobj(surface_left_data, fd_l)
+
+                print "write right"
+                print surface_right_file.file
+                surface_right_file.open()
+                surface_right_data = StringIO(surface_right_file.read())
+                with open(os.path.join(tmp_dir, 'rh.mgh'), 'w') as fd_r:
+                    surface_right_file.seek(0)
+                    shutil.copyfileobj(surface_right_data, fd_r)
+                print "done writing"
+
+                for hemi in ["lh", "rh"]:
+                    print hemi
+                    try:
+                        subprocess.check_output(
+                            [os.path.join(os.environ['FREESURFER_HOME'],
+                                          "bin", "mri_surf2surf"),
+                             "--s", "fsaverage",
+                             "--hemi", hemi,
+                             "--srcsurfval",
+                             os.path.join(tmp_dir, hemi+'.mgh'),
+                             "--trgsubject", "ICBM2009c_asym_nlin",
+                             "--trgsurfval",
+                             os.path.join(tmp_dir, hemi+'.MNI.mgh')])
+                    except CalledProcessError, e:
+                        raise RuntimeError(str(e.cmd) + " returned code " +
+                                           str(e.returncode) + " with output " + e.output)
+                print "surf2vol"
+                try:
+                    subprocess.check_output(
+                        [os.path.join(os.environ['FREESURFER_HOME'],
+                                      "bin", "mri_surf2vol"),
+                         "--subject", "ICBM2009c_asym_nlin",
+                         "--o",
+                         ribbon_projection_file,
+                         "--so",
+                         os.path.join(os.environ['FREESURFER_HOME'],
+                                      "subjects", "ICBM2009c_asym_nlin", "surf", "lh.white"),
+                         os.path.join(tmp_dir, 'lh.MNI.mgh'),
+                         "--so",
+                         os.path.join(os.environ['FREESURFER_HOME'],
+                                      "subjects", "ICBM2009c_asym_nlin", "surf", "rh.white"),
+                         os.path.join(tmp_dir, 'rh.MNI.mgh')])
+                except CalledProcessError, e:
+                    raise RuntimeError(str(e.cmd) + " returned code " +
+                                       str(e.returncode) + " with output " + e.output)
+
+                cleaned_data['file'] = memory_uploadfile(
+                    ribbon_projection_file, new_name, None)
+            finally:
+                shutil.rmtree(tmp_dir)
+
+
+        elif file:
             # check extension of the data file
             _, fname, ext = split_filename(file.name)
             if not ext.lower() in [".nii.gz", ".nii", ".img"]:
@@ -643,7 +718,7 @@ class AddStatisticMapForm(StatisticMapForm):
     class Meta(StatisticMapForm.Meta):
         fields = ('name', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
                   'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
-                  'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
+                  'file', 'ignore_file_warning', 'hdr_file', 'surface_left_file', 'surface_right_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels')
 
 
