@@ -11,7 +11,7 @@ RUN pip install numpy
 RUN pip install cython scipy
 RUN pip install scikit-learn pandas h5py matplotlib
 
-RUN pip install celery[redis]
+RUN pip install celery[redis]==3.1.24
 RUN pip install certifi==2015.04.28
 RUN pip install cognitiveatlas
 RUN pip install 'Django==1.8.8'

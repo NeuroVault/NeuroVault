@@ -33,7 +33,7 @@ services:
 
   redis:
     restart: always
-    image: redis
+    image: redis:3.0.7
     command: redis-server --appendonly yes
 
   worker:
