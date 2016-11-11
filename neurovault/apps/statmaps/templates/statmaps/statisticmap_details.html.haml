@@ -147,8 +147,10 @@ a.disabled-link:hover {
                             %a{:href => "{{ image.nidm_results.ttl_file.url }}"}
                                 Turtle File
                                 %span.muted [{{ ttl_basename }}]
-            - else
+            - elif image.data_origin == "volume"
                 %a.btn.btn-primary.btn{href: "{{ image.file.url|urlencode }}" } Download
+            - elif image.data_origin == "surface"
+                %a.btn.btn-primary.btn{href: "download_surfaces" } Download
 
             .btn-group
                 %a.btn.btn-primary.btn.dropdown-toggle{"data-toggle" => "dropdown", :href => "#"}
