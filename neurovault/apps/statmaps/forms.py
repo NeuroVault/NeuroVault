@@ -405,7 +405,7 @@ class ImageValidationMixin(object):
                                       "bin", "mri_surf2vol"),
                          "--subject", "ICBM2009c_asym_nlin",
                          "--o",
-                         ribbon_projection_file,
+                         ribbon_projection_file[:-3],
                          "--so",
                          os.path.join(os.environ['FREESURFER_HOME'],
                                       "subjects", "ICBM2009c_asym_nlin", "surf", "lh.white"),
@@ -417,6 +417,12 @@ class ImageValidationMixin(object):
                 except CalledProcessError, e:
                     raise RuntimeError(str(e.cmd) + " returned code " +
                                        str(e.returncode) + " with output " + e.output)
+
+                #fix one voxel offset
+                nii = nb.load(ribbon_projection_file[:-3])
+                affine = nii.affine
+                affine[0, 3] -= 1
+                nb.Nifti1Image(nii.get_data(), affine).to_filename(ribbon_projection_file)
 
                 cleaned_data['file'] = memory_uploadfile(
                     ribbon_projection_file, new_name, None)
@@ -545,7 +551,8 @@ class ImageForm(ModelForm, ImageValidationMixin):
         exclude = []
         widgets = {
             'file': AdminResubmitFileWidget,
-            'hdr_file': AdminResubmitFileWidget
+            'hdr_file': AdminResubmitFileWidget,
+            'data_origin': HiddenInput
         }
 
     def clean(self, **kwargs):
@@ -569,10 +576,13 @@ class StatisticMapForm(ImageForm):
 
         cleaned_data["is_valid"] = True #This will be only saved if the form will validate
         cleaned_data["tags"] = clean_tags(cleaned_data)
+        print cleaned_data
 
-        if cleaned_data["data_origin"] == "surface":
+        if "data_origin" in cleaned_data.keys() and cleaned_data["data_origin"] == "surface":
             cleaned_data["is_thresholded"] = False
-            cleaned_data["no_mni"] = False
+            cleaned_data["not_mni"] = False
+            cleaned_data["perc_bad_voxels"] = 0
+            cleaned_data["brain_coverage"] = 100
         elif django_file and "file" not in self._errors and "hdr_file" not in self._errors:
             django_file.open()
             fileobj = StringIO(django_file.read())
@@ -618,7 +628,7 @@ class StatisticMapForm(ImageForm):
         fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
                   'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
                   'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
-                  'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels', 'is_valid')
+                  'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels', 'is_valid', 'data_origin')
         widgets = {
             'file': AdminResubmitFileWidget,
             'hdr_file': AdminResubmitFileWidget,
@@ -628,7 +638,8 @@ class StatisticMapForm(ImageForm):
             'not_mni': HiddenInput,
             'brain_coverage': HiddenInput,
             'perc_voxels_outside': HiddenInput,
-            'is_valid': HiddenInput
+            'is_valid': HiddenInput,
+            'data_origin': HiddenInput
         }
 
     def save_afni_slices(self, commit):
@@ -720,7 +731,7 @@ class AddStatisticMapForm(StatisticMapForm):
         fields = ('name', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
                   'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
                   'file', 'ignore_file_warning', 'hdr_file', 'surface_left_file', 'surface_right_file', 'tags', 'statistic_parameters',
-                  'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels')
+                  'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels', 'data_origin')
 
 
 class EditAtlasForm(AtlasForm):
