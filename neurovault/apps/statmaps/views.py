@@ -246,8 +246,8 @@ def view_image(request, pk, collection_cid=None):
         'image': image,
         'user': image.collection.owner,
         'user_owns_image': user_owns_image,
-        'api_cid':api_cid,
-        'comparison_is_possible':comparison_is_possible
+        'api_cid': api_cid,
+        'comparison_is_possible': comparison_is_possible
     }
 
     if isinstance(image, NIDMResultStatisticMap):

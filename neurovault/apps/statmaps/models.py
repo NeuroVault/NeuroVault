@@ -308,8 +308,8 @@ def basecollectionitem_created(sender, instance, created, **kwargs):
 
 class Image(BaseCollectionItem):
     file = models.FileField(upload_to=upload_img_to, null=False, blank=False, storage=DoubleExtensionStorage(), verbose_name='File with the unthresholded volume map (.img, .nii, .nii.gz)')
-    surface_left_file = models.FileField(upload_to=upload_img_to, null=True, blank=True, storage=DoubleExtensionStorage(), verbose_name='File with the unthresholded LEFT hemisphere fsaverage surface map (.mgh)')
-    surface_right_file = models.FileField(upload_to=upload_img_to, null=True, blank=True, storage=DoubleExtensionStorage(), verbose_name='File with the unthresholded RIGHT hemisphere fsaverage surface map (.mgh)')
+    surface_left_file = models.FileField(upload_to=upload_img_to, null=True, blank=True, storage=DoubleExtensionStorage(), verbose_name='File with the unthresholded LEFT hemisphere fsaverage surface map (.mgh, .curv)')
+    surface_right_file = models.FileField(upload_to=upload_img_to, null=True, blank=True, storage=DoubleExtensionStorage(), verbose_name='File with the unthresholded RIGHT hemisphere fsaverage surface map (.mgh, .curv)')
     data_origin = models.CharField(
                     help_text=("Was this map originaly derived from volume or surface?"),
                     verbose_name="Data origin",

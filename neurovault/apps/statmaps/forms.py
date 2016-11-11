@@ -365,39 +365,78 @@ class ImageValidationMixin(object):
                 new_name = cleaned_data["name"] + ".nii.gz"
                 ribbon_projection_file = os.path.join(tmp_dir, new_name)
 
-                print "write left"
-                print surface_left_file.file
-                surface_left_file.open()
-                surface_left_data = StringIO(surface_left_file.read())
-                with open(os.path.join(tmp_dir, 'lh.mgh'), 'w') as fd_l:
-                    surface_left_file.seek(0)
-                    shutil.copyfileobj(surface_left_data, fd_l)
-
-                print "write right"
-                print surface_right_file.file
-                surface_right_file.open()
-                surface_right_data = StringIO(surface_right_file.read())
-                with open(os.path.join(tmp_dir, 'rh.mgh'), 'w') as fd_r:
-                    surface_right_file.seek(0)
-                    shutil.copyfileobj(surface_right_data, fd_r)
-                print "done writing"
+                inputs_dict = {"lh": "surface_left_file",
+                               "rh": "surface_right_file"}
+                intent_dict = {"lh": "CortexLeft",
+                               "rh": "CortexRight"}
 
                 for hemi in ["lh", "rh"]:
                     print hemi
+                    surface_file = cleaned_data.get(inputs_dict[hemi])
+                    _, ext = os.path.splitext(surface_file.name)
+
+                    if not ext.lower() in [".mgh", ".curv"]:
+                        self._errors[inputs_dict[hemi]] = self.error_class(
+                            ["Doesn't have proper extension"]
+                        )
+                        del cleaned_data[inputs_dict[hemi]]
+                        return cleaned_data
+
+                    infile = os.path.join(tmp_dir, hemi + '.' + ext)
+
+                    print "write " + hemi
+                    print surface_file.file
+                    surface_file.open()
+                    surface_file = StringIO(surface_file.read())
+                    with open(infile, 'w') as fd:
+                        surface_file.seek(0)
+                        shutil.copyfileobj(surface_file, fd)
+
                     try:
+                        subprocess.check_output(
+                            [os.path.join(os.environ['FREESURFER_HOME'],
+                                          "bin", "mris_convert"),
+                             "-c", infile,
+                             os.path.join(os.environ['FREESURFER_HOME'],
+                                          "subjects", "fsaverage", "surf",
+                                          hemi + ".white"),
+                             os.path.join(tmp_dir, hemi + '.gii')])
+
+                        gii = nb.load(os.path.join(tmp_dir, hemi + '.gii'))
+
+                        if gii.darrays[0].dims != [163842]:
+                            self._errors[inputs_dict[hemi]] = self.error_class(
+                                ["Doesn't have proper dimensions - are you sure it's fsaverage?"]
+                            )
+                            del cleaned_data[inputs_dict[hemi]]
+                            return cleaned_data
+
+                        # fix intent
+                        old_dict = gii.meta.metadata
+                        old_dict['AnatomicalStructurePrimary'] = intent_dict[hemi]
+                        gii.meta = gii.meta.from_dict(old_dict)
+                        gii.to_filename(os.path.join(tmp_dir, hemi + '.gii'))
+
                         subprocess.check_output(
                             [os.path.join(os.environ['FREESURFER_HOME'],
                                           "bin", "mri_surf2surf"),
                              "--s", "fsaverage",
                              "--hemi", hemi,
                              "--srcsurfval",
-                             os.path.join(tmp_dir, hemi+'.mgh'),
+                             os.path.join(tmp_dir, hemi+'.gii'),
                              "--trgsubject", "ICBM2009c_asym_nlin",
                              "--trgsurfval",
-                             os.path.join(tmp_dir, hemi+'.MNI.mgh')])
+                             os.path.join(tmp_dir, hemi+'.MNI.gii')])
                     except CalledProcessError, e:
                         raise RuntimeError(str(e.cmd) + " returned code " +
                                            str(e.returncode) + " with output " + e.output)
+
+                cleaned_data['surface_left_file'] = memory_uploadfile(
+                    os.path.join(tmp_dir, 'lh.gii'),
+                    new_name[:-7] + ".fsaverage.lh.func.gii", None)
+                cleaned_data['surface_right_file'] = memory_uploadfile(
+                    os.path.join(tmp_dir, 'rh.gii'),
+                    new_name[:-7] + ".fsaverage.rh.func.gii", None)
                 print "surf2vol"
                 try:
                     subprocess.check_output(
@@ -409,11 +448,11 @@ class ImageValidationMixin(object):
                          "--so",
                          os.path.join(os.environ['FREESURFER_HOME'],
                                       "subjects", "ICBM2009c_asym_nlin", "surf", "lh.white"),
-                         os.path.join(tmp_dir, 'lh.MNI.mgh'),
+                         os.path.join(tmp_dir, 'lh.MNI.gii'),
                          "--so",
                          os.path.join(os.environ['FREESURFER_HOME'],
                                       "subjects", "ICBM2009c_asym_nlin", "surf", "rh.white"),
-                         os.path.join(tmp_dir, 'rh.MNI.mgh')])
+                         os.path.join(tmp_dir, 'rh.MNI.gii')])
                 except CalledProcessError, e:
                     raise RuntimeError(str(e.cmd) + " returned code " +
                                        str(e.returncode) + " with output " + e.output)
