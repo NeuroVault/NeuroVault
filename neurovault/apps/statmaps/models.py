@@ -308,8 +308,13 @@ def basecollectionitem_created(sender, instance, created, **kwargs):
 
 class Image(BaseCollectionItem):
     file = models.FileField(upload_to=upload_img_to, null=False, blank=False, storage=DoubleExtensionStorage(), verbose_name='File with the unthresholded volume map (.img, .nii, .nii.gz)')
-    surface_left_file = models.FileField(upload_to=upload_img_to, null=True, blank=True, storage=DoubleExtensionStorage(), verbose_name='File with the unthresholded left hemisphere fsaverage surface map (.mgh)')
-    surface_right_file = models.FileField(upload_to=upload_img_to, null=True, blank=True, storage=DoubleExtensionStorage(), verbose_name='File with the unthresholded right hemisphere fsaverage surface map (.mgh)')
+    surface_left_file = models.FileField(upload_to=upload_img_to, null=True, blank=True, storage=DoubleExtensionStorage(), verbose_name='File with the unthresholded LEFT hemisphere fsaverage surface map (.mgh)')
+    surface_right_file = models.FileField(upload_to=upload_img_to, null=True, blank=True, storage=DoubleExtensionStorage(), verbose_name='File with the unthresholded RIGHT hemisphere fsaverage surface map (.mgh)')
+    data_origin = models.CharField(
+                    help_text=("Was this map originaly derived from volume or surface?"),
+                    verbose_name="Data origin",
+                    default='volume',
+                    max_length=200, null=True, blank=True, choices=[('volume','volume'), ('surface', 'surface')])
     figure = models.CharField(help_text="Which figure in the corresponding paper was this map displayed in?", verbose_name="Corresponding figure", max_length=200, null=True, blank=True)
     thumbnail = models.FileField(help_text="The orthogonal view thumbnail path of the nifti image",
                                  null=True, blank=True, upload_to=upload_img_to,

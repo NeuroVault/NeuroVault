@@ -359,9 +359,7 @@ class ImageValidationMixin(object):
         if surface_left_file and surface_right_file and not file:
             if "file" in self._errors.keys():
                 del self._errors["file"]
-            cleaned_data["is_thresholded"] = False
-            cleaned_data["ignore_file_warning"] = True
-            cleaned_data["not_mni"] = False
+            cleaned_data["data_origin"] = 'surface'
             tmp_dir = tempfile.mkdtemp()
             try:
                 new_name = cleaned_data["name"] + ".nii.gz"
@@ -572,7 +570,10 @@ class StatisticMapForm(ImageForm):
         cleaned_data["is_valid"] = True #This will be only saved if the form will validate
         cleaned_data["tags"] = clean_tags(cleaned_data)
 
-        if django_file and "file" not in self._errors and "hdr_file" not in self._errors:
+        if cleaned_data["data_origin"] == "surface":
+            cleaned_data["is_thresholded"] = False
+            cleaned_data["no_mni"] = False
+        elif django_file and "file" not in self._errors and "hdr_file" not in self._errors:
             django_file.open()
             fileobj = StringIO(django_file.read())
             django_file.seek(0)
