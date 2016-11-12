@@ -127,8 +127,6 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer,
             serializer = NIDMResultsSerializer
             image_type = 'NIDM Results'
 
-        print image_type, obj.pk
-
         orderedDict = serializer(obj, context={
             'request': self.context['request']}).to_representation(obj)
         orderedDict['image_type'] = image_type
