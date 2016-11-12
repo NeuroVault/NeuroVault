@@ -382,7 +382,7 @@ class ImageValidationMixin(object):
                         del cleaned_data[inputs_dict[hemi]]
                         return cleaned_data
 
-                    infile = os.path.join(tmp_dir, hemi + '.' + ext)
+                    infile = os.path.join(tmp_dir, hemi + ext)
 
                     print "write " + hemi
                     print surface_file.file
