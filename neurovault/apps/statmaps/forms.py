@@ -1,6 +1,8 @@
 import os
 import re
 import shutil
+import subprocess
+from subprocess import CalledProcessError
 from cStringIO import StringIO
 
 import nibabel as nb
@@ -349,9 +351,125 @@ class ImageValidationMixin(object):
         self.afni_tmp = None
 
     def clean_and_validate(self, cleaned_data):
+        print "enter clean_and_validate"
         file = cleaned_data.get('file')
+        surface_left_file = cleaned_data.get('surface_left_file')
+        surface_right_file = cleaned_data.get('surface_right_file')
 
-        if file:
+        if surface_left_file and surface_right_file and not file:
+            if "file" in self._errors.keys():
+                del self._errors["file"]
+            cleaned_data["data_origin"] = 'surface'
+            tmp_dir = tempfile.mkdtemp()
+            try:
+                new_name = cleaned_data["name"] + ".nii.gz"
+                ribbon_projection_file = os.path.join(tmp_dir, new_name)
+
+                inputs_dict = {"lh": "surface_left_file",
+                               "rh": "surface_right_file"}
+                intent_dict = {"lh": "CortexLeft",
+                               "rh": "CortexRight"}
+
+                for hemi in ["lh", "rh"]:
+                    print hemi
+                    surface_file = cleaned_data.get(inputs_dict[hemi])
+                    _, ext = os.path.splitext(surface_file.name)
+
+                    if not ext.lower() in [".mgh", ".curv"]:
+                        self._errors[inputs_dict[hemi]] = self.error_class(
+                            ["Doesn't have proper extension"]
+                        )
+                        del cleaned_data[inputs_dict[hemi]]
+                        return cleaned_data
+
+                    infile = os.path.join(tmp_dir, hemi + '.' + ext)
+
+                    print "write " + hemi
+                    print surface_file.file
+                    surface_file.open()
+                    surface_file = StringIO(surface_file.read())
+                    with open(infile, 'w') as fd:
+                        surface_file.seek(0)
+                        shutil.copyfileobj(surface_file, fd)
+
+                    try:
+                        subprocess.check_output(
+                            [os.path.join(os.environ['FREESURFER_HOME'],
+                                          "bin", "mris_convert"),
+                             "-c", infile,
+                             os.path.join(os.environ['FREESURFER_HOME'],
+                                          "subjects", "fsaverage", "surf",
+                                          hemi + ".white"),
+                             os.path.join(tmp_dir, hemi + '.gii')])
+
+                        gii = nb.load(os.path.join(tmp_dir, hemi + '.gii'))
+
+                        if gii.darrays[0].dims != [163842]:
+                            self._errors[inputs_dict[hemi]] = self.error_class(
+                                ["Doesn't have proper dimensions - are you sure it's fsaverage?"]
+                            )
+                            del cleaned_data[inputs_dict[hemi]]
+                            return cleaned_data
+
+                        # fix intent
+                        old_dict = gii.meta.metadata
+                        old_dict['AnatomicalStructurePrimary'] = intent_dict[hemi]
+                        gii.meta = gii.meta.from_dict(old_dict)
+                        gii.to_filename(os.path.join(tmp_dir, hemi + '.gii'))
+
+                        subprocess.check_output(
+                            [os.path.join(os.environ['FREESURFER_HOME'],
+                                          "bin", "mri_surf2surf"),
+                             "--s", "fsaverage",
+                             "--hemi", hemi,
+                             "--srcsurfval",
+                             os.path.join(tmp_dir, hemi+'.gii'),
+                             "--trgsubject", "ICBM2009c_asym_nlin",
+                             "--trgsurfval",
+                             os.path.join(tmp_dir, hemi+'.MNI.gii')])
+                    except CalledProcessError, e:
+                        raise RuntimeError(str(e.cmd) + " returned code " +
+                                           str(e.returncode) + " with output " + e.output)
+
+                cleaned_data['surface_left_file'] = memory_uploadfile(
+                    os.path.join(tmp_dir, 'lh.gii'),
+                    new_name[:-7] + ".fsaverage.lh.func.gii", None)
+                cleaned_data['surface_right_file'] = memory_uploadfile(
+                    os.path.join(tmp_dir, 'rh.gii'),
+                    new_name[:-7] + ".fsaverage.rh.func.gii", None)
+                print "surf2vol"
+                try:
+                    subprocess.check_output(
+                        [os.path.join(os.environ['FREESURFER_HOME'],
+                                      "bin", "mri_surf2vol"),
+                         "--subject", "ICBM2009c_asym_nlin",
+                         "--o",
+                         ribbon_projection_file[:-3],
+                         "--so",
+                         os.path.join(os.environ['FREESURFER_HOME'],
+                                      "subjects", "ICBM2009c_asym_nlin", "surf", "lh.white"),
+                         os.path.join(tmp_dir, 'lh.MNI.gii'),
+                         "--so",
+                         os.path.join(os.environ['FREESURFER_HOME'],
+                                      "subjects", "ICBM2009c_asym_nlin", "surf", "rh.white"),
+                         os.path.join(tmp_dir, 'rh.MNI.gii')])
+                except CalledProcessError, e:
+                    raise RuntimeError(str(e.cmd) + " returned code " +
+                                       str(e.returncode) + " with output " + e.output)
+
+                #fix one voxel offset
+                nii = nb.load(ribbon_projection_file[:-3])
+                affine = nii.affine
+                affine[0, 3] -= 1
+                nb.Nifti1Image(nii.get_data(), affine).to_filename(ribbon_projection_file)
+
+                cleaned_data['file'] = memory_uploadfile(
+                    ribbon_projection_file, new_name, None)
+            finally:
+                shutil.rmtree(tmp_dir)
+
+
+        elif file:
             # check extension of the data file
             _, fname, ext = split_filename(file.name)
             if not ext.lower() in [".nii.gz", ".nii", ".img"]:
@@ -472,7 +590,8 @@ class ImageForm(ModelForm, ImageValidationMixin):
         exclude = []
         widgets = {
             'file': AdminResubmitFileWidget,
-            'hdr_file': AdminResubmitFileWidget
+            'hdr_file': AdminResubmitFileWidget,
+            'data_origin': HiddenInput
         }
 
     def clean(self, **kwargs):
@@ -496,8 +615,14 @@ class StatisticMapForm(ImageForm):
 
         cleaned_data["is_valid"] = True #This will be only saved if the form will validate
         cleaned_data["tags"] = clean_tags(cleaned_data)
+        print cleaned_data
 
-        if django_file and "file" not in self._errors and "hdr_file" not in self._errors:
+        if "data_origin" in cleaned_data.keys() and cleaned_data["data_origin"] == "surface":
+            cleaned_data["is_thresholded"] = False
+            cleaned_data["not_mni"] = False
+            cleaned_data["perc_bad_voxels"] = 0
+            cleaned_data["brain_coverage"] = 100
+        elif django_file and "file" not in self._errors and "hdr_file" not in self._errors:
             django_file.open()
             fileobj = StringIO(django_file.read())
             django_file.seek(0)
@@ -542,7 +667,7 @@ class StatisticMapForm(ImageForm):
         fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
                   'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
                   'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
-                  'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels', 'is_valid')
+                  'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels', 'is_valid', 'data_origin')
         widgets = {
             'file': AdminResubmitFileWidget,
             'hdr_file': AdminResubmitFileWidget,
@@ -552,7 +677,8 @@ class StatisticMapForm(ImageForm):
             'not_mni': HiddenInput,
             'brain_coverage': HiddenInput,
             'perc_voxels_outside': HiddenInput,
-            'is_valid': HiddenInput
+            'is_valid': HiddenInput,
+            'data_origin': HiddenInput
         }
 
     def save_afni_slices(self, commit):
@@ -643,8 +769,8 @@ class AddStatisticMapForm(StatisticMapForm):
     class Meta(StatisticMapForm.Meta):
         fields = ('name', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
                   'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
-                  'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
-                  'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels')
+                  'file', 'ignore_file_warning', 'hdr_file', 'surface_left_file', 'surface_right_file', 'tags', 'statistic_parameters',
+                  'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels', 'data_origin')
 
 
 class EditAtlasForm(AtlasForm):

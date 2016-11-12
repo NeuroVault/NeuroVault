@@ -246,8 +246,8 @@ def view_image(request, pk, collection_cid=None):
         'image': image,
         'user': image.collection.owner,
         'user_owns_image': user_owns_image,
-        'api_cid':api_cid,
-        'comparison_is_possible':comparison_is_possible
+        'api_cid': api_cid,
+        'comparison_is_possible': comparison_is_possible
     }
 
     if isinstance(image, NIDMResultStatisticMap):
@@ -1212,6 +1212,32 @@ def download_collection(request, cid):
     # E.g [collection.name.zip]/collection.name/img.id.nii.gz
     zip_subdir = collection.name
     zip_filename = '%s.zip' % collection.name
+
+    zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
+
+    for fpath in filenames:
+        # Calculate path for file in zip
+        fdir, fname = os.path.split(fpath)
+        zip_path = os.path.join(zip_subdir, fname)
+
+        # Add file, at correct path
+        zf.write(fpath, zip_path)
+
+    response = StreamingHttpResponse(zf, content_type='application/zip')
+    response['Content-Disposition'] = 'attachment; filename=%s' % zip_filename
+    return response
+
+def serve_surface_archive(request, pk, collection_cid=None):
+    img = get_image(pk,collection_cid,request)
+    user_owns_image = owner_or_contrib(request,img.collection)
+    api_cid = pk
+
+    filenames = [img.surface_left_file.path, img.surface_right_file.path]
+
+    # Folder name in ZIP archive which contains the above files
+    # E.g [collection.name.zip]/collection.name/img.id.nii.gz
+    zip_subdir = img.name
+    zip_filename = '%s.zip' % img.name
 
     zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
 
