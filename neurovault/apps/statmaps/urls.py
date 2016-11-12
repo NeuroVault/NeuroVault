@@ -15,7 +15,7 @@ from .views import edit_collection, view_image, delete_image, edit_image, \
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
                 view_nidm_results, find_similar, find_similar_json, compare_images, edit_metadata, \
                 export_images_filenames, delete_nidm_results, view_task, search, gene_expression_json, \
-                gene_expression
+                gene_expression, serve_surface_archive
 
 
 urlpatterns = patterns('',
@@ -124,6 +124,14 @@ urlpatterns = patterns('',
     url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<img_name>[0-9a-zA-Z\^\&\'\@\{\}\[\]\,\$\=\!\-\#\(\)\.\%\+\~\_ ]+)$',
         serve_image,
         name='serve_image'),
+
+    url(r'^images/(?P<pk>\d+)/download_surfaces$',
+        serve_surface_archive,
+        name='serve_surface_archive'),
+
+    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/images/(?P<pk>\d+)/download_surfaces$',
+        serve_surface_archive,
+        name='serve_surface_archive'),
 
     url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[0-9a-zA-Z\^\&\'\@\{\}\[\]\,\$\=\!\-\#\(\)\.\%\+\~\_ ]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
         serve_nidm_image,
