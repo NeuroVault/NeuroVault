@@ -375,7 +375,7 @@ class ImageValidationMixin(object):
                     surface_file = cleaned_data.get(inputs_dict[hemi])
                     _, ext = os.path.splitext(surface_file.name)
 
-                    if not ext.lower() in [".mgh", ".curv"]:
+                    if not ext.lower() in [".mgh", ".curv", ".gii"]:
                         self._errors[inputs_dict[hemi]] = self.error_class(
                             ["Doesn't have proper extension"]
                         )
@@ -393,16 +393,20 @@ class ImageValidationMixin(object):
                         shutil.copyfileobj(surface_file, fd)
 
                     try:
-                        subprocess.check_output(
-                            [os.path.join(os.environ['FREESURFER_HOME'],
-                                          "bin", "mris_convert"),
-                             "-c", infile,
-                             os.path.join(os.environ['FREESURFER_HOME'],
-                                          "subjects", "fsaverage", "surf",
-                                          hemi + ".white"),
-                             os.path.join(tmp_dir, hemi + '.gii')])
+                        if ext.lower() != ".gii":
+                            out_gii = os.path.join(tmp_dir, hemi + '.gii')
+                            subprocess.check_output(
+                                [os.path.join(os.environ['FREESURFER_HOME'],
+                                              "bin", "mris_convert"),
+                                 "-c", infile,
+                                 os.path.join(os.environ['FREESURFER_HOME'],
+                                              "subjects", "fsaverage", "surf",
+                                              hemi + ".white"),
+                                 out_gii])
+                        else:
+                            out_gii = infile
 
-                        gii = nb.load(os.path.join(tmp_dir, hemi + '.gii'))
+                        gii = nb.load(out_gii)
 
                         if gii.darrays[0].dims != [163842]:
                             self._errors[inputs_dict[hemi]] = self.error_class(
