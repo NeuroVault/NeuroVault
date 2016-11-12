@@ -300,7 +300,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
     def _get_paginated_results(self, obj_class, pk, request, serializer):
         collection = get_collection(pk, request, mode='api')
-        queryset = obj_class.objects.filter(collection=collection)
+        queryset = obj_class.objects.filter(collection=collection).order_by('id')
         paginator = StandardResultPagination()
         page = paginator.paginate_queryset(queryset, request)
         serializer = serializer(
