@@ -1224,7 +1224,7 @@ def download_collection(request, cid):
         zf.write(fpath, zip_path)
 
     response = StreamingHttpResponse(zf, content_type='application/zip')
-    response['Content-Disposition'] = 'attachment; filename=%s' % zip_filename
+    response['Content-Disposition'] = 'attachment; filename=%s' % zip_filename.replace (" ", "_")
     return response
 
 def serve_surface_archive(request, pk, collection_cid=None):
