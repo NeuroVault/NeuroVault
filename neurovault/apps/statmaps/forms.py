@@ -375,7 +375,7 @@ class ImageValidationMixin(object):
                     surface_file = cleaned_data.get(inputs_dict[hemi])
                     _, ext = os.path.splitext(surface_file.name)
 
-                    if not ext.lower() in [".mgh", ".curv", ".gii"]:
+                    if not ext.lower() in [".mgh", ".curv", ".gii", ".nii", ".nii.gz"]:
                         self._errors[inputs_dict[hemi]] = self.error_class(
                             ["Doesn't have proper extension"]
                         )
