@@ -78,6 +78,10 @@ a.disabled-link:hover {
     - elif image.map_type == "A"
       :javascript
          params["images"] = ["{{ image.file.url|urlencode }}"];
+    - elif image.data_origin == "surface":
+      :javascript
+         params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ image.file.url|urlencode }}"];
+         params[filename] = {"parametric": true,  "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric": true, minPercent: 0.0, maxPercent: 1.0};
     - else
       :javascript
          params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ image.file.url|urlencode }}"];

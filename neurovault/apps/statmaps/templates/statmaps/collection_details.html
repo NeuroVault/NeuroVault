@@ -51,6 +51,9 @@
         params[tmpname] = {"parametric": true,  "lut":"Overlay (Negatives)", "alpha":"0.75",  minPercent: 0.0, maxPercent: 1.0};
       } else if ($(mrimage).attr("type") == "anatomical") {
         params["images"] = [$(mrimage).attr("filename")];
+      } else if ($(mrimage).attr("data_origin") == "surface"){
+        params["images"] = ["{% static "images/MNI152.nii.gz"%}",$(mrimage).attr("filename")];
+      	params[tmpname] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true, minPercent: 0.0, maxPercent: 1.0};
       } else {
         params["images"] = ["{% static "images/MNI152.nii.gz"%}",$(mrimage).attr("filename")];
       	params[tmpname] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
