@@ -70,14 +70,18 @@ a.disabled-link:hover {
     - if image.map_type == "Pa"
       :javascript
          params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ image.file.url|urlencode }}"];
-         params[filename] = {"parametric": true,  "lut":"Spectrum", "alpha":"0.75", minPercent: 0.0, maxPercent: 1.0};
+         params[filename] = {"parametric": true,  "lut":"Spectrum", "alpha":"0.75", "minPercent": 0.0, "maxPercent": 1.0};
     - elif image.map_type == "R"
       :javascript
          params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ image.file.url|urlencode }}"];
-         params[filename] = {"parametric": true,  "lut":"Overlay (Negatives)", "alpha":"0.75", minPercent: 0.0, maxPercent: 1.0};
+         params[filename] = {"parametric": true,  "lut":"Overlay (Negatives)", "alpha":"0.75", "minPercent": 0.0, "maxPercent": 1.0};
     - elif image.map_type == "A"
       :javascript
          params["images"] = ["{{ image.file.url|urlencode }}"];
+    - elif image.data_origin == "surface"
+      :javascript
+         params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ image.file.url|urlencode }}"];
+         params[filename] = {"parametric": true,  "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric": true, "minPercent": 0.0, "maxPercent": 1.0};
     - else
       :javascript
          params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ image.file.url|urlencode }}"];

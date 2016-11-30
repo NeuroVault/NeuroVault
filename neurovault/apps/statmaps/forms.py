@@ -28,8 +28,8 @@ import tempfile
 from neurovault.apps.statmaps.utils import (
     split_filename, get_paper_properties,
     detect_4D, split_4D_to_3D, memory_uploadfile,
-    is_thresholded, not_in_mni
-)
+    is_thresholded, not_in_mni,
+    splitext_nii_gz)
 from neurovault.apps.statmaps.nidm_results import NIDMUpload
 from django import forms
 from django.utils.encoding import smart_str
@@ -373,9 +373,9 @@ class ImageValidationMixin(object):
                 for hemi in ["lh", "rh"]:
                     print hemi
                     surface_file = cleaned_data.get(inputs_dict[hemi])
-                    _, ext = os.path.splitext(surface_file.name)
+                    _, ext = splitext_nii_gz(surface_file.name)
 
-                    if not ext.lower() in [".mgh", ".curv", ".gii"]:
+                    if not ext.lower() in [".mgh", ".curv", ".gii", ".nii", ".nii.gz"]:
                         self._errors[inputs_dict[hemi]] = self.error_class(
                             ["Doesn't have proper extension"]
                         )
