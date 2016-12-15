@@ -255,6 +255,7 @@
         allowInsertRow: false,
         minSpareRows: 0,
         maxRows: window.NVMetadata.data.length,
+        copyRowsLimit: window.NVMetadata.data.length,
         contextMenu: {
           callback: function (key) {
             if (key === 'insert_column_left' ||
