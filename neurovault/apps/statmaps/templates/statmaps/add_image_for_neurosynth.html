@@ -4,8 +4,9 @@
 
 {% block head %}
     <link href="{% static 'css/studies.css' %}" media="screen" rel="stylesheet" type="text/css"/>
-    <script src="{% static "scripts/select2.min.js"%}" type="text/javascript"></script>
-    <link rel="stylesheet" href="{% static "css/select2.min.css" %}" />
+    <script src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.2/js/select2.min.js
+" type="text/javascript"></script>
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.2/js/select2.min.js" />
     <title>{% block title %}Add a new image{% endblock %}</title>
 {% endblock %}
 
@@ -14,28 +15,28 @@
         <h2>Upload a map to decode it with Neurosynth</h2>
         <div class="row">
             <div class="col-md-9">
-                <p>Welcome to NeuroVault - a  public web repository for statistical 
+                <p>Welcome to NeuroVault - a  public web repository for statistical
                         maps of the human brain. After filling in the minimum
-                        information outlined below (only the fields with an 
-                        asterisk [*] are compulsory), your map 
+                        information outlined below (only the fields with an
+                        asterisk [*] are compulsory), your map
                         will be sent back to <a href="http://neurosynth.org">Neurosynth.org</a> for
                         decoding. <b>Remember that your map needs to be unthresholded and in MNI152
                         space for decoding to work correctly!</b>.
                         <b>By uploading your map you agree to make it publicly available under <a href="http://creativecommons.org/about/cc0">CC0 license</a>.</b>
-			You can always come back to <a href="/">NeuroVault.org</a> to 
-			inspect, modify, and/or delete your maps. If you wish to use Neurosynth decoding, but keep 
+			You can always come back to <a href="/">NeuroVault.org</a> to
+			inspect, modify, and/or delete your maps. If you wish to use Neurosynth decoding, but keep
 			your maps private, consider creating a <a href="{% url 'new_collection' %}">a private collection</a>.
                 </p>
             </div>
-        </div> 
-    </div> 
-    <div class="col-md-11">  
+        </div>
+    </div>
+    <div class="col-md-11">
         <hr>
         <form  class="form-horizontal" method="post"  enctype="multipart/form-data">
     		{% crispy form %}
 	</form>
     </div>
 
-    {% include "statmaps/_contrast_lookup.html" %}		
+    {% include "statmaps/_contrast_lookup.html" %}
 
 {% endblock %}

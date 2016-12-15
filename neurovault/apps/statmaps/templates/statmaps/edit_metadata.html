@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static from staticfiles %}
 {% block head %}
-<link rel="stylesheet" media="screen" href="{% static "css/handsontable.full.min.css"%}">
+<link rel="stylesheet" media="screen" href="//cdnjs.cloudflare.com/ajax/libs/handsontable/0.16.1/handsontable.full.min.css">
 <style>
     .errors {
         display: none;
@@ -79,7 +79,7 @@
     </div>
 </div>
 
-<script src="{% static "scripts/handsontable.full.min.js"%}" type="text/javascript"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/handsontable/0.16.1/handsontable.full.min.js" type="text/javascript"></script>
 <script src="{% static "scripts/metadata-common.js"%}" type="text/javascript"></script>
 <script src="{% static "scripts/metadata-edit.js"%}" type="text/javascript"></script>
 {% endblock %}
