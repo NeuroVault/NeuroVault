@@ -475,7 +475,7 @@ def add_image_for_neurosynth(request):
 
 @login_required
 def add_image_for_neuropower(request):
-    redirect_url = "http://neuropowertools.org/neuropowerinput/?neurovault=%(private_token)s-%(image_id)s"
+    redirect_url = "http://neuropowertools.org/neuropower/neuropowerinput/?neurovault=%(private_token)s-%(image_id)s"
     template_path = "statmaps/add_image_for_neuropower.html"
     return add_image_redirect(request,NeuropowerStatisticMapForm,template_path,redirect_url,True)
 
