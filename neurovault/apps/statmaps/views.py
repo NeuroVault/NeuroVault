@@ -454,13 +454,14 @@ def add_image_redirect(request,formclass,template_path,redirect_url,is_private):
                                      private_token=priv_token)
         temp_collection.save()
     image = StatisticMap(collection=temp_collection)
-    redirect = redirect_url % {'private_token': temp_collection.private_token,
-                               'image_id': image.id}
     if request.method == "POST":
         form = formclass(request.POST, request.FILES, instance=image, user=request.user)
         if form.is_valid():
             image = form.save()
-        return HttpResponseRedirect(redirect)
+            redirect = redirect_url % {
+                'private_token': temp_collection.private_token,
+                'image_id': image.id}
+            return HttpResponseRedirect(redirect)
     else:
         form = formclass(user=request.user, instance=image)
     contrasts = get_contrast_lookup()
