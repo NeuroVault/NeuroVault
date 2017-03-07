@@ -25,7 +25,7 @@ class TestGeneDecoding(TestCase):
         map = save_statmap_form(
             image_path=nii_path, collection=cls.Collection1)
         save_resampled_transformation_single(map.pk)
-        response = json.loads(cls.client.get("/images/%d/gene_expression/json&mask=full" % map.pk, follow=True).content)
+        response = json.loads(cls.client.get("/images/%d/gene_expression/json?mask=full" % map.pk, follow=True).content)
         cls.df = pd.DataFrame(response["data"], columns=response["columns"])
 
     @classmethod
