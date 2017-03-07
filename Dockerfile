@@ -79,4 +79,6 @@ RUN apt-get autoremove -y
 RUN apt-get clean
 RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+COPY ahba_docker/subcortex_mask.npy /ahba_data/subcortex_mask.npy
+
 EXPOSE 3031

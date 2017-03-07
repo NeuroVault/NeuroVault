@@ -13,8 +13,9 @@ from scipy.stats.stats import pearsonr, ttest_1samp, percentileofscore, linregre
 from statsmodels.sandbox.stats.multicomp import multipletests
 
 
-def calculate_gene_expression_similarity(reduced_stat_map_data):
+def calculate_gene_expression_similarity(reduced_stat_map_data, mask="full"):
     store_file = "/ahba_data/store_max1_reduced.h5"
+    subcortex_mask = "/ahba_data/subcortex_mask.npy"
 
     results_dfs = []
     with pd.HDFStore(store_file, 'r') as store:
@@ -27,6 +28,15 @@ def calculate_gene_expression_similarity(reduced_stat_map_data):
 
             print "Removing missing values (%s)" % donor_id
             na_mask = np.isnan(nifti_values)
+            if mask == "subcortex":
+                na_mask = np.logical_or(na_mask,
+                    np.isnan(np.load(subcortex_mask)[expression_data.columns]))
+            elif mask == "cortex":
+                na_mask = np.logical_or(na_mask, np.logical_not(np.isnan(
+                    np.load(subcortex_mask)[expression_data.columns])))
+            else:
+                assert mask == "full"
+
             nifti_values = np.array(nifti_values)[np.logical_not(na_mask)]
             expression_data.drop(expression_data.columns[na_mask], axis=1, inplace=True)
 
