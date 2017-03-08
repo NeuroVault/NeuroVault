@@ -1006,6 +1006,7 @@ def gene_expression(request, pk, collection_cid=None):
     context = {
         'image': image,
         'api_cid': api_cid,
+        'mask': request.GET.get('mask', 'full')
     }
     template = 'statmaps/gene_expression.html.haml'
     return render(request, template, context)
@@ -1019,7 +1020,9 @@ def gene_expression_json(request, pk, collection_cid=None):
         image = save_resampled_transformation_single(image.id)
 
     map_data = np.load(image.reduced_representation.file)
-    expression_results = calculate_gene_expression_similarity(map_data)
+
+    mask = request.GET.get('mask', None)
+    expression_results = calculate_gene_expression_similarity(map_data, mask)
     dict = expression_results.to_dict("split")
     del dict["index"]
     return JSONResponse(dict)
