@@ -19,7 +19,7 @@
         			"columnDefs": [
 										{
 											"render": function ( data, type, row ) {
-												return "<a href='http://www.ncbi.nlm.nih.gov/gene/" + row[1] +"'>" + data + "</a>";
+												return data + " <a href='http://www.ncbi.nlm.nih.gov/gene/" + row[1] +"'>[NCBI]</a> <a href='http://neurosynth.org/genes/" + data +"'>[Neurosynth]</a>";
 											},
 											"targets":[ 0 ]
 										},
