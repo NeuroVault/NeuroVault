@@ -3,6 +3,9 @@ import os
 import re
 import xml.etree.ElementTree as ET
 from django.http import HttpResponse
+
+from guardian.shortcuts import get_objects_for_user
+
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.decorators import detail_route, list_route
 from rest_framework.filters import DjangoFilterBackend
@@ -352,8 +355,8 @@ class MyCollectionsViewSet(CollectionViewSet):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
-        user = self.request.user
-        return Collection.objects.filter(owner=user)
+        return get_objects_for_user(self.request.user,
+                                    'statmaps.change_collection')
 
 
 class NIDMResultsViewSet(mixins.RetrieveModelMixin,
