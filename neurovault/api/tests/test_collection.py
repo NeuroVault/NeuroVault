@@ -30,6 +30,36 @@ class TestCollection(APITestCase):
         self.assertEqual(response.data['id'], self.coll.id)
         self.assertEqual(response.data['name'], self.coll.name)
 
+    def test_fetch_my_collections(self):
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.get('/api/my_collections/', follow=True)
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(response.data['results'][0]['id'], self.coll.id)
+
+        # Create and share a new collection with our user
+        sharer_user = User.objects.create_user('Sharer')
+        sharer_user.save()
+
+        shared_collection = Collection(
+            owner=sharer_user,
+            name="Shared Test Collection"
+        )
+
+        shared_collection.save()
+        shared_collection.contributors.add(self.user)
+
+        # Re-fetch the data
+        response = self.client.get('/api/my_collections/', follow=True)
+
+        self.assertEqual(len(response.data['results']), 2)
+
+        user_collections_ids = sorted([self.coll.id, shared_collection.id])
+        result_collection_ids = sorted(
+            x['id'] for x in response.data['results']
+        )
+        self.assertListEqual(user_collections_ids, result_collection_ids)
+
     def test_create_collection(self):
         self.client.force_authenticate(user=self.user)
 
