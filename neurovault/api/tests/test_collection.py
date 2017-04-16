@@ -6,6 +6,7 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 
 from neurovault.apps.statmaps.models import Collection
+from neurovault.apps.statmaps.utils import generate_url_token
 
 
 class TestCollection(APITestCase):
@@ -23,19 +24,37 @@ class TestCollection(APITestCase):
         self.assertEqual(response.data['results'][0]['echo_time'], None)
         self.assertEqual(response.data['results'][0]['id'], self.coll.id)
         self.assertEqual(response.data['results'][0]['name'], self.coll.name)
+        self.assertEqual(response.data['results'][0]['private'], False)
 
     def test_fetch_collection(self):
         response = self.client.get('/api/collections/%s/' % self.coll.id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], self.coll.id)
         self.assertEqual(response.data['name'], self.coll.name)
+        self.assertEqual(response.data['private'], False)
 
     def test_fetch_my_collections(self):
         self.client.force_authenticate(user=self.user)
 
+        # Create a private collection
+        private_collection = Collection(
+            owner=self.user,
+            name='Private Collection',
+            private=True,
+            private_token=generate_url_token()
+        )
+        private_collection.save()
+
         response = self.client.get('/api/my_collections/', follow=True)
-        self.assertEqual(len(response.data['results']), 1)
-        self.assertEqual(response.data['results'][0]['id'], self.coll.id)
+        self.assertEqual(len(response.data['results']), 2)
+
+        collection_map = dict((x['id'], x) for x in response.data['results'])
+
+        self.assertEqual(collection_map[self.coll.id]['id'], self.coll.id)
+        self.assertEqual(collection_map[self.coll.id]['private'], False)
+        self.assertEqual(
+            collection_map[private_collection.id]['private'], True
+        )
 
         # Create and share a new collection with our user
         sharer_user = User.objects.create_user('Sharer')
@@ -43,7 +62,7 @@ class TestCollection(APITestCase):
 
         shared_collection = Collection(
             owner=sharer_user,
-            name="Shared Test Collection"
+            name='Shared Test Collection'
         )
 
         shared_collection.save()
@@ -52,11 +71,17 @@ class TestCollection(APITestCase):
         # Re-fetch the data
         response = self.client.get('/api/my_collections/', follow=True)
 
-        self.assertEqual(len(response.data['results']), 2)
-
-        user_collections_ids = sorted([self.coll.id, shared_collection.id])
+        user_collections_ids = sorted([
+            self.coll.id,
+            shared_collection.id,
+            private_collection.id
+        ])
         result_collection_ids = sorted(
             x['id'] for x in response.data['results']
+        )
+
+        self.assertEqual(
+            len(response.data['results']), len(user_collections_ids)
         )
         self.assertListEqual(user_collections_ids, result_collection_ids)
 
