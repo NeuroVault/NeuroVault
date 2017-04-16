@@ -323,7 +323,6 @@ class CollectionSerializer(serializers.ModelSerializer):
     owner_name = serializers.SerializerMethodField()
     number_of_images = serializers.SerializerMethodField('num_im')
 
-
     def num_im(self, obj):
         return obj.basecollectionitem_set.count()
 
