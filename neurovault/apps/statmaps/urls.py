@@ -2,7 +2,6 @@ from django.conf.urls import patterns, url
 from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView, TemplateView
 from django.views.generic.base import RedirectView
-from rest_framework.pagination import LimitOffsetPagination
 
 from neurovault import settings
 from neurovault.apps.statmaps.models import KeyValueTag
@@ -10,14 +9,14 @@ from neurovault.apps.statmaps.views import ImagesInCollectionJson,\
     PublicCollectionsJson, MyCollectionsJson, AtlasesAndParcellationsJson, \
     ImagesByTaskJson
 from .views import edit_collection, view_image, delete_image, edit_image, \
-                view_collection, delete_collection, upload_folder, add_image_for_neurosynth, \
+                view_collection, delete_collection, download_collection, upload_folder, add_image_for_neurosynth, \
                 serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
                 papaya_js_embed, view_images_by_tag, add_image_for_neuropower, \
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
                 view_nidm_results, find_similar, find_similar_json, compare_images, edit_metadata, \
                 export_images_filenames, delete_nidm_results, view_task, search, gene_expression_json, \
                 gene_expression, spatial_regression_select, cognitive_decoder_json, choose_cognitive_decoder, \
-                cognitive_decoder
+                cognitive_decoder, serve_surface_archive
 
 urlpatterns = patterns('',
     url(r'^my_collections/$',
@@ -50,6 +49,9 @@ urlpatterns = patterns('',
     url(r'^collections/(?P<cid>\d+|[A-Z]{8})/delete$',
         delete_collection,
         name='delete_collection'),
+    url(r'^collections/(?P<cid>\d+|[A-Z]{8})/download$',
+       download_collection,
+       name='download_collection'),
     url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/addimage',
         add_image,
         name="add_image"),
@@ -141,6 +143,14 @@ urlpatterns = patterns('',
         serve_image,
         name='serve_image'),
 
+    url(r'^images/(?P<pk>\d+)/download_surfaces$',
+        serve_surface_archive,
+        name='serve_surface_archive'),
+
+    url(r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/images/(?P<pk>\d+)/download_surfaces$',
+        serve_surface_archive,
+        name='serve_surface_archive'),
+
     url(r'^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[0-9a-zA-Z\^\&\'\@\{\}\[\]\,\$\=\!\-\#\(\)\.\%\+\~\_ ]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$',
         serve_nidm_image,
         name='serve_nidm_images'),
@@ -207,9 +217,3 @@ urlpatterns = patterns('',
         name='spatial_regression')
 
 )
-
-# Pagination Custom Function to modify LimitedResultPagination
-class StandardResultPagination(LimitOffsetPagination):
-    PAGE_SIZE = 100  # this also sets default_limit to same value
-    max_limit = 1000 # we need to set this, default is None
-    default_limit = 100

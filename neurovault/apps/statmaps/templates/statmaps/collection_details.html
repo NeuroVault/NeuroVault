@@ -11,38 +11,6 @@
 
 <title>{% block title %}{{collection.name}}{% endblock %}</title>
 
-<script type="text/javascript">
-
-var params = [];
-
-{% if first_image %}
-   var tmpname = "{{ first_image.file.url }}".replace(/^.*[\\\/]/, '')
-    {% if first_image.map_type == 'Pa' or first_image.polymorphic_ctype.model == 'atlas' %}
-        params["images"] = ["{% static "images/MNI152.nii.gz"%}","{{ first_image.file.url|urlencode }}".replace(" ","")];
-        params[tmpname] = {"parametric": true,  "lut":"Spectrum", "alpha":"0.75", minPercent: 0.0, maxPercent: 1.0};
-    {% elif first_image.map_type == 'R' %}
-        params["images"] = ["{% static "images/MNI152.nii.gz"%}","{{ first_image.file.url|urlencode }}".replace(" ","")];
-        params[tmpname] = {"parametric": true,  "lut":"Overlay (Negatives)", "alpha":"0.75", minPercent: 0.0, maxPercent: 1.0};
-    {% elif first_image.map_type == 'A' %}
-        params["images"] = ["{{ first_image.file.url|urlencode }}".replace(" ","")];
-    {% else %}
-        params["images"] = ["{% static "images/MNI152.nii.gz"%}","{{ first_image.file.url|urlencode }}".replace(" ","")];
-        params[tmpname] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
-        params["{% static "images/MNI152.nii.gz"%}"] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
-    {% endif %}
-{% else %}
-   params["images"] = ["{% static "images/MNI152.nii.gz"%}"];
-{% endif %}
-   params["worldSpace"] = true;
-   params["expandable"] = true;
-   params["combineParametric"] = true;
-   params["showControls"] = false;
-   params["smoothDisplay"] = false;
-   params["luts"] = [{"name":"PuBu", "data":[[0,1,0.968627,0.984314],[0.125,0.92549,0.905882,0.94902],[0.25,0.815686,0.819608,0.901961],[0.375,0.65098,0.741176,0.858824],[0.5,0.454902,0.662745,0.811765],[0.625,0.211765,0.564706,0.752941],[0.75,0.0196078,0.439216,0.690196],[0.875,0.0156863,0.352941,0.552941],[1,0.00784314,0.219608,0.345098]]},
-   {"name":"OrRd", "data":[[0,1,0.968627,0.92549],[0.125,0.996078,0.909804,0.784314],[0.25,0.992157,0.831373,0.619608],[0.375,0.992157,0.733333,0.517647],[0.5,0.988235,0.552941,0.34902],[0.625,0.937255,0.396078,0.282353],[0.75,0.843137,0.188235,0.121569],[0.875,0.701961,0,0],[1,0.498039,0,0]]}];
-
-</script>
-
 <!-- Fix for dropdown menus -->
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 <script src="{% static "scripts/jquery.cookie.js"%}" type="text/javascript"></script>
@@ -83,6 +51,9 @@ var params = [];
         params[tmpname] = {"parametric": true,  "lut":"Overlay (Negatives)", "alpha":"0.75",  minPercent: 0.0, maxPercent: 1.0};
       } else if ($(mrimage).attr("type") == "anatomical") {
         params["images"] = [$(mrimage).attr("filename")];
+      } else if ($(mrimage).attr("data_origin") == "surface"){
+        params["images"] = ["{% static "images/MNI152.nii.gz"%}",$(mrimage).attr("filename")];
+      	params[tmpname] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true, minPercent: 0.0, maxPercent: 1.0};
       } else {
         params["images"] = ["{% static "images/MNI152.nii.gz"%}",$(mrimage).attr("filename")];
       	params[tmpname] = {"parametric": true,  "min":0, "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric":true};
@@ -118,10 +89,10 @@ var params = [];
     $('#delete_collection').click(function(e) {
       return confirm("Are you sure you want to delete this collection? This operation cannot be undone!");
     });
-    $('#upload_archive').click(function(e) {
+    $('.upload_archive').click(function(e) {
       return document.getElementById("id_file").click();
     });
-    $('#upload_folder').click(function(e) {
+    $('.upload_folder').click(function(e) {
       return document.getElementById("folder_input").click();
     });
     $('#id_file').change(function(e) {
@@ -186,11 +157,10 @@ var params = [];
         <div class="row">
             <div class="col-md-3">
                 {% if collection.DOI %}
-                <div class="lead"><a href="{{ collection.paper_url }}">Link to the paper</a></div>
+                <div class="lead"><a href="{{ collection.paper_url }}">Corresponding publication</a></div>
                 {% endif %}
                 {% if collection.full_dataset_url %}
-                <div class="lead">Full dataset available at:<a href="{{ collection.full_dataset_url }}">
-                {{ collection.full_dataset_url }}</a>
+                <div class="lead"><a href="{{ collection.full_dataset_url }}">Source data</a>
                 </div>
                 {% endif %}
             </div>
@@ -213,11 +183,11 @@ var params = [];
 
             {% if not is_empty %}
             <a class="btn btn-primary" href="pycortex">3D View</a>
+            <a class="btn btn-primary" href="{% url 'download_collection' cid %}">Download</a>
             {% endif %}
 
             {% if edit_permission %}
 
-                {% if not is_empty %}
                 <a class="btn btn-primary" href="{% url 'add_image' cid %}">Add image</a>
 
                 <div class="btn-group">
@@ -234,13 +204,13 @@ var params = [];
                 <div class="btn-group">
                     <a class="btn btn-primary dropdown-toggle" href="#" data-toggle="dropdown">Upload<span class="caret"></span></a>
                     <ul class="dropdown-menu">
-                        <li><a id="upload_archive" href="#">Archive (.zip)</a></li>
+                        <li><a class="upload_archive" href="#">Archive (.zip)</a></li>
+                        <li><a class="upload_archive" href="#">NIDM-Results (.nidm.zip)</a></li>
                         <!--[if !IE]> -->
-                        <li><a id="upload_folder" href="#">Folder</a></li>
+                        <li><a class="upload_folder" href="#">Folder</a></li>
                         <!-- <![endif]-->
                     </ul>
                 </div>
-                {% endif %}<!-- close if images -->
 
                 {% if delete_permission %}
                 <a class="btn btn-danger" href="{% url 'delete_collection' cid %}" id="delete_collection"> Delete collection</a>
@@ -272,22 +242,33 @@ var params = [];
 
 <!-- Content-->
 <div class="row">
-
-<div class="col-md-6" style="margin-top:20px">
-    <div class="papaya" data-params="params" style="width:560px; float:left;"></div>
+{% if is_empty and edit_permission %}
+<div class="center-text" style="margin-top:60px;">
+<div style="font-size:34px;" style="margin-bottom:30px">
+    This collection is empty. You can:
+</div>
+<br><br>
+<ul class="list-group">
+<li class="list-group-item"><a href="{% url 'add_image' cid %}">Add images one by one</a></li>
+<li class="list-group-item"><a class="upload_archive" href="#">Upload an archive with images (.zip or .tar.gz)</a></li>
+<li class="list-group-item"><a class="upload_archive" href="#">Upload a NIDM-Results file (.nidm.zip)</a></li>
+<!--[if !IE]> -->
+<li class="list-group-item"><a class="upload_folder" href="#">Upload a folder with images</a></li>
+<!-- <![endif]-->
+<div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false"></div>
+</div>
+{% elif not is_empty %} <!-- close if not empty -->
+<div class="col-md-6" style="margin-top:20px" id="for_papaya">
 </div>
 <div class="col-md-6">
-        {% if not is_empty %}
         <!-- COLLECTION TABS -->
         <ul id='collection-tabs' class='nav nav-tabs'>
               <li><a data-toggle='tab' href='#images'>Images</a></li>
               <li><a data-toggle='tab' href='#details'>Details</a></li>
         </ul>
-        {% endif %}
 
         <div class='tab-content'>
                <div id='images' class='tab-pane active'>
-               {% if not is_empty or not edit_permission %}
                <table id="collection-images-datatable" class="compact">
                <thead>
                       <tr>
@@ -298,25 +279,11 @@ var params = [];
                       </tr>
                </thead>
                </table>
-               {% else %}
-               <div class="center-text" style="margin-top:60px;">
-                    <div style="font-size:34px;" style="margin-bottom:30px">
-                        This collection is empty. You can:
-                    </div>
-                    <br><br>
-                    <ul class="list-group">
-                    <li class="list-group-item"><a href="{% url 'add_image' cid %}">Add images one by one</a></li>
-                    <li class="list-group-item"><a id="upload_archive" href="#">Upload an archive with images (.zip or .tar.gz)</a></li>
-                    <!--[if !IE]> -->
-                    <li class="list-group-item"><a  id="upload_folder" href="#">Upload a folder with images</a></li>
-                    <!-- <![endif]-->
-                    </div>
-              {% endif %} <!-- close if not empty -->
+
               </form>
 
               </div><!-- Close images tab-->
 
-              {% if not is_empty %}
               <div id="details" class="tab-pane">
                   <table id="collection-details-datatable" class="compact">
                   <thead>
@@ -337,10 +304,10 @@ var params = [];
                   </tbody>
                   </table>
               </div><!-- close details tab-->
-              {% endif %}
               <div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false"></div>
          </div><!-- close tab content-->
     </div>
+{% endif %}
 </div>
 </div>
 
@@ -375,8 +342,10 @@ $(document).ready(function() {
         {% else %}
         "ajax": "{% url 'collection_images_json' collection.id %}"{% endif %}{% if not is_empty %},
         "initComplete": function(settings, json) {
-    		var collection_images = $(".viewimage")
-        	$(collection_images[0]).addClass("active")
+            $("#for_papaya").append("<div class=\"papaya\" style=\"width:560px; float:left;\"></div>")
+            papaya.Container.startPapaya();
+            var collection_images = $(".viewimage")
+            viewimage($(collection_images[0]))
   		}
   		{% endif %}
     });

@@ -1,13 +1,13 @@
 version: '2'
 services:
   db:
-    image: postgres
+    image: postgres:9.5.4
     volumes:
       - ./create_hstore_extension.sh:/docker-entrypoint-initdb.d/create_hstore_extension.sh:ro
 
   uwsgi:
     restart: always
-    image: neurovault/neurovault
+    image: neurovault/neurovault_fs
     build: .
     command: /code/run_uwsgi.sh
     volumes:
@@ -33,11 +33,11 @@ services:
 
   redis:
     restart: always
-    image: redis
+    image: redis:3.0.7
     command: redis-server --appendonly yes
 
   worker:
-    image: neurovault/neurovault
+    image: neurovault/neurovault_fs
     command: celery worker -A neurovault.celery -Q default -n default@%h
     volumes_from:
       - uwsgi

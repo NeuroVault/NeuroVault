@@ -1,6 +1,8 @@
 import os
 import re
 import shutil
+import subprocess
+from subprocess import CalledProcessError
 from cStringIO import StringIO
 
 import nibabel as nb
@@ -26,8 +28,8 @@ import tempfile
 from neurovault.apps.statmaps.utils import (
     split_filename, get_paper_properties,
     detect_4D, split_4D_to_3D, memory_uploadfile,
-    is_thresholded, not_in_mni
-)
+    is_thresholded, not_in_mni,
+    splitext_nii_gz)
 from neurovault.apps.statmaps.nidm_results import NIDMUpload
 from django import forms
 from django.utils.encoding import smart_str
@@ -349,9 +351,129 @@ class ImageValidationMixin(object):
         self.afni_tmp = None
 
     def clean_and_validate(self, cleaned_data):
+        print "enter clean_and_validate"
         file = cleaned_data.get('file')
+        surface_left_file = cleaned_data.get('surface_left_file')
+        surface_right_file = cleaned_data.get('surface_right_file')
 
-        if file:
+        if surface_left_file and surface_right_file and not file:
+            if "file" in self._errors.keys():
+                del self._errors["file"]
+            cleaned_data["data_origin"] = 'surface'
+            tmp_dir = tempfile.mkdtemp()
+            try:
+                new_name = cleaned_data["name"] + ".nii.gz"
+                ribbon_projection_file = os.path.join(tmp_dir, new_name)
+
+                inputs_dict = {"lh": "surface_left_file",
+                               "rh": "surface_right_file"}
+                intent_dict = {"lh": "CortexLeft",
+                               "rh": "CortexRight"}
+
+                for hemi in ["lh", "rh"]:
+                    print hemi
+                    surface_file = cleaned_data.get(inputs_dict[hemi])
+                    _, ext = splitext_nii_gz(surface_file.name)
+
+                    if not ext.lower() in [".mgh", ".curv", ".gii", ".nii", ".nii.gz"]:
+                        self._errors[inputs_dict[hemi]] = self.error_class(
+                            ["Doesn't have proper extension"]
+                        )
+                        del cleaned_data[inputs_dict[hemi]]
+                        return cleaned_data
+
+                    infile = os.path.join(tmp_dir, hemi + ext)
+
+                    print "write " + hemi
+                    print surface_file.file
+                    surface_file.open()
+                    surface_file = StringIO(surface_file.read())
+                    with open(infile, 'w') as fd:
+                        surface_file.seek(0)
+                        shutil.copyfileobj(surface_file, fd)
+
+                    try:
+                        if ext.lower() != ".gii":
+                            out_gii = os.path.join(tmp_dir, hemi + '.gii')
+                            subprocess.check_output(
+                                [os.path.join(os.environ['FREESURFER_HOME'],
+                                              "bin", "mris_convert"),
+                                 "-c", infile,
+                                 os.path.join(os.environ['FREESURFER_HOME'],
+                                              "subjects", "fsaverage", "surf",
+                                              hemi + ".white"),
+                                 out_gii])
+                        else:
+                            out_gii = infile
+
+                        gii = nb.load(out_gii)
+
+                        if gii.darrays[0].dims != [163842]:
+                            self._errors[inputs_dict[hemi]] = self.error_class(
+                                ["Doesn't have proper dimensions - are you sure it's fsaverage?"]
+                            )
+                            del cleaned_data[inputs_dict[hemi]]
+                            return cleaned_data
+
+                        # fix intent
+                        old_dict = gii.meta.metadata
+                        old_dict['AnatomicalStructurePrimary'] = intent_dict[hemi]
+                        gii.meta = gii.meta.from_dict(old_dict)
+                        gii.to_filename(os.path.join(tmp_dir, hemi + '.gii'))
+
+                        subprocess.check_output(
+                            [os.path.join(os.environ['FREESURFER_HOME'],
+                                          "bin", "mri_surf2surf"),
+                             "--s", "fsaverage",
+                             "--hemi", hemi,
+                             "--srcsurfval",
+                             os.path.join(tmp_dir, hemi+'.gii'),
+                             "--trgsubject", "ICBM2009c_asym_nlin",
+                             "--trgsurfval",
+                             os.path.join(tmp_dir, hemi+'.MNI.gii')])
+                    except CalledProcessError, e:
+                        raise RuntimeError(str(e.cmd) + " returned code " +
+                                           str(e.returncode) + " with output " + e.output)
+
+                cleaned_data['surface_left_file'] = memory_uploadfile(
+                    os.path.join(tmp_dir, 'lh.gii'),
+                    new_name[:-7] + ".fsaverage.lh.func.gii", None)
+                cleaned_data['surface_right_file'] = memory_uploadfile(
+                    os.path.join(tmp_dir, 'rh.gii'),
+                    new_name[:-7] + ".fsaverage.rh.func.gii", None)
+                print "surf2vol"
+                try:
+                    subprocess.check_output(
+                        [os.path.join(os.environ['FREESURFER_HOME'],
+                                      "bin", "mri_surf2vol"),
+                         "--subject", "ICBM2009c_asym_nlin",
+                         "--o",
+                         ribbon_projection_file[:-3],
+                         "--so",
+                         os.path.join(os.environ['FREESURFER_HOME'],
+                                      "subjects", "ICBM2009c_asym_nlin", "surf", "lh.white"),
+                         os.path.join(tmp_dir, 'lh.MNI.gii'),
+                         "--so",
+                         os.path.join(os.environ['FREESURFER_HOME'],
+                                      "subjects", "ICBM2009c_asym_nlin", "surf", "rh.white"),
+                         os.path.join(tmp_dir, 'rh.MNI.gii')])
+                except CalledProcessError, e:
+                    raise RuntimeError(str(e.cmd) + " returned code " +
+                                       str(e.returncode) + " with output " + e.output)
+
+                #fix one voxel offset
+                nii = nb.load(ribbon_projection_file[:-3])
+                affine = nii.affine
+                affine[0, 3] -= 1
+                nb.Nifti1Image(nii.get_data(), affine).to_filename(ribbon_projection_file)
+
+                cleaned_data['file'] = memory_uploadfile(
+                    ribbon_projection_file, new_name, None)
+            finally:
+                shutil.rmtree(tmp_dir)
+
+
+        elif file:
             # check extension of the data file
             _, fname, ext = split_filename(file.name)
             if not ext.lower() in [".nii.gz", ".nii", ".img"]:
@@ -472,7 +594,8 @@ class ImageForm(ModelForm, ImageValidationMixin):
         exclude = []
         widgets = {
             'file': AdminResubmitFileWidget,
-            'hdr_file': AdminResubmitFileWidget
+            'hdr_file': AdminResubmitFileWidget,
+            'data_origin': HiddenInput
         }
 
     def clean(self, **kwargs):
@@ -496,8 +619,14 @@ class StatisticMapForm(ImageForm):
 
         cleaned_data["is_valid"] = True #This will be only saved if the form will validate
         cleaned_data["tags"] = clean_tags(cleaned_data)
+        print cleaned_data
 
-        if django_file and "file" not in self._errors and "hdr_file" not in self._errors:
+        if "data_origin" in cleaned_data.keys() and cleaned_data["data_origin"] == "surface":
+            cleaned_data["is_thresholded"] = False
+            cleaned_data["not_mni"] = False
+            cleaned_data["perc_bad_voxels"] = 0
+            cleaned_data["brain_coverage"] = 100
+        elif django_file and "file" not in self._errors and "hdr_file" not in self._errors:
             django_file.open()
             fileobj = StringIO(django_file.read())
             django_file.seek(0)
@@ -540,9 +669,9 @@ class StatisticMapForm(ImageForm):
     class Meta(ImageForm.Meta):
         model = StatisticMap
         fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
-                  'cognitive_contrast_cogatlas', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
+                  'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
                   'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
-                  'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels', 'is_valid')
+                  'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels', 'is_valid', 'data_origin')
         widgets = {
             'file': AdminResubmitFileWidget,
             'hdr_file': AdminResubmitFileWidget,
@@ -552,7 +681,8 @@ class StatisticMapForm(ImageForm):
             'not_mni': HiddenInput,
             'brain_coverage': HiddenInput,
             'perc_voxels_outside': HiddenInput,
-            'is_valid': HiddenInput
+            'is_valid': HiddenInput,
+            'data_origin': HiddenInput
         }
 
     def save_afni_slices(self, commit):
@@ -642,9 +772,9 @@ class AddStatisticMapForm(StatisticMapForm):
 
     class Meta(StatisticMapForm.Meta):
         fields = ('name', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
-                  'cognitive_contrast_cogatlas', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
-                  'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
-                  'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels')
+                  'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
+                  'file', 'ignore_file_warning', 'hdr_file', 'surface_left_file', 'surface_right_file', 'tags', 'statistic_parameters',
+                  'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels', 'data_origin')
 
 
 class EditAtlasForm(AtlasForm):
@@ -669,7 +799,7 @@ class SimplifiedStatisticMapForm(EditStatisticMapForm):
 
     class Meta(EditStatisticMapForm.Meta):
         fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
-                  'cognitive_contrast_cogatlas', 'file', 'ignore_file_warning', 'hdr_file', 'tags', 'is_thresholded',
+                  'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url', 'file', 'ignore_file_warning', 'hdr_file', 'tags', 'is_thresholded',
                   'perc_bad_voxels')
 
 class NeuropowerStatisticMapForm(EditStatisticMapForm):
@@ -680,7 +810,7 @@ class NeuropowerStatisticMapForm(EditStatisticMapForm):
 
     class Meta(EditStatisticMapForm.Meta):
         fields = ('name', 'collection', 'description', 'map_type', 'modality', 'map_type','analysis_level','number_of_subjects','cognitive_paradigm_cogatlas',
-                  'cognitive_contrast_cogatlas', 'file', 'ignore_file_warning', 'hdr_file', 'tags', 'is_thresholded',
+                  'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url', 'file', 'ignore_file_warning', 'hdr_file', 'tags', 'is_thresholded',
                   'perc_bad_voxels')
 
 class UploadFileForm(Form):
@@ -730,6 +860,19 @@ class NIDMResultsValidationMixin(object):
         return data
 
     def clean_and_validate_zip_file(self, data, zip_file):
+        # make sure the zip file has a unique name
+        base_subdir = os.path.split(data['zip_file'].name)[-1].replace(
+            '.nidm.zip',
+            '')
+        nres = NIDMResults.objects.filter(collection=data['collection'],
+                                          name__startswith=base_subdir + ".nidm").count()
+        # don't count current instance
+        if self.instance.pk is not None and nres != 0:
+            nres -= 1
+        safe_name = '{0}_{1}.nidm'.format(base_subdir, nres)
+        data['name'] = base_subdir + ".nidm" if nres == 0 else safe_name
+        data['zip_file'].name = zip_file.name = data['name'] + ".zip"
+
         try:
             self.nidm = NIDMUpload(zip_file)
         except Exception, e:
@@ -749,16 +892,6 @@ class NIDMResultsValidationMixin(object):
             cdir = os.path.dirname(self.instance.zip_file.path)
             if os.path.isdir(cdir):
                 shutil.rmtree(cdir)
-
-        base_subdir = os.path.split(data['zip_file'].name)[-1].replace('.zip',
-                                                                       '')
-        nres = NIDMResults.objects.filter(collection=data['collection'],
-                                          name__startswith=base_subdir).count()
-        # don't count current instance
-        if self.instance.pk is not None and nres != 0:
-            nres -= 1
-        safe_name = '{0}_{1}'.format(base_subdir, nres)
-        data['name'] = base_subdir if nres == 0 else safe_name
 
         ttl_name = os.path.split(self.nidm.ttl.filename)[-1]
 
@@ -854,7 +987,7 @@ class NIDMResultsForm(forms.ModelForm, NIDMResultsValidationMixin):
         self.helper.add_input(Submit('submit', 'Submit'))
         self.helper.add_input(
             Button('delete', 'Delete',
-                   onclick='window.location.href="{}"'.format('delete')))
+                   onclick='window.location.href=window.location.href+"/delete"'))
         self.nidm = None
         self.new_statmaps = []
 
@@ -893,7 +1026,7 @@ class NIDMViewForm(forms.ModelForm):
 
     class Meta:
         model = NIDMResults
-        exclude = []
+        exclude = ['is_valid']
 
     def __init__(self, *args, **kwargs):
         super(NIDMViewForm, self).__init__(*args, **kwargs)

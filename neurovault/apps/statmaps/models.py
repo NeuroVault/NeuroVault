@@ -20,7 +20,7 @@ from polymorphic.models import PolymorphicModel
 from taggit.managers import TaggableManager
 from taggit.models import GenericTaggedItemBase, TagBase
 
-from neurovault.apps.statmaps.storage import NiftiGzStorage, NIDMStorage,\
+from neurovault.apps.statmaps.storage import DoubleExtensionStorage, NIDMStorage,\
     OverwriteStorage
 from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, generate_glassbrain_image
 from neurovault.settings import PRIVATE_MEDIA_ROOT
@@ -37,7 +37,7 @@ class Collection(models.Model):
     owner = models.ForeignKey(User)
     contributors = models.ManyToManyField(User,related_name="collection_contributors",related_query_name="contributor", blank=True,help_text="Select other NeuroVault users to add as contributes to the collection.  Contributors can add, edit and delete images in the collection.",verbose_name="Contributors")
     private = models.BooleanField(choices=((False, 'Public (The collection will be accessible by anyone and all the data in it will be distributed under CC0 license)'),
-                                           (True, 'Private (The collection will be not listed in the NeuroVault index. It will be possible to shared it with others at a private URL.)')), default=False,verbose_name="Accesibility")
+                                           (True, 'Private (The collection will be not listed in the NeuroVault index. It will be possible to shared it with others at a private URL.)')), default=False,verbose_name="Accessibility")
     private_token = models.CharField(max_length=8,blank=True,null=True,unique=True,db_index=True, default=None)
     add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
@@ -250,13 +250,7 @@ class CognitiveAtlasContrast(models.Model):
 def upload_nidm_to(instance, filename):
 
     base_subdir = os.path.split(instance.zip_file.name)[-1].replace('.zip','')
-    nres = NIDMResults.objects.filter(collection=instance.collection,
-                                      name__startswith=base_subdir).count()
-    if instance.pk is not None and nres != 0:  # don't count current instance
-        nres -= 1
-    use_subdir = base_subdir if nres == 0 else '{0}_{1}'.format(base_subdir,nres)
-
-    return os.path.join('images',str(instance.collection.id), use_subdir,filename)
+    return os.path.join('images',str(instance.collection.id), base_subdir, filename)
 
 
 def upload_img_to(instance, filename):
@@ -316,12 +310,19 @@ def basecollectionitem_created(sender, instance, created, **kwargs):
 
 
 class Image(BaseCollectionItem):
-    file = models.FileField(upload_to=upload_img_to, null=False, blank=False, storage=NiftiGzStorage(), verbose_name='File with the unthresholded map (.img, .nii, .nii.gz)')
+    file = models.FileField(upload_to=upload_img_to, null=False, blank=False, storage=DoubleExtensionStorage(), verbose_name='File with the unthresholded volume map (.img, .nii, .nii.gz)')
+    surface_left_file = models.FileField(upload_to=upload_img_to, null=True, blank=True, storage=DoubleExtensionStorage(), verbose_name='File with the unthresholded LEFT hemisphere fsaverage surface map (.mgh, .curv, .gii)')
+    surface_right_file = models.FileField(upload_to=upload_img_to, null=True, blank=True, storage=DoubleExtensionStorage(), verbose_name='File with the unthresholded RIGHT hemisphere fsaverage surface map (.mgh, .curv, .gii)')
+    data_origin = models.CharField(
+                    help_text=("Was this map originaly derived from volume or surface?"),
+                    verbose_name="Data origin",
+                    default='volume',
+                    max_length=200, null=True, blank=True, choices=[('volume','volume'), ('surface', 'surface')])
     figure = models.CharField(help_text="Which figure in the corresponding paper was this map displayed in?", verbose_name="Corresponding figure", max_length=200, null=True, blank=True)
     thumbnail = models.FileField(help_text="The orthogonal view thumbnail path of the nifti image",
                                  null=True, blank=True, upload_to=upload_img_to,
                                  verbose_name='Image orthogonal view thumbnail 2D bitmap',
-                                 storage=NiftiGzStorage())
+                                 storage=DoubleExtensionStorage())
     reduced_representation = models.FileField(help_text=("Binary file with the vector of in brain values resampled to lower resolution"),
                                               verbose_name="Reduced representation of the image",
                                               null=True, blank=True, upload_to=upload_img_to,
@@ -558,16 +559,19 @@ class StatisticMap(BaseStatisticMap):
     contrast_definition = models.CharField(help_text="Exactly what terms are subtracted from what? Define these in terms of task or stimulus conditions (e.g., 'one-back task with objects versus zero-back task with objects') instead of underlying psychological concepts (e.g., 'working memory').", verbose_name="Contrast definition", max_length=200, null=True, blank=True)
     contrast_definition_cogatlas = models.CharField(help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast", verbose_name="Cognitive Atlas definition", max_length=200, null=True, blank=True)
     cognitive_paradigm_cogatlas = models.ForeignKey(CognitiveAtlasTask, help_text="Task (or lack of it) performed by the subjects in the scanner described using <a href='http://www.cognitiveatlas.org/' target='_blank'>Cognitive Atlas</a> terms",
-                                                    verbose_name="Cognitive Paradigm", null=True, blank=False,
+                                                    verbose_name="Cognitive Atlas Paradigm", null=True, blank=False,
                                                     on_delete=models.PROTECT)
     cognitive_contrast_cogatlas = models.ForeignKey(CognitiveAtlasContrast, help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast",
                                                     verbose_name="Cognitive Atlas Contrast", null=True, blank=True,
                                                     on_delete=models.PROTECT)
+    cognitive_paradigm_description_url = models.URLField(help_text="Link to a paper, poster, abstract or other form text describing in detail the task performed by the subject(s) in the scanner.",
+                                                         verbose_name="Cognitive Paradigm Description URL",
+                                                         null=True, blank=True)
 
     @classmethod
     def get_fixed_fields(cls):
         return super(StatisticMap, cls).get_fixed_fields() + (
-            'modality', 'contrast_definition', 'cognitive_paradigm_cogatlas')
+            'modality', 'contrast_definition', 'cognitive_paradigm_cogatlas', 'cognitive_paradigm_description_url')
 
 post_save.connect(basecollectionitem_created, sender=StatisticMap, weak=True)
 
@@ -614,7 +618,7 @@ class Atlas(Image):
     label_description_file = models.FileField(
                                 upload_to=upload_img_to,
                                 null=False, blank=False,
-                                storage=NiftiGzStorage(),
+                                storage=DoubleExtensionStorage(),
                                 verbose_name='FSL compatible label description file (.xml)')
 
     class Meta:

@@ -241,6 +241,37 @@
     hotInstance.render();
   }
 
+  function dataToCSV(data) {
+    var delimiter = ",";
+    var newLine = "\r\n";
+
+    // modified excerpt from https://github.com/jmaister/excellentexport
+    var fixCSVField = function(value) {
+        if (typeof value === 'undefined' || value === null) {
+          return '';
+        }
+        value = value.toString();
+        var fixedValue = value;
+        var addQuotes = (value.indexOf(delimiter) !== -1) || (value.indexOf('\r') !== -1) || (value.indexOf('\n') !== -1);
+        var replaceDoubleQuotes = (value.indexOf('"') !== -1);
+
+        if (replaceDoubleQuotes) {
+            fixedValue = fixedValue.replace(/"/g, '""');
+        }
+        if (addQuotes || replaceDoubleQuotes) {
+            fixedValue = '"' + fixedValue + '"';
+        }
+
+        return fixedValue;
+    };
+
+    var rows = data.map(function (row) {
+      return row.map(fixCSVField).join(delimiter);
+    });
+
+    return rows.join(newLine);
+  }
+
   $(document).ready(function () {
 
     var container = document.getElementById('hot'),
@@ -255,6 +286,7 @@
         allowInsertRow: false,
         minSpareRows: 0,
         maxRows: window.NVMetadata.data.length,
+        copyRowsLimit: window.NVMetadata.data.length,
         contextMenu: {
           callback: function (key) {
             if (key === 'insert_column_left' ||
@@ -321,6 +353,19 @@
             NVMetadata.getErrors(jqXHR, textStatus, errorThrown));
         });
     });
+
+    $('.btn-download-csv').click(function () {
+      var collectionId = NVMetadata.getCollectionIdFromURL(
+        window.location.href
+      );
+
+      var csvString = dataToCSV(serializeTable(hot));
+
+      var file = new File([csvString], collectionId + '_images_metadata.csv', {
+        type: "text/csv;charset=utf-8"
+      });
+      saveAs(file);
+    })
 
     window.onbeforeunload = function () {
       if (hot.isUndoAvailable()) {

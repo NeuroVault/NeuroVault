@@ -3,6 +3,7 @@ import functools
 import gzip
 import json
 import nibabel as nib
+import nidmresults
 import numpy as np
 import os
 import re
@@ -10,7 +11,9 @@ import shutil
 import tarfile
 import tempfile
 import traceback
+import urllib
 import zipfile
+import zipstream
 from collections import OrderedDict
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -18,7 +21,7 @@ from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Q
 from django.db.models.aggregates import Count
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, StreamingHttpResponse
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render_to_response, render, redirect
 from django.template.context import RequestContext
@@ -29,7 +32,7 @@ from fnmatch import fnmatch
 from guardian.shortcuts import get_objects_for_user
 from nidmviewer.viewer import generate
 from pybraincompare.compare.scatterplot import scatterplot_compare_vector
-from pybraincompare.compare.search import similarity_search
+from nidmresults.graph import Graph
 from rest_framework.renderers import JSONRenderer
 from sendfile import sendfile
 from sklearn.externals import joblib
@@ -246,8 +249,8 @@ def view_image(request, pk, collection_cid=None):
         'image': image,
         'user': image.collection.owner,
         'user_owns_image': user_owns_image,
-        'api_cid':api_cid,
-        'comparison_is_possible':comparison_is_possible
+        'api_cid': api_cid,
+        'comparison_is_possible': comparison_is_possible
     }
 
     if isinstance(image, NIDMResultStatisticMap):
@@ -330,7 +333,7 @@ def view_collection(request, cid):
         context["messages"] = [msg]
 
     if not is_empty:
-        context["first_image"] = collection.basecollectionitem_set.not_instance_of(NIDMResults).order_by("pk")[0]
+        context["first_image"] = collection.basecollectionitem_set.order_by("pk")[0]
 
     if owner_or_contrib(request,collection):
         form = UploadFileForm()
@@ -486,13 +489,14 @@ def add_image_redirect(request,formclass,template_path,redirect_url,is_private):
                                      private_token=priv_token)
         temp_collection.save()
     image = StatisticMap(collection=temp_collection)
-    redirect = redirect_url % {'private_token': temp_collection.private_token,
-                               'image_id': image.id}
     if request.method == "POST":
         form = formclass(request.POST, request.FILES, instance=image, user=request.user)
         if form.is_valid():
             image = form.save()
-        return HttpResponseRedirect(redirect)
+            redirect = redirect_url % {
+                'private_token': temp_collection.private_token,
+                'image_id': image.id}
+            return HttpResponseRedirect(redirect)
     else:
         form = formclass(user=request.user, instance=image)
     contrasts = get_contrast_lookup()
@@ -507,7 +511,7 @@ def add_image_for_neurosynth(request):
 
 @login_required
 def add_image_for_neuropower(request):
-    redirect_url = "http://neuropowertools.org/neuropowerinput/?neurovault=%(private_token)s-%(image_id)s"
+    redirect_url = "http://neuropowertools.org/neuropower/neuropowerinput/?neurovault=%(private_token)s-%(image_id)s"
     template_path = "statmaps/add_image_for_neuropower.html"
     return add_image_redirect(request,NeuropowerStatisticMapForm,template_path,redirect_url,True)
 
@@ -1042,6 +1046,7 @@ def gene_expression(request, pk, collection_cid=None):
     context = {
         'image': image,
         'api_cid': api_cid,
+        'mask': request.GET.get('mask', 'full')
     }
     template = 'statmaps/gene_expression.html.haml'
     return render(request, template, context)
@@ -1055,7 +1060,9 @@ def gene_expression_json(request, pk, collection_cid=None):
         image = save_resampled_transformation_single(image.id)
 
     map_data = np.load(image.reduced_representation.file)
-    expression_results = calculate_gene_expression_similarity(map_data)
+
+    mask = request.GET.get('mask', None)
+    expression_results = calculate_gene_expression_similarity(map_data, mask)
     dict = expression_results.to_dict("split")
     del dict["index"]
     return JSONResponse(dict)
@@ -1128,7 +1135,16 @@ class ImagesInCollectionJson(BaseDatatableView):
             if isinstance(row, Image):
                 return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>'%(filepath_to_uri(row.file.url), type)
             elif isinstance(row, NIDMResults):
-                return ""
+                try:
+                    excursion_sets = Graph(
+                        row.zip_file.path).get_excursion_set_maps().values()
+                    map_url = row.get_absolute_url() + "/" + str(excursion_sets[0].file.path)
+                except KeyError:
+                    maps = Graph(
+                        row.zip_file.path).get_statistic_maps()
+                    map_url = row.get_absolute_url() + "/" + str(
+                        maps[0].file.path)
+                return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>' % (map_url, type)
         elif column == 'polymorphic_ctype.name':
             return type
         elif column == 'is_valid':
@@ -1254,3 +1270,57 @@ class MyCollectionsJson(PublicCollectionsJson):
 
     def get_initial_queryset(self):
         return get_objects_for_user(self.request.user, 'statmaps.change_collection')
+
+
+def download_collection(request, cid):
+    # Files (local path) to put in the .zip
+    collection = get_collection(cid, request)
+
+    filenames = [img.zip_file.path for img in collection.basecollectionitem_set.instance_of(NIDMResults)] + \
+                [img.file.path for img in
+                 (collection.basecollectionitem_set.instance_of(Image).not_instance_of(NIDMResultStatisticMap))]
+
+    # Folder name in ZIP archive which contains the above files
+    # E.g [collection.name.zip]/collection.name/img.id.nii.gz
+    zip_subdir = collection.name
+    zip_filename = '%s.zip' % collection.name
+
+    zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
+
+    for fpath in filenames:
+        # Calculate path for file in zip
+        fdir, fname = os.path.split(fpath)
+        zip_path = os.path.join(zip_subdir, fname)
+
+        # Add file, at correct path
+        zf.write(fpath, zip_path)
+
+    response = StreamingHttpResponse(zf, content_type='application/zip')
+    response['Content-Disposition'] = 'attachment; filename=%s' % urllib.quote_plus(zip_filename.encode('utf-8'))
+    return response
+
+def serve_surface_archive(request, pk, collection_cid=None):
+    img = get_image(pk,collection_cid,request)
+    user_owns_image = owner_or_contrib(request,img.collection)
+    api_cid = pk
+
+    filenames = [img.surface_left_file.path, img.surface_right_file.path]
+
+    # Folder name in ZIP archive which contains the above files
+    # E.g [collection.name.zip]/collection.name/img.id.nii.gz
+    zip_subdir = img.name
+    zip_filename = '%s.zip' % img.name
+
+    zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
+
+    for fpath in filenames:
+        # Calculate path for file in zip
+        fdir, fname = os.path.split(fpath)
+        zip_path = os.path.join(zip_subdir, fname)
+
+        # Add file, at correct path
+        zf.write(fpath, zip_path)
+
+    response = StreamingHttpResponse(zf, content_type='application/zip')
+    response['Content-Disposition'] = 'attachment; filename=%s' % zip_filename
+    return response

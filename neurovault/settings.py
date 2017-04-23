@@ -227,7 +227,7 @@ REST_FRAMEWORK = {
     # LimitOffsetPagination will allow to set a ?limit= and ?offset=
     # variable in the URL.
     'DEFAULT_PAGINATION_CLASS':
-         'neurovault.apps.statmaps.urls.StandardResultPagination',
+        'neurovault.api.pagination.StandardResultPagination',
 
     # Use Django's standard `django.contrib.auth` permissions,
     # or allow read-only access for unauthenticated users.
@@ -348,7 +348,7 @@ os.environ["PATH"] += os.pathsep + '/path/to/lib/provToolbox/bin'
 # or manage periodic schedule in django admin
 #CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 
-if "test" in sys.argv:
+if "test" in sys.argv or "benchmark" in sys.argv:
     test_media_root = os.path.join(tempfile.mkdtemp(prefix="neurovault_test_"))
     PRIVATE_MEDIA_ROOT = test_media_root
     CELERY_ALWAYS_EAGER = True

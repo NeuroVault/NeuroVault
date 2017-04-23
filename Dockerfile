@@ -11,11 +11,11 @@ RUN pip install numpy
 RUN pip install cython scipy
 RUN pip install scikit-learn pandas h5py matplotlib
 
-RUN pip install celery[redis]
+RUN pip install celery[redis]==3.1.24
 RUN pip install certifi==2015.04.28
 RUN pip install cognitiveatlas
 RUN pip install 'Django==1.8.8'
-RUN pip install djangorestframework
+RUN pip install djangorestframework==3.4.7
 RUN pip install django-celery
 RUN pip install django-chosen
 RUN pip install django-cleanup==0.4.2
@@ -40,7 +40,7 @@ RUN pip install hamlpy
 RUN pip install lxml
 RUN pip install markdown
 RUN pip install networkx
-RUN pip install nibabel
+RUN pip install nibabel==2.1.0
 RUN pip install nidmresults==0.3.2
 RUN pip install nidmfsl==0.3.4
 RUN pip install nilearn
@@ -56,7 +56,9 @@ RUN pip install requests
 RUN pip install requests-oauthlib
 RUN pip install shapely
 RUN pip install uwsgi
+RUN pip install zipstream
 
+RUN pip install html5lib
 RUN pip install https://github.com/gallantlab/pycortex/archive/fe58400c8c3a3187d930b8a696cda8fec62c0f19.zip --egg
 RUN pip install git+https://github.com/benkonrath/django-guardian.git@7cded9081249e9a4cd9f5cd85e67cf843c138b0c#egg=django-guardian
 RUN pip install nidmviewer==0.1.3
@@ -64,6 +66,7 @@ RUN pip install nidmviewer==0.1.3
 RUN pip install tables
 RUN pip install statsmodels
 
+RUN apt-get update
 RUN apt-get install -y npm
 RUN ln -s /usr/bin/nodejs /usr/bin/node
 RUN npm install -g coffee-script
@@ -76,5 +79,7 @@ RUN apt-get remove -y gfortran
 RUN apt-get autoremove -y
 RUN apt-get clean
 RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+COPY ahba_docker/subcortex_mask.npy /ahba_data/subcortex_mask.npy
 
 EXPOSE 3031

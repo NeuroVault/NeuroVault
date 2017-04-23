@@ -3,6 +3,9 @@ import os
 import re
 import xml.etree.ElementTree as ET
 from django.http import HttpResponse
+
+from guardian.shortcuts import get_objects_for_user
+
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.decorators import detail_route, list_route
 from rest_framework.filters import DjangoFilterBackend
@@ -12,8 +15,7 @@ from rest_framework.views import APIView
 from taggit.models import Tag
 
 from neurovault.apps.statmaps.models import (Atlas, Collection, Image,
-                                             NIDMResults)
-from neurovault.apps.statmaps.urls import StandardResultPagination
+                                             StatisticMap, NIDMResults)
 from neurovault.apps.statmaps.views import (get_collection, get_image,
                                             owner_or_contrib)
 from neurovault.apps.statmaps.voxel_query_functions import (getAtlasVoxels,
@@ -28,6 +30,8 @@ from .serializers import (UserSerializer, AtlasSerializer,
 
 from .permissions import (ObjectOnlyPermissions,
                           ObjectOnlyPolymorphicPermissions)
+
+from .pagination import StandardResultPagination
 
 
 class JSONResponse(HttpResponse):
@@ -107,6 +111,26 @@ class ImageViewSet(mixins.RetrieveModelMixin,
         image = self._get_api_image(request, pk)
         data = ImageSerializer(image, context={'request': request}).data
         return Response(data)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        if isinstance(instance, StatisticMap):
+            serializer = EditableStatisticMapSerializer(
+                data=request.data,
+                instance=instance,
+                context={'request': request},
+                partial=partial
+            )
+        else:
+            serializer = self.get_serializer(
+                instance,
+                data=request.data,
+                partial=partial
+            )
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
 
 
 class AtlasViewSet(ImageViewSet):
@@ -279,7 +303,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
     def _get_paginated_results(self, obj_class, pk, request, serializer):
         collection = get_collection(pk, request, mode='api')
-        queryset = obj_class.objects.filter(collection=collection)
+        queryset = obj_class.objects.filter(collection=collection).order_by('id')
         paginator = StandardResultPagination()
         page = paginator.paginate_queryset(queryset, request)
         serializer = serializer(
@@ -331,8 +355,8 @@ class MyCollectionsViewSet(CollectionViewSet):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
-        user = self.request.user
-        return Collection.objects.filter(owner=user)
+        return get_objects_for_user(self.request.user,
+                                    'statmaps.change_collection')
 
 
 class NIDMResultsViewSet(mixins.RetrieveModelMixin,
@@ -355,4 +379,3 @@ class TagViewSet(viewsets.ModelViewSet):
         from django.db.models import Count
         data = Tag.objects.annotate(action_count=Count('action'))
         return APIHelper.wrap_for_datatables(data)
-

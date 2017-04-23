@@ -37,7 +37,9 @@ class NeuroVaultStorage(FileSystemStorage):
         return os.path.join(self.base_url, str(cid), cont_path, file_name)
 
 
-class NiftiGzStorage(NeuroVaultStorage):
+class DoubleExtensionStorage(NeuroVaultStorage):
+    _extensions = ["nii.gz", "nidm.zip"]
+
     def get_available_name(self, name):
         """
         Returns a filename that's free on the target storage system, and
@@ -45,11 +47,13 @@ class NiftiGzStorage(NeuroVaultStorage):
         """
         dir_name, file_name = os.path.split(name)
         file_root, file_ext = os.path.splitext(file_name)
-        if file_ext.lower() == ".gz":
-            file_root2, file_ext2 = os.path.splitext(file_root)
-            if file_ext2.lower() == ".nii":
+        for extension in self._extensions:
+            if name.lower().endswith(extension):
+                file_root2, file_ext2 = os.path.splitext(file_root)
                 file_root = file_root2
                 file_ext = file_ext2 + file_ext
+                break
+
         # If the filename already exists, add an underscore and a number (before
         # the file extension, if one exists) to the filename until the generated
         # filename doesn't exist.
@@ -102,7 +106,7 @@ class OverwriteStorage(NeuroVaultStorage):
         return name
 
 
-class NIDMStorage(NiftiGzStorage):
+class NIDMStorage(DoubleExtensionStorage):
     def __init__(self, location=None, base_url=None):
         super(NIDMStorage, self).__init__(location, base_url)
 
