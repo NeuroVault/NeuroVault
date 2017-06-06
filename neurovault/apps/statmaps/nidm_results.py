@@ -63,18 +63,13 @@ class NIDMUpload:
         prefix prov: <http://www.w3.org/ns/prov#>
         prefix nidm: <http://purl.org/nidash/nidm#>
 
-        prefix contrast_estimation: <http://purl.org/nidash/nidm#NIDM_0000001>
-        prefix contrast_map: <http://purl.org/nidash/nidm#NIDM_0000002>
         prefix contrast_name: <http://purl.org/nidash/nidm#NIDM_0000085>
         prefix statistic_map: <http://purl.org/nidash/nidm#NIDM_0000076>
         prefix statistic_type: <http://purl.org/nidash/nidm#NIDM_0000123>
 
         SELECT ?rdfLabel ?contrastName ?statType ?statFile WHERE {
-         ?cid a contrast_map: ;
-              contrast_name: ?contrastName .
-         ?cea a contrast_estimation: .
-         ?cid prov:wasGeneratedBy ?cea .
          ?sid a statistic_map: ;
+              contrast_name: ?contrastName ;
               statistic_type: ?statType ;
               rdfs:label ?rdfLabel ;
               prov:atLocation ?statFile .
