@@ -212,6 +212,8 @@ class ComparisonTestCase(TestCase):
         self.assertEqual(similar_images['score'][0], 1)
 
     def test_update_metrics(self):
+        from django.core.files import File
+
         collection1 = Collection(name='Collection1', owner=self.u1,
                                  DOI='10.3389/fninf.2015.00099')
 
@@ -228,16 +230,20 @@ class ComparisonTestCase(TestCase):
                                    collection=collection2,
                                    image_name="image2")
 
-        similar_images = get_similar_images(int(image1.pk))
+        similar_images = get_similar_images(int(image2.pk))
         similarity_score_1 = similar_images['score'][0]
 
-        image2 = save_statmap_form(image_path=os.path.join(app_path, 'test_data/statmaps/saccade.I_C.MNI.nii.gz'),
-                                   collection=collection2,
-                                   image_name="image2")
+        image_path = os.path.join(app_path, 'test_data/statmaps/all.nii.gz')
+        f = open(image_path)
+        niftiFile = File(f)
+        my_file_name = 'another_name_but_same_image.nii.gz'
+        image2.file.save(my_file_name, niftiFile)
+        image2.save()
 
-        similar_images = get_similar_images(int(image1.pk))
+        similar_images = get_similar_images(int(image2.pk))
         similarity_score_2 = similar_images['score'][0]
 
-        print similarity_score_1, similarity_score_2
         print "Success for this test means that similarity scores changed"
         self.assertNotEqual(similarity_score_1, similarity_score_2)
+        print "Success for this test means that similarity score is 1"
+        self.assertEqual(similarity_score_2, 1)
