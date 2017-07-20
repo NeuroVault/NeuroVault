@@ -424,7 +424,6 @@ def is_thresholded(nii_obj, thr=0.85):
     else:
         return (False, ratio_bad)
 
-
 #checks if map is a parcellation or ROI/mask
 def infer_map_type(nii_obj):
     data = nii_obj.get_data()
@@ -494,6 +493,34 @@ def not_in_mni(nii, plot=False):
 
     return ret, perc_mask_covered, perc_voxels_outside_of_mask
 
+#infers subject species based on target_template_image
+### THIS SHOULD PROBABLY READ FROM SOME KIND OF TEMPLATE OBJECT?
+def infer_subject_species( target_template_image='MNI152' ):
+    TARGET_TEMPLATE_DICT = dict([('MNI152', 'Human'), ('NMT', 'Rhesus (macacca mulatta)'), ('Dorr_2008_average', 'Mouse')])
+    if not target_template_image:
+        target_template_image = 'MNI152'
+    return TARGET_TEMPLATE_DICT[target_template_image]
+
+def is_target_template_image_pycortex_compatible(target_template_image='MNI152'):
+    PYCORTEX_COMPATIBLE_TEMPLATE = dict([('MNI152',True), ('NMT',False), ('Dorr_2008_average',False)])
+    if not target_template_image:
+        target_template_image = 'MNI152'
+    return PYCORTEX_COMPATIBLE_TEMPLATE[target_template_image]
+
+def is_target_template_image_neurosynth_compatible(target_template_image='MNI152'):
+    SEARCH_COMPATIBLE_TEMPLATE = dict([('MNI152',True), ('NMT',False), ('Dorr_2008_average',False)])
+    if not target_template_image:
+        target_template_image = 'MNI152'
+    return SEARCH_COMPATIBLE_TEMPLATE[target_template_image]
+
+def is_target_template_image_search_compatible(target_template_image='MNI152'):
+    SEARCH_COMPATIBLE_TEMPLATE = dict([('MNI152',True), ('NMT',False), ('Dorr_2008_average',False)])
+    if not target_template_image:
+        target_template_image = 'MNI152'
+    return SEARCH_COMPATIBLE_TEMPLATE[target_template_image]
+###
+
+
 
 # QUERY FUNCTIONS -------------------------------------------------------------------------------
 
@@ -507,6 +534,7 @@ def is_search_compatible(pk):
     if img.polymorphic_ctype.model in ['image', 'atlas'] or \
        img.is_thresholded or \
        img.analysis_level == 'S' or \
+       not is_target_template_image_search_compatible(img.collection.target_template_image) or \
        img.map_type in ['R', 'Pa', 'A'] or img.collection.private:
         return False
     else:

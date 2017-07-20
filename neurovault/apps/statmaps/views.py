@@ -53,6 +53,7 @@ from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_vol
     send_email_notification, populate_nidm_results, get_server_url, populate_feat_directory, \
     detect_feat_directory, format_image_collection_names, is_search_compatible, \
     get_similar_images
+from neurovault.apps.statmaps.utils import is_target_template_image_pycortex_compatible, is_target_template_image_neurosynth_compatible
 from neurovault.apps.statmaps.voxel_query_functions import *
 from . import image_metadata
 
@@ -74,6 +75,11 @@ def get_collection(cid,request,mode=None):
         keyargs = {'private_token':cid}
     try:
         collection = Collection.objects.get(**keyargs)
+        # assume MNI152 if no template specified.
+        if not collection.target_template_image: 
+            collection.target_template_image = 'MNI152'
+        pycortex_compatible = is_target_template_image_pycortex_compatible( collection.target_template_image )
+
         if private_url is None and collection.private:
             if owner_or_contrib(request,collection):
                 if mode in ['file','api']:
@@ -239,7 +245,13 @@ def view_image(request, pk, collection_cid=None):
     user_owns_image = owner_or_contrib(request,image.collection)
     api_cid = pk
 
+    # if no template is specified use MNI152
+    if not image.collection.target_template_image:
+        image.collection.target_template_image = 'MNI152'
+
     comparison_is_possible = is_search_compatible(pk) and image.thumbnail
+    pycortex_compatible = is_target_template_image_pycortex_compatible( image.collection.target_template_image )
+    neurosynth_compatible = is_target_template_image_neurosynth_compatible( image.collection.target_template_image )
 
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
@@ -248,6 +260,7 @@ def view_image(request, pk, collection_cid=None):
         'user': image.collection.owner,
         'user_owns_image': user_owns_image,
         'api_cid': api_cid,
+        'neurosynth_compatible': neurosynth_compatible,
         'comparison_is_possible': comparison_is_possible
     }
 
