@@ -1,12 +1,13 @@
 from django.core.management.base import BaseCommand, CommandError
 
 from neurovault.apps.statmaps.tests.utils import save_statmap_form
-from neurovault.apps.statmaps.models import User, Collection
+from neurovault.apps.statmaps.models import User, Collection, StatisticMap
 import urllib
 import tempfile
 import os
 import zipfile
 from django.db.utils import IntegrityError
+import time
 
 class Command(BaseCommand):
 
@@ -55,7 +56,26 @@ class Command(BaseCommand):
             for j, name in enumerate(df['Tasks']):
                 d[name] = float(df['Pr(Comp %d | Task)' % c_id][j])
             d['component number'] = c_id
-            map.data = d
-            map.save()
-            print map.data
-        collection.save()
+            while not len(StatisticMap.objects.get(id=map.id).data.keys()):
+                nmap = StatisticMap.objects.get(id=map.id)
+                nmap.data = d
+                nmap.save()
+                print map.data
+                time.sleep(2)
+
+
+        collection = Collection.objects.get(name=col_name)
+        for map in collection.basecollectionitem_set.all():
+            print map
+            c_id = int(map.name.split("volume ")[1][:-1])
+            d = {}
+            for j, name in enumerate(df['Tasks']):
+                d[name] = float(df['Pr(Comp %d | Task)' % c_id][j])
+            d['component number'] = c_id
+            while not len(StatisticMap.objects.get(id=map.id).data.keys()):
+                nmap = StatisticMap.objects.get(id=map.id)
+                nmap.data = d
+                nmap.save()
+                print map.data
+                time.sleep(2)
+
