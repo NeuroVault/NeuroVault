@@ -25,24 +25,27 @@ class Command(BaseCommand):
         weights_file = z.extract('YeoBrainmapMNI152/FSL/Yeo_14Comp_PrCompGivenTasks.csv',
                                         os.path.join(tmpdir, "14maps.csv"))
 
+        col_name = 'Yeo et al. (2015) - 14 components'
+
         user = User.objects.get(username="neurovault")
         try:
-            collection = Collection(name='Yeo et. al 14 components', owner=user)
+            collection = Collection(name=col_name, owner=user)
             collection.save()
         except IntegrityError:
-            Collection.objects.get(name='Yeo et. al 14 components').delete()
-            collection = Collection(name='Yeo et. al 14 components', owner=user)
+            Collection.objects.get(name=col_name).delete()
+            collection = Collection(name=col_name, owner=user)
             collection.save()
 
         collection.description = "14 components used to decode 83 cognitive task. Task come from the Cognitive Paradigm Ontology (CogPO). Components were derived from the BrainMap database."
-        collection.name = "Yeo et al. (2015) - 14 components"
+        collection.name = col_name
+        collection.topic_set = True
         collection.save()
 
         saved = save_statmap_form(image_path=map_file,
                                   collection=collection,
                                   image_name="14 Component Model")
 
-        collection = Collection.objects.get(name='Yeo et. al 14 components')
+        collection = Collection.objects.get(name=col_name)
         import pandas
         df = pandas.read_csv(weights_file)
         for map in collection.basecollectionitem_set.all():
