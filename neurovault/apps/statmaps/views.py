@@ -37,6 +37,7 @@ from rest_framework.renderers import JSONRenderer
 from sendfile import sendfile
 from sklearn.externals import joblib
 from xml.dom import minidom
+import pandas as pd
 
 import neurovault
 from neurovault import settings
@@ -46,6 +47,7 @@ from neurovault.apps.statmaps.forms import CollectionForm, UploadFileForm, Simpl
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
 from neurovault.apps.statmaps.models import Collection, Image, Atlas, StatisticMap, NIDMResults, NIDMResultStatisticMap, \
     CognitiveAtlasTask, CognitiveAtlasContrast, BaseStatisticMap
+from neurovault.apps.statmaps.neurovault_decoder import image_to_words
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
@@ -273,6 +275,39 @@ def view_image(request, pk, collection_cid=None):
             context['warning'] += "Please use unthresholded maps whenever possible."
 
         template = 'statmaps/statisticmap_details.html.haml'
+    return render(request, template, context)
+
+
+def choose_cognitive_decoder(request, pk, collection_cid=None):
+    image = get_image(pk, collection_cid, request)
+    if image.collection.private:
+        api_cid = '%s-%s' % (image.collection.private_token, pk)
+    else:
+        api_cid = pk
+
+    topic_sets = Collection.objects.filter(topic_set=True).filter(private=False)
+    context = {
+        'image': image,
+        'user': image.collection.owner,
+        'pk': pk,
+        'topic_sets': topic_sets,
+        'api_cid': api_cid,
+        'collection_cid': collection_cid
+    }
+    template = "statmaps/choose_cognitive_decoder.html"
+    return render(request, template, context)
+
+
+def cognitive_decoder(request, topic_set_pk, pk, collection_cid=None):
+    image = get_image(pk, collection_cid, request)
+    context = {
+        'image': image,
+        'user': image.collection.owner,
+        'pk': pk,
+        'collection_cid': collection_cid,
+        'topic_set': Collection.objects.get(pk=topic_set_pk)
+    }
+    template = "statmaps/cognitive_decoder.html"
     return render(request, template, context)
 
 
@@ -988,9 +1023,14 @@ def find_similar_json(request, pk, collection_cid=None):
     else:
         similar_images = get_similar_images(pk, max_results)
 
-    dict = similar_images.to_dict("split")
-    del dict["index"]
-    return JSONResponse(dict)
+
+def spatial_regression_select(request, pk):
+    public_collections = Collection.objects.exclude(private=False)
+    non_empty_public_collections = [col for col in public_collections if col.image_set.count() > 0]
+    context = {'collections': non_empty_public_collections,
+               'map_pk': pk}
+    return render(request, 'statmaps/spatial_regression_select.html', context)
+
 
 def gene_expression(request, pk, collection_cid=None):
     '''view_image returns main view to see an image and associated meta data. If the image is in a collection with a DOI and has a generated thumbnail, it is a contender for image comparison, and a find similar button is exposed.
@@ -1026,6 +1066,33 @@ def gene_expression_json(request, pk, collection_cid=None):
     dict = expression_results.to_dict("split")
     del dict["index"]
     return JSONResponse(dict)
+
+
+def cognitive_decoder_json(request, pk, topic_set_pk, collection_cid=None):
+    image = get_image(pk, collection_cid, request)
+
+    if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
+        image = save_resampled_transformation_single(image.id)
+
+    map_data = np.load(image.reduced_representation.file)
+    component_maps = []
+    term_probs = []
+    col = Collection.objects.get(pk=topic_set_pk)
+    for map in col.basecollectionitem_set.all():
+        print map
+        component_maps.append(np.load(map.reduced_representation.file))
+        print map.data
+        d = map.data
+        if "component number" in d:
+            del d["component number"]
+        term_probs.append(map.data)
+    results = image_to_words(map_data, component_maps, term_probs)
+    df = pd.DataFrame(results, columns=["weight"])
+    df["term"] = results.index
+    df = df[["term", "weight"]]
+    dict = df.to_dict("split")
+    return JSONResponse(dict)
+
 
 # Return search interface
 def search(request,error_message=None):

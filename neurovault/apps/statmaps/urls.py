@@ -15,8 +15,8 @@ from .views import edit_collection, view_image, delete_image, edit_image, \
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
                 view_nidm_results, find_similar, find_similar_json, compare_images, edit_metadata, \
                 export_images_filenames, delete_nidm_results, view_task, search, gene_expression_json, \
-                gene_expression, serve_surface_archive
-
+                gene_expression, spatial_regression_select, cognitive_decoder_json, choose_cognitive_decoder, \
+                cognitive_decoder, serve_surface_archive
 
 urlpatterns = patterns('',
     url(r'^my_collections/$',
@@ -107,6 +107,24 @@ urlpatterns = patterns('',
     url(r'^images/add_for_neuropower$',
         add_image_for_neuropower,
         name='add_for_neuropower'),
+    url(r'^images/(?P<pk>\d+)/choose_cognitive_decoder$',
+        choose_cognitive_decoder,
+        name="choose_cognitive_decoder"),
+    url(r'^(?P<collection_cid>\d+|[A-Z]{8})/images/(?P<pk>\d+)/choose_cognitive_decoder$',
+        choose_cognitive_decoder,
+        name="private_choose_cognitive_decoder"),
+    url(r'^images/(?P<pk>\d+)/cognitive_decoder_(?P<topic_set_pk>[0-9]+)$',
+        cognitive_decoder,
+        name="cognitive_decoder"),
+    url(r'^(?P<collection_cid>\d+|[A-Z]{8})/images/(?P<pk>\d+)/cognitive_decoder_(?P<topic_set_pk>[0-9]+)$',
+        cognitive_decoder,
+        name="private_cognitive_decoder"),
+    url(r'^images/(?P<pk>\d+)/cognitive_decoder_json_(?P<topic_set_pk>[0-9]+)$',
+        cognitive_decoder_json,
+        name="cognitive_decoder_json"),
+    url(r'^(?P<collection_cid>\d+|[A-Z]{8})/images/(?P<pk>\d+)/cognitive_decoder_json_(?P<topic_set_pk>[0-9]+)$',
+        cognitive_decoder_json,
+        name="private_cognitive_decoder_json"),
     url(r'^images/(?P<pk>\d+)/js/embed$',
         papaya_js_embed,
         name='papaya_js_embed'),
@@ -190,6 +208,12 @@ urlpatterns = patterns('',
         name='view_task'),
     url(r'^tasks$',
         view_task,
-        name='view_task')
+        name='view_task'),
+    url(r'^images/(?P<pk>\d+)/spatial_regression$',
+        spatial_regression_select,
+        name='spatial_regression_select'),
+    url(r'^images/(?P<pk>\d+)/spatial_regression/(?P<collection_cid>\d+|[A-Z]{8})$',
+        find_similar,
+        name='spatial_regression')
 
 )

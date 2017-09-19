@@ -56,7 +56,7 @@ a.disabled-link:hover {
     background-color:#d9d9d9 !important;
     color:#aaa !important;
 }
-+</style>
+</style>
     :javascript
          var params = [];
          params["worldSpace"] = true;
@@ -83,9 +83,9 @@ a.disabled-link:hover {
          params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ image.file.url|urlencode }}"];
          params[filename] = {"parametric": true,  "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric": true, "minPercent": 0.0, "maxPercent": 1.0};
     - else
-      :javascript
-         params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ image.file.url|urlencode }}"];
-         params[filename] = {"parametric": true,  "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric": true};
+        :javascript
+          params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ image.file.url|urlencode }}"];
+          params[filename] = {"parametric": true,  "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric": true};
     :javascript
         {% inlinecoffeescript %}
             $(document).ready ->
@@ -162,9 +162,15 @@ a.disabled-link:hover {
                     %span.caret
                 %ul.dropdown-menu
                     %li
-                        %a{:href => "http://neurosynth.org/decode/?neurovault={{ api_cid }}"}
-                            %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Cognitive decoding using coordiante based data collected from thousands of papers."}
-                                Cognitive decoding (neurosynth)
+                        - if image.collection.private
+                            %a{:href => "{% url 'private_choose_cognitive_decoder' image.collection.private_token image.id %}"}
+                                %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Cognitive decoding using coordiante based data collected from thousands of papers."}
+                                    Cognitive decoding
+                        - else
+                            %a{:href => "{% url 'choose_cognitive_decoder' image.id %}"}
+                                %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Cognitive decoding using coordiante based data collected from thousands of papers."}
+                                    Cognitive decoding
+
                     - if comparison_is_possible
                         %li
                             %a{:href => "{% url 'find_similar' image.id %}"}

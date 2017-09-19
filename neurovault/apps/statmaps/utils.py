@@ -556,6 +556,7 @@ def get_existing_comparisons(pk1):
     comparisons = comparisons.exclude(image1__pk=pk1, image2__pk=pk1)
     return comparisons
 
+
 # Returns existing comparisons for specific pk in pd format for
 def get_similar_images(pk, max_results=100):
     comparisons = get_existing_comparisons(pk).extra(select={"abs_score": "abs(similarity_score)"}).order_by(
@@ -583,3 +584,4 @@ def get_similar_images(pk, max_results=100):
         comparisons_pd = comparisons_pd.append(df, ignore_index=True)
 
     return comparisons_pd
+

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load coffeescript %}
+
+{% block head %}
+<title>{% block title %}Cognitive decoding of {{ image.name }}{% endblock %}</title>
+    <script src="//cdn.datatables.net/plug-ins/1.10.11/sorting/natural.js" type="text/javascript"></script>
+    <script>
+        $(document).ready(function() {
+          var prevSearch;
+    	  var saveState = true;
+    	  var captured = /q=([^&]+)/.exec(window.location.href);
+          var result = captured ? captured[1] : '';
+          var base_url = captured != '' ? window.location.href.split("?")[0] : window.location.href;
+          $('#genes-table').dataTable({
+                    "bJQueryUI": true,
+                    iDisplayLength: 25,
+                    {% if image.collection.private %}
+        			"ajax": "{% url 'private_cognitive_decoder_json' image.collection.private_token pk topic_set.pk %}",
+        			{% else %}
+        			"ajax": "{% url 'cognitive_decoder_json' pk topic_set.pk %}",
+        			{% endif %}
+        			"order": [[ 1, "dsc" ]],
+        			"oSearch":{"sSearch":result},
+					"fnDrawCallback": function (oSettings) {
+						var curSearch = oSettings.oPreviousSearch.sSearch;
+						history.replaceState({query:curSearch}, "title", base_url+"?q=" + curSearch);
+					}
+				});
+       });
+
+    </script>
+
+{% endblock %}
+
+{% block content %}
+.row
+	.span11
+		%h2 Cognitive decoding of the <a href="{{ image.get_absolute_url }}">{{ image.name }}</a> statistical map
+
+		%table#genes-table.table.table-condensed.table-striped.table-hover
+			%thead
+				%tr
+					%th Term
+					%th Strength
+.row
+	.span11
+		%p <strong>About</strong>
+		%div.well
+			This map has been decoding using a set of topic maps and terms weights from
+			<a href="{% url 'collection_details' topic_set.pk %}">{{ topic_set.name }}</a>.
+			The	decoding was performed by an algorithm described in
+			<a href="http://biorxiv.org/content/early/2016/06/18/059618">Rubin et al. (submitted)</a>.
+{% endblock %}
