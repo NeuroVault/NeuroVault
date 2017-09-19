@@ -420,6 +420,7 @@ class BaseStatisticMap(Image):
     F = 'F'
     X2 = 'X2'
     P = 'P'
+    IP = 'IP'
     M ='M'
     U = 'U'
     R = 'R'
@@ -435,6 +436,7 @@ class BaseStatisticMap(Image):
         (F, 'F map'),
         (X2, 'Chi squared map'),
         (P, 'P map (given null hypothesis)'),
+        (IP, '1-P map ("inverted" probability)'),
         (M, 'multivariate-beta map'),
         (U, 'univariate-beta map'),
         (R, 'ROI/mask'),
