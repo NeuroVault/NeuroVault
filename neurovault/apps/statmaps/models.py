@@ -605,7 +605,7 @@ def mymodel_delete(sender, instance, **kwargs):
     if os.path.isdir(nidm_path):
         shutil.rmtree(nidm_path, onerror=remove_readonly)
 
-# Solution to deleting read-only files from: 
+# Solution to delete read-only files from: 
 # https://docs.python.org/3/library/shutil.html#rmtree-example
 def remove_readonly(func, path, _):
     "Clear the readonly bit and reattempt the removal"
