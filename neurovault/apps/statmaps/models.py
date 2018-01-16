@@ -28,6 +28,11 @@ from neurovault.settings import PRIVATE_MEDIA_ROOT
 import stat
 
 
+# I wanted to put this in utils, but it had to go here to avoid circular imports. :-/
+### I think it should probably be read from a template object? 
+def get_target_template_list():
+    return [('MNI152', 'Human'), ('NMT', 'Rhesus (macacca mulatta)'), ('Dorr_2008_average', 'Mouse (Dorr et al., 2008 space)')]
+
 class Collection(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of collection")
     DOI = models.CharField(max_length=200, unique=True, blank=True, null=True, default=None, verbose_name="DOI of the corresponding paper (required if you want your maps to be archived in Stanford Digital Repository)")
@@ -99,7 +104,9 @@ class Collection(models.Model):
     functional_coregistered_to_structural = models.NullBooleanField(help_text="Were the functional images coregistered to the subject's structural image?", null=True, verbose_name="Coregistered to structural?", blank=True)
     functional_coregistration_method = models.CharField(help_text="Method used to coregister functional to structural images", verbose_name="Coregistration method", max_length=200, null=True, blank=True)
     coordinate_space = models.CharField(choices=[('mni', 'MNI'), ('talairach', 'Talairach'), ('mni2tal', 'MNI2Tal'), ('other', 'other')], max_length=200, blank=True, help_text="Name of coordinate space for registration target", null=True, verbose_name="Coordinate space")
-    target_template_image = models.CharField(help_text="Name of target template image", verbose_name="Target template image", max_length=200, null=True, blank=True)
+
+    target_template_image = models.CharField(choices=get_target_template_list(), help_text="Name of target template image", verbose_name="Target template image", default=('MNI152', 'Human'), max_length=200, null=True, blank=True)
+
     target_resolution = models.FloatField(help_text="Voxel size of target template in millimeters", null=True, verbose_name="Target resolution", blank=True)
     used_smoothing = models.NullBooleanField(help_text="Was spatial smoothing applied?", null=True, verbose_name="Used smoothing?", blank=True)
     smoothing_type = models.CharField(help_text="Describe the type of smoothing applied", verbose_name="Type of smoothing", max_length=200, null=True, blank=True)
@@ -456,6 +463,7 @@ class BaseStatisticMap(Image):
                     verbose_name="Map type",
                     max_length=200, null=False, blank=False, choices=MAP_TYPE_CHOICES)
 
+    subject_species = models.CharField( max_length=200, blank=True, null=True)
     is_thresholded = models.NullBooleanField(null=True, blank=True)
     perc_bad_voxels = models.FloatField(null=True, blank=True)
     not_mni = models.NullBooleanField(null=True, blank=True)
@@ -490,6 +498,10 @@ class BaseStatisticMap(Image):
             gzfileobj = GzipFile(filename=self.file.name, mode='rb', fileobj=self.file.file)
             nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(self.file.name, gzfileobj)})
             self.map_type = nvutils.infer_map_type(nii)
+
+        if self.subject_species == None and self.collection.target_template_image:
+            import neurovault.apps.statmaps.utils as nvutils
+            self.subject_species = nvutils.infer_subject_species(self.collection.target_template_image)
 
         # Calculation of image reduced_representation and comparisons
         file_changed = False
@@ -666,3 +678,5 @@ class Comparison(models.Model):
 
         verbose_name = "pairwise image comparison"
         verbose_name_plural = "pairwise image comparisons"
+
+
