@@ -13,7 +13,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DEBUG = True
 
-DOMAIN_NAME = "http://neurovault.org"
+DOMAIN_NAME = "https://neurovault.org"
 
 TEMPLATE_DEBUG = DEBUG
 
