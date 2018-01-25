@@ -27,7 +27,7 @@ from django.template.loader import render_to_string
 from lxml import etree
 
 from neurovault.apps.statmaps.models import Collection, NIDMResults, StatisticMap, Comparison, NIDMResultStatisticMap, \
-    BaseStatisticMap
+    BaseStatisticMap, get_possible_templates
 
 
 # see CollectionRedirectMiddleware
@@ -448,9 +448,15 @@ def infer_map_type(nii_obj):
 
 import nibabel as nb
 from nilearn.image import resample_img
-def not_in_mni(nii, plot=False):
+def not_in_mni(nii, target_template_image='MNI152', plot=False):
     this_path = os.path.abspath(os.path.dirname(__file__))
-    mask_nii = nb.load(os.path.join(this_path, "static", 'anatomical','MNI152_T1_2mm_brain_mask.nii.gz'))
+
+    POSSIBLE_TEMPLATES = get_possible_templates()
+    mask_path = POSSIBLE_TEMPLATES[target_template_image]['mask']
+    if mask_path==None:
+        return False, 100.0, 100.0
+
+    mask_nii = nb.load(os.path.join(this_path, "static", 'anatomical',mask_path))
 
     #resample to the smaller one
     if np.prod(nii.shape) > np.prod(mask_nii.shape):
@@ -494,30 +500,21 @@ def not_in_mni(nii, plot=False):
     return ret, perc_mask_covered, perc_voxels_outside_of_mask
 
 #infers subject species based on target_template_image
-### THIS SHOULD PROBABLY READ FROM SOME KIND OF TEMPLATE OBJECT?
 def infer_subject_species( target_template_image='MNI152' ):
-    TARGET_TEMPLATE_DICT = dict([('MNI152', 'Human'), ('NMT', 'Rhesus (macacca mulatta)'), ('Dorr_2008_average', 'Mouse')])
-    if not target_template_image:
-        target_template_image = 'MNI152'
-    return TARGET_TEMPLATE_DICT[target_template_image]
+    POSSIBLE_TEMPLATES = get_possible_templates()
+    return POSSIBLE_TEMPLATES[target_template_image]['species']
 
-def is_target_template_image_pycortex_compatible(target_template_image='MNI152'):
-    PYCORTEX_COMPATIBLE_TEMPLATE = dict([('MNI152',True), ('NMT',False), ('Dorr_2008_average',False)])
-    if not target_template_image:
-        target_template_image = 'MNI152'
-    return PYCORTEX_COMPATIBLE_TEMPLATE[target_template_image]
+def is_target_template_image_pycortex_compatible( target_template_image='MNI152' ):
+    POSSIBLE_TEMPLATES = get_possible_templates()
+    return POSSIBLE_TEMPLATES[target_template_image]['pycortex_enabled']
 
-def is_target_template_image_neurosynth_compatible(target_template_image='MNI152'):
-    SEARCH_COMPATIBLE_TEMPLATE = dict([('MNI152',True), ('NMT',False), ('Dorr_2008_average',False)])
-    if not target_template_image:
-        target_template_image = 'MNI152'
-    return SEARCH_COMPATIBLE_TEMPLATE[target_template_image]
+def is_target_template_image_neurosynth_compatible( target_template_image='MNI152' ):
+    POSSIBLE_TEMPLATES = get_possible_templates()
+    return POSSIBLE_TEMPLATES[target_template_image]['image_search_enabled']
 
-def is_target_template_image_search_compatible(target_template_image='MNI152'):
-    SEARCH_COMPATIBLE_TEMPLATE = dict([('MNI152',True), ('NMT',False), ('Dorr_2008_average',False)])
-    if not target_template_image:
-        target_template_image = 'MNI152'
-    return SEARCH_COMPATIBLE_TEMPLATE[target_template_image]
+def is_target_template_image_search_compatible( target_template_image='MNI152' ):
+    POSSIBLE_TEMPLATES = get_possible_templates()
+    return POSSIBLE_TEMPLATES[target_template_image]['image_search_enabled']
 ###
 
 
@@ -534,7 +531,7 @@ def is_search_compatible(pk):
     if img.polymorphic_ctype.model in ['image', 'atlas'] or \
        img.is_thresholded or \
        img.analysis_level == 'S' or \
-       not is_target_template_image_search_compatible(img.collection.target_template_image) or \
+       not is_target_template_image_search_compatible(img.target_template_image) or \
        img.map_type in ['R', 'Pa', 'A'] or img.collection.private:
         return False
     else:

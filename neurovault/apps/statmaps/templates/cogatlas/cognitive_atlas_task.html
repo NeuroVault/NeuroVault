@@ -29,7 +29,8 @@
         {% if first_image %}
             var tmpname = "{{ first_image.file.url }}".replace(/^.*[\\\/]/, '')
             {% if first_image.map_type == 'Pa' or first_image.polymorphic_ctype.model == 'atlas' %}
-                params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ first_image.file.url|urlencode }}".replace(" ", "")];
+                params["images"] = ["{% static "images/"%}{{ first_image.target_template_image }}.nii.gz", "{{ first_image.file.url|urlencode }}".replace(" ", "")];
+
                 params[tmpname] = {
                     "parametric": true,
                     "lut": "Spectrum",
@@ -38,7 +39,7 @@
                     maxPercent: 1.0
                 };
             {% elif first_image.map_type == 'R' %}
-                params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ first_image.file.url|urlencode }}".replace(" ", "")];
+                params["images"] = ["{% static "images/"%}{{ first_image.target_template_image }}.nii.gz", "{{ first_image.file.url|urlencode }}".replace(" ", "")];
                 params[tmpname] = {
                     "parametric": true,
                     "lut": "Overlay (Negatives)",
@@ -49,7 +50,7 @@
             {% elif first_image.map_type == 'A' %}
                 params["images"] = ["{{ first_image.file.url|urlencode }}".replace(" ", "")];
             {% else %}
-                params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ first_image.file.url|urlencode }}".replace(" ", "")];
+                params["images"] = ["{% static "images/"%}{{ first_image.target_template_image }}.nii.gz", "{{ first_image.file.url|urlencode }}".replace(" ", "")];
                 params[tmpname] = {
                     "parametric": true,
                     "min": 0,
@@ -58,7 +59,7 @@
                     "alpha": "0.75",
                     "symmetric": true
                 };
-                params["{% static "images/MNI152.nii.gz"%}"] = {
+                params["{% static "images/"%}{{ first_image.target_template_image }}.nii.gz"] = {
                     "parametric": true,
                     "min": 0,
                     "lut": "OrRd",
@@ -68,7 +69,7 @@
                 };
             {% endif %}
         {% else %}
-            params["images"] = ["{% static "images/MNI152.nii.gz"%}"];
+            params["images"] = ["{% static "images/"%}{{ first_image.target_template_image }}.nii.gz"];
         {% endif %}
         params["worldSpace"] = true;
         params["expandable"] = true;
@@ -107,7 +108,12 @@
             // Reset viewer and load new images
             $(".viewimage").removeClass("active")
 
+            // MAY NEED SOMETHING SIMILAR TO GET TEMPLATE NAME... 
             var tmpname = $(mrimage).attr("filename").replace(/^.*[\\\/]/, '')
+            var templatename = Object.keys( $(mrimage) )
+            console.log(propName,propValue);
+
+            alert( templatename )
 
             if ($(mrimage).attr("type") == "atlas" || $(mrimage).attr("type") == "parcellation") {
                 params["images"] = ["{% static "images/MNI152.nii.gz"%}", $(mrimage).attr("filename")];

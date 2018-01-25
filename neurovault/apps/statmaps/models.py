@@ -25,11 +25,18 @@ from neurovault.apps.statmaps.storage import DoubleExtensionStorage, NIDMStorage
 from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, generate_glassbrain_image
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 
+# possible templates
+POSSIBLE_TEMPLATES = {
+    'MNI152':{'name':'Human (MNI152)', 'species':'Human','pycortex_enabled':True, 'image_search_enabled':True, 'mask':'MNI152_T1_2mm_brain_mask.nii.gz' },
+    'Door_2008_average':{'name':'Mouse (Dorr 2008 space)', 'species':'Mouse','pycortex_enabled':False, 'image_search_enabled':False, 'mask':None },
+    'NMT':{'name':'Rhesus (macacca mulatta), NMT space', 'species':'Rhesus','pycortex_enabled':False, 'image_search_enabled':False, 'mask':None },
+    'MNI152NLin2009cAsym':{'name':'Human (MNI152 NLin 2009c Asym)', 'species':'Human','pycortex_enabled':True, 'image_search_enabled':True, 'mask':None }
+    }
 
-# I wanted to put this in utils, but it had to go here to avoid circular imports. :-/
-### I think it should probably be read from a template object? 
+def get_possible_templates():
+    return POSSIBLE_TEMPLATES
 def get_target_template_list():
-    return [('MNI152', 'Human'), ('NMT', 'Rhesus (macacca mulatta)'), ('Dorr_2008_average', 'Mouse (Dorr et al., 2008 space)')]
+    return [ (template, POSSIBLE_TEMPLATES[template]['name']) for template in POSSIBLE_TEMPLATES ]
 
 class Collection(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of collection")
@@ -102,9 +109,6 @@ class Collection(models.Model):
     functional_coregistered_to_structural = models.NullBooleanField(help_text="Were the functional images coregistered to the subject's structural image?", null=True, verbose_name="Coregistered to structural?", blank=True)
     functional_coregistration_method = models.CharField(help_text="Method used to coregister functional to structural images", verbose_name="Coregistration method", max_length=200, null=True, blank=True)
     coordinate_space = models.CharField(choices=[('mni', 'MNI'), ('talairach', 'Talairach'), ('mni2tal', 'MNI2Tal'), ('other', 'other')], max_length=200, blank=True, help_text="Name of coordinate space for registration target", null=True, verbose_name="Coordinate space")
-
-    target_template_image = models.CharField(choices=get_target_template_list(), help_text="Name of target template image", verbose_name="Target template image", default=('MNI152', 'Human'), max_length=200, null=True, blank=True)
-
     target_resolution = models.FloatField(help_text="Voxel size of target template in millimeters", null=True, verbose_name="Target resolution", blank=True)
     used_smoothing = models.NullBooleanField(help_text="Was spatial smoothing applied?", null=True, verbose_name="Used smoothing?", blank=True)
     smoothing_type = models.CharField(help_text="Describe the type of smoothing applied", verbose_name="Type of smoothing", max_length=200, null=True, blank=True)
@@ -459,6 +463,7 @@ class BaseStatisticMap(Image):
                     verbose_name="Map type",
                     max_length=200, null=False, blank=False, choices=MAP_TYPE_CHOICES)
 
+
     subject_species = models.CharField( max_length=200, blank=True, null=True)
     is_thresholded = models.NullBooleanField(null=True, blank=True)
     perc_bad_voxels = models.FloatField(null=True, blank=True)
@@ -486,7 +491,7 @@ class BaseStatisticMap(Image):
             self.file.open()
             gzfileobj = GzipFile(filename=self.file.name, mode='rb', fileobj=self.file.file)
             nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(self.file.name, gzfileobj)})
-            self.not_mni, self.brain_coverage, self.perc_voxels_outside = nvutils.not_in_mni(nii)
+            self.not_mni, self.brain_coverage, self.perc_voxels_outside = nvutils.not_in_mni(nii, self.target_template_image)
 
         if self.map_type == self.OTHER:
             import neurovault.apps.statmaps.utils as nvutils
@@ -495,9 +500,9 @@ class BaseStatisticMap(Image):
             nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(self.file.name, gzfileobj)})
             self.map_type = nvutils.infer_map_type(nii)
 
-        if self.subject_species == None and self.collection.target_template_image:
+        if self.subject_species == None and self.target_template_image:
             import neurovault.apps.statmaps.utils as nvutils
-            self.subject_species = nvutils.infer_subject_species(self.collection.target_template_image)
+            self.subject_species = nvutils.infer_subject_species(self.target_template_image)
 
         # Calculation of image reduced_representation and comparisons
         file_changed = False
@@ -563,6 +568,13 @@ class StatisticMap(BaseStatisticMap):
                                               help_text="Ignore the warning when the map is sparse by nature, an ROI mask, or was acquired with limited field of view.")
     modality = models.CharField(verbose_name="Modality & Acquisition Type", help_text="Brain imaging procedure that was used to acquire the data.",
                                 max_length=200, null=False, blank=False, choices=MODALITY_CHOICES)
+
+    target_template_image = models.CharField(
+        choices=get_target_template_list(), 
+        help_text="Name of target template image", 
+        verbose_name="Target template image", 
+        default=('MNI152', 'Human (MNI152)'), max_length=200, null=False, blank=False)
+
     statistic_parameters = models.FloatField(help_text="Parameters of the null distribution of the test statistic, typically degrees of freedom (should be clear from the test statistic what these are).", null=True, verbose_name="Statistic parameters", blank=True)
     smoothness_fwhm = models.FloatField(help_text="Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.", verbose_name="Smoothness FWHM", null=True, blank=True)
     contrast_definition = models.CharField(help_text="Exactly what terms are subtracted from what? Define these in terms of task or stimulus conditions (e.g., 'one-back task with objects versus zero-back task with objects') instead of underlying psychological concepts (e.g., 'working memory').", verbose_name="Contrast definition", max_length=200, null=True, blank=True)

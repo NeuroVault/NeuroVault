@@ -75,10 +75,10 @@ def get_collection(cid,request,mode=None):
         keyargs = {'private_token':cid}
     try:
         collection = Collection.objects.get(**keyargs)
-        # assume MNI152 if no template specified.
-        if not collection.target_template_image: 
-            collection.target_template_image = 'MNI152'
-        pycortex_compatible = is_target_template_image_pycortex_compatible( collection.target_template_image )
+        # assume MNI152 if no template specified. 
+        #if not collection.target_template_image: 
+        #    collection.target_template_image = 'MNI152'
+        #pycortex_compatible = is_target_template_image_pycortex_compatible( collection.target_template_image )
 
         if private_url is None and collection.private:
             if owner_or_contrib(request,collection):
@@ -246,12 +246,12 @@ def view_image(request, pk, collection_cid=None):
     api_cid = pk
 
     # if no template is specified use MNI152
-    if not image.collection.target_template_image:
-        image.collection.target_template_image = 'MNI152'
+    if not image.target_template_image:
+        image.target_template_image = 'MNI152'
 
     comparison_is_possible = is_search_compatible(pk) and image.thumbnail
-    pycortex_compatible = is_target_template_image_pycortex_compatible( image.collection.target_template_image )
-    neurosynth_compatible = is_target_template_image_neurosynth_compatible( image.collection.target_template_image )
+    pycortex_compatible = is_target_template_image_pycortex_compatible( image.target_template_image )
+    neurosynth_compatible = is_target_template_image_neurosynth_compatible( image.target_template_image )
 
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
