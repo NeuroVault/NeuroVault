@@ -31,6 +31,7 @@ class AddStatmapsTests(TestCase):
                 'modality':'fMRI-BOLD',
                 'map_type': 'T',
                 'collection':self.coll.pk,
+                'target_template_image': 'GenericMNI',
             }
             testpath = os.path.abspath(os.path.dirname(__file__))
             fname = os.path.join(testpath,'test_data/statmaps/motor_lips.nii.gz')
@@ -51,6 +52,7 @@ class AddStatmapsTests(TestCase):
                 'modality':'fMRI-BOLD',
                 'map_type': 'T',
                 'collection':self.coll.pk,
+                'target_template_image': 'GenericMNI',
             }
             testpath = os.path.abspath(os.path.dirname(__file__))
             fname = os.path.join(testpath,'test_data/statmaps/saccade.I_C.MNI.nii.gz')
@@ -77,6 +79,7 @@ class AddStatmapsTests(TestCase):
                 'modality':'fMRI-BOLD',
                 'map_type': 'T',
                 'collection':self.coll.pk,
+                'target_template_image': 'GenericMNI',
             }
             testpath = os.path.abspath(os.path.dirname(__file__))
             fname_img = os.path.join(testpath,'test_data/statmaps/box_0b_vs_1b.img')
@@ -93,7 +96,8 @@ class AddStatmapsTests(TestCase):
                 'modality':'fMRI-BOLD',
                 'map_type': 'T',
                 'collection':self.coll.pk,
-                'ignore_file_warning': True
+                'ignore_file_warning': True,
+                'target_template_image': 'GenericMNI',
             }
             testpath = os.path.abspath(os.path.dirname(__file__))
             fname_img = os.path.join(testpath,'test_data/statmaps/box_0b_vs_1b.img')
@@ -119,6 +123,7 @@ class AddStatmapsTests(TestCase):
                 'name': "test map",
                 'cognitive_paradigm_cogatlas': 'trm_4f24126c22011',
                 'modality':'fMRI-BOLD',
+                'target_template_image': 'GenericMNI',
                 'map_type': 'T',
                 'collection':self.coll.pk,
                 'ignore_file_warning': True,
@@ -138,6 +143,7 @@ class AddStatmapsTests(TestCase):
                 'name': "test map",
                 'cognitive_paradigm_cogatlas': 'trm_4f24126c22011',
                 'modality':'fMRI-BOLD',
+                'target_template_image': 'GenericMNI',
                 'map_type': 'T',
                 'collection':self.coll.pk,
                 'ignore_file_warning': True,
