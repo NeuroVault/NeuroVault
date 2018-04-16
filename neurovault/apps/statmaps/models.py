@@ -435,6 +435,10 @@ class Image(BaseCollectionItem):
             super(Image, self).save()
 
 
+    @classmethod
+    def get_fixed_fields(cls):
+        return super(Image, cls).get_fixed_fields() + ('target_template_image', )
+
 
 class BaseStatisticMap(Image):
     T = 'T'
