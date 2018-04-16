@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import shutil
+import stat
 from datetime import datetime
 from gzip import GzipFile
 
@@ -441,6 +442,7 @@ class BaseStatisticMap(Image):
     F = 'F'
     X2 = 'X2'
     P = 'P'
+    IP = 'IP'
     M ='M'
     U = 'U'
     R = 'R'
@@ -456,6 +458,7 @@ class BaseStatisticMap(Image):
         (F, 'F map'),
         (X2, 'Chi squared map'),
         (P, 'P map (given null hypothesis)'),
+        (IP, '1-P map ("inverted" probability)'),
         (M, 'multivariate-beta map'),
         (U, 'univariate-beta map'),
         (R, 'ROI/mask'),
@@ -624,7 +627,14 @@ class NIDMResults(BaseCollectionItem):
 def mymodel_delete(sender, instance, **kwargs):
     nidm_path = os.path.dirname(instance.zip_file.path)
     if os.path.isdir(nidm_path):
-        shutil.rmtree(nidm_path)
+        shutil.rmtree(nidm_path, onerror=remove_readonly)
+
+# Solution to delete read-only files from: 
+# https://docs.python.org/3/library/shutil.html#rmtree-example
+def remove_readonly(func, path, _):
+    "Clear the readonly bit and reattempt the removal"
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
 
 post_save.connect(basecollectionitem_created, sender=NIDMResults, weak=True)
 

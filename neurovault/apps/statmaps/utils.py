@@ -54,7 +54,6 @@ def split_filename(fname):
 
     Examples
     --------
-    >>> from nipype.utils.filemanip import split_filename
     >>> pth, fname, ext = split_filename('/home/data/subject.nii.gz')
     >>> pth
     '/home/data'
@@ -532,6 +531,7 @@ def is_search_compatible(pk):
        img.is_thresholded or \
        img.analysis_level == 'S' or \
        not is_target_template_image_search_compatible(img.target_template_image) or \
+       img.not_mni or \
        img.map_type in ['R', 'Pa', 'A'] or img.collection.private:
         return False
     else:
@@ -548,7 +548,7 @@ def get_images_to_compare_with(pk1, for_generation=False):
     img = Image.objects.get(pk=pk1)
     image_pks = []
     for cls in [StatisticMap, NIDMResultStatisticMap]:
-        qs = cls.objects.filter(collection__private=False, is_thresholded=False)
+        qs = cls.objects.filter(collection__private=False, is_thresholded=False, not_mni=False)
         if not (for_generation and img.collection.DOI is not None):
             qs = qs.exclude(collection__DOI__isnull=True)
         qs = qs.exclude(collection=img.collection)
