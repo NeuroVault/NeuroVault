@@ -323,7 +323,6 @@ class CollectionSerializer(serializers.ModelSerializer):
     owner_name = serializers.SerializerMethodField()
     number_of_images = serializers.SerializerMethodField('num_im')
 
-
     def num_im(self, obj):
         return obj.basecollectionitem_set.count()
 
@@ -354,6 +353,6 @@ class CollectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Collection
-        exclude = ['private_token', 'private', 'images']
+        exclude = ['private_token', 'images']
         # Override `required` to allow name fetching by DOI
         extra_kwargs = {'name': {'required': False}}

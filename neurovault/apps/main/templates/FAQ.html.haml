@@ -29,7 +29,7 @@
         .well
             %p 
             :markdown
-                Yes there is a RESTful API - you can find it [here]({% url 'api-docs' %}). Please let us know if you build something cool using NeuroVault!
+                Yes there is a RESTful API - you can find it [here]({% url 'api-docs' %}). There are also <a href="https://github.com/NeuroVault/pyneurovault">python</a> and <a href="https://github.com/muschellij2/neurovault">R</a> clients for the API. Please let us know if you build something cool using NeuroVault!
         %h4 8. I found a bug. How can I report it?
         .well  
             %p Excellent! Please use the "Give feedback" button in the toolbar.
@@ -49,5 +49,10 @@
         .well     
             %p All data in NeuroVault (with exclusion of private collections) is distributed under <a href="http://creativecommons.org/publicdomain/zero/1.0/">CC0 license</a>.
         %h4 14. My image looks perfectly aligned with the MNI template in FSLView but when I upload it to NeuroVault it's misaligned in the web viewver.
+        .well
             %p Use this command line FSL tool: fslcpgeom MNIatlas image_with_weird_header. (Many thanks to Leonie Lampe for the tip).
+        %h4 15. Should I add a NeuroVault link to the paper I'm about to submit? What's the best practice of doing this?
+        .well
+            %p Linking unthresholded maps is a great way to allow the readers of your paper to explore your results and reuse them in their work. We recommend grouping all maps from one study/paper in a single collection and including a link to that collection in your manuscript. Additionally one can include links to individual maps in figure captions. An example can be found in <a href="https://doi.org/10.1016/j.neuroimage.2017.10.059">the following publication, the caption of Fig. 3</a>. Please note that if you decide to use a private collection (e.g., during peer-review), a unique string is added to the URL so people would not be able to guess the address. Additionally, it's worth mentioning that if your collection was initially private (so it got longer URLs) and you later made it public, both URLs (public and private) will resolve correctly. This allows users to keep collections private during peer-review and make them public after the paper gets published (which is not required but can be preferred by some).
+
 {% endblock %}

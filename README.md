@@ -49,8 +49,9 @@ docker-compose run --rm uwsgi python manage.py shell
 ```
 docker-compose run --rm uwsgi python manage.py test
 ```
-### Updating docker image
-If you add a dependency to requirements.txt or modify Dockerfile you will need to rebuild the docker image
+### Updating Docker image
+If you add a dependency (e.g., a new pip install) or modify the Dockerfile in any way, you will need to rebuild the docker image:
+
 ```
 docker build -t neurovault/neurovault .
 ```
@@ -62,4 +63,4 @@ You can also build it locally
 ```
 docker build -t neurovault/neurovault_fs -f fs_docker/Dockerfile .
 ```
-
+Pay special close attention that the command above ends with a `.` to indicate the present working directory, the base of the code repository.
