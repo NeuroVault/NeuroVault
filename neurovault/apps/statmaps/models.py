@@ -27,11 +27,12 @@ from neurovault.settings import PRIVATE_MEDIA_ROOT
 
 # possible templates
 POSSIBLE_TEMPLATES = {
-    'MNI152':{'name':'Human (MNI152)', 'species':'Human','pycortex_enabled':True, 'image_search_enabled':True, 'mask':'MNI152_T1_2mm_brain_mask.nii.gz' },
-    'Door_2008_average':{'name':'Mouse (Dorr 2008 space)', 'species':'Mouse','pycortex_enabled':False, 'image_search_enabled':False, 'mask':None },
+    'MNI152':{'name':'Human (Generic/Unknown MNI)', 'species': 'Human', 'pycortex_enabled':True, 'image_search_enabled':True, 'mask':'MNI152_T1_2mm_brain_mask.nii.gz' },
+    'Door_2008_average':{'name':'Mouse (Dorr 2008 space)', 'species': 'Mouse','pycortex_enabled':False, 'image_search_enabled':False, 'mask':None },
     'NMT':{'name':'Rhesus (macacca mulatta), NMT space', 'species':'Rhesus','pycortex_enabled':False, 'image_search_enabled':False, 'mask':None },
     'MNI152NLin2009cAsym':{'name':'Human (MNI152 NLin 2009c Asym)', 'species':'Human','pycortex_enabled':True, 'image_search_enabled':True, 'mask':None }
     }
+DEFAULT_TEMPLATE = 'MNI152'
 
 def get_possible_templates():
     return POSSIBLE_TEMPLATES
@@ -573,7 +574,7 @@ class StatisticMap(BaseStatisticMap):
         choices=get_target_template_list(), 
         help_text="Name of target template image", 
         verbose_name="Target template image", 
-        default=('MNI152', 'Human (MNI152)'), max_length=200, null=False, blank=False)
+        default=DEFAULT_TEMPLATE, max_length=200, null=False, blank=False)
 
     statistic_parameters = models.FloatField(help_text="Parameters of the null distribution of the test statistic, typically degrees of freedom (should be clear from the test statistic what these are).", null=True, verbose_name="Statistic parameters", blank=True)
     smoothness_fwhm = models.FloatField(help_text="Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.", verbose_name="Smoothness FWHM", null=True, blank=True)

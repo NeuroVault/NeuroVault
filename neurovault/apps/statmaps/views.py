@@ -44,8 +44,10 @@ from neurovault.apps.statmaps.ahba import calculate_gene_expression_similarity
 from neurovault.apps.statmaps.forms import CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,NeuropowerStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
-from neurovault.apps.statmaps.models import Collection, Image, Atlas, StatisticMap, NIDMResults, NIDMResultStatisticMap, \
-    CognitiveAtlasTask, CognitiveAtlasContrast, BaseStatisticMap
+from neurovault.apps.statmaps.models import Collection, Image, Atlas, \
+    StatisticMap, NIDMResults, NIDMResultStatisticMap, \
+    CognitiveAtlasTask, CognitiveAtlasContrast, BaseStatisticMap, \
+    DEFAULT_TEMPLATE
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
@@ -64,6 +66,13 @@ def owner_or_contrib(request,collection):
     '''
     return request.user.has_perm('statmaps.change_collection', collection) or request.user.is_superuser
 
+
+def get_button_html(url, type, target_template_image):
+    return '<a class="btn btn-default viewimage" ' \
+           'onclick="viewimage(this)" filename="%s" type="%s" ' \
+           'target_template_image="%s"><i class="fa fa-lg ' \
+           'fa-eye"></i></a>' % (url,
+                                 type, target_template_image)
 
 def get_collection(cid,request,mode=None):
     '''get_collection returns collection object based on a primary key (cid)
@@ -1079,7 +1088,8 @@ class ImagesInCollectionJson(BaseDatatableView):
         # We want to render user as a custom column
         if column == 'file.url':
             if isinstance(row, Image):
-                return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>'%(filepath_to_uri(row.file.url), type)
+                return get_button_html(filepath_to_uri(row.file.url), type,
+                                       row.target_teplate_image)
             elif isinstance(row, NIDMResults):
                 try:
                     excursion_sets = Graph(
@@ -1090,7 +1100,7 @@ class ImagesInCollectionJson(BaseDatatableView):
                         row.zip_file.path).get_statistic_maps()
                     map_url = row.get_absolute_url() + "/" + str(
                         maps[0].file.path)
-                return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>' % (map_url, type)
+                return get_button_html(map_url, type, DEFAULT_TEMPLATE)
         elif column == 'polymorphic_ctype.name':
             return type
         elif column == 'is_valid':
@@ -1124,7 +1134,8 @@ class ImagesByTaskJson(BaseDatatableView):
         # We want to render user as a custom column
         if column == 'file.url':
             if isinstance(row, Image):
-                return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>'%(filepath_to_uri(row.file.url), type)
+                return get_button_html(filepath_to_uri(row.file.url), type,
+                                       row.target_teplate_image)
             elif isinstance(row, NIDMResults):
                 return ""
         else:
@@ -1161,7 +1172,8 @@ class AtlasesAndParcellationsJson(BaseDatatableView):
 
         # We want to render user as a custom column
         if column == 'file.url':
-            return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>'%(filepath_to_uri(row.file.url), type)
+            return get_button_html(filepath_to_uri(row.file.url), type,
+                                   row.target_teplate_image)
         elif column == 'polymorphic_ctype.name':
             return type
         if column == 'collection.authors' and row.collection.authors:
