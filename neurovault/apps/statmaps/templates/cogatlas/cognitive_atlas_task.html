@@ -116,7 +116,7 @@
             alert( templatename )
 
             if ($(mrimage).attr("type") == "atlas" || $(mrimage).attr("type") == "parcellation") {
-                params["images"] = ["{% static "images/MNI152.nii.gz"%}", $(mrimage).attr("filename")];
+                params["images"] = ["{% static "images/"%}" + $(mrimage).attr("target_template_image") + ".nii.gz", $(mrimage).attr("filename")];
                 params[tmpname] = {
                     "parametric": true,
                     "lut": "Spectrum",
@@ -125,7 +125,7 @@
                     maxPercent: 1.0
                 };
             } else if ($(mrimage).attr("type") == "ROI/mask") {
-                params["images"] = ["{% static "images/MNI152.nii.gz"%}", $(mrimage).attr("filename")];
+                params["images"] = ["{% static "images/"%}" + $(mrimage).attr("target_template_image") + ".nii.gz", $(mrimage).attr("filename")];
                 params[tmpname] = {
                     "parametric": true,
                     "lut": "Overlay (Negatives)",
@@ -136,7 +136,7 @@
             } else if ($(mrimage).attr("type") == "anatomical") {
                 params["images"] = [$(mrimage).attr("filename")];
             } else {
-                params["images"] = ["{% static "images/MNI152.nii.gz"%}", $(mrimage).attr("filename")];
+                params["images"] = ["{% static "images/"%}" + $(mrimage).attr("target_template_image") + ".nii.gz", $(mrimage).attr("filename")];
                 params[tmpname] = {
                     "parametric": true,
                     "min": 0,

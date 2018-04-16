@@ -256,7 +256,7 @@ def view_image(request, pk, collection_cid=None):
 
     # if no template is specified use MNI152
     if not image.target_template_image:
-        image.target_template_image = 'MNI152'
+        image.target_template_image = DEFAULT_TEMPLATE
 
     comparison_is_possible = is_search_compatible(pk) and image.thumbnail
     pycortex_compatible = is_target_template_image_pycortex_compatible( image.target_template_image )

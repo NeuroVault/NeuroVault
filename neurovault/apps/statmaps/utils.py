@@ -26,8 +26,9 @@ from django.db.models import Q
 from django.template.loader import render_to_string
 from lxml import etree
 
-from neurovault.apps.statmaps.models import Collection, NIDMResults, StatisticMap, Comparison, NIDMResultStatisticMap, \
-    BaseStatisticMap, get_possible_templates
+from neurovault.apps.statmaps.models import Collection, NIDMResults, \
+    StatisticMap, Comparison, NIDMResultStatisticMap, \
+    BaseStatisticMap, get_possible_templates, DEFAULT_TEMPLATE
 
 
 # see CollectionRedirectMiddleware
@@ -447,7 +448,7 @@ def infer_map_type(nii_obj):
 
 import nibabel as nb
 from nilearn.image import resample_img
-def not_in_mni(nii, target_template_image='MNI152', plot=False):
+def not_in_mni(nii, target_template_image=DEFAULT_TEMPLATE, plot=False):
     this_path = os.path.abspath(os.path.dirname(__file__))
 
     POSSIBLE_TEMPLATES = get_possible_templates()
@@ -499,19 +500,19 @@ def not_in_mni(nii, target_template_image='MNI152', plot=False):
     return ret, perc_mask_covered, perc_voxels_outside_of_mask
 
 #infers subject species based on target_template_image
-def infer_subject_species(target_template_image='MNI152'):
+def infer_subject_species(target_template_image=DEFAULT_TEMPLATE):
     POSSIBLE_TEMPLATES = get_possible_templates()
     return POSSIBLE_TEMPLATES[target_template_image]['species']
 
-def is_target_template_image_pycortex_compatible( target_template_image='MNI152' ):
+def is_target_template_image_pycortex_compatible( target_template_image=DEFAULT_TEMPLATE ):
     POSSIBLE_TEMPLATES = get_possible_templates()
     return POSSIBLE_TEMPLATES[target_template_image]['pycortex_enabled']
 
-def is_target_template_image_neurosynth_compatible( target_template_image='MNI152' ):
+def is_target_template_image_neurosynth_compatible( target_template_image=DEFAULT_TEMPLATE ):
     POSSIBLE_TEMPLATES = get_possible_templates()
     return POSSIBLE_TEMPLATES[target_template_image]['image_search_enabled']
 
-def is_target_template_image_search_compatible( target_template_image='MNI152' ):
+def is_target_template_image_search_compatible( target_template_image=DEFAULT_TEMPLATE ):
     POSSIBLE_TEMPLATES = get_possible_templates()
     return POSSIBLE_TEMPLATES[target_template_image]['image_search_enabled']
 ###

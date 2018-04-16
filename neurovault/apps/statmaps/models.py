@@ -28,12 +28,12 @@ from neurovault.settings import PRIVATE_MEDIA_ROOT
 
 # possible templates
 POSSIBLE_TEMPLATES = {
-    'MNI152':{'name':'Human (Generic/Unknown MNI)', 'species': 'Human', 'pycortex_enabled':True, 'image_search_enabled':True, 'mask':'MNI152_T1_2mm_brain_mask.nii.gz' },
+    'GenericMNI':{'name':'Human (Generic/Unknown MNI)', 'species': 'Human', 'pycortex_enabled':True, 'image_search_enabled':True, 'mask':'MNI152_T1_2mm_brain_mask.nii.gz' },
     'Door_2008_average':{'name':'Mouse (Dorr 2008 space)', 'species': 'Mouse','pycortex_enabled':False, 'image_search_enabled':False, 'mask':None },
     'NMT':{'name':'Rhesus (macacca mulatta), NMT space', 'species':'Rhesus','pycortex_enabled':False, 'image_search_enabled':False, 'mask':None },
     'MNI152NLin2009cAsym':{'name':'Human (MNI152 NLin 2009c Asym)', 'species':'Human','pycortex_enabled':True, 'image_search_enabled':True, 'mask':None }
     }
-DEFAULT_TEMPLATE = 'MNI152'
+DEFAULT_TEMPLATE = 'GenericMNI'
 
 def get_possible_templates():
     return POSSIBLE_TEMPLATES

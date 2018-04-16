@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('statmaps', '0074_auto_20170718_1842'),
+        ('statmaps', '0074_auto_20170919_2026'),
     ]
 
     operations = [
@@ -19,6 +19,17 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='image',
             name='target_template_image',
-            field=models.CharField(default=b'MNI152', help_text=b'Name of target template image', max_length=200, verbose_name=b'Target template image', choices=[(b'MNI152NLin2009cAsym', b'Human (MNI152 NLin 2009c Asym)'), (b'Door_2008_average', b'Mouse (Dorr 2008 space)'), (b'NMT', b'Rhesus (macacca mulatta), NMT space'), (b'MNI152', b'Human (Generic/Unknown MNI)')]),
+            field=models.CharField(default=b'GenericMNI',
+                                   help_text=b'Name of target template image',
+                                   max_length=200,
+                                   verbose_name=b'Target template image',
+                                   choices=[(b'MNI152NLin2009cAsym',
+                                             b'Human (MNI152 NLin 2009c Asym)'),
+                                            (b'GenericMNI',
+                                             b'Human (Generic/Unknown MNI)'), (
+                                            b'NMT',
+                                            b'Rhesus (macacca mulatta), NMT space'),
+                                            (b'Door_2008_average',
+                                             b'Mouse (Dorr 2008 space)')]),
         ),
     ]
