@@ -14,7 +14,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='image',
             name='subject_species',
-            field=models.CharField(max_length=200, null=True, blank=True),
+            field=models.CharField(default=b'homo sapiens', max_length=200,
+                                   null=True, blank=True),
         ),
         migrations.AddField(
             model_name='image',
@@ -28,8 +29,8 @@ class Migration(migrations.Migration):
                                             (b'GenericMNI',
                                              b'Human (Generic/Unknown MNI)'), (
                                             b'NMT',
-                                            b'Rhesus (macacca mulatta), NMT space'),
-                                            (b'Door_2008_average',
+                                            b'Rhesus - macacca mulatta (NMT)'),
+                                            (b'Dorr2008',
                                              b'Mouse (Dorr 2008 space)')]),
         ),
     ]

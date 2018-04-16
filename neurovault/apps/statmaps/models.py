@@ -28,10 +28,10 @@ from neurovault.settings import PRIVATE_MEDIA_ROOT
 
 # possible templates
 POSSIBLE_TEMPLATES = {
-    'GenericMNI':{'name':'Human (Generic/Unknown MNI)', 'species': 'Human', 'pycortex_enabled':True, 'image_search_enabled':True, 'mask':'MNI152_T1_2mm_brain_mask.nii.gz' },
-    'Door_2008_average':{'name':'Mouse (Dorr 2008 space)', 'species': 'Mouse','pycortex_enabled':False, 'image_search_enabled':False, 'mask':None },
-    'NMT':{'name':'Rhesus (macacca mulatta), NMT space', 'species':'Rhesus','pycortex_enabled':False, 'image_search_enabled':False, 'mask':None },
-    'MNI152NLin2009cAsym':{'name':'Human (MNI152 NLin 2009c Asym)', 'species':'Human','pycortex_enabled':True, 'image_search_enabled':True, 'mask':None }
+    'GenericMNI':{'name':'Human (Generic/Unknown MNI)', 'species': 'homo sapiens', 'pycortex_enabled':True, 'image_search_enabled':True, 'mask':'MNI152_T1_2mm_brain_mask.nii.gz' },
+    'Dorr2008':{'name':'Mouse (Dorr 2008 space)', 'species': 'mus musculus','pycortex_enabled':False, 'image_search_enabled':False, 'mask':None },
+    'NMT':{'name':'Rhesus - macacca mulatta (NMT)', 'species': 'macaca mulatta','pycortex_enabled':False, 'image_search_enabled':False, 'mask':None },
+    'MNI152NLin2009cAsym':{'name':'Human (MNI152 NLin 2009c Asym)', 'species':'homo sapiens','pycortex_enabled':True, 'image_search_enabled':True, 'mask':None }
     }
 DEFAULT_TEMPLATE = 'GenericMNI'
 
@@ -334,7 +334,7 @@ class Image(BaseCollectionItem):
         help_text="Name of target template image",
         verbose_name="Target template image",
         default=DEFAULT_TEMPLATE, max_length=200, null=False, blank=False)
-    subject_species = models.CharField(max_length=200, blank=True, null=True)
+    subject_species = models.CharField(max_length=200, default=POSSIBLE_TEMPLATES[DEFAULT_TEMPLATE]['species'], blank=True, null=True)
     figure = models.CharField(help_text="Which figure in the corresponding paper was this map displayed in?", verbose_name="Corresponding figure", max_length=200, null=True, blank=True)
     thumbnail = models.FileField(help_text="The orthogonal view thumbnail path of the nifti image",
                                  null=True, blank=True, upload_to=upload_img_to,
