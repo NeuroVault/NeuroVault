@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import shutil
+import stat
 from datetime import datetime
 from gzip import GzipFile
 
@@ -25,8 +26,19 @@ from neurovault.apps.statmaps.storage import DoubleExtensionStorage, NIDMStorage
 from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, generate_glassbrain_image
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 
-import stat
+# possible templates
+POSSIBLE_TEMPLATES = {
+    'GenericMNI':{'name':'Human (Generic/Unknown MNI)', 'species': 'homo sapiens', 'pycortex_enabled':True, 'image_search_enabled':True, 'mask':'MNI152_T1_2mm_brain_mask.nii.gz' },
+    'Dorr2008':{'name':'Mouse (Dorr 2008 space)', 'species': 'mus musculus','pycortex_enabled':False, 'image_search_enabled':False, 'mask':None },
+    'NMT':{'name':'Rhesus - macacca mulatta (NMT)', 'species': 'macaca mulatta','pycortex_enabled':False, 'image_search_enabled':False, 'mask':None },
+    'MNI152NLin2009cAsym':{'name':'Human (MNI152 NLin 2009c Asym)', 'species':'homo sapiens','pycortex_enabled':True, 'image_search_enabled':True, 'mask':None }
+    }
+DEFAULT_TEMPLATE = 'GenericMNI'
 
+def get_possible_templates():
+    return POSSIBLE_TEMPLATES
+def get_target_template_list():
+    return [ (template, POSSIBLE_TEMPLATES[template]['name']) for template in POSSIBLE_TEMPLATES ]
 
 class Collection(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of collection")
@@ -317,6 +329,12 @@ class Image(BaseCollectionItem):
                     verbose_name="Data origin",
                     default='volume',
                     max_length=200, null=True, blank=True, choices=[('volume','volume'), ('surface', 'surface')])
+    target_template_image = models.CharField(
+        choices=get_target_template_list(),
+        help_text="Name of target template image",
+        verbose_name="Target template image",
+        default=DEFAULT_TEMPLATE, max_length=200, null=False, blank=False)
+    subject_species = models.CharField(max_length=200, default=POSSIBLE_TEMPLATES[DEFAULT_TEMPLATE]['species'], blank=True, null=True)
     figure = models.CharField(help_text="Which figure in the corresponding paper was this map displayed in?", verbose_name="Corresponding figure", max_length=200, null=True, blank=True)
     thumbnail = models.FileField(help_text="The orthogonal view thumbnail path of the nifti image",
                                  null=True, blank=True, upload_to=upload_img_to,
@@ -396,6 +414,10 @@ class Image(BaseCollectionItem):
             # Generate glass brain image
             generate_glassbrain_image.apply_async([self.pk])
 
+        if self.subject_species == None and self.target_template_image:
+            import neurovault.apps.statmaps.utils as nvutils
+            self.subject_species = nvutils.infer_subject_species(self.target_template_image)
+
         if collection_changed:
             for field_name in self._meta.get_all_field_names():
                 field_instance = getattr(self, field_name)
@@ -412,6 +434,10 @@ class Image(BaseCollectionItem):
                     os.remove(old_path)
             super(Image, self).save()
 
+
+    @classmethod
+    def get_fixed_fields(cls):
+        return super(Image, cls).get_fixed_fields() + ('target_template_image', )
 
 
 class BaseStatisticMap(Image):
@@ -455,7 +481,6 @@ class BaseStatisticMap(Image):
                     help_text=("Type of statistic that is the basis of the inference"),
                     verbose_name="Map type",
                     max_length=200, null=False, blank=False, choices=MAP_TYPE_CHOICES)
-
     is_thresholded = models.NullBooleanField(null=True, blank=True)
     perc_bad_voxels = models.FloatField(null=True, blank=True)
     not_mni = models.NullBooleanField(null=True, blank=True)
@@ -482,7 +507,7 @@ class BaseStatisticMap(Image):
             self.file.open()
             gzfileobj = GzipFile(filename=self.file.name, mode='rb', fileobj=self.file.file)
             nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(self.file.name, gzfileobj)})
-            self.not_mni, self.brain_coverage, self.perc_voxels_outside = nvutils.not_in_mni(nii)
+            self.not_mni, self.brain_coverage, self.perc_voxels_outside = nvutils.not_in_mni(nii, self.target_template_image)
 
         if self.map_type == self.OTHER:
             import neurovault.apps.statmaps.utils as nvutils
@@ -555,6 +580,7 @@ class StatisticMap(BaseStatisticMap):
                                               help_text="Ignore the warning when the map is sparse by nature, an ROI mask, or was acquired with limited field of view.")
     modality = models.CharField(verbose_name="Modality & Acquisition Type", help_text="Brain imaging procedure that was used to acquire the data.",
                                 max_length=200, null=False, blank=False, choices=MODALITY_CHOICES)
+
     statistic_parameters = models.FloatField(help_text="Parameters of the null distribution of the test statistic, typically degrees of freedom (should be clear from the test statistic what these are).", null=True, verbose_name="Statistic parameters", blank=True)
     smoothness_fwhm = models.FloatField(help_text="Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.", verbose_name="Smoothness FWHM", null=True, blank=True)
     contrast_definition = models.CharField(help_text="Exactly what terms are subtracted from what? Define these in terms of task or stimulus conditions (e.g., 'one-back task with objects versus zero-back task with objects') instead of underlying psychological concepts (e.g., 'working memory').", verbose_name="Contrast definition", max_length=200, null=True, blank=True)
@@ -666,3 +692,5 @@ class Comparison(models.Model):
 
         verbose_name = "pairwise image comparison"
         verbose_name_plural = "pairwise image comparisons"
+
+

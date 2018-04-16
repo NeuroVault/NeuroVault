@@ -98,7 +98,6 @@ collection_fieldsets = [
                                   'functional_coregistered_to_structural',
                                   'functional_coregistration_method',
                                   'coordinate_space',
-                                  'target_template_image',
                                   'target_resolution',
                                   'used_smoothing',
                                   'smoothing_type',
@@ -181,7 +180,6 @@ collection_row_attrs = {
     'group_model_type': {'priority': 1},
     'used_slice_timing_correction': {'priority': 1},
     'intrasubject_modeling_software': {'priority': 2},
-    'target_template_image': {'priority': 2},
     'resampled_voxel_size': {'priority': 3},
     'object_image_type': {'priority': 1},
     'group_description': {'priority': 2},
@@ -619,7 +617,7 @@ class StatisticMapForm(ImageForm):
 
         cleaned_data["is_valid"] = True #This will be only saved if the form will validate
         cleaned_data["tags"] = clean_tags(cleaned_data)
-        print cleaned_data
+        # print cleaned_data
 
         if "data_origin" in cleaned_data.keys() and cleaned_data["data_origin"] == "surface":
             cleaned_data["is_thresholded"] = False
@@ -647,7 +645,7 @@ class StatisticMapForm(ImageForm):
                     "ignore_file_warning"].widget = forms.CheckboxInput()
             else:
                 cleaned_data["not_mni"], cleaned_data["brain_coverage"], cleaned_data[
-                    "perc_voxels_outside"] = not_in_mni(nii)
+                    "perc_voxels_outside"] = not_in_mni(nii, target_template_image=cleaned_data["target_template_image"])
                 if cleaned_data["not_mni"] and not cleaned_data.get("ignore_file_warning") and cleaned_data.get(
                     "map_type") != "R":
                     self._errors["file"] = self.error_class(
@@ -668,7 +666,7 @@ class StatisticMapForm(ImageForm):
 
     class Meta(ImageForm.Meta):
         model = StatisticMap
-        fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
+        fields = ('name', 'collection', 'description', 'map_type', 'modality', 'target_template_image', 'cognitive_paradigm_cogatlas',
                   'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
                   'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels', 'is_valid', 'data_origin')
@@ -771,7 +769,7 @@ class EditStatisticMapForm(StatisticMapForm):
 class AddStatisticMapForm(StatisticMapForm):
 
     class Meta(StatisticMapForm.Meta):
-        fields = ('name', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
+        fields = ('name', 'description', 'map_type', 'modality', 'target_template_image', 'cognitive_paradigm_cogatlas',
                   'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
                   'file', 'ignore_file_warning', 'hdr_file', 'surface_left_file', 'surface_right_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels', 'data_origin')
@@ -798,7 +796,7 @@ class EditAtlasForm(AtlasForm):
 class SimplifiedStatisticMapForm(EditStatisticMapForm):
 
     class Meta(EditStatisticMapForm.Meta):
-        fields = ('name', 'collection', 'description', 'map_type', 'modality', 'cognitive_paradigm_cogatlas',
+        fields = ('name', 'collection', 'description', 'map_type', 'modality', 'target_template_image', 'cognitive_paradigm_cogatlas',
                   'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url', 'file', 'ignore_file_warning', 'hdr_file', 'tags', 'is_thresholded',
                   'perc_bad_voxels')
 
@@ -809,7 +807,7 @@ class NeuropowerStatisticMapForm(EditStatisticMapForm):
         self.fields['number_of_subjects'].required = True
 
     class Meta(EditStatisticMapForm.Meta):
-        fields = ('name', 'collection', 'description', 'map_type', 'modality', 'map_type','analysis_level','number_of_subjects','cognitive_paradigm_cogatlas',
+        fields = ('name', 'collection', 'description', 'map_type', 'modality', 'target_template_image', 'map_type','analysis_level','number_of_subjects','cognitive_paradigm_cogatlas',
                   'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url', 'file', 'ignore_file_warning', 'hdr_file', 'tags', 'is_thresholded',
                   'perc_bad_voxels')
 

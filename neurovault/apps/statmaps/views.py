@@ -44,8 +44,10 @@ from neurovault.apps.statmaps.ahba import calculate_gene_expression_similarity
 from neurovault.apps.statmaps.forms import CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,NeuropowerStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
-from neurovault.apps.statmaps.models import Collection, Image, Atlas, StatisticMap, NIDMResults, NIDMResultStatisticMap, \
-    CognitiveAtlasTask, CognitiveAtlasContrast, BaseStatisticMap
+from neurovault.apps.statmaps.models import Collection, Image, Atlas, \
+    StatisticMap, NIDMResults, NIDMResultStatisticMap, \
+    CognitiveAtlasTask, CognitiveAtlasContrast, BaseStatisticMap, \
+    DEFAULT_TEMPLATE
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
@@ -53,6 +55,7 @@ from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_vol
     send_email_notification, populate_nidm_results, get_server_url, populate_feat_directory, \
     detect_feat_directory, format_image_collection_names, is_search_compatible, \
     get_similar_images
+from neurovault.apps.statmaps.utils import is_target_template_image_pycortex_compatible, is_target_template_image_neurosynth_compatible
 from neurovault.apps.statmaps.voxel_query_functions import *
 from . import image_metadata
 
@@ -64,6 +67,13 @@ def owner_or_contrib(request,collection):
     return request.user.has_perm('statmaps.change_collection', collection) or request.user.is_superuser
 
 
+def get_button_html(url, type, target_template_image):
+    return '<a class="btn btn-default viewimage" ' \
+           'onclick="viewimage(this)" filename="%s" type="%s" ' \
+           'target_template_image="%s"><i class="fa fa-lg ' \
+           'fa-eye"></i></a>' % (url,
+                                 type, target_template_image)
+
 def get_collection(cid,request,mode=None):
     '''get_collection returns collection object based on a primary key (cid)
     :param cid: statmaps.models.Collection.pk the primary key of the collection
@@ -74,6 +84,11 @@ def get_collection(cid,request,mode=None):
         keyargs = {'private_token':cid}
     try:
         collection = Collection.objects.get(**keyargs)
+        # assume MNI152 if no template specified. 
+        #if not collection.target_template_image: 
+        #    collection.target_template_image = 'MNI152'
+        #pycortex_compatible = is_target_template_image_pycortex_compatible( collection.target_template_image )
+
         if private_url is None and collection.private:
             if owner_or_contrib(request,collection):
                 if mode in ['file','api']:
@@ -239,7 +254,13 @@ def view_image(request, pk, collection_cid=None):
     user_owns_image = owner_or_contrib(request,image.collection)
     api_cid = pk
 
+    # if no template is specified use MNI152
+    if not image.target_template_image:
+        image.target_template_image = DEFAULT_TEMPLATE
+
     comparison_is_possible = is_search_compatible(pk) and image.thumbnail
+    pycortex_compatible = is_target_template_image_pycortex_compatible( image.target_template_image )
+    neurosynth_compatible = is_target_template_image_neurosynth_compatible( image.target_template_image )
 
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
@@ -248,6 +269,7 @@ def view_image(request, pk, collection_cid=None):
         'user': image.collection.owner,
         'user_owns_image': user_owns_image,
         'api_cid': api_cid,
+        'neurosynth_compatible': neurosynth_compatible,
         'comparison_is_possible': comparison_is_possible
     }
 
@@ -1066,7 +1088,8 @@ class ImagesInCollectionJson(BaseDatatableView):
         # We want to render user as a custom column
         if column == 'file.url':
             if isinstance(row, Image):
-                return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>'%(filepath_to_uri(row.file.url), type)
+                return get_button_html(filepath_to_uri(row.file.url), type,
+                                       row.target_template_image)
             elif isinstance(row, NIDMResults):
                 try:
                     excursion_sets = Graph(
@@ -1077,7 +1100,7 @@ class ImagesInCollectionJson(BaseDatatableView):
                         row.zip_file.path).get_statistic_maps()
                     map_url = row.get_absolute_url() + "/" + str(
                         maps[0].file.path)
-                return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>' % (map_url, type)
+                return get_button_html(map_url, type, DEFAULT_TEMPLATE)
         elif column == 'polymorphic_ctype.name':
             return type
         elif column == 'is_valid':
@@ -1111,7 +1134,8 @@ class ImagesByTaskJson(BaseDatatableView):
         # We want to render user as a custom column
         if column == 'file.url':
             if isinstance(row, Image):
-                return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>'%(filepath_to_uri(row.file.url), type)
+                return get_button_html(filepath_to_uri(row.file.url), type,
+                                       row.target_template_image)
             elif isinstance(row, NIDMResults):
                 return ""
         else:
@@ -1148,7 +1172,8 @@ class AtlasesAndParcellationsJson(BaseDatatableView):
 
         # We want to render user as a custom column
         if column == 'file.url':
-            return '<a class="btn btn-default viewimage" onclick="viewimage(this)" filename="%s" type="%s"><i class="fa fa-lg fa-eye"></i></a>'%(filepath_to_uri(row.file.url), type)
+            return get_button_html(filepath_to_uri(row.file.url), type,
+                                   row.target_template_image)
         elif column == 'polymorphic_ctype.name':
             return type
         if column == 'collection.authors' and row.collection.authors:
