@@ -500,7 +500,7 @@ def not_in_mni(nii, target_template_image='MNI152', plot=False):
     return ret, perc_mask_covered, perc_voxels_outside_of_mask
 
 #infers subject species based on target_template_image
-def infer_subject_species( target_template_image='MNI152' ):
+def infer_subject_species(target_template_image='MNI152'):
     POSSIBLE_TEMPLATES = get_possible_templates()
     return POSSIBLE_TEMPLATES[target_template_image]['species']
 

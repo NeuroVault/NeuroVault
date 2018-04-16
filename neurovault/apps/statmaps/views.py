@@ -1089,7 +1089,7 @@ class ImagesInCollectionJson(BaseDatatableView):
         if column == 'file.url':
             if isinstance(row, Image):
                 return get_button_html(filepath_to_uri(row.file.url), type,
-                                       row.target_teplate_image)
+                                       row.target_template_image)
             elif isinstance(row, NIDMResults):
                 try:
                     excursion_sets = Graph(
@@ -1135,7 +1135,7 @@ class ImagesByTaskJson(BaseDatatableView):
         if column == 'file.url':
             if isinstance(row, Image):
                 return get_button_html(filepath_to_uri(row.file.url), type,
-                                       row.target_teplate_image)
+                                       row.target_template_image)
             elif isinstance(row, NIDMResults):
                 return ""
         else:
@@ -1173,7 +1173,7 @@ class AtlasesAndParcellationsJson(BaseDatatableView):
         # We want to render user as a custom column
         if column == 'file.url':
             return get_button_html(filepath_to_uri(row.file.url), type,
-                                   row.target_teplate_image)
+                                   row.target_template_image)
         elif column == 'polymorphic_ctype.name':
             return type
         if column == 'collection.authors' and row.collection.authors:

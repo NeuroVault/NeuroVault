@@ -110,6 +110,7 @@ class Collection(models.Model):
     functional_coregistered_to_structural = models.NullBooleanField(help_text="Were the functional images coregistered to the subject's structural image?", null=True, verbose_name="Coregistered to structural?", blank=True)
     functional_coregistration_method = models.CharField(help_text="Method used to coregister functional to structural images", verbose_name="Coregistration method", max_length=200, null=True, blank=True)
     coordinate_space = models.CharField(choices=[('mni', 'MNI'), ('talairach', 'Talairach'), ('mni2tal', 'MNI2Tal'), ('other', 'other')], max_length=200, blank=True, help_text="Name of coordinate space for registration target", null=True, verbose_name="Coordinate space")
+    target_template_image = models.CharField(help_text="Name of target template image", verbose_name="Target template image", max_length=200, null=True, blank=True)
     target_resolution = models.FloatField(help_text="Voxel size of target template in millimeters", null=True, verbose_name="Target resolution", blank=True)
     used_smoothing = models.NullBooleanField(help_text="Was spatial smoothing applied?", null=True, verbose_name="Used smoothing?", blank=True)
     smoothing_type = models.CharField(help_text="Describe the type of smoothing applied", verbose_name="Type of smoothing", max_length=200, null=True, blank=True)
@@ -327,6 +328,12 @@ class Image(BaseCollectionItem):
                     verbose_name="Data origin",
                     default='volume',
                     max_length=200, null=True, blank=True, choices=[('volume','volume'), ('surface', 'surface')])
+    target_template_image = models.CharField(
+        choices=get_target_template_list(),
+        help_text="Name of target template image",
+        verbose_name="Target template image",
+        default=DEFAULT_TEMPLATE, max_length=200, null=False, blank=False)
+    subject_species = models.CharField(max_length=200, blank=True, null=True)
     figure = models.CharField(help_text="Which figure in the corresponding paper was this map displayed in?", verbose_name="Corresponding figure", max_length=200, null=True, blank=True)
     thumbnail = models.FileField(help_text="The orthogonal view thumbnail path of the nifti image",
                                  null=True, blank=True, upload_to=upload_img_to,
@@ -406,6 +413,10 @@ class Image(BaseCollectionItem):
             # Generate glass brain image
             generate_glassbrain_image.apply_async([self.pk])
 
+        if self.subject_species == None and self.target_template_image:
+            import neurovault.apps.statmaps.utils as nvutils
+            self.subject_species = nvutils.infer_subject_species(self.target_template_image)
+
         if collection_changed:
             for field_name in self._meta.get_all_field_names():
                 field_instance = getattr(self, field_name)
@@ -463,9 +474,6 @@ class BaseStatisticMap(Image):
                     help_text=("Type of statistic that is the basis of the inference"),
                     verbose_name="Map type",
                     max_length=200, null=False, blank=False, choices=MAP_TYPE_CHOICES)
-
-
-    subject_species = models.CharField( max_length=200, blank=True, null=True)
     is_thresholded = models.NullBooleanField(null=True, blank=True)
     perc_bad_voxels = models.FloatField(null=True, blank=True)
     not_mni = models.NullBooleanField(null=True, blank=True)
@@ -500,10 +508,6 @@ class BaseStatisticMap(Image):
             gzfileobj = GzipFile(filename=self.file.name, mode='rb', fileobj=self.file.file)
             nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(self.file.name, gzfileobj)})
             self.map_type = nvutils.infer_map_type(nii)
-
-        if self.subject_species == None and self.target_template_image:
-            import neurovault.apps.statmaps.utils as nvutils
-            self.subject_species = nvutils.infer_subject_species(self.target_template_image)
 
         # Calculation of image reduced_representation and comparisons
         file_changed = False
@@ -569,12 +573,6 @@ class StatisticMap(BaseStatisticMap):
                                               help_text="Ignore the warning when the map is sparse by nature, an ROI mask, or was acquired with limited field of view.")
     modality = models.CharField(verbose_name="Modality & Acquisition Type", help_text="Brain imaging procedure that was used to acquire the data.",
                                 max_length=200, null=False, blank=False, choices=MODALITY_CHOICES)
-
-    target_template_image = models.CharField(
-        choices=get_target_template_list(), 
-        help_text="Name of target template image", 
-        verbose_name="Target template image", 
-        default=DEFAULT_TEMPLATE, max_length=200, null=False, blank=False)
 
     statistic_parameters = models.FloatField(help_text="Parameters of the null distribution of the test statistic, typically degrees of freedom (should be clear from the test statistic what these are).", null=True, verbose_name="Statistic parameters", blank=True)
     smoothness_fwhm = models.FloatField(help_text="Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.", verbose_name="Smoothness FWHM", null=True, blank=True)
