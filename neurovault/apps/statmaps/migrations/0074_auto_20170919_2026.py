@@ -9,7 +9,7 @@ import neurovault.apps.statmaps.storage
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('statmaps', '0073_auto_20161111_0033'),
+        ('statmaps', '0074_auto_20170718_1842'),
     ]
 
     operations = [

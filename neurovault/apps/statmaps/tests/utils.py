@@ -35,6 +35,7 @@ def save_statmap_form(image_path,collection,ignore_file_warning=False,image_name
         'cognitive_paradigm_cogatlas': 'trm_4f24126c22011',
         'modality': 'fMRI-BOLD',
         'map_type': 'T',
+        'target_template_image': 'GenericMNI',
         'collection': collection.pk,
         'ignore_file_warning': ignore_file_warning
     }
