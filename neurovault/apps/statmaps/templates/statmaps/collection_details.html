@@ -182,7 +182,7 @@
              <form action="upload_folder" enctype="multipart/form-data" method= "POST" name="upload_folder_form">
 
             {% if not is_empty %}
-              {% if collection.pycortex_compatible %}
+              {% if pycortex_compatible %}
                 <a class="btn btn-primary" href="pycortex">3D View</a>
               {% endif %}
             <a class="btn btn-primary" href="{% url 'download_collection' cid %}">Download</a>
