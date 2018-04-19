@@ -12,7 +12,7 @@ from .utils import clearDB
 
 class Test_Counter(TestCase):
     def setUp(self):
-        print "\n\n### TESTING COUNTER ###"
+        print("\n\n### TESTING COUNTER ###")
         self.test_path = os.path.abspath(os.path.dirname(__file__))
         self.user = User.objects.create(username='neurovault')
         self.client = Client()
@@ -37,12 +37,12 @@ class Test_Counter(TestCase):
         # The field is populated with the file when image comparisons are done, meaning that if there is only one
         # image in the database (case below) we cannot calculate comparisons, and the "transform" field remains none
         # This is currently the only way that we can test the counter, which will be "1" in this case
-        print "\nTesting Counter - added statistic maps ###" 
+        print("\nTesting Counter - added statistic maps ###") 
         Image1 = StatisticMap(name='Image1', collection=self.Collection1, file='motor_lips.nii.gz', map_type="Z")
         Image1.file = SimpleUploadedFile('motor_lips.nii.gz', file(os.path.join(self.test_path,'test_data/statmaps/motor_lips.nii.gz')).read())
         Image1.save()
         images_processing = count_processing_comparisons(Image1.pk)
-        print "%s images processing [should be 0]" %(images_processing)
+        print("%s images processing [should be 0]" %(images_processing))
         self.assertEqual(images_processing,0)
 
         # When we add an image, the comparison will be calculated with image1, and both images transform fields will be populated
@@ -54,7 +54,7 @@ class Test_Counter(TestCase):
         Image2.file = SimpleUploadedFile('beta_0001.nii.gz', file(os.path.join(self.test_path,'test_data/statmaps/beta_0001.nii.gz')).read())
         Image2.save()
         images_processing = count_processing_comparisons(Image1.pk)
-        print "%s images processing [should be 0]" %(images_processing)
+        print("%s images processing [should be 0]" %(images_processing))
         self.assertEqual(images_processing,0)
 
         # We should have 2 images total, so 1 comparison
@@ -78,7 +78,7 @@ class Test_Counter(TestCase):
         form = NIDMResultsForm(post_dict, file_dict)
         # Transforms should be generated synchronously
         nidm = form.save()
-        print "\nTesting Counter - added nidm result ###"
+        print("\nTesting Counter - added nidm result ###")
 
         # We should have 2 images total, so 1 comparison
         total_comparisons = count_existing_comparisons(Image2.pk)
@@ -93,5 +93,5 @@ class Test_Counter(TestCase):
 
         # Make sure comparisons were calculated
         number_comparisons = len(Comparison.objects.all())
-        print "\n %s comparisons exist after adding NIDM `[should not be 0]" %(number_comparisons)
+        print("\n %s comparisons exist after adding NIDM `[should not be 0]" %(number_comparisons))
         self.assertEqual(number_comparisons>0,True)

@@ -100,7 +100,7 @@ class DeleteCollectionsTest(TestCase):
         delete_collection(request, str(pk1))
         imageDir = os.path.join(PRIVATE_MEDIA_ROOT, 'images')
         dirList = os.listdir(imageDir)
-        print dirList
+        print(dirList)
         self.assertIn(str(self.Collection2.pk), dirList)
         self.assertNotIn(str(self.Collection1.pk), dirList)
 
@@ -142,11 +142,11 @@ class Afni4DTest(TestCase):
         self.assertFalse(test_non_afni)
 
         # check for 2 sub bricks
-        self.assertEquals(len(bricks),2)
+        self.assertEqual(len(bricks),2)
 
         # check that brick labels match afni 3dinfo binary output
-        self.assertEquals(bricks[0][0],'uu3[0]')
-        self.assertEquals(bricks[1][0],'uu5[0]')
+        self.assertEqual(bricks[0][0],'uu3[0]')
+        self.assertEqual(bricks[1][0],'uu5[0]')
 
         # check that sliced niftis exist at output location
         self.assertTrue(os.path.exists(bricks[0][1]))

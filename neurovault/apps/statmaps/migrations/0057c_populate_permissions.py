@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 from guardian.shortcuts import assign_perm
 from django.db import migrations
 from django.contrib.auth import get_user_model

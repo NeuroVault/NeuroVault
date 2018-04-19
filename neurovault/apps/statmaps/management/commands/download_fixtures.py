@@ -28,13 +28,13 @@ class Command(BaseCommand):
         fixturesDir = os.path.join(statmapsPath, 'fixtures')
         if not os.path.exists(fixturesDir):
             os.makedirs(fixturesDir)
-        print args
+        print(args)
         if args:
             temp1 = tempfile.mkdtemp()
             for fixtureName in args:
                 fileName = fixtureName + '.zip'
                 url = 'https://github.com/NeuroVault/neurovault_data/trunk/fixtures/%s' % fileName
-                (path, _) = urllib.urlretrieve(url)
+                (path, _) = urllib.request.urlretrieve(url)
                 with zipfile.ZipFile(path, "r") as z:
                     # extract everything except for _MACOSX folder, which contains redundant data
                     z.extractall(temp1, [x for x in z.namelist() if not x.startswith('__MACOSX')])

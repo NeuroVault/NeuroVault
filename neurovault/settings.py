@@ -320,15 +320,15 @@ DEFAULT_OAUTH_APP_OWNER_USERNAME = 'DefaultAppOwner'
 OAUTH_PERSONAL_TOKEN_LENGTH = 40
 
 # Bogus secret key.
-try:
-    from secrets import *
-except ImportError:
-    from bogus_secrets import *
-
-try:
-    from local_settings import *
-except ImportError:
-    pass
+SECRET_KEY = 'bogus'
+FACEBOOK_APP_ID = 'bogus'
+FACEBOOK_API_SECRET = 'bogus'
+SOCIAL_AUTH_GOOGLE_PLUS_KEY = 'bogus'
+SOCIAL_AUTH_GOOGLE_PLUS_SECRET = 'bogus'
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = 'bogus'
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = 'bogus'
+DBBACKUP_DROPBOX_APP_KEY = 'bogus'
+DBBACKUP_DROPBOX_APP_SECRET = 'bogus'
 
 # freesurfer/pycortex environment
 os.environ["XDG_CONFIG_HOME"] = PYCORTEX_DATASTORE

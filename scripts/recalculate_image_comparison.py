@@ -34,5 +34,5 @@ for img in Image.objects.all():
 # We will use a celery task (as this will be integrated into upload workflow)
 for collection in Collection.objects.filter(DOI__isnull=False):
     for image in collection.basecollectionitem_set.instance_of(Image).all():
-      print "Calculating pearson similarity for images %s" %image
+      print("Calculating pearson similarity for images %s" %image)
       run_voxelwise_pearson_similarity.apply_async([image.pk])

@@ -27,7 +27,7 @@ class TestAtlas(APITestCase):
             name='unorderedAtlas', description='', collection=self.Collection1)
 
         # Save new atlas object, unordered
-        print "Adding unordered and ordered atlas..."
+        print("Adding unordered and ordered atlas...")
         nii_path = self.abs_data_path(
             'api/VentralFrontal_thr75_summaryimage_2mm.nii.gz'
         )
@@ -55,7 +55,7 @@ class TestAtlas(APITestCase):
         )
 
         # Statistical Map 1 and 2
-        print "Adding statistical maps..."
+        print("Adding statistical maps...")
         nii_path = self.abs_data_path(
             'statmaps/motor_lips.nii.gz'
         )
@@ -73,7 +73,7 @@ class TestAtlas(APITestCase):
         )
 
         # Zip file with nidm results
-        print "Adding nidm results..."
+        print("Adding nidm results...")
         zip_file = self.abs_data_path(
             'nidm/spm_example.nidm.zip'
         )
@@ -89,7 +89,7 @@ class TestAtlas(APITestCase):
 
     def test_query_region_out_of_order_indices(self):
 
-        print "\nAssessing equality of ordered vs. unordered atlas query..."
+        print("\nAssessing equality of ordered vs. unordered atlas query...")
         atlas_dir = self.abs_data_path('api')
         tree = ET.parse(os.path.join(
             atlas_dir, 'VentralFrontal_thr75_summaryimage_2mm.xml'
@@ -112,14 +112,14 @@ class TestAtlas(APITestCase):
                                  unorderedList[2][i]) for i in range(len(unorderedList[0]))]
             orderedSorted = sorted(orderedTriples, key=itemgetter(0))
             unorderedSorted = sorted(unorderedTriples, key=itemgetter(0))
-            print "Equality of lists for region %s: %s" % (region, orderedSorted == unorderedSorted)
+            print("Equality of lists for region %s: %s" % (region, orderedSorted == unorderedSorted))
             self.assertEqual(orderedSorted, unorderedSorted)
 
-        print "\nAssessing consistency of results for regional query..."
+        print("\nAssessing consistency of results for regional query...")
         testRegions = {'6v': [(58.00, -4.00, 18.00), (62.00, 6.00, 30.00)],
                        'fop': [(56.00, 20.00, 24.00), (34.00, 18.00, 30.00)],
                        'fpm': [(8.00, 62.00, 10.00), (10.00, 62.00, -16.00)]}
-        for region, testVoxels in testRegions.items():
+        for region, testVoxels in list(testRegions.items()):
             URL = 'http://127.0.0.1:8000/api/atlases/atlas_query_region/?region=%s&atlas=orderedAtlas&collection=Collection1' % (
                 region)
             response = self.client.get(URL, follow=True)
@@ -130,12 +130,12 @@ class TestAtlas(APITestCase):
                 self.assertTrue(voxel in triples)
 
     def test_out_of_order_indices(self):
-        print "\nAssessing consistency of results for coordinate query..."
+        print("\nAssessing consistency of results for coordinate query...")
         testRegions = {'6v': [(58.00, -4.00, 18.00), (62.00, 6.00, 30.00)],
                        'fop': [(56.00, 20.00, 24.00), (34.00, 18.00, 30.00)],
                        'fpm': [(8.00, 62.00, 10.00), (10.00, 62.00, -16.00)]}
 
-        for region, testVoxels in testRegions.items():
+        for region, testVoxels in list(testRegions.items()):
             for triple in testVoxels:
                 X, Y, Z = triple[0], triple[1], triple[2]
                 URL = 'http://127.0.0.1:8000/api/atlases/atlas_query_voxel/?x=%s&y=%s&z=%s&atlas=orderedAtlas&collection=Collection1' % (
@@ -147,22 +147,22 @@ class TestAtlas(APITestCase):
     # General API Tests
 
     def test_atlases(self):
-        print "\nChecking that atlas images are returned by atlas api..."
+        print("\nChecking that atlas images are returned by atlas api...")
         url = '/api/atlases/'
         response = json.loads(self.client.get(url, follow=True).content)
-        self.assertTrue('.nii.gz' in response['results'][0][u'file'])
-        names = [item[u'name'] for item in response['results']]
-        self.assertTrue(u'orderedAtlas' in names)
+        self.assertTrue('.nii.gz' in response['results'][0]['file'])
+        names = [item['name'] for item in response['results']]
+        self.assertTrue('orderedAtlas' in names)
 
     def test_atlases_pk(self):
-        print "\nTesting atlas query with specific atlas pk...."
+        print("\nTesting atlas query with specific atlas pk....")
         url = '/api/atlases/%d/' % self.unorderedAtlas.pk
         response = json.loads(self.client.get(url, follow=True).content)
-        self.assertTrue('.nii.gz' in response[u'file'])
-        self.assertEqual(response['name'], u'unorderedAtlas')
+        self.assertTrue('.nii.gz' in response['file'])
+        self.assertEqual(response['name'], 'unorderedAtlas')
 
     def test_atlases_datatable(self):
-        print "\nTesting atlas datatable query...."
+        print("\nTesting atlas datatable query....")
         url = '/api/atlases/%d/datatable/' % self.unorderedAtlas.pk
         response = json.loads(self.client.get(url, follow=True).content)
         data = dict(response['aaData'])
@@ -170,11 +170,11 @@ class TestAtlas(APITestCase):
                          'unordered_VentralFrontal_thr75_summaryimage_2mm.xml')
 
     def test_atlases_regions_table(self):
-        print "\nTesting atlas regions table query...."
+        print("\nTesting atlas regions table query....")
         url = '/api/atlases/%d/regions_table/' % self.unorderedAtlas.pk
         response = json.loads(self.client.get(url, follow=True).content)
-        self.assertEqual(response['aaData'][2][1], u'fop')
-        self.assertEqual(response['aaData'][11][1], u'46')
+        self.assertEqual(response['aaData'][2][1], 'fop')
+        self.assertEqual(response['aaData'][11][1], '46')
 
 
 class TestAtlasChange(BaseTestCases.TestCollectionItemChange):

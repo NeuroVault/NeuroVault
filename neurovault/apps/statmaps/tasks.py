@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+
 
 import nilearn
 from django.core.files.base import ContentFile
@@ -16,8 +16,8 @@ from six import BytesIO
 import nibabel as nib
 import pylab as plt
 import numpy
-import urllib, json, tarfile, requests, os
-from StringIO import StringIO
+import urllib.request, urllib.parse, urllib.error, json, tarfile, requests, os
+from io import StringIO
 import xml.etree.cElementTree as e
 from django.db import IntegrityError
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -43,7 +43,7 @@ def crawl_anima():
         anima_user = models.User.objects.get(username=username, email=email)
     
     url = "http://anima.fz-juelich.de/api/studies"
-    response = urllib.urlopen(url);
+    response = urllib.request.urlopen(url);
     datasets = json.loads(response.read())
     
     # results = tarfile.open(mode="r:gz", fileobj=StringIO(response.content))
@@ -76,7 +76,7 @@ def crawl_anima():
         elif pubmedid != None:
             pubmedid = pubmedid.text.strip()
             url = "http://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids=%s&format=json" % pubmedid
-            response = urllib.urlopen(url);
+            response = urllib.request.urlopen(url);
             parsed = json.loads(response.read())
             post_dict['DOI'] = parsed['records'][0]['doi']
         
@@ -122,7 +122,7 @@ def crawl_anima():
                 quantity = study_element.find("./Metadata/Element[@name='Quantity']")
                 if quantity != None:
                     quantity = quantity.text.strip()
-                    if quantity in quantity_dict.keys():
+                    if quantity in list(quantity_dict.keys()):
                         map_type = quantity_dict[quantity]
         
                 post_dict = {
@@ -265,7 +265,7 @@ def save_voxelwise_pearson_similarity_reduced_representation(pk1, pk2):
                                                           'similarity_score': pearson_score})
             return image1.pk,image2.pk,pearson_score
         else:
-            print "Comparison returned NaN."
+            print("Comparison returned NaN.")
     else:
         raise Exception("You are trying to compare an image with itself!")
 
@@ -335,14 +335,14 @@ def repopulate_cognitive_atlas(CognitiveAtlasTask=None,CognitiveAtlasContrast=No
     # Update tasks
     for t in range(0,len(tasks.json)):
         task = tasks.json[t]
-        print "%s of %s" %(t,len(tasks.json)) 
+        print("%s of %s" %(t,len(tasks.json))) 
         if tasks.json[t]["name"]:
             task, _ = CognitiveAtlasTask.objects.update_or_create(cog_atlas_id=task["id"],defaults={"name":task["name"]})
             task.save()
             if tasks.json[t]["id"]:
                 task_details = get_task(id=tasks.json[t]["id"])
                 if task_details.json[0]["contrasts"]:
-                    print "Found %s contrasts!" %(len(task_details.json[0]["contrasts"]))
+                    print("Found %s contrasts!" %(len(task_details.json[0]["contrasts"])))
                     for contrast in task_details.json[0]["contrasts"]:
                         contrast, _ = CognitiveAtlasContrast.objects.update_or_create(cog_atlas_id=contrast["id"], 
                                                                                       defaults={"name":contrast["contrast_text"],

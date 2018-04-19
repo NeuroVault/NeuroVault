@@ -36,7 +36,7 @@ class TestGeneDecoding(TestCase):
     def _assess_gene(self, gene_name, field='t'):
         value = self.df.loc[self.df['gene_symbol'] == gene_name][field]
 
-        self.assertEquals(len(value), 1)
+        self.assertEqual(len(value), 1)
 
         value = list(value)[0]
 
@@ -44,10 +44,10 @@ class TestGeneDecoding(TestCase):
 
     def _assess_gene_relation(self, gene_name1, gene_name2, field='variance explained (mean)'):
         value1 = self.df.loc[self.df['gene_symbol'] == gene_name1][field]
-        self.assertEquals(len(value1), 1)
+        self.assertEqual(len(value1), 1)
 
         value2 = self.df.loc[self.df['gene_symbol'] == gene_name2][field]
-        self.assertEquals(len(value2), 1)
+        self.assertEqual(len(value2), 1)
 
         value1 = list(value1)[0]
         value2 = list(value2)[0]

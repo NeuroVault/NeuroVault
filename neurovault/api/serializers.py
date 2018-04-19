@@ -130,14 +130,14 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer,
         orderedDict = serializer(obj, context={
             'request': self.context['request']}).to_representation(obj)
         orderedDict['image_type'] = image_type
-        for key, val in orderedDict.iteritems():
+        for key, val in orderedDict.items():
             if pd.isnull(val):
                 orderedDict[key] = None
         return orderedDict
 
     def extract_metadata_fields(self, initial_data, writable_fields):
         field_name_set = set(f.field_name for f in writable_fields)
-        metadata_field_set = initial_data.viewkeys() - field_name_set
+        metadata_field_set = initial_data.keys() - field_name_set
         return {key: initial_data[key] for key in metadata_field_set}
 
     def validate(self, data):
@@ -212,7 +212,7 @@ class StatisticMapSerializer(ImageSerializer):
 
     def to_representation(self, obj):
         ret = super(ImageSerializer, self).to_representation(obj)
-        for field_name, value in obj.data.items():
+        for field_name, value in list(obj.data.items()):
             if field_name not in ret:
                 ret[field_name] = self.value_to_python(value)
         return ret
