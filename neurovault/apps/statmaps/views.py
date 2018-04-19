@@ -303,7 +303,7 @@ def view_collection(request, cid):
     edit_permission = request.user.has_perm('statmaps.change_collection', collection)
     delete_permission = request.user.has_perm('statmaps.delete_collection', collection)
     is_empty = not collection.basecollectionitem_set.exists()
-    pycortex_compatible = all([is_target_template_image_pycortex_compatible(image.target_template_image) for image in collection.basecollectionitem_set.all()])
+    pycortex_compatible = all([is_target_template_image_pycortex_compatible(image.target_template_image) for image in collection.basecollectionitem_set.instance_of(Image)])
     context = {'collection': collection,
                'is_empty': is_empty,
                'user': request.user,
