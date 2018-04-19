@@ -131,7 +131,7 @@ a.disabled-link:hover {
 
             - if image.cognitive_paradigm_cogatlas_id
                 %a.btn.btn-primary.btn{href: "{% url 'view_task' image.cognitive_paradigm_cogatlas_id %}"} Task View
-            - if image.data_origin == "volume" and image.pycortex_compatible
+            - if image.data_origin == "volume" and pycortex_compatible
                 %a.btn.btn-primary.btn{href: "pycortex" } 3D View
             - if image.nidm_results
                 .btn-group
