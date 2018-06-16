@@ -187,7 +187,7 @@ def generate_surfacce_image(image_pk):
     img_vol = nib.load(img.file.path)
     data_vol = img_vol.get_data()
     if data_vol.ndim > 3:
-        data_dim = data_vol.shape[3] #number of time points
+        data_dim = data_vol.shape[3]  #number of time points
     else:
         data_dim = 1
     this_path = os.path.abspath(os.path.dirname(__file__))
@@ -202,7 +202,7 @@ def generate_surfacce_image(image_pk):
 
         vox2ras = img_vol.get_sform()
         ras_centered = ras_coor - matlib.repmat(vox2ras[0:3, 3], ras_coor.shape[1], 1).T
-        vox_coor = numpy.dot(numpy.linalg.inv(vox2ras[0:3, 0:3]), ras_centered) # convert to voxel coordinates
+        vox_coor = numpy.dot(numpy.linalg.inv(vox2ras[0:3, 0:3]), ras_centered)  # convert to voxel coordinates
 
         img_surf = nib.gifti.GiftiImage()
         for i in range(data_dim):
@@ -218,18 +218,17 @@ def generate_surfacce_image(image_pk):
                                     data_curr, vox_coor.T, 'linear')
                 data_surf_gifti = nib.gifti.GiftiDataArray(data_surf, 'NIFTI_INTENT_NONE', 'NIFTI_TYPE_FLOAT32',
                                                            'ASCII')
-
             img_surf.add_gifti_data_array(data_surf_gifti)
+
         f = BytesIO()
         fmap = {'image': nib.FileHolder(fileobj=f), 'header': nib.FileHolder(fileobj=f)}
         img_surf.to_file_map(fmap)
         f.seek(0)
         content_file = ContentFile(f.read())
         if hemi == 'lh':
-            img.surface_left_file.save("surface_%s_%s.gii" %(hemi, img.pk), content_file)
+            img.surface_left_file.save("surface_%s_%s.gii" % (hemi, img.pk), content_file)
         else:
-            img.surface_right_file.save("surface_%s_%s.gii" %(hemi, img.pk), content_file)
-
+            img.surface_right_file.save("surface_%s_%s.gii" % (hemi, img.pk), content_file)
     img.save()
 
 
