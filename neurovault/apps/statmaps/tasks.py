@@ -192,15 +192,13 @@ def generate_surfacce_image(image_pk):
         data_dim = 1
     this_path = os.path.abspath(os.path.dirname(__file__))
 
-    for hemi in ['left', 'right']:
-        if hemi == 'left':
+    for hemi in ['lh', 'rh']:
+        if hemi == 'lh':
             ras_coor = loadmat(os.path.abspath(os.path.join(this_path, "static", "anatomical",
                                                             "lh.avgMapping_allSub_RF_ANTs_MNI2fs.mat")))['ras']
-            output = img.surface_left_file
         else:
             ras_coor = loadmat(os.path.abspath(os.path.join(this_path, "static", "anatomical",
                                                             "rh.avgMapping_allSub_RF_ANTs_MNI2fs.mat")))['ras']
-            output = img.surface_right_file
 
         vox2ras = img_vol.get_sform()
         ras_centered = ras_coor - matlib.repmat(vox2ras[0:3, 3], ras_coor.shape[1], 1).T
@@ -217,10 +215,14 @@ def generate_surfacce_image(image_pk):
             data_surf_gifti = nib.gifti.GiftiDataArray(data_surf, 'NIFTI_INTENT_TIME_SERIES', 'NIFTI_TYPE_FLOAT32', 'ASCII')
             img_surf.add_gifti_data_array(data_surf_gifti)
         f = BytesIO()
-        nib.save(img_surf, f)
+        fmap = {'image': nib.FileHolder(fileobj=f), 'header': nib.FileHolder(fileobj=f)}
+        img_surf.to_file_map(fmap)
         f.seek(0)
         content_file = ContentFile(f.read())
-        output.save("surface_%s_%s.gii" %(hemi, img.pk), content_file)
+        if hemi == 'lh':
+            img.surface_left_file.save("surface_%s_%s.gii" %(hemi, img.pk), content_file)
+        else:
+            img.surface_right_file.save("surface_%s_%s.gii" %(hemi, img.pk), content_file)
 
 
 # IMAGE TRANSFORMATION ################################################################################
