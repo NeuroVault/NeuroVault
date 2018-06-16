@@ -230,6 +230,7 @@ def generate_surfacce_image(image_pk):
         else:
             img.surface_right_file.save("surface_%s_%s.gii" % (hemi, img.pk), content_file)
     img.save()
+    print("Surface image generation done.")
 
 
 # IMAGE TRANSFORMATION ################################################################################
