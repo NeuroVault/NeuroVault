@@ -23,7 +23,8 @@ from taggit.models import GenericTaggedItemBase, TagBase
 
 from neurovault.apps.statmaps.storage import DoubleExtensionStorage, NIDMStorage,\
     OverwriteStorage
-from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, generate_glassbrain_image
+from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, generate_glassbrain_image, \
+    generate_surfacce_image
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 
 # possible templates
@@ -413,6 +414,7 @@ class Image(BaseCollectionItem):
         if (do_update or new_image) and self.collection and self.collection.private == False:
             # Generate glass brain image
             generate_glassbrain_image.apply_async([self.pk])
+            generate_surfacce_image.apply_async([self.pk])
 
         if self.subject_species == None and self.target_template_image:
             import neurovault.apps.statmaps.utils as nvutils

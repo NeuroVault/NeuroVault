@@ -174,6 +174,55 @@ def generate_glassbrain_image(image_pk):
         img.thumbnail.save("glass_brain_%s.jpg" % img.pk, content_file)
         img.save()
 
+# SURFACE IMAGE GENERATION ###########################################################################
+
+@shared_task
+def generate_surfacce_image(image_pk):
+    from neurovault.apps.statmaps.models import Image
+    from scipy.io import loadmat
+    import numpy.matlib as matlib
+    from scipy.interpolate import interpn
+
+    img = Image.objects.get(pk=image_pk)
+    img_vol = nib.load(img.file.path)
+    data_vol = img_vol.get_data()
+    if data_vol.ndim > 3:
+        data_dim = data_vol.shape[3] #number of time points
+    else:
+        data_dim = 1
+    this_path = os.path.abspath(os.path.dirname(__file__))
+
+    for hemi in ['left', 'right']:
+        if hemi == 'left':
+            ras_coor = loadmat(os.path.abspath(os.path.join(this_path, "static", "anatomical",
+                                                            "lh.avgMapping_allSub_RF_ANTs_MNI2fs.mat")))['ras']
+            output = img.surface_left_file
+        else:
+            ras_coor = loadmat(os.path.abspath(os.path.join(this_path, "static", "anatomical",
+                                                            "rh.avgMapping_allSub_RF_ANTs_MNI2fs.mat")))['ras']
+            output = img.surface_right_file
+
+        vox2ras = img_vol.get_sform()
+        ras_centered = ras_coor - matlib.repmat(vox2ras[0:3, 3], ras_coor.shape[1], 1).T
+        vox_coor = numpy.dot(numpy.linalg.inv(vox2ras[0:3, 0:3]), ras_centered) # convert to voxel coordinates
+
+        img_surf = nib.gifti.GiftiImage()
+        for i in range(data_dim):
+            if data_dim > 3:
+                data_curr = data_vol[:, :, :, i]
+            else:
+                data_curr = data_vol
+            data_surf = interpn([range(data_vol.shape[0]), range(data_vol.shape[1]), range(data_vol.shape[2])],
+                                data_curr, vox_coor.T, 'linear')
+            data_surf_gifti = nib.gifti.GiftiDataArray(data_surf, 'NIFTI_INTENT_TIME_SERIES', 'NIFTI_TYPE_FLOAT32', 'ASCII')
+            img_surf.add_gifti_data_array(data_surf_gifti)
+        f = BytesIO()
+        nib.save(img_surf, f)
+        f.seek(0)
+        content_file = ContentFile(f.read())
+        output.save("surface_%s_%s.gii" %(hemi, img.pk), content_file)
+
+
 # IMAGE TRANSFORMATION ################################################################################
 
 # Save 4mm, brain masked image vector in pkl file in image folder
