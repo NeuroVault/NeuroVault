@@ -206,7 +206,7 @@ def generate_surfacce_image(image_pk):
 
         img_surf = nib.gifti.GiftiImage()
         for i in range(data_dim):
-            if data_dim > 3:
+            if data_vol.ndim > 3:
                 data_curr = data_vol[:, :, :, i]
                 data_surf = interpn([range(data_vol.shape[0]), range(data_vol.shape[1]), range(data_vol.shape[2])],
                                     data_curr, vox_coor.T, 'linear')
@@ -231,6 +231,7 @@ def generate_surfacce_image(image_pk):
             img.surface_right_file.save("surface_%s_%s.gii" %(hemi, img.pk), content_file)
 
     img.save()
+    print("Surface image generation done.")
 
 
 # IMAGE TRANSFORMATION ################################################################################
