@@ -184,7 +184,8 @@ def generate_surfacce_image(image_pk):
     from scipy.interpolate import interpn
 
     img = Image.objects.get(pk=image_pk)
-    if img.target_template_image in ['GenericMNI', 'MNI152NLin2009cAsym']:
+    if img.target_template_image in ['GenericMNI', 'MNI152NLin2009cAsym'] and \
+            img.data_origin == 'volume':
         img_vol = nib.load(img.file.path)
         data_vol = img_vol.get_data()
         if data_vol.ndim > 3:
