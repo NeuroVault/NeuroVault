@@ -177,7 +177,7 @@ def generate_glassbrain_image(image_pk):
 # SURFACE IMAGE GENERATION ###########################################################################
 
 @shared_task
-def generate_surfacce_image(image_pk):
+def generate_surface_image(image_pk):
     from neurovault.apps.statmaps.models import Image
     from scipy.io import loadmat
     import numpy.matlib as matlib
