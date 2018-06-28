@@ -146,6 +146,11 @@ def crawl_anima():
                 form.save()
 
 
+@shared_task
+def process_map(image_pk):
+    generate_glassbrain_image(image_pk)
+    generate_surface_image(image_pk)
+
 # THUMBNAIL IMAGE GENERATION ###########################################################################
 
 @shared_task
@@ -232,7 +237,7 @@ def generate_surface_image(image_pk):
             else:
                 img.surface_right_file.save("surface_%s_%s.gii" % (hemi, img.pk), content_file)
         img.save()
-    print("Surface image generation done.")
+        print("Surface image generation done.")
 
 
 # IMAGE TRANSFORMATION ################################################################################
