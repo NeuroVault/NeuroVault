@@ -215,16 +215,18 @@ def generate_surface_image(image_pk):
             for i in range(data_dim):
                 if data_vol.ndim > 3:
                     data_curr = data_vol[:, :, :, i]
-                    data_surf = interpn([range(data_vol.shape[0]), range(data_vol.shape[1]), range(data_vol.shape[2])],
-                                        data_curr, vox_coor.T, 'linear')
-                    data_surf_gifti = nib.gifti.GiftiDataArray(data_surf, 'NIFTI_INTENT_TIME_SERIES', 'NIFTI_TYPE_FLOAT32',
-                                                               'ASCII')
                 else:
                     data_curr = data_vol
-                    data_surf = interpn([range(data_vol.shape[0]), range(data_vol.shape[1]), range(data_vol.shape[2])],
-                                        data_curr, vox_coor.T, 'linear')
-                    data_surf_gifti = nib.gifti.GiftiDataArray(data_surf, 'NIFTI_INTENT_NONE', 'NIFTI_TYPE_FLOAT32',
-                                                               'ASCII')
+
+                data_surf = interpn(points=[range(data_vol.shape[0]), range(data_vol.shape[1]), range(data_vol.shape[2])],
+                                    values=data_curr,
+                                    xi=vox_coor.T,
+                                    method='linear',
+                                    bounds_error=False,
+                                    fill_value=0)
+                data_surf_gifti = nib.gifti.GiftiDataArray(data_surf, 'NIFTI_INTENT_TIME_SERIES',
+                                                           'NIFTI_TYPE_FLOAT32',
+                                                           'ASCII')
                 img_surf.add_gifti_data_array(data_surf_gifti)
 
             f = BytesIO()
