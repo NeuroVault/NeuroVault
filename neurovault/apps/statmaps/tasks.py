@@ -218,10 +218,15 @@ def generate_surface_image(image_pk):
                 else:
                     data_curr = data_vol
 
+                if img.polymorphic_ctype.model == 'atlas' or (hasattr(img, 'map_type') and img.map_type in ['Pa', 'R']):
+                    method = 'nearest'
+                else:
+                    method = 'linear'
+
                 data_surf = interpn(points=[range(data_vol.shape[0]), range(data_vol.shape[1]), range(data_vol.shape[2])],
                                     values=data_curr,
                                     xi=vox_coor.T,
-                                    method='linear',
+                                    method=method,
                                     bounds_error=False,
                                     fill_value=0)
                 data_surf_gifti = nib.gifti.GiftiDataArray(data_surf, 'NIFTI_INTENT_TIME_SERIES',
