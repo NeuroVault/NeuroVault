@@ -225,9 +225,8 @@ def generate_surface_image(image_pk):
                                     method=method,
                                     bounds_error=False,
                                     fill_value=0)
-                data_surf_gifti = nib.gifti.GiftiDataArray(data_surf, 'NIFTI_INTENT_TIME_SERIES',
-                                                           'NIFTI_TYPE_FLOAT32',
-                                                           'GZipBase64Binary')
+                data_surf_gifti = nib.gifti.GiftiDataArray(data_surf, 'NIFTI_INTENT_NONE',
+                                                           'NIFTI_TYPE_FLOAT32', 'ASCII')
                 img_surf.add_gifti_data_array(data_surf_gifti)
 
             f = BytesIO()
