@@ -200,12 +200,8 @@ def generate_surface_image(image_pk):
         this_path = os.path.abspath(os.path.dirname(__file__))
 
         for hemi in ['lh', 'rh']:
-            if hemi == 'lh':
-                ras_coor = loadmat(os.path.abspath(os.path.join(this_path, "static", "anatomical",
-                                                                "lh.avgMapping_allSub_RF_ANTs_MNI2fs.mat")))['ras']
-            else:
-                ras_coor = loadmat(os.path.abspath(os.path.join(this_path, "static", "anatomical",
-                                                                "rh.avgMapping_allSub_RF_ANTs_MNI2fs.mat")))['ras']
+            ras_coor = loadmat(os.path.abspath(os.path.join(this_path, "static", "anatomical",
+                                                                "%s.avgMapping_allSub_RF_ANTs_MNI2fs.mat" % hemi)))['ras']
 
             vox2ras = img_vol.get_sform()
             ras_centered = ras_coor - matlib.repmat(vox2ras[0:3, 3], ras_coor.shape[1], 1).T
