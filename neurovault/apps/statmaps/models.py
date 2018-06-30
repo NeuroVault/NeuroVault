@@ -23,7 +23,7 @@ from taggit.models import GenericTaggedItemBase, TagBase
 
 from neurovault.apps.statmaps.storage import DoubleExtensionStorage, NIDMStorage,\
     OverwriteStorage
-from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, generate_glassbrain_image
+from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, process_map
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 
 # possible templates
@@ -175,7 +175,6 @@ class Collection(models.Model):
         if (privacy_changed and not self.private) or (DOI_changed and self.DOI is not None):
             for image in self.basecollectionitem_set.instance_of(Image).all():
                 if image.pk:
-                    generate_glassbrain_image.apply_async([image.pk])
                     run_voxelwise_pearson_similarity.apply_async([image.pk])
 
     class Meta:
@@ -410,9 +409,8 @@ class Image(BaseCollectionItem):
         new_image = True if self.pk is None else False
         super(Image, self).save()
 
-        if (do_update or new_image) and self.collection and self.collection.private == False:
-            # Generate glass brain image
-            generate_glassbrain_image.apply_async([self.pk])
+        if do_update or new_image:
+            process_map.apply_async([self.pk])
 
         if self.subject_species == None and self.target_template_image:
             import neurovault.apps.statmaps.utils as nvutils
