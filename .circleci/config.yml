@@ -41,7 +41,6 @@ jobs:
         # Any branch if there are none on the default branch - this should be unnecessary if you have your default branch configured correctly
         - v1-dep-
 
-    - setup_remote_docker
     - run: if [[ -e ~/docker/image.tar ]]; then docker load -i ~/docker/image.tar; fi
     - run: ./scripts/git-set-file-times
     - run: docker build -t neurovault/neurovault .
