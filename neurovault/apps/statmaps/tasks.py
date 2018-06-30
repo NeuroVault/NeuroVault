@@ -228,6 +228,9 @@ def generate_surface_image(image_pk):
                 data_surf_gifti = nib.gifti.GiftiDataArray(data_surf, 'NIFTI_INTENT_NONE',
                                                            'NIFTI_TYPE_FLOAT32', 'ASCII')
                 img_surf.add_gifti_data_array(data_surf_gifti)
+                img_surf.meta.data.insert(0, nib.gifti.GiftiNVPairs('AnatomicalStructurePrimary',
+                                                                    {'lh': 'CortexLeft',
+                                                                     'rh': 'CortexRight'}[hemi]))
 
             f = BytesIO()
             fmap = {'image': nib.FileHolder(fileobj=f), 'header': nib.FileHolder(fileobj=f)}
@@ -235,9 +238,9 @@ def generate_surface_image(image_pk):
             f.seek(0)
             content_file = ContentFile(f.read())
             if hemi == 'lh':
-                img.surface_left_file.save("surface_%s_%s.gii" % (hemi, img.pk), content_file)
+                img.surface_left_file.save("%s.%s.func.gii" % (img.pk, {'lh': 'L', 'rh': 'R'}[hemi]), content_file)
             else:
-                img.surface_right_file.save("surface_%s_%s.gii" % (hemi, img.pk), content_file)
+                img.surface_right_file.save("%s.%s.func.gii" % (img.pk, {'lh': 'L', 'rh': 'R'}[hemi]), content_file)
         img.save()
         print("Surface image generation done.")
 
