@@ -45,7 +45,7 @@ RUN pip install nidmresults==0.3.2
 RUN pip install nidmfsl==0.3.4
 RUN pip install nilearn
 RUN pip install numexpr
-RUN pip install opbeat
+RUN pip install raven==6.9.0
 RUN pip install Pillow
 RUN pip install psycopg2
 RUN pip install pybraincompare==0.1.18
