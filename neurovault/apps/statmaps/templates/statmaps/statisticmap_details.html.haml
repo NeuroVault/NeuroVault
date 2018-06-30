@@ -131,7 +131,7 @@ a.disabled-link:hover {
 
             - if image.cognitive_paradigm_cogatlas_id
                 %a.btn.btn-primary.btn{href: "{% url 'view_task' image.cognitive_paradigm_cogatlas_id %}"} Task View
-            - if image.data_origin == "volume" and image.pycortex_compatible
+            - if image.data_origin == "volume" and pycortex_compatible
                 %a.btn.btn-primary.btn{href: "pycortex" } 3D View
             - if image.nidm_results
                 .btn-group
@@ -151,10 +151,31 @@ a.disabled-link:hover {
                             %a{:href => "{{ image.nidm_results.ttl_file.url }}"}
                                 Turtle File
                                 %span.muted [{{ ttl_basename }}]
-            - elif image.data_origin == "volume"
-                %a.btn.btn-primary.btn{href: "{{ image.file.url|urlencode }}" } Download
-            - elif image.data_origin == "surface"
-                %a.btn.btn-primary.btn{href: "download_surfaces" } Download
+            .btn-group
+                %a.btn.btn-primary.btn.dropdown-toggle{"data-toggle" => "dropdown", :href => "#"}
+                    Download
+                    %span.caret
+                %ul.dropdown-menu
+                    - if image.file
+                        %li
+                            %a{href: "{{ image.file.url|urlencode }}" }
+                                %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Data in a NIfTI file."}
+                                Volume
+                    - else
+                        %li
+                            %a.disabled-link{:href => ""}
+                                %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Data in a NIfTI file."}
+                                Volume
+                    - if image.surface_right_file
+                        %li
+                            %a{href: "download_surfaces" }
+                                %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Data in two GIfTI files."}
+                                Surface
+                    - else
+                        %li
+                            %a.disabled-link{:href => ""}
+                                %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Data in two GIfTI files."}
+                                Surface
 
             .btn-group
                 %a.btn.btn-primary.btn.dropdown-toggle{"data-toggle" => "dropdown", :href => "#"}

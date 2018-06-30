@@ -146,6 +146,11 @@ def crawl_anima():
                 form.save()
 
 
+@shared_task
+def process_map(image_pk):
+    generate_glassbrain_image(image_pk)
+    generate_surface_image(image_pk)
+
 # THUMBNAIL IMAGE GENERATION ###########################################################################
 
 @shared_task
@@ -173,6 +178,65 @@ def generate_glassbrain_image(image_pk):
         content_file = ContentFile(f.read())
         img.thumbnail.save("glass_brain_%s.jpg" % img.pk, content_file)
         img.save()
+
+# SURFACE IMAGE GENERATION ###########################################################################
+
+@shared_task
+def generate_surface_image(image_pk):
+    from neurovault.apps.statmaps.models import Image
+    from scipy.io import loadmat
+    from scipy.interpolate import interpn
+
+    img = Image.objects.get(pk=image_pk)
+    if img.target_template_image in ['GenericMNI', 'MNI152NLin2009cAsym'] and \
+            img.data_origin == 'volume':
+        img_vol = nib.load(img.file.path)
+        data_vol = img_vol.get_data()
+        if data_vol.ndim > 3:
+            data_vol = data_vol[:, :, :, 0]  #number of time points
+        this_path = os.path.abspath(os.path.dirname(__file__))
+
+        for hemi in ['lh', 'rh']:
+            ras_coor = loadmat(os.path.abspath(os.path.join(this_path, "static", "anatomical",
+                                                                "%s.avgMapping_allSub_RF_ANTs_MNI2fs.mat" % hemi)))['ras']
+
+            vox_coor = nib.affines.apply_affine(numpy.linalg.inv(img_vol.affine), ras_coor.T).T
+            img_surf = nib.gifti.GiftiImage()
+
+            if img.polymorphic_ctype.model == 'atlas' or (hasattr(img, 'map_type') and img.map_type in ['Pa', 'R']):
+                method = 'nearest'
+            else:
+                method = 'linear'
+
+            data_surf = interpn(points=[range(data_vol.shape[0]), range(data_vol.shape[1]), range(data_vol.shape[2])],
+                                values=data_vol,
+                                xi=vox_coor.T,
+                                method=method,
+                                bounds_error=False,
+                                fill_value=0)
+            # without turning nan's to zeros Connectome Workbench behaves weird
+            data_surf[numpy.isnan(data_surf)] = 0
+
+            # ASCII is the only encoding that produces outputs compatible with Connectome Workbench
+            data_surf_gifti = nib.gifti.GiftiDataArray(data_surf, 'NIFTI_INTENT_NONE',
+                                                       'NIFTI_TYPE_FLOAT32', 'ASCII')
+            img_surf.add_gifti_data_array(data_surf_gifti)
+            img_surf.meta.data.insert(0, nib.gifti.GiftiNVPairs('AnatomicalStructurePrimary',
+                                                                {'lh': 'CortexLeft',
+                                                                 'rh': 'CortexRight'}[hemi]))
+
+            f = BytesIO()
+            fmap = {'image': nib.FileHolder(fileobj=f), 'header': nib.FileHolder(fileobj=f)}
+            img_surf.to_file_map(fmap)
+            f.seek(0)
+            content_file = ContentFile(f.read())
+            if hemi == 'lh':
+                img.surface_left_file.save("%s.%s.func.gii" % (img.pk, {'lh': 'L', 'rh': 'R'}[hemi]), content_file)
+            else:
+                img.surface_right_file.save("%s.%s.func.gii" % (img.pk, {'lh': 'L', 'rh': 'R'}[hemi]), content_file)
+        img.save()
+        print("Surface image generation done.")
+
 
 # IMAGE TRANSFORMATION ################################################################################
 

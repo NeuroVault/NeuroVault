@@ -84,10 +84,6 @@ def get_collection(cid,request,mode=None):
         keyargs = {'private_token':cid}
     try:
         collection = Collection.objects.get(**keyargs)
-        # assume MNI152 if no template specified. 
-        #if not collection.target_template_image: 
-        #    collection.target_template_image = 'MNI152'
-        #pycortex_compatible = is_target_template_image_pycortex_compatible( collection.target_template_image )
 
         if private_url is None and collection.private:
             if owner_or_contrib(request,collection):
@@ -270,6 +266,7 @@ def view_image(request, pk, collection_cid=None):
         'user_owns_image': user_owns_image,
         'api_cid': api_cid,
         'neurosynth_compatible': neurosynth_compatible,
+        'pycortex_compatible': pycortex_compatible,
         'comparison_is_possible': comparison_is_possible
     }
 
@@ -306,12 +303,14 @@ def view_collection(request, cid):
     edit_permission = request.user.has_perm('statmaps.change_collection', collection)
     delete_permission = request.user.has_perm('statmaps.delete_collection', collection)
     is_empty = not collection.basecollectionitem_set.exists()
+    pycortex_compatible = all([is_target_template_image_pycortex_compatible(image.target_template_image) for image in collection.basecollectionitem_set.instance_of(Image)])
     context = {'collection': collection,
-            'is_empty': is_empty,
-            'user': request.user,
-            'delete_permission': delete_permission,
-            'edit_permission': edit_permission,
-            'cid':cid}
+               'is_empty': is_empty,
+               'user': request.user,
+               'delete_permission': delete_permission,
+               'edit_permission': edit_permission,
+               'pycortex_compatible': pycortex_compatible,
+               'cid':cid}
 
     if not all(collection.basecollectionitem_set.instance_of(StatisticMap).values_list('is_valid', flat=True)):
         msg = "Some of the images in this collection are missing crucial metadata."
