@@ -162,7 +162,8 @@ INSTALLED_APPS = (
     'django_hstore',
     'guardian',
     'oauth2_provider',
-    'fixture_media'
+    'fixture_media',
+    'raven.contrib.django.raven_compat',
 )
 
 # A sample logging configuration. The only tangible logging
