@@ -8,8 +8,8 @@ def add_nutrition_and_developmental(apps, schema_editor):
     # version than this migration expects. We use the historical version.
     Community = apps.get_model("statmaps", "Community")
 
-    Community.create(label="developmental", short_desc="Developmental Neuroscience")
-    Community.create(label="nutritional", short_desc="Nutritional Neuroscience")
+    Community.objects.create(label="developmental", short_desc="Developmental Neuroscience")
+    Community.objects.create(label="nutritional", short_desc="Nutritional Neuroscience")
 
 
 class Migration(migrations.Migration):

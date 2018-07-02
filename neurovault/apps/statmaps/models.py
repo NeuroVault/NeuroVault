@@ -50,6 +50,9 @@ class Community(models.Model):
     label = models.CharField(max_length=200, unique=True, null=False, verbose_name="Lexical label of the community")
     short_desc = models.CharField(max_length=200, null=False, verbose_name="Short description of the community")
 
+    def __unicode__(self):
+        return self.short_desc
+
 class Collection(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of collection")
     DOI = models.CharField(max_length=200, unique=True, blank=True, null=True, default=None, verbose_name="DOI of the corresponding paper (required if you want your maps to be archived in Stanford Digital Repository)")
