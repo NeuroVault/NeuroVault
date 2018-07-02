@@ -68,7 +68,7 @@ class Collection(models.Model):
     doi_add_date = models.DateTimeField('date the DOI was added', editable=False, blank=True, null=True, db_index=True)
     communities = models.ManyToManyField(Community, related_name="collection_communities",
                                          related_query_name="community", blank=True,
-                                         help_text="Is this collection part of any special Communities?",
+                                         help_text="Is this collection part of any special Community?",
                                          verbose_name="Communities", default=None)
 
     type_of_design = models.CharField(choices=[('blocked', 'blocked'), ('eventrelated', 'event_related'), ('hybridblockevent', 'hybrid block/event'), ('other', 'other')], max_length=200, blank=True, help_text="Blocked, event-related, hybrid, or other", null=True, verbose_name="Type of design")

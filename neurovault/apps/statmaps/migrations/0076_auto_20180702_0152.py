@@ -3,6 +3,14 @@ from __future__ import unicode_literals
 
 from django.db import migrations, models
 
+def add_nutrition_and_developmental(apps, schema_editor):
+    # We can't import the Person model directly as it may be a newer
+    # version than this migration expects. We use the historical version.
+    Community = apps.get_model("statmaps", "Community")
+
+    Community.create(label="developmental", short_desc="Developmental Neuroscience")
+    Community.create(label="nutritional", short_desc="Nutritional Neuroscience")
+
 
 class Migration(migrations.Migration):
 
@@ -22,6 +30,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='collection',
             name='communities',
-            field=models.ManyToManyField(related_query_name=b'community', related_name='collection_communities', default=None, to='statmaps.Community', blank=True, help_text=b'Is this collection part of any special Communities?', verbose_name=b'Communities'),
+            field=models.ManyToManyField(related_query_name=b'community', related_name='collection_communities', default=None, to='statmaps.Community', blank=True, help_text=b'Is this collection part of any special Community?', verbose_name=b'Communities'),
         ),
+        migrations.RunPython(add_nutrition_and_developmental),
+
     ]
