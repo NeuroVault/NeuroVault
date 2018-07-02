@@ -1,4 +1,4 @@
-FROM python:2.7
+FROM python:2.7.15-jessie
 ENV PYTHONUNBUFFERED 1
 
 RUN apt-get update && apt-get install -y \
@@ -11,7 +11,7 @@ RUN pip install nibabel
 RUN pip install tables
 RUN pip install h5py
 RUN pip install pandas
-RUN pip install pybraincompare
+RUN pip install pybraincompare==0.1.18
 
 RUN mkdir /code
 WORKDIR /code
