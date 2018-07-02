@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='collection',
             name='communities',
-            field=models.ManyToManyField(related_query_name=b'community', related_name='collection_communities', default=None, to='statmaps.Community', blank=True, help_text=b'Is this collection part of any special Community?', verbose_name=b'Communities'),
+            field=models.ManyToManyField(related_query_name=b'collection', related_name='collections', default=None, to='statmaps.Community', blank=True, help_text=b'Is this collection part of any special Community?', verbose_name=b'Communities'),
         ),
         migrations.RunPython(add_nutrition_and_developmental),
 

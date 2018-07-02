@@ -69,8 +69,8 @@ class Collection(models.Model):
     add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
     doi_add_date = models.DateTimeField('date the DOI was added', editable=False, blank=True, null=True, db_index=True)
-    communities = models.ManyToManyField(Community, related_name="collection_communities",
-                                         related_query_name="community", blank=True,
+    communities = models.ManyToManyField(Community, related_name="collections",
+                                         related_query_name="collection", blank=True,
                                          help_text="Is this collection part of any special Community?",
                                          verbose_name="Communities", default=None)
 
