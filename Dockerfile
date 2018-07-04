@@ -1,4 +1,4 @@
-FROM neurovault/ahba
+FROM neurovault/ahba:py3
 
 RUN apt-get update && apt-get install -y \
     libopenblas-dev \
@@ -26,7 +26,7 @@ RUN pip install 'django-dbbackup<2.3'
 RUN pip install django-dirtyfields
 RUN pip install django-file-resubmit==0.4.3
 RUN pip install django-filter
-RUN pip install https://github.com/crlyli/django-fixturemedia/archive/985f3c9a6bb21d4c4e70844060ffa5445e8aba1f.zip --egg 
+RUN pip install https://github.com/crlyli/django-fixturemedia/archive/985f3c9a6bb21d4c4e70844060ffa5445e8aba1f.zip
 RUN pip install django-form-utils
 RUN pip install 'django-hstore==1.4.1'
 RUN pip install 'django-oauth-toolkit==0.10.0'
@@ -45,7 +45,7 @@ RUN pip install nidmresults==0.3.2
 RUN pip install nidmfsl==0.3.4
 RUN pip install nilearn
 RUN pip install numexpr
-RUN pip install opbeat
+RUN pip install raven==6.9.0
 RUN pip install Pillow
 RUN pip install psycopg2
 RUN pip install pybraincompare==0.1.19
@@ -59,7 +59,7 @@ RUN pip install uwsgi
 RUN pip install zipstream
 
 RUN pip install html5lib
-RUN pip install https://github.com/gallantlab/pycortex/archive/fe58400c8c3a3187d930b8a696cda8fec62c0f19.zip --egg
+RUN pip install https://github.com/gallantlab/pycortex/archive/fe58400c8c3a3187d930b8a696cda8fec62c0f19.zip
 RUN pip install git+https://github.com/benkonrath/django-guardian.git@7cded9081249e9a4cd9f5cd85e67cf843c138b0c#egg=django-guardian
 RUN pip install nidmviewer==0.1.3
 

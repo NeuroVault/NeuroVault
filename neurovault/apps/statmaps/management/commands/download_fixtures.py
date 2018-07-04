@@ -44,7 +44,7 @@ class Command(BaseCommand):
         else:
             temp1 = tempfile.mkdtemp()
             temp2 = tempfile.mkdtemp()
-            command = "wget https://raw.github.com/NeuroVault/neurovault_data/master/fixtures/dumpdata.zip -P %s " % temp1
+            command = "wget https://raw.github.com/chrisfilo/neurovault_data/master/fixtures/dumpdata.zip -P %s " % temp1
             p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
             (output, err) = p.communicate()
             for fileName in os.listdir(temp1):

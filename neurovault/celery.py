@@ -12,12 +12,13 @@ nvcelery.config_from_object('django.conf:settings')
 nvcelery.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
 
-from opbeat.contrib.django.models import client, logger, register_handlers
-from opbeat.contrib.celery import register_signal
-try:
-    register_signal(client)
-except Exception as e:
-    logger.exception('Failed installing celery hook: %s' % e)
+from raven.contrib.django.raven_compat.models import client
+from raven.contrib.celery import register_signal, register_logger_signal
 
-if 'opbeat.contrib.django' in settings.INSTALLED_APPS:
-    register_handlers()
+
+# register a custom filter to filter out duplicate logs
+register_logger_signal(client)
+
+# hook into the Celery error handler
+register_signal(client)
+

@@ -8,9 +8,9 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install numpy
 RUN pip install nibabel
-RUN pip install tables
+RUN pip install tables==3.3.0
 RUN pip install h5py
-RUN pip install pandas
+RUN pip install pandas==0.20.3
 RUN pip install pybraincompare==0.1.19
 
 RUN mkdir /code
