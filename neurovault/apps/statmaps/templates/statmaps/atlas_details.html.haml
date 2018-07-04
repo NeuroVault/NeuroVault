@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% load coffeescript %}
 {% load static from staticfiles %}
 {% block includes %}
 <script type="text/javascript" src="{% static "scripts/papaya.js"%}"/></script>
@@ -11,33 +10,35 @@
          params["worldSpace"] = true;
          params["expandable"] = true;
          params["smoothDisplay"] = false;
-         params["images"] = ["{% static "images/MNI152.nii.gz"%}", "{{ image.file.url |urlencode}}"];
+         params["images"] = ["{% static "images/"%}{{ image.target_template_image }}.nii.gz", "{{ image.file.url|urlencode }}"];
          params["luts"] = [{"name":"PuBu", "data":[[0,1,0.968627,0.984314],[0.125,0.92549,0.905882,0.94902],[0.25,0.815686,0.819608,0.901961],[0.375,0.65098,0.741176,0.858824],[0.5,0.454902,0.662745,0.811765],[0.625,0.211765,0.564706,0.752941],[0.75,0.0196078,0.439216,0.690196],[0.875,0.0156863,0.352941,0.552941],[1,0.00784314,0.219608,0.345098]]},
          {"name":"OrRd", "data":[[0,1,0.968627,0.92549],[0.125,0.996078,0.909804,0.784314],[0.25,0.992157,0.831373,0.619608],[0.375,0.992157,0.733333,0.517647],[0.5,0.988235,0.552941,0.34902],[0.625,0.937255,0.396078,0.282353],[0.75,0.843137,0.188235,0.121569],[0.875,0.701961,0,0],[1,0.498039,0,0]]}];
 
          var filename = "{{ image.file.url }}".replace(/^.*[\\\/]/, '')
          params[filename] = {"parametric": true,  "lut":"Spectrum", "alpha":"0.75",  minPercent: 0.0, maxPercent: 1.0};
     :javascript
-        {% inlinecoffeescript %}
-            $(document).ready ->
-                $('#collection-tabs a:first').tab('show')
-                $("table[class*=image-details-datatable]").dataTable
-                    sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
-                    sAjaxSource: "/api/images/" + "{{ api_cid }}" + "/datatable/?format=json"
-                    iDisplayLength: 25
-                $("table[class*=image-regions-datatable]").dataTable
-                    sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>"
-                    sAjaxSource: "/api/atlases/" + "{{ api_cid }}" + "/regions_table/?format=json"
-                    iDisplayLength: 25
+	(function() {
+	  $(document).ready(function() {
+	    $('#collection-tabs a:first').tab('show');
+	    $("table[class*=image-details-datatable]").dataTable({
+	      sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>",
+	      sAjaxSource: "/api/images/" + "{{ api_cid }}" + "/datatable/?format=json",
+	      iDisplayLength: 25
+	    });
+	    $("table[class*=image-regions-datatable]").dataTable({
+	      sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>",
+	      sAjaxSource: "/api/atlases/" + "{{ api_cid }}" + "/regions_table/?format=json",
+	      iDisplayLength: 25
+	    });
+	    $('#delete_image').click(function(e) {
+	      return confirm("Are you sure you want to delete this image? This operation cannot be undone!");
+	    });
+	    if (navigator.userAgent.indexOf("Safari") > -1 && navigator.userAgent.indexOf("Chrome") === -1) {
+	      return $('a[href="pycortex"]').hide();
+	    }
+	  });
+	}).call(this);
 
-                $('#delete_image').click((e) ->
-                    confirm("Are you sure you want to delete this image? This operation cannot be undone!")
-                )
-
-                if navigator.userAgent.indexOf("Safari") > -1 and navigator.userAgent.indexOf("Chrome") == -1
-                    $('a[href="pycortex"]').hide()
-
-        {% endinlinecoffeescript %}
 {% include 'statmaps/_papaya_viewer_head.html.haml' %}
 {% include "statmaps/_meta_image.html" %}
 <meta name="pagetype" content="atlas">

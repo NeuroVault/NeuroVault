@@ -19,7 +19,6 @@ RUN pip install djangorestframework==3.4.7
 RUN pip install django-celery
 RUN pip install django-chosen
 RUN pip install django-cleanup==0.4.2
-RUN pip install django-coffeescript
 RUN pip install django-crispy-forms
 RUN pip install django-datatables-view
 RUN pip install 'django-dbbackup<2.3'

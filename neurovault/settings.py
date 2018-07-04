@@ -150,7 +150,6 @@ INSTALLED_APPS = (
     'rest_framework',
     'taggit',
     'crispy_forms',
-    'coffeescript',
     'taggit_templatetags',
     #'south',
     'dbbackup',
