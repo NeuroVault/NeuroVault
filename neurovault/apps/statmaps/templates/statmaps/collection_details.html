@@ -26,7 +26,7 @@
 
  function fillCitation() {
      var xhr = new XMLHttpRequest();
-    xhr.open('GET', 'https://doi.org/{{ collection.DOI }}', true);
+    xhr.open('GET', 'https://data.crossref.org/{{ collection.DOI }}', true);
     xhr.setRequestHeader('Accept', 'text/x-bibliography; style=apa');
     xhr.onload = function() {
         var status = xhr.status;
