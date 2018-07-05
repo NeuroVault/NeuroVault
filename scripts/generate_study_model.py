@@ -32,17 +32,17 @@ def get_field_type(field_format):
     else:
         return field_type_map[field_format], extra_options
 
-print '-' * 80
-print 'Collection Model'
-print '-' * 80
+print('-' * 80)
+print('Collection Model')
+print('-' * 80)
 
 with open('metadata_neurovault.csv', 'rb') as csvfile:
     reader = csv.reader(csvfile, delimiter=',')
-    header = reader.next()
+    header = next(reader)
     for row in reader:
         field = {}
         field_options = {}
-        field_infos = dict(zip(header, row))
+        field_infos = dict(list(zip(header, row)))
 
         field_type, extras = get_field_type(field_infos['Format'])
         field_options.update(extras)
@@ -79,13 +79,13 @@ with open('metadata_neurovault.csv', 'rb') as csvfile:
         field_options['verbose_name'] = '"%s.%s"' % (field_infos['Section'], field_infos['Item'])
         fields_order.setdefault(priority, []).append('%s.%s' % (field_infos['Section'], field_infos['Item']))
 
-        field['options'] = ', '.join(['%s=%s' % (k, v) for k, v in field_options.items()])
-        print '    %s' % template % field
+        field['options'] = ', '.join(['%s=%s' % (k, v) for k, v in list(field_options.items())])
+        print('    %s' % template % field)
 
-print 
-print '-' * 80
-print 'Collection Form'
-print '-' * 80
+print() 
+print('-' * 80)
+print('Collection Form')
+print('-' * 80)
 
 template = "self.fields.keyOrder = [%s]"
 
@@ -94,7 +94,7 @@ order = []
 for priority in sorted(fields_order.keys()):
     order.extend([f.split('.')[1] for f in sorted(fields_order[priority])])
 
-print template % ', '.join(["'%s'" % f for f in order])
+print(template % ', '.join(["'%s'" % f for f in order]))
 # print fields_order
 
 
@@ -109,12 +109,12 @@ print template % ', '.join(["'%s'" % f for f in order])
 # print '}'
 
 
-print 'fieldsets = ['
-for item in fieldsets.items():
-    print "    ('%s', %s)," % item
-print ']'
+print('fieldsets = [')
+for item in list(fieldsets.items()):
+    print("    ('%s', %s)," % item)
+print(']')
 
-print 'row_attrs = {'
+print('row_attrs = {')
 for row in row_attrs:
-    print "    '%s' : %s," % (row, row_attrs[row])
-print '}'
+    print("    '%s' : %s," % (row, row_attrs[row]))
+print('}')

@@ -41,7 +41,7 @@ class MoveImageTest(TestCase):
         self.unorderedAtlas.save()
         
         self.unorderedAtlas = Image.objects.get(id=self.unorderedAtlas.id)
-        print self.unorderedAtlas.file.path
+        print(self.unorderedAtlas.file.path)
         self.assertTrue(os.path.exists(self.unorderedAtlas.file.path))
         self.assertTrue(os.path.exists(self.unorderedAtlas.label_description_file.path))
         self.assertTrue(os.path.exists(self.unorderedAtlas.thumbnail.path))
@@ -62,7 +62,7 @@ class MoveImageTest(TestCase):
         self.coll1.delete()
         
         self.unorderedAtlas = Image.objects.get(id=self.unorderedAtlas.id)
-        print self.unorderedAtlas.file.path
+        print(self.unorderedAtlas.file.path)
         self.assertTrue(os.path.exists(self.unorderedAtlas.file.path))
         self.assertTrue(os.path.exists(self.unorderedAtlas.label_description_file.path))
         self.assertTrue(os.path.exists(self.unorderedAtlas.thumbnail.path))

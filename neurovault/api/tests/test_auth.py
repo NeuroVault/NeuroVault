@@ -29,5 +29,5 @@ class TestAuthenticatedUser(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIsInstance(response.data['id'], int)
 
-        for field in self.user_fields.keys():
+        for field in list(self.user_fields.keys()):
             self.assertEqual(response.data[field], self.user_fields[field])

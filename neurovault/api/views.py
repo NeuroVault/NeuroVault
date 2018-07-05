@@ -1,4 +1,4 @@
-import cPickle as pickle
+import pickle as pickle
 import os
 import re
 import xml.etree.ElementTree as ET
@@ -64,10 +64,10 @@ class APIHelper:
         Returns:
             A dict with an aaData field containing all of the
             values (and no keys) in tabular format. '''
-        data = dict([(k, v) for k, v in data.items()
+        data = dict([(k, v) for k, v in list(data.items())
                      if v and k not in fields_to_strip])
         return Response(
-            {'aaData': zip(data.keys(), data.values())}
+            {'aaData': list(zip(list(data.keys()), list(data.values())))}
         )
 
 
@@ -172,7 +172,7 @@ class AtlasViewSet(ImageViewSet):
             regions = [line.find("name").text.split(
                 '(')[0].replace("'", '').rstrip(' ').lower() for line in lines]
         return Response(
-            {'aaData': zip(indices, regions)})
+            {'aaData': list(zip(indices, regions))})
 
     @list_route()
     def atlas_query_region(self, request, pk=None):
@@ -257,9 +257,9 @@ class AtlasViewSet(ImageViewSet):
                 status=400
             )
         try:
-            print atlas
-            print[x.name
-                  for x in Atlas.objects.filter(collection=collection_object)]
+            print(atlas)
+            print([x.name
+                  for x in Atlas.objects.filter(collection=collection_object)])
             atlas_object = Atlas.objects.filter(
                 name=atlas, collection=collection_object)[0]
             atlas_image = atlas_object.file

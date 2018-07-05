@@ -126,7 +126,7 @@ class TestCollection(APITestCase):
 
         collection = Collection.objects.get(pk=response.data['id'])
 
-        for key in doi_properties.keys():
+        for key in list(doi_properties.keys()):
             self.assertEqual(response.data[key], doi_properties[key])
             self.assertEqual(getattr(collection, key), doi_properties[key])
 
@@ -194,7 +194,7 @@ class TestCollection(APITestCase):
         response = self.client.patch(self.item_url, patch_dict)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data, {
-            'name': [u'This field may not be blank.']
+            'name': ['This field may not be blank.']
         })
 
     def test_update_collection(self):

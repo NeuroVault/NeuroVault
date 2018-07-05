@@ -28,15 +28,15 @@ class Timer:
             gc.enable()
         self.interval = self.end - self.start
         if self.verbose:
-            print('time taken: %f seconds' % self.interval)
+            print(('time taken: %f seconds' % self.interval))
 
 def down_data():
-    import urllib, json
+    import urllib.request, urllib.parse, urllib.error, json
     if not os.path.isdir('/code/neurovault/apps/statmaps/tests/bench'):
         os.makedirs('/code/neurovault/apps/statmaps/tests/bench')
         os.makedirs('/code/neurovault/apps/statmaps/tests/bench/images')
     if len(os.listdir('/code/neurovault/apps/statmaps/tests/bench/images')) == 0:
-        (path, _) = urllib.urlretrieve("https://ndownloader.figshare.com/files/5360999")
+        (path, _) = urllib.request.urlretrieve("https://ndownloader.figshare.com/files/5360999")
         archive = tarfile.open(path)
         archive.extractall('/code/neurovault/apps/statmaps/tests/bench')
         archive.close()

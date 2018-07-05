@@ -7,7 +7,7 @@ services:
 
   uwsgi:
     restart: always
-    image: neurovault/neurovault_fs
+    image: neurovault/neurovault
     build: .
     command: /code/run_uwsgi.sh
     volumes:
@@ -37,7 +37,7 @@ services:
     command: redis-server --appendonly yes
 
   worker:
-    image: neurovault/neurovault_fs
+    image: neurovault/neurovault
     command: celery worker -A neurovault.celery -Q default -n default@%h
     volumes_from:
       - uwsgi

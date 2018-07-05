@@ -16,7 +16,7 @@ for image in StatisticMap.objects.filter(map_type=BaseStatisticMap.OTHER):
     nii = nb.Nifti1Image.from_file_map({'image': nb.FileHolder(image.file.name, gzfileobj)})
     map_type = nvutils.infer_map_type(nii)
     if map_type != BaseStatisticMap.OTHER:
-        print "changed type of %s to %s"%(image.get_absolute_url(), map_type)
+        print("changed type of %s to %s"%(image.get_absolute_url(), map_type))
         image.map_type = map_type
         image.save()
     image.file.close()

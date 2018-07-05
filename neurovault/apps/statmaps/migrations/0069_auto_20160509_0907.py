@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 from django.db import migrations, models
 
 
@@ -12,9 +12,9 @@ def tag_sensitiveness(apps, schema_editor):
 
     # Find for all tagged_items if there is a lowercased case, replace or create
     for item in ValueTaggedItem.objects.all():
-        if tag_dict.has_key(item.tag.name.lower()):
+        if item.tag.name.lower() in tag_dict:
             item.tag_id = tag_dict.get(item.tag.name.lower())
-            print item.tag_id
+            print(item.tag_id)
             item.save()
         else:  # if there was not a lowercase tag associated to it
             item.tag.name = item.tag.name.lower()
@@ -24,7 +24,7 @@ def tag_sensitiveness(apps, schema_editor):
     # Find not lowercase KeyTags and delete them
     for tag in KeyValueTag.objects.all():
         if not tag.name.islower():
-            print "Deleting %s" % tag.name
+            print("Deleting %s" % tag.name)
             tag.delete()
 
 class Migration(migrations.Migration):

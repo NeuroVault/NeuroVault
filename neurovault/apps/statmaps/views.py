@@ -11,7 +11,7 @@ import shutil
 import tarfile
 import tempfile
 import traceback
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import zipfile
 import zipstream
 from collections import OrderedDict
@@ -426,7 +426,7 @@ def view_task(request, cog_atlas_id=None):
     '''view_task returns a view to see a group of images associated with a particular cognitive atlas task.
     :param cog_atlas_id: statmaps.models.CognitiveAtlasTask the id for the task defined in the Cognitive Atlas
     '''
-    from cogat_functions import get_task_graph
+    from .cogat_functions import get_task_graph
 
     # Get the cognitive atlas id
     if not cog_atlas_id:
@@ -526,12 +526,12 @@ def upload_folder(request, collection_cid):
     allowed_extensions = ['.nii', '.img', '.nii.gz']
     niftiFiles = []
     if request.method == 'POST':
-        print request.POST
-        print request.FILES
+        print(request.POST)
+        print(request.FILES)
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             tmp_directory = tempfile.mkdtemp()
-            print tmp_directory
+            print(tmp_directory)
             try:
                 # Save archive (.zip or .tar.gz) to disk
                 if "file" in request.FILES:
@@ -795,12 +795,12 @@ def stats_view(request):
         if not collection.journal_name:
             _,_,_,_, collection.journal_name = get_paper_properties(collection.DOI)
             collection.save()
-        if collection.journal_name not in collections_by_journals.keys():
+        if collection.journal_name not in list(collections_by_journals.keys()):
             collections_by_journals[collection.journal_name] = 1
         else:
             collections_by_journals[collection.journal_name] += 1
-    collections_by_journals = OrderedDict(sorted(collections_by_journals.items(
-                                                ), key=lambda t: t[1], reverse=True))
+    collections_by_journals = OrderedDict(sorted(list(collections_by_journals.items(
+                                                )), key=lambda t: t[1], reverse=True))
 
     non_empty_collections_count = Collection.objects.annotate(num_submissions=Count('basecollectionitem')).filter(num_submissions__gt = 0).count()
     public_collections_count = Collection.objects.filter(private=False).annotate(num_submissions=Count('basecollectionitem')).filter(num_submissions__gt = 0).count()
@@ -1091,8 +1091,8 @@ class ImagesInCollectionJson(BaseDatatableView):
                                        row.target_template_image)
             elif isinstance(row, NIDMResults):
                 try:
-                    excursion_sets = Graph(
-                        row.zip_file.path).get_excursion_set_maps().values()
+                    excursion_sets = list(Graph(
+                        row.zip_file.path).get_excursion_set_maps().values())
                     map_url = row.get_absolute_url() + "/" + str(excursion_sets[0].file.path)
                 except KeyError:
                     maps = Graph(
@@ -1114,7 +1114,7 @@ class ImagesInCollectionJson(BaseDatatableView):
         # use parameters passed in GET request to filter queryset
 
         # simple example:
-        search = self.request.GET.get(u'search[value]', None)
+        search = self.request.GET.get('search[value]', None)
         if search:
             qs = qs.filter(Q(name__icontains=search)| Q(description__icontains=search))
         return qs
@@ -1143,7 +1143,7 @@ class ImagesByTaskJson(BaseDatatableView):
     def filter_queryset(self, qs):
         # use parameters passed in GET request to filter queryset
         # simple example:
-        search = self.request.GET.get(u'search[value]', None)
+        search = self.request.GET.get('search[value]', None)
         if search:
             qs = qs.filter(Q(name__icontains=search)| Q(id__icontains=search))
         return qs
@@ -1186,7 +1186,7 @@ class AtlasesAndParcellationsJson(BaseDatatableView):
         # use parameters passed in GET request to filter queryset
 
         # simple example:
-        search = self.request.GET.get(u'search[value]', None)
+        search = self.request.GET.get('search[value]', None)
         if search:
             qs = qs.filter(Q(name__icontains=search)| Q(description__icontains=search))
         return qs
@@ -1218,7 +1218,7 @@ class PublicCollectionsJson(BaseDatatableView):
         # use parameters passed in GET request to filter queryset
 
         # simple example:
-        search = self.request.GET.get(u'search[value]', None)
+        search = self.request.GET.get('search[value]', None)
         if search:
             qs = qs.filter(Q(name__icontains=search)| Q(description__icontains=search))
         return qs
@@ -1253,7 +1253,7 @@ def download_collection(request, cid):
         zf.write(fpath, zip_path)
 
     response = StreamingHttpResponse(zf, content_type='application/zip')
-    response['Content-Disposition'] = 'attachment; filename=%s' % urllib.quote_plus(zip_filename.encode('utf-8'))
+    response['Content-Disposition'] = 'attachment; filename=%s' % urllib.parse.quote_plus(zip_filename.encode('utf-8'))
     return response
 
 def serve_surface_archive(request, pk, collection_cid=None):
