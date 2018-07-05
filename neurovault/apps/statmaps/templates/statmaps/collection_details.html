@@ -24,6 +24,19 @@
 
 <script type='text/javascript'>
 
+ function fillCitation() {
+     var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'https://doi.org/{{ collection.DOI }}', true);
+    xhr.setRequestHeader('Accept', 'text/x-bibliography; style=apa');
+    xhr.onload = function() {
+        var status = xhr.status;
+        if (status === 200) {
+            $('#citation').text(xhr.response);
+        }
+    };
+    xhr.send();
+ }
+
  function showLoader() {
     document.getElementById('spinny').style.display = 'block';
     document.getElementById('fade').style.display = 'block';
@@ -141,6 +154,7 @@
   });
 }).call(this);
 
+ window.onload = fillCitation;
 </script>
 {% endblock %}
 
@@ -151,13 +165,11 @@
 <div class="row">
         <h2>{{ collection.name }}</h2>
         <p>Contributed by {{ collection.owner }}</p>
-        {% if collection.authors %}
-        <div class="lead">{{collection.authors}}</div>
-        {% endif %}
         <div class="row">
-            <div class="col-md-3">
+            <div class="col-md-12">
                 {% if collection.DOI %}
-                <div class="lead"><a href="http://doi.org/{{ collection.DOI }}">Corresponding publication</a></div>
+                If you use data from this collection please cite:<br />
+                <a href="http://doi.org/{{ collection.DOI }}" id="citation">http://doi.org/{{ collection.DOI }}</a><br />
                 {% endif %}
                 {% if collection.full_dataset_url %}
                 <div class="lead"><a href="{{ collection.full_dataset_url }}">Source data</a>
@@ -165,6 +177,7 @@
                 {% endif %}
             </div>
          </div>
+         <div class="row"><br /></div>
 
      {% if messages %}
          <div class="row">
