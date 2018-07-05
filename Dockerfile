@@ -65,12 +65,6 @@ RUN pip install nidmviewer==0.1.3
 RUN pip install tables
 RUN pip install statsmodels
 
-RUN apt-get update
-RUN apt-get install -y npm
-RUN ln -s /usr/bin/nodejs /usr/bin/node
-RUN npm install -g coffee-script
-
-RUN mkdir -p /code
 WORKDIR /code
 RUN /usr/bin/yes | pip uninstall cython
 RUN apt-get remove -y gfortran

@@ -73,7 +73,7 @@ jobs:
         command: if [ "$CIRCLE_NODE_INDEX" == "0" ]; then curl --retry 10 --retry-delay 15 -vkf http://localhost; fi
     - run:
         name: set -o pipefail && docker-compose run uwsgi python manage.py test -v 2 2>&1 | tee log.txt
-        command: if [ "$CIRCLE_NODE_INDEX" == "0" ]; then set -o pipefail && docker-compose run uwsgi python manage.py test -v 2 2>&1 | tee log.txt; fi
+        command: if [ "$CIRCLE_NODE_INDEX" == "0" ]; then set -o pipefail && docker-compose run -T uwsgi python manage.py test -v 2 2>&1 | tee log.txt; fi
     - run:
         name: if grep -q "^OK" log.txt; then true; else cat log.txt; false; fi
         command: if [ "$CIRCLE_NODE_INDEX" == "0" ]; then if grep -q "^OK" log.txt; then true; else cat log.txt; false; fi; fi
