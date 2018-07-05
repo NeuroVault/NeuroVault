@@ -157,7 +157,7 @@
         <div class="row">
             <div class="col-md-3">
                 {% if collection.DOI %}
-                <div class="lead"><a href="{{ collection.paper_url }}">Corresponding publication</a></div>
+                <div class="lead"><a href="http://doi.org/{{ collection.DOI }}">Corresponding publication</a></div>
                 {% endif %}
                 {% if collection.full_dataset_url %}
                 <div class="lead"><a href="{{ collection.full_dataset_url }}">Source data</a>
