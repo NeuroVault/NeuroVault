@@ -3,7 +3,7 @@ import nibabel
 import xml.etree.ElementTree as ET
 import numpy
 import os.path
-from builtins import True
+# from builtins import True
 import urllib.request, urllib.error, urllib.parse
 import networkx as nx
 import pickle as pickle
