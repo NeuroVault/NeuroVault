@@ -48,7 +48,7 @@ class UploadFolderTestCase(TestCase):
         self.user.delete()
  
     def test_upload_zip(self):
-        with open(os.path.join(self.tmpdir, 'example.zip')) as fp:
+        with open(os.path.join(self.tmpdir, 'example.zip', 'rb')) as fp:
             response = self.client.post(reverse('upload_folder', kwargs={'collection_cid': self.coll.id}), {'collection_cid': self.coll.id, 'file': fp})
         # Assert that self.post is actually returned by the post_detail view
         self.assertEqual(response.status_code, 302)

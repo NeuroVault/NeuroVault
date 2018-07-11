@@ -35,7 +35,7 @@ class AddStatmapsTests(TestCase):
             }
             testpath = os.path.abspath(os.path.dirname(__file__))
             fname = os.path.join(testpath,'test_data/statmaps/motor_lips.nii.gz')
-            file_dict = {'file': SimpleUploadedFile(fname, open(fname).read())}
+            file_dict = {'file': SimpleUploadedFile(fname, open(fname, 'rb').read())}
             form = StatisticMapForm(post_dict, file_dict)
 
             self.assertTrue(form.is_valid())
@@ -62,7 +62,7 @@ class AddStatmapsTests(TestCase):
             self.assertTrue(detect_4D(nii))
             self.assertTrue(len(split_4D_to_3D(nii)) > 0)
 
-            file_dict = {'file': SimpleUploadedFile(fname, open(fname).read())}
+            file_dict = {'file': SimpleUploadedFile(fname, open(fname, 'rb').read())}
             form = StatisticMapForm(post_dict, file_dict)
 
             self.assertTrue(form.is_valid())
@@ -84,7 +84,7 @@ class AddStatmapsTests(TestCase):
             testpath = os.path.abspath(os.path.dirname(__file__))
             fname_img = os.path.join(testpath,'test_data/statmaps/box_0b_vs_1b.img')
             fname_hdr = os.path.join(testpath,'test_data/statmaps/box_0b_vs_1b.hdr')
-            file_dict = {'file': SimpleUploadedFile(fname_img, open(fname_img).read()),
+            file_dict = {'file': SimpleUploadedFile(fname_img, open(fname_img, 'rb').read()),
                          'hdr_file': SimpleUploadedFile(fname_hdr, open(fname_hdr).read())}
             form = StatisticMapForm(post_dict, file_dict)
             self.assertFalse(form.is_valid())
@@ -128,7 +128,7 @@ class AddStatmapsTests(TestCase):
                 'collection':self.coll.pk,
                 'ignore_file_warning': True,
                 'file': SimpleUploadedFile(fname_img, open(fname_img, 'rb').read()),
-                'hdr_file': SimpleUploadedFile(fname_hdr, open(fname_hdr).read())
+                'hdr_file': SimpleUploadedFile(fname_hdr, open(fname_hdr, 'rb').read())
         }
         cid = self.coll.pk
         response = client.post(reverse('add_image', kwargs={'collection_cid':cid}), post_dict)
@@ -147,8 +147,8 @@ class AddStatmapsTests(TestCase):
                 'map_type': 'T',
                 'collection':self.coll.pk,
                 'ignore_file_warning': True,
-                'file': SimpleUploadedFile(fname_img, open(fname_img).read()),
-                'hdr_file': SimpleUploadedFile(fname_hdr, open(fname_hdr).read())
+                'file': SimpleUploadedFile(fname_img, open(fname_img, 'rb').read()),
+                'hdr_file': SimpleUploadedFile(fname_hdr, open(fname_hdr, 'rb').read())
         }
         cid = self.coll.pk
         response = self.client.post(reverse('add_image', kwargs={'collection_cid':cid}), post_dict)

@@ -66,7 +66,7 @@ class TestCollectionItemUpload(APITestCase):
             'name': 'test map',
             'modality': 'fMRI-BOLD',
             'map_type': 'T',
-            'file': SimpleUploadedFile(fname, open(fname).read()),
+            'file': SimpleUploadedFile(fname, open(fname, 'rb').read()),
             'custom_metadata_numeric_field': 42,
             'custom_metadata_string_field': 'forty two',
         }
@@ -110,7 +110,7 @@ class TestCollectionItemUpload(APITestCase):
             'name': 'test map',
             'modality': 'fMRI-BOLD',
             'map_type': 'T',
-            'file': SimpleUploadedFile(fname, open(fname).read()),
+            'file': SimpleUploadedFile(fname, open(fname, 'rb').read(), 'rb'),
             'data': 42
         }
 
@@ -135,7 +135,7 @@ class TestCollectionItemUpload(APITestCase):
 
         post_dict = {
             'name': 'test atlas',
-            'file': SimpleUploadedFile(nii_path, open(nii_path).read()),
+            'file': SimpleUploadedFile(nii_path, open(nii_path, 'rb').read()),
             'label_description_file': SimpleUploadedFile(xml_path,
                                                          open(xml_path).read())
         }
@@ -209,7 +209,7 @@ class TestCollectionItemUpload(APITestCase):
             'name': 'test map',
             'modality': 'fMRI-BOLD',
             'map_type': 'T',
-            'file': SimpleUploadedFile(fname, open(fname).read())
+            'file': SimpleUploadedFile(fname, open(fname).read(), 'rb')
         }
 
         response = self.client.post(url, post_dict, format='multipart')
