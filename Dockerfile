@@ -41,7 +41,7 @@ RUN pip install hamlpy
 RUN pip install lxml
 RUN pip install markdown
 RUN pip install networkx
-RUN pip install nibabel==2.1.0
+RUN pip install nibabel
 RUN pip install nidmresults
 RUN pip install nidmfsl
 RUN pip install nilearn
