@@ -62,8 +62,8 @@ def save_atlas_form(nii_path,xml_path,collection,ignore_file_warning=False,name=
         'collection':collection.pk,
         'ignore_file_warning': ignore_file_warning
     }
-    file_dict = {'file': SimpleUploadedFile(nii_path, open(nii_path).read()),
-                     'label_description_file': SimpleUploadedFile(xml_path, open(xml_path).read())}
+    file_dict = {'file': SimpleUploadedFile(nii_path, open(nii_path, 'rb').read()),
+                     'label_description_file': SimpleUploadedFile(xml_path, open(xml_path, 'rb').read())}
     form = AtlasForm(post_dict, file_dict)
     return form.save()
 

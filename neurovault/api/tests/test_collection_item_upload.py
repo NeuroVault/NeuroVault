@@ -35,7 +35,7 @@ class TestCollectionItemUpload(APITestCase):
             'map_type': 'T',
             'cognitive_paradigm_cogatlas': 'tsk_4a57abb949846',
             'cognitive_contrast_cogatlas': 'cnt_4e08fefbf0382',
-            'file': SimpleUploadedFile(fname, open(fname).read())
+            'file': SimpleUploadedFile(fname, open(fname, 'rb').read())
         }
 
         response = self.client.post(url, post_dict, format='multipart')

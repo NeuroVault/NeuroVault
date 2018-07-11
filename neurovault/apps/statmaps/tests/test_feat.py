@@ -106,7 +106,7 @@ class FeatDirectoryTest(TestCase):
             }
             
 
-            file_dict = {'zip_file': SimpleUploadedFile(zname, open(info['nidm_file'],'r').read())}
+            file_dict = {'zip_file': SimpleUploadedFile(zname, open(info['nidm_file'],'rb').read())}
             form = NIDMResultsForm(post_dict, file_dict)
 
             # validate NIDM Results

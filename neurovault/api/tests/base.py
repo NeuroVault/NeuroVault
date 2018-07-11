@@ -31,7 +31,7 @@ class BaseTestCases:
 
         def simple_uploaded_file(self, rel_path):
             fname = self.abs_data_path(rel_path)
-            return SimpleUploadedFile(rel_path, open(fname).read())
+            return SimpleUploadedFile(rel_path, open(fname, 'rb').read())
 
         def setUp(self):
             self.user = User.objects.create_user('NeuroGuy')
