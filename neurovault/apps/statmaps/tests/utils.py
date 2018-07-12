@@ -44,7 +44,7 @@ def save_statmap_form(image_path,collection,ignore_file_warning=False,image_name
         file_dict = {'file': SimpleUploadedFile(image_path[0], open(image_path[0]).read()),
                      'hdr_file': SimpleUploadedFile(image_path[1], open(image_path[1]).read())}
     else:
-        file_dict = {'file': SimpleUploadedFile(image_path, open(image_path).read())}
+        file_dict = {'file': SimpleUploadedFile(str.encode(image_path), open(image_path, 'rb').read())}
     form = StatisticMapForm(post_dict, file_dict)
     # this is necessary to split 4D volumes
     form.is_valid()

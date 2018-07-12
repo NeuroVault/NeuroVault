@@ -84,8 +84,8 @@ class AddStatmapsTests(TestCase):
             testpath = os.path.abspath(os.path.dirname(__file__))
             fname_img = os.path.join(testpath,'test_data/statmaps/box_0b_vs_1b.img')
             fname_hdr = os.path.join(testpath,'test_data/statmaps/box_0b_vs_1b.hdr')
-            file_dict = {'file': SimpleUploadedFile(fname_img, open(fname_img, 'rb').read()),
-                         'hdr_file': SimpleUploadedFile(fname_hdr, open(fname_hdr).read())}
+            file_dict = {'file': SimpleUploadedFile(str.encode(fname_img), open(fname_img, 'rb').read()),
+                         'hdr_file': SimpleUploadedFile(str.encode(fname_hdr), open(fname_hdr, 'rb').read())}
             form = StatisticMapForm(post_dict, file_dict)
             self.assertFalse(form.is_valid())
             self.assertTrue("thresholded" in form.errors["file"][0])

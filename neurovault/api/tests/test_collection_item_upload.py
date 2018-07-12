@@ -136,8 +136,8 @@ class TestCollectionItemUpload(APITestCase):
         post_dict = {
             'name': 'test atlas',
             'file': SimpleUploadedFile(nii_path, open(nii_path, 'rb').read()),
-            'label_description_file': SimpleUploadedFile(xml_path,
-                                                         open(xml_path).read())
+            'label_description_file': SimpleUploadedFile(str.encode(xml_path),
+                                                         open(xml_path, 'rb').read())
         }
 
         response = self.client.post(url, post_dict, format='multipart')
