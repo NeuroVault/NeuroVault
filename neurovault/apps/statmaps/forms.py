@@ -3,7 +3,7 @@ import re
 import shutil
 import subprocess
 from subprocess import CalledProcessError
-from io import StringIO
+import io
 
 import nibabel as nb
 import numpy as np
@@ -385,7 +385,7 @@ class ImageValidationMixin(object):
                     print("write " + hemi)
                     print(surface_file.file)
                     surface_file.open()
-                    surface_file = StringIO(surface_file.read())
+                    surface_file = io.BytesIO(surface_file.read())
                     with open(infile, 'w') as fd:
                         surface_file.seek(0)
                         shutil.copyfileobj(surface_file, fd)
@@ -626,7 +626,7 @@ class StatisticMapForm(ImageForm):
             cleaned_data["brain_coverage"] = 100
         elif django_file and "file" not in self._errors and "hdr_file" not in self._errors:
             django_file.open()
-            fileobj = StringIO(django_file.read())
+            fileobj = io.BytesIO(django_file.read())
             django_file.seek(0)
             gzfileobj = GzipFile(
                 filename=django_file.name, mode='rb', fileobj=fileobj)

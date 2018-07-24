@@ -41,8 +41,8 @@ def save_statmap_form(image_path,collection,ignore_file_warning=False,image_name
     }
     # If image path is a list, we have img/hdr
     if isinstance(image_path,list):
-        file_dict = {'file': SimpleUploadedFile(image_path[0], open(image_path[0]).read()),
-                     'hdr_file': SimpleUploadedFile(image_path[1], open(image_path[1]).read())}
+        file_dict = {'file': SimpleUploadedFile(image_path[0], open(image_path[0], 'rb').read()),
+                     'hdr_file': SimpleUploadedFile(image_path[1], open(image_path[1], 'rb').read())}
     else:
         file_dict = {'file': SimpleUploadedFile(str.encode(image_path), open(image_path, 'rb').read())}
     form = StatisticMapForm(post_dict, file_dict)
