@@ -40,6 +40,19 @@ def get_possible_templates():
 def get_target_template_list():
     return [ (template, POSSIBLE_TEMPLATES[template]['name']) for template in POSSIBLE_TEMPLATES ]
 
+COMMUNITIES = {'developmental': {'short_desc': 'Developmental Neuroscience'},
+               'nutrition': {'short_desc': 'Nutrition Neuroscience'}}
+community_choices = []
+for k in COMMUNITIES.keys():
+    community_choices.append((k, COMMUNITIES[k]['short_desc']))
+
+class Community(models.Model):
+    label = models.CharField(max_length=200, unique=True, null=False, verbose_name="Lexical label of the community")
+    short_desc = models.CharField(max_length=200, null=False, verbose_name="Short description of the community")
+
+    def __unicode__(self):
+        return self.short_desc
+
 class Collection(models.Model):
     name = models.CharField(max_length=200, unique = True, null=False, verbose_name="Name of collection")
     DOI = models.CharField(max_length=200, unique=True, blank=True, null=True, default=None, verbose_name="DOI of the corresponding paper (required if you want your maps to be archived in Stanford Digital Repository)")
@@ -56,6 +69,11 @@ class Collection(models.Model):
     add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
     doi_add_date = models.DateTimeField('date the DOI was added', editable=False, blank=True, null=True, db_index=True)
+    communities = models.ManyToManyField(Community, related_name="collections",
+                                         related_query_name="collection", blank=True,
+                                         help_text="Is this collection part of any special Community?",
+                                         verbose_name="Communities", default=None)
+
     type_of_design = models.CharField(choices=[('blocked', 'blocked'), ('eventrelated', 'event_related'), ('hybridblockevent', 'hybrid block/event'), ('other', 'other')], max_length=200, blank=True, help_text="Blocked, event-related, hybrid, or other", null=True, verbose_name="Type of design")
     number_of_imaging_runs = models.IntegerField(help_text="Number of imaging runs acquired", null=True, verbose_name="No. of imaging runs", blank=True)
     number_of_experimental_units = models.IntegerField(help_text="Number of blocks, trials or experimental units per imaging run", null=True, verbose_name="No. of experimental units", blank=True)

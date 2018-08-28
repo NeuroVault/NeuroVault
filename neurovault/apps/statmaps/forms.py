@@ -47,6 +47,7 @@ from guardian.shortcuts import get_objects_for_user
 collection_fieldsets = [
     ('Essentials', {'fields': ['name',
                                'DOI',
+                               'communities',
                                'description',
                                'full_dataset_url',
                                'contributors',
