@@ -225,11 +225,7 @@ def generate_surface_image(image_pk):
                                                                 {'lh': 'CortexLeft',
                                                                  'rh': 'CortexRight'}[hemi]))
 
-            f = BytesIO()
-            fmap = {'image': nib.FileHolder(fileobj=f), 'header': nib.FileHolder(fileobj=f)}
-            img_surf.to_file_map(fmap)
-            f.seek(0)
-            content_file = ContentFile(f.read())
+            content_file = ContentFile(img_surf.to_xml())
             if hemi == 'lh':
                 img.surface_left_file.save("%s.%s.func.gii" % (img.pk, {'lh': 'L', 'rh': 'R'}[hemi]), content_file)
             else:
