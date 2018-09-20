@@ -667,8 +667,13 @@ class StatisticMapForm(ImageForm):
 
     class Meta(ImageForm.Meta):
         model = StatisticMap
-        fields = ('name', 'collection', 'description', 'map_type', 'modality', 'target_template_image', 'cognitive_paradigm_cogatlas',
-                  'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
+        fields = ('name', 'collection', 'description', 'map_type', 'modality',
+                  'target_template_image', 'cognitive_paradigm_cogatlas',
+                  'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url',
+                  'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
+                  'age', 'gender', 'ethnicity', 'race', 'handedness',   'bis11_score', 'bis_bas_score',
+                  'spsrq_score', 'BMI', 'fat_percentage', 'waist_hip_ratio', 'hours_since_last_meal', 'days_since_menstruation',
+                  'mean_PDS_score',  'tanner_stage',
                   'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels', 'is_valid', 'data_origin')
         widgets = {
@@ -772,6 +777,9 @@ class AddStatisticMapForm(StatisticMapForm):
     class Meta(StatisticMapForm.Meta):
         fields = ('name', 'description', 'map_type', 'modality', 'target_template_image', 'cognitive_paradigm_cogatlas',
                   'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
+                  'age', 'gender', 'ethnicity', 'race', 'handedness',   'bis11_score', 'bis_bas_score',
+                  'spsrq_score', 'BMI', 'fat_percentage', 'waist_hip_ratio', 'hours_since_last_meal', 'days_since_menstruation',
+                  'mean_PDS_score',  'tanner_stage',
                   'file', 'ignore_file_warning', 'hdr_file', 'surface_left_file', 'surface_right_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels', 'data_origin')
 

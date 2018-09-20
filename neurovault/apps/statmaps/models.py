@@ -353,6 +353,55 @@ class Image(BaseCollectionItem):
         default=DEFAULT_TEMPLATE, max_length=200, null=False, blank=False)
     subject_species = models.CharField(max_length=200, default=POSSIBLE_TEMPLATES[DEFAULT_TEMPLATE]['species'], blank=True, null=True)
     figure = models.CharField(help_text="Which figure in the corresponding paper was this map displayed in?", verbose_name="Corresponding figure", max_length=200, null=True, blank=True)
+
+    ### Added for the NutBrain project BEGIN
+    handedness = models.CharField(max_length=200, null=True, blank=True, choices=[('L', 'Left'),
+                                                                                  ('R', 'Right')],
+                                  verbose_name="Handedness")
+    age = models.FloatField(null=True, blank=True, verbose_name="Age (years)")
+    gender = models.CharField(max_length=200, null=True, blank=True,
+                              choices=[('M', 'Male'),
+                                       ('F', 'Female'),
+                                       ('O', 'Other')],
+                              verbose_name="Gender")
+    race = models.CharField(max_length=200, null=True, blank=True,
+                            choices=[('W', 'White'),
+                                     ('B', 'Black or African American'),
+                                     ('I', 'American Indian or Alaska Native'),
+                                     ('A', 'Asian'),
+                                     ('H', 'Native Hawaiian or Other Pacific Islander')],
+                            verbose_name="Race (US Census definition)")
+    ethnicity = models.CharField(max_length=200, null=True, blank=True,
+                                 choices=[('H', 'Hispanic or Latino'),
+                                          ('NH', 'Not Hispanic or Latino')],
+                                 verbose_name="Ethnicity (US Census definition)")
+    BMI = models.FloatField(null=True, blank=True, verbose_name="Body Mass Index (kg/m2)")
+    fat_percentage = models.FloatField(null=True, blank=True, verbose_name="% body fat")
+    waist_hip_ratio = models.FloatField(null=True, blank=True, verbose_name="waist-hip-ratio")
+    mean_PDS_score = models.FloatField(null=True, blank=True,
+                                       verbose_name="Mean Puberty Development Scale score")
+    tanner_stage = models.CharField(max_length=200, null=True, blank=True,
+                                    choices=[('I', 'I'),
+                                             ('II', 'II'),
+                                             ('III', 'III'),
+                                             ('IV', 'IV'),
+                                             ('V', 'V')],
+                                    verbose_name="Tanner stage")
+    days_since_menstruation = models.FloatField(null=True, blank=True,
+                                                verbose_name="Number of days since menstruation")
+    hours_since_last_meal = models.FloatField(null=True, blank=True,
+                                              verbose_name="Time since last meal (hours)")
+    bis_bas_score = models.FloatField(null=True, blank=True,
+                                      verbose_name="Behavioral inhibition, behavioral activation "
+                                                   "(BIS/BAS) score")
+    spsrq_score = models.FloatField(null=True, blank=True,
+                                    verbose_name="Sensitivity to Punishment and Sensitivity to "
+                                                 "Reward Questionnaire (SPSRQ) score")
+    bis11_score = models.FloatField(null=True, blank=True,
+                                    verbose_name="Barratt Impulsiveness Scale (BIS-11) score")
+    # END
+
+
     thumbnail = models.FileField(help_text="The orthogonal view thumbnail path of the nifti image",
                                  null=True, blank=True, upload_to=upload_img_to,
                                  verbose_name='Image orthogonal view thumbnail 2D bitmap',
@@ -453,7 +502,13 @@ class Image(BaseCollectionItem):
 
     @classmethod
     def get_fixed_fields(cls):
-        return super(Image, cls).get_fixed_fields() + ('target_template_image', )
+        return super(Image, cls).get_fixed_fields() + ('target_template_image', 'age', 'gender',
+                                                       'ethnicity', 'race', 'handedness',
+                                                       'bis11_score', 'bis_bas_score',
+                                                       'spsrq_score', 'BMI', 'fat_percentage',
+                                                       'waist_hip_ratio', 'hours_since_last_meal',
+                                                       'days_since_menstruation',
+                                                       'mean_PDS_score', 'tanner_stage',)
 
 
 class BaseStatisticMap(Image):
