@@ -155,6 +155,33 @@ class Collection(models.Model):
     group_model_multilevel = models.CharField(help_text="If more than 2-levels, describe the levels and assumptions of the model (e.g. are variances assumed equal between groups)", verbose_name="Multilevel modeling", max_length=200, null=True, blank=True)
     group_repeated_measures = models.NullBooleanField(help_text="Was this a repeated measures design at the group level?", null=True, verbose_name="Repeated measures", blank=True)
     group_repeated_measures_method = models.CharField(help_text="If multiple measurements per subject, list method to account for within subject correlation, exact assumptions made about correlation/variance", verbose_name="Repeated measures method", max_length=200, null=True, blank=True)
+    nutbrain_hunger_state = models.CharField(choices=[('I', 'Fed (<1h after meal)'),
+                                                      ('II', '2-3 h fasted'),
+                                                      ('III', '4-6 h fasted'),
+                                                      ('IV', '7-9h fasted'),
+                                                      ('V', 'fasted overnight (> 10h)'),
+                                                      ('VI', '36h fast')], max_length=200,
+                                             blank=True, null=True,
+                                             verbose_name="Hunger state")
+    nutbrain_food_viewing_conditions = models.CharField(max_length=200,
+                                                        blank=True,
+                                                        null=True,
+                                                        verbose_name="Food viewing conditions",
+                                                        help_text="Image categories")
+    nutbrain_food_choice_type = models.CharField(max_length=200,
+                                                blank=True,
+                                                null=True,
+                                                verbose_name="Food choice type",
+                                                help_text="Choice conditions/image types")
+    nutbrain_taste_conditions = models.CharField(max_length=200,
+                                                 blank=True,
+                                                 null=True,
+                                                 verbose_name="Taste conditions")
+    nutbrain_odor_conditions = models.CharField(max_length=200,
+                                                 blank=True,
+                                                 null=True,
+                                                 verbose_name="Odor conditions")
+
 
     @property
     def is_statisticmap_set(self):
@@ -353,6 +380,55 @@ class Image(BaseCollectionItem):
         default=DEFAULT_TEMPLATE, max_length=200, null=False, blank=False)
     subject_species = models.CharField(max_length=200, default=POSSIBLE_TEMPLATES[DEFAULT_TEMPLATE]['species'], blank=True, null=True)
     figure = models.CharField(help_text="Which figure in the corresponding paper was this map displayed in?", verbose_name="Corresponding figure", max_length=200, null=True, blank=True)
+
+    ### Added for the NutBrain project BEGIN
+    handedness = models.CharField(max_length=200, null=True, blank=True, choices=[('L', 'Left'),
+                                                                                  ('R', 'Right')],
+                                  verbose_name="Handedness")
+    age = models.FloatField(null=True, blank=True, verbose_name="Age (years)")
+    gender = models.CharField(max_length=200, null=True, blank=True,
+                              choices=[('M', 'Male'),
+                                       ('F', 'Female'),
+                                       ('O', 'Other')],
+                              verbose_name="Gender")
+    race = models.CharField(max_length=200, null=True, blank=True,
+                            choices=[('W', 'White'),
+                                     ('B', 'Black or African American'),
+                                     ('I', 'American Indian or Alaska Native'),
+                                     ('A', 'Asian'),
+                                     ('H', 'Native Hawaiian or Other Pacific Islander')],
+                            verbose_name="Race (US Census definition)")
+    ethnicity = models.CharField(max_length=200, null=True, blank=True,
+                                 choices=[('H', 'Hispanic or Latino'),
+                                          ('NH', 'Not Hispanic or Latino')],
+                                 verbose_name="Ethnicity (US Census definition)")
+    BMI = models.FloatField(null=True, blank=True, verbose_name="Body Mass Index (kg/m2)")
+    fat_percentage = models.FloatField(null=True, blank=True, verbose_name="% body fat")
+    waist_hip_ratio = models.FloatField(null=True, blank=True, verbose_name="waist-hip-ratio")
+    mean_PDS_score = models.FloatField(null=True, blank=True,
+                                       verbose_name="Mean Puberty Development Scale score")
+    tanner_stage = models.CharField(max_length=200, null=True, blank=True,
+                                    choices=[('I', 'I'),
+                                             ('II', 'II'),
+                                             ('III', 'III'),
+                                             ('IV', 'IV'),
+                                             ('V', 'V')],
+                                    verbose_name="Tanner stage")
+    days_since_menstruation = models.FloatField(null=True, blank=True,
+                                                verbose_name="Number of days since menstruation")
+    hours_since_last_meal = models.FloatField(null=True, blank=True,
+                                              verbose_name="Time since last meal (hours)")
+    bis_bas_score = models.FloatField(null=True, blank=True,
+                                      verbose_name="Behavioral inhibition, behavioral activation "
+                                                   "(BIS/BAS) score")
+    spsrq_score = models.FloatField(null=True, blank=True,
+                                    verbose_name="Sensitivity to Punishment and Sensitivity to "
+                                                 "Reward Questionnaire (SPSRQ) score")
+    bis11_score = models.FloatField(null=True, blank=True,
+                                    verbose_name="Barratt Impulsiveness Scale (BIS-11) score")
+    # END
+
+
     thumbnail = models.FileField(help_text="The orthogonal view thumbnail path of the nifti image",
                                  null=True, blank=True, upload_to=upload_img_to,
                                  verbose_name='Image orthogonal view thumbnail 2D bitmap',
@@ -453,7 +529,13 @@ class Image(BaseCollectionItem):
 
     @classmethod
     def get_fixed_fields(cls):
-        return super(Image, cls).get_fixed_fields() + ('target_template_image', )
+        return super(Image, cls).get_fixed_fields() + ('target_template_image', 'age', 'gender',
+                                                       'ethnicity', 'race', 'handedness',
+                                                       'bis11_score', 'bis_bas_score',
+                                                       'spsrq_score', 'BMI', 'fat_percentage',
+                                                       'waist_hip_ratio', 'hours_since_last_meal',
+                                                       'days_since_menstruation',
+                                                       'mean_PDS_score', 'tanner_stage',)
 
 
 class BaseStatisticMap(Image):
