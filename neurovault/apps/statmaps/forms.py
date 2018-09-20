@@ -145,6 +145,13 @@ collection_fieldsets = [
                 'group_repeated_measures',
                 'group_repeated_measures_method'],
      'legend': '2nd Level'}),
+    ('Nutritional', {
+        'fields': ['nutbrain_hunger_state',
+                   'nutbrain_food_viewing_conditions',
+                   'nutbrain_food_choice_type',
+                   'nutbrain_taste_conditions',
+                   'nutbrain_odor_conditions'],
+        'legend': 'Nutritional'})
 ]
 
 
@@ -232,6 +239,11 @@ collection_row_attrs = {
     'flip_angle': {'priority': 2},
     'group_statistic_parameters': {'priority': 3},
     'motion_correction_metric': {'priority': 3},
+    'nutbrain_hunger_state': {'priority': 3},
+    'nutbrain_food_viewing_conditions': {'priority': 3},
+    'nutbrain_food_choice_type': {'priority': 3},
+    'nutbrain_taste_conditions': {'priority': 3},
+    'nutbrain_odor_conditions': {'priority': 3}
 }
 
 
@@ -667,8 +679,13 @@ class StatisticMapForm(ImageForm):
 
     class Meta(ImageForm.Meta):
         model = StatisticMap
-        fields = ('name', 'collection', 'description', 'map_type', 'modality', 'target_template_image', 'cognitive_paradigm_cogatlas',
-                  'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
+        fields = ('name', 'collection', 'description', 'map_type', 'modality',
+                  'target_template_image', 'cognitive_paradigm_cogatlas',
+                  'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url',
+                  'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
+                  'age', 'gender', 'ethnicity', 'race', 'handedness',   'bis11_score', 'bis_bas_score',
+                  'spsrq_score', 'BMI', 'fat_percentage', 'waist_hip_ratio', 'hours_since_last_meal', 'days_since_menstruation',
+                  'mean_PDS_score',  'tanner_stage',
                   'file', 'ignore_file_warning', 'hdr_file', 'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels', 'is_valid', 'data_origin')
         widgets = {
@@ -771,8 +788,16 @@ class AddStatisticMapForm(StatisticMapForm):
 
     class Meta(StatisticMapForm.Meta):
         fields = ('name', 'description', 'map_type', 'modality', 'target_template_image', 'cognitive_paradigm_cogatlas',
-                  'cognitive_contrast_cogatlas', 'cognitive_paradigm_description_url', 'analysis_level', 'number_of_subjects', 'contrast_definition', 'figure',
-                  'file', 'ignore_file_warning', 'hdr_file', 'surface_left_file', 'surface_right_file', 'tags', 'statistic_parameters',
+                  'cognitive_contrast_cogatlas',
+                  'file', 'ignore_file_warning', 'hdr_file', 'surface_left_file', 'surface_right_file',
+                  'cognitive_paradigm_description_url', 'analysis_level', 'number_of_subjects',
+                  'contrast_definition', 'figure',
+                  'age', 'gender', 'ethnicity', 'race', 'handedness', 'bis11_score',
+                  'bis_bas_score',
+                  'spsrq_score', 'BMI', 'fat_percentage', 'waist_hip_ratio',
+                  'hours_since_last_meal', 'days_since_menstruation',
+                  'mean_PDS_score', 'tanner_stage',
+                  'tags', 'statistic_parameters',
                   'smoothness_fwhm', 'is_thresholded', 'perc_bad_voxels', 'data_origin')
 
 
