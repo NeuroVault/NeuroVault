@@ -155,6 +155,33 @@ class Collection(models.Model):
     group_model_multilevel = models.CharField(help_text="If more than 2-levels, describe the levels and assumptions of the model (e.g. are variances assumed equal between groups)", verbose_name="Multilevel modeling", max_length=200, null=True, blank=True)
     group_repeated_measures = models.NullBooleanField(help_text="Was this a repeated measures design at the group level?", null=True, verbose_name="Repeated measures", blank=True)
     group_repeated_measures_method = models.CharField(help_text="If multiple measurements per subject, list method to account for within subject correlation, exact assumptions made about correlation/variance", verbose_name="Repeated measures method", max_length=200, null=True, blank=True)
+    nutbrain_hunger_state = models.CharField(choices=[('I', 'Fed (<1h after meal)'),
+                                                      ('II', '2-3 h fasted'),
+                                                      ('III', '4-6 h fasted'),
+                                                      ('IV', '7-9h fasted'),
+                                                      ('V', 'fasted overnight (> 10h)'),
+                                                      ('VI', '36h fast')], max_length=200,
+                                             blank=True, null=True,
+                                             verbose_name="Hunger state")
+    nutbrain_food_viewing_conditions = models.CharField(max_length=200,
+                                                        blank=True,
+                                                        null=True,
+                                                        verbose_name="Food viewing conditions",
+                                                        help_text="Image categories")
+    nutbrain_food_choice_type = models.CharField(max_length=200,
+                                                blank=True,
+                                                null=True,
+                                                verbose_name="Food choice type",
+                                                help_text="Choice conditions/image types")
+    nutbrain_taste_conditions = models.CharField(max_length=200,
+                                                 blank=True,
+                                                 null=True,
+                                                 verbose_name="Taste conditions")
+    nutbrain_odor_conditions = models.CharField(max_length=200,
+                                                 blank=True,
+                                                 null=True,
+                                                 verbose_name="Odor conditions")
+
 
     @property
     def is_statisticmap_set(self):

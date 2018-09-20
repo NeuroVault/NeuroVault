@@ -145,6 +145,13 @@ collection_fieldsets = [
                 'group_repeated_measures',
                 'group_repeated_measures_method'],
      'legend': '2nd Level'}),
+    ('Nutritional', {
+        'fields': ['nutbrain_hunger_state',
+                   'nutbrain_food_viewing_conditions',
+                   'nutbrain_food_choice_type',
+                   'nutbrain_taste_conditions',
+                   'nutbrain_odor_conditions'],
+        'legend': 'Nutritional'})
 ]
 
 
@@ -232,6 +239,11 @@ collection_row_attrs = {
     'flip_angle': {'priority': 2},
     'group_statistic_parameters': {'priority': 3},
     'motion_correction_metric': {'priority': 3},
+    'nutbrain_hunger_state': {'priority': 3},
+    'nutbrain_food_viewing_conditions': {'priority': 3},
+    'nutbrain_food_choice_type': {'priority': 3},
+    'nutbrain_taste_conditions': {'priority': 3},
+    'nutbrain_odor_conditions': {'priority': 3}
 }
 
 
