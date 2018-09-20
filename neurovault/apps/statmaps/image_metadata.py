@@ -194,8 +194,9 @@ def get_field_by_name(model, field_name):
 
 
 def get_fixed_fields(model):
-    return map(functools.partial(get_field_by_name, model),
+    fields = map(functools.partial(get_field_by_name, model),
                model.get_fixed_fields())
+    return sorted(fields, key=lambda field: field.blank)
 
 
 def get_data_headers(image_obj_list):
