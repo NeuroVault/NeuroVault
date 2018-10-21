@@ -23,7 +23,8 @@ def index_view(request):
 def community_view(request, community_label):
     community = get_object_or_404(Community, label=community_label)
 
-    recent_collections = community.collections.exclude(private=True).order_by('-doi_add_date')
+    recent_collections = community.collections.exclude(DOI__isnull=True).exclude(
+        private=True).order_by('-doi_add_date')
     # this is faster than using annotate and count!
     recent_collections = [col for col in recent_collections if col.basecollectionitem_set.count() > 0][:10]
 
