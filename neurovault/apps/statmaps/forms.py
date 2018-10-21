@@ -637,6 +637,12 @@ class StatisticMapForm(ImageForm):
         cleaned_data["tags"] = clean_tags(cleaned_data)
         # print cleaned_data
 
+        if "analysis_level" in cleaned_data.keys():
+            if cleaned_data.get('analysis_level') == 'S':
+                cleaned_data['number_of_subjects'] = 1
+                if 'number_of_subjects' in self._errors:
+                    del self._errors['number_of_subjects']
+
         if "data_origin" in cleaned_data.keys() and cleaned_data["data_origin"] == "surface":
             cleaned_data["is_thresholded"] = False
             cleaned_data["not_mni"] = False
