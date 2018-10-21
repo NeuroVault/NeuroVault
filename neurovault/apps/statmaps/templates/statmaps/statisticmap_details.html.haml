@@ -118,6 +118,10 @@ a.disabled-link:hover {
             - if not image.collection.private
                 %p Contributed by {{ user.username }} on {{ image.add_date|date:"N j, Y" }}
             %p <b>Collection</b>: <a href="{{ image.collection.get_absolute_url }}">{{ image.collection.name }}</a>
+            - if image.collection.communities
+                %p Communities:
+                    - for community in image.collection.communities.all
+                       <a href="{%  url 'view_community' community_label=community.label %}">{{ community.label }}</a>
             - if image.nidm_results
                 %p <b>Source</b>: <a href="{{ image.nidm_results.get_absolute_url }}">{{ image.nidm_results.name }}.zip</a>
             - else
