@@ -50,7 +50,8 @@
     .span11
         %h2 {{ image.name }}
         .lead
-            %p Contributed by {{ user.username }} on {{ image.add_date|date:"N j, Y" }}
+            - if not image.collection.private
+                %p Contributed by {{ user.username }} on {{ image.add_date|date:"N j, Y" }}
             %p <b>Collection</b>: <a href="{{ image.collection.get_absolute_url }}">{{ image.collection.name }}</a>
             - if image.description
             	%p <b>Description</b>: {{ image.description }}

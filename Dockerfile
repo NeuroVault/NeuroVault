@@ -26,14 +26,14 @@ RUN pip install django-datatables-view
 RUN pip install 'django-dbbackup<2.3'
 RUN pip install django-dirtyfields
 RUN pip install django-file-resubmit==0.4.3
-RUN pip install django-filter
+RUN pip install django-filter==1.1.0
 RUN pip install django-fixture-media
 RUN pip install django-form-utils
 RUN pip install 'django-hstore==1.4.1'
 RUN pip install 'django-oauth-toolkit==0.10.0'
 RUN pip install django-polymorphic==0.9.2
 RUN pip install django-sendfile
-RUN pip install django-taggit
+RUN pip install django-taggit==0.22.2
 RUN pip install django-taggit-templatetags
 RUN pip install django-mailgun
 RUN pip install 'dropbox==1.6'
@@ -48,7 +48,7 @@ RUN pip install nilearn
 RUN pip install numexpr
 RUN pip install raven==6.9.0
 RUN pip install Pillow
-RUN pip install psycopg2
+RUN pip install psycopg2==2.7.3.2
 RUN pip install pybraincompare==0.1.18
 RUN pip install python-openid
 RUN pip install 'python-social-auth==0.2.13'
