@@ -37,7 +37,7 @@ from django.utils.safestring import mark_safe
 from django.forms.utils import flatatt
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.files.base import ContentFile
-from django.forms.widgets import HiddenInput
+from django.forms.widgets import HiddenInput, CheckboxSelectMultiple
 from neurovault import settings
 from gzip import GzipFile
 from file_resubmit.admin import AdminResubmitFileWidget
@@ -292,6 +292,10 @@ class CollectionForm(ModelForm):
     class Meta:
         exclude = ('owner', 'private_token', 'contributors', 'private')
         model = Collection
+        widgets = {
+            'communities': CheckboxSelectMultiple
+        }
+
         # fieldsets = study_fieldsets
         # row_attrs = study_row_attrs
 
@@ -341,11 +345,12 @@ class OwnerCollectionForm(CollectionForm):
     contributors = ContributorCommaField(
         queryset=None, required=False, help_text="Select other NeuroVault users to add as contributes to the collection.  Contributors can add, edit and delete images in the collection.")
 
-    class Meta():
+    class Meta:
         exclude = ('owner', 'private_token')
         model = Collection
         widgets = {
-            'private': forms.RadioSelect
+            'private': forms.RadioSelect,
+            'communities': CheckboxSelectMultiple
         }
 
     def __init__(self, *args, **kwargs):
