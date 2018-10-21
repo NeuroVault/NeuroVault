@@ -115,7 +115,8 @@ a.disabled-link:hover {
     .span11
         %h2 {{ image.name }}
         .lead
-            %p Contributed by {{ user.username }} on {{ image.add_date|date:"N j, Y" }}
+            - if not image.collection.private
+                %p Contributed by {{ user.username }} on {{ image.add_date|date:"N j, Y" }}
             %p <b>Collection</b>: <a href="{{ image.collection.get_absolute_url }}">{{ image.collection.name }}</a>
             - if image.nidm_results
                 %p <b>Source</b>: <a href="{{ image.nidm_results.get_absolute_url }}">{{ image.nidm_results.name }}.zip</a>
