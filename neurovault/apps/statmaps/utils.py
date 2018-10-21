@@ -530,6 +530,7 @@ def is_search_compatible(pk):
 
     if img.polymorphic_ctype.model in ['image', 'atlas'] or \
        img.is_thresholded or \
+       img.analysis_level is None or \
        img.analysis_level == 'S' or \
        not is_target_template_image_search_compatible(img.target_template_image) or \
        img.not_mni or \
@@ -553,7 +554,8 @@ def get_images_to_compare_with(pk1, for_generation=False):
         if not (for_generation and img.collection.DOI is not None):
             qs = qs.exclude(collection__DOI__isnull=True)
         qs = qs.exclude(collection=img.collection)
-        qs = qs.exclude(pk=pk1).exclude(analysis_level='S').exclude(map_type='R').exclude(map_type='Pa')
+        qs = qs.exclude(pk=pk1).exclude(analysis_level__isnull=True).exclude(
+            analysis_level='S').exclude(map_type='R').exclude(map_type='Pa')
         image_pks += list(qs.values_list('pk', flat=True))
     return image_pks
 
