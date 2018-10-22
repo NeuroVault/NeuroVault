@@ -950,6 +950,8 @@ class NIDMResultsValidationMixin(object):
             s['statmap'].collection = cleaned_data['collection']
             s['statmap'].description = cleaned_data['description']
             s['statmap'].map_type = s['type']
+            s['statmap'].analysis_level = 'Other'
+            s['statmap'].number_of_subjects = 0
             s['statmap'].nidm_results = self.instance
             s['statmap'].file = 'images/1/foo/bar/'
 
