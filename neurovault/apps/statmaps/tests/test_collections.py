@@ -228,7 +228,7 @@ class CollectionMetaDataTest(TestCase):
 
     def test_empty_string_value_in_fixed_numeric_field(self):
         test_data = [
-            ['Filename', 'Subject ID', 'number_of_subjects'],
+            ['Filename', 'Subject ID', 'age'],
             ['motor_lips.nii.gz', '12', ''],
             ['beta_0001.nii.gz', '13', None]
         ]
@@ -243,10 +243,10 @@ class CollectionMetaDataTest(TestCase):
         self.assertEqual(resp.status_code, 200)
 
         image1 = Image.objects.get(id=self.image1.id)
-        self.assertIsNone(image1.number_of_subjects)
+        self.assertIsNone(image1.age)
 
         image2 = Image.objects.get(id=self.image2.id)
-        self.assertIsNone(image2.number_of_subjects)
+        self.assertIsNone(image2.age)
 
     def test_metadata_for_files_missing_in_the_collection(self):
         test_data = [

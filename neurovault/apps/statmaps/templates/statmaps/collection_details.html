@@ -164,6 +164,12 @@
 <!-- Meta data and header row-->
 <div class="row">
         <h2>{{ collection.name }}</h2>
+        {% if collection.communities %}
+            Communities: {% for community in collection.communities.all %} <a href="{%  url 'view_community' community_label=community.label %}"
+            >{{ community.label }}</a>
+        {% endfor %}
+        {% endif %}
+
         {% if not collection.private %}
             <p>Contributed by {{ collection.owner }}</p>
         {% endif %}

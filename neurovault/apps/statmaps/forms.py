@@ -637,6 +637,12 @@ class StatisticMapForm(ImageForm):
         cleaned_data["tags"] = clean_tags(cleaned_data)
         # print cleaned_data
 
+        if "analysis_level" in cleaned_data.keys():
+            if cleaned_data.get('analysis_level') == 'S':
+                cleaned_data['number_of_subjects'] = 1
+                if 'number_of_subjects' in self._errors:
+                    del self._errors['number_of_subjects']
+
         if "data_origin" in cleaned_data.keys() and cleaned_data["data_origin"] == "surface":
             cleaned_data["is_thresholded"] = False
             cleaned_data["not_mni"] = False
@@ -944,6 +950,8 @@ class NIDMResultsValidationMixin(object):
             s['statmap'].collection = cleaned_data['collection']
             s['statmap'].description = cleaned_data['description']
             s['statmap'].map_type = s['type']
+            s['statmap'].analysis_level = 'Other'
+            s['statmap'].number_of_subjects = 0
             s['statmap'].nidm_results = self.instance
             s['statmap'].file = 'images/1/foo/bar/'
 

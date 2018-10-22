@@ -28,6 +28,7 @@ from django.template.context import RequestContext
 from django.utils.encoding import filepath_to_uri
 from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
+from django.core.urlresolvers import reverse
 from fnmatch import fnmatch
 from guardian.shortcuts import get_objects_for_user
 from nidmviewer.viewer import generate
@@ -241,6 +242,13 @@ def export_images_filenames(request, collection_cid):
     return response
 
 
+def add_communities_context(communities, context):
+    if len(communities) == 1:
+        main_community = communities[0]
+        context['name_subscript'] = main_community.label
+        context['name_subscript_url'] = reverse('view_community',
+                                                kwargs={'community_label': main_community.label})
+
 def view_image(request, pk, collection_cid=None):
     '''view_image returns main view to see an image and associated meta data. If the image is in a collection with a DOI and has a generated thumbnail, it is a contender for image comparison, and a find similar button is exposed.
     :param pk: statmaps.models.Image.pk the primary key of the image
@@ -269,6 +277,9 @@ def view_image(request, pk, collection_cid=None):
         'pycortex_compatible': pycortex_compatible,
         'comparison_is_possible': comparison_is_possible
     }
+
+    communities = image.collection.communities.all()
+    add_communities_context(communities, context)
 
     if isinstance(image, NIDMResultStatisticMap):
         context['img_basename'] = os.path.basename(image.file.url)
@@ -304,6 +315,7 @@ def view_collection(request, cid):
     delete_permission = request.user.has_perm('statmaps.delete_collection', collection)
     is_empty = not collection.basecollectionitem_set.exists()
     pycortex_compatible = all([is_target_template_image_pycortex_compatible(image.target_template_image) for image in collection.basecollectionitem_set.instance_of(Image)])
+
     context = {'collection': collection,
                'is_empty': is_empty,
                'user': request.user,
@@ -311,6 +323,9 @@ def view_collection(request, cid):
                'edit_permission': edit_permission,
                'pycortex_compatible': pycortex_compatible,
                'cid':cid}
+
+    communities = collection.communities.all()
+    add_communities_context(communities, context)
 
     if not all(collection.basecollectionitem_set.instance_of(StatisticMap).values_list('is_valid', flat=True)):
         msg = "Some of the images in this collection are missing crucial metadata."
