@@ -164,7 +164,7 @@
 <!-- Meta data and header row-->
 <div class="row">
         <h2>{{ collection.name }}</h2>
-        {% if collection.communities %}
+        {% if collection.communities.all %}
             Communities: {% for community in collection.communities.all %} <a href="{%  url 'view_community' community_label=community.label %}"
             >{{ community.label }}</a>
         {% endfor %}
@@ -286,13 +286,61 @@
 <div class="col-md-6">
         <!-- COLLECTION TABS -->
         <ul id='collection-tabs' class='nav nav-tabs'>
-              <li><a data-toggle='tab' href='#images'>Images</a></li>
+              {% if images_visible %}<li><a data-toggle='tab' href='#images'>Images</a></li>{% endif %}
+              {% if gimages_visible %}<li><a data-toggle='tab' href='#gimages'>Group</a></li>{% endif %}
+              {% if simages_visible %}<li><a data-toggle='tab' href='#simages'>Single
+            subject</a></li>{% endif %}
+              {% if oimages_visible %}<li><a data-toggle='tab' href='#oimages'>
+                  {{ oimages_title }}</a></li>{% endif %}
               <li><a data-toggle='tab' href='#details'>Details</a></li>
         </ul>
 
         <div class='tab-content'>
+            {% if images_visible %}
                <div id='images' class='tab-pane active'>
                <table id="collection-images-datatable" class="compact">
+               <thead>
+                      <tr>
+                          <th>View</th>
+                          <th>ID</th>
+                          <th>Name</th>
+                          <th>Type</th>
+                      </tr>
+               </thead>
+               </table>
+               </div>
+            {% endif %}
+            {% if gimages_visible %}
+               <div id='gimages' class='tab-pane {%  if gimages_active %}active{%  endif %}'>
+               <table id="collection-gimages-datatable" class="compact">
+               <thead>
+                      <tr>
+                          <th>View</th>
+                          <th>ID</th>
+                          <th>Name</th>
+                          <th>Type</th>
+                      </tr>
+               </thead>
+               </table>
+               </div>
+            {% endif %}
+            {% if simages_visible %}
+               <div id='simages' class='tab-pane {%  if simages_active %}active{%  endif %}'>
+               <table id="collection-simages-datatable" class="compact">
+               <thead>
+                      <tr>
+                          <th>View</th>
+                          <th>ID</th>
+                          <th>Name</th>
+                          <th>Type</th>
+                      </tr>
+               </thead>
+               </table>
+               </div>
+            {% endif %}
+            {% if oimages_visible %}
+               <div id='oimages' class='tab-pane {%  if oimages_active %}active{%  endif %}'>
+               <table id="collection-oimages-datatable" class="compact">
                <thead>
                       <tr>
                           <th>View</th>
@@ -306,7 +354,7 @@
               </form>
 
               </div><!-- Close images tab-->
-
+            {% endif %}
               <div id="details" class="tab-pane">
                   <table id="collection-details-datatable" class="compact">
                   <thead>
@@ -328,7 +376,7 @@
                   </table>
               </div><!-- close details tab-->
               <div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false"></div>
-         </div><!-- close tab content-->
+        </div><!-- close tab content-->
     </div>
 {% endif %}
 </div>
@@ -344,6 +392,7 @@ $(document).ready(function() {
     $('#collection-details-datatable').dataTable({
       responsive: true
     });
+    {% if images_visible %}
     $('#collection-images-datatable').dataTable({
         "processing": true,
         "serverSide": true,
@@ -372,6 +421,100 @@ $(document).ready(function() {
   		}
   		{% endif %}
     });
+    {% endif %}
+    {% if gimages_visible %}
+    $('#collection-gimages-datatable').dataTable({
+        "processing": true,
+        "serverSide": true,
+        "pagingType": "full",
+		"iDisplayLength": 7,
+        "lengthMenu": [7, 10, 25, 50, 75, 100],
+        "columnDefs": [
+    		{ "orderable": false, "targets": 0 }
+  		],
+        "order": [[ 1, "asc" ]],
+        "createdRow": function( row, data, dataIndex ) {
+              if (data[4] == false) {
+                $(row).removeClass('odd');
+                $(row).addClass('invalid');
+              }
+        },
+        {% if collection.private %}
+        "ajax": "{% url 'collection_gimages_json' collection.private_token %}"
+        {% else %}
+        "ajax": "{% url 'collection_gimages_json' collection.id %}"{% endif %}
+        {% if not is_empty and gimages_active %},
+        "initComplete": function(settings, json) {
+            $("#for_papaya").append("<div class=\"papaya\" style=\"width:560px; float:left;\"></div>")
+            papaya.Container.startPapaya();
+            var collection_images = $(".viewimage")
+            viewimage($(collection_images[0]))
+  		}
+  		{% endif %}
+    });
+    {% endif %}
+    {% if simages_visible %}
+    $('#collection-simages-datatable').dataTable({
+        "processing": true,
+        "serverSide": true,
+        "pagingType": "full",
+		"iDisplayLength": 7,
+        "lengthMenu": [7, 10, 25, 50, 75, 100],
+        "columnDefs": [
+    		{ "orderable": false, "targets": 0 }
+  		],
+        "order": [[ 1, "asc" ]],
+        "createdRow": function( row, data, dataIndex ) {
+              if (data[4] == false) {
+                $(row).removeClass('odd');
+                $(row).addClass('invalid');
+              }
+        },
+        {% if collection.private %}
+        "ajax": "{% url 'collection_simages_json' collection.private_token %}"
+        {% else %}
+        "ajax": "{% url 'collection_simages_json' collection.id %}"{% endif %}
+        {% if not is_empty and simages_active %},
+        "initComplete": function(settings, json) {
+            $("#for_papaya").append("<div class=\"papaya\" style=\"width:560px; float:left;\"></div>")
+            papaya.Container.startPapaya();
+            var collection_images = $(".viewimage")
+            viewimage($(collection_images[0]))
+  		}
+  		{% endif %}
+    });
+    {% endif %}
+    {% if oimages_visible %}
+    $('#collection-oimages-datatable').dataTable({
+        "processing": true,
+        "serverSide": true,
+        "pagingType": "full",
+		"iDisplayLength": 7,
+        "lengthMenu": [7, 10, 25, 50, 75, 100],
+        "columnDefs": [
+    		{ "orderable": false, "targets": 0 }
+  		],
+        "order": [[ 1, "asc" ]],
+        "createdRow": function( row, data, dataIndex ) {
+              if (data[4] == false) {
+                $(row).removeClass('odd');
+                $(row).addClass('invalid');
+              }
+        },
+        {% if collection.private %}
+        "ajax": "{% url 'collection_oimages_json' collection.private_token %}"
+        {% else %}
+        "ajax": "{% url 'collection_oimages_json' collection.id %}"{% endif %}
+        {% if not is_empty and oimages_active %},
+        "initComplete": function(settings, json) {
+            $("#for_papaya").append("<div class=\"papaya\" style=\"width:560px; float:left;\"></div>")
+            papaya.Container.startPapaya();
+            var collection_images = $(".viewimage")
+            viewimage($(collection_images[0]))
+  		}
+  		{% endif %}
+    });
+    {% endif %}
 } );
 
 

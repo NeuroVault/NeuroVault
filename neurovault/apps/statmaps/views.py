@@ -48,7 +48,7 @@ from neurovault.apps.statmaps.forms import CollectionForm, UploadFileForm, Simpl
 from neurovault.apps.statmaps.models import Collection, Image, Atlas, \
     StatisticMap, NIDMResults, NIDMResultStatisticMap, \
     CognitiveAtlasTask, CognitiveAtlasContrast, BaseStatisticMap, \
-    DEFAULT_TEMPLATE
+    DEFAULT_TEMPLATE, BaseCollectionItem
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
@@ -323,6 +323,36 @@ def view_collection(request, cid):
                'edit_permission': edit_permission,
                'pycortex_compatible': pycortex_compatible,
                'cid':cid}
+
+    context['gimages_visible'] = False
+    context['simages_visible'] = False
+    context['oimages_visible'] = False
+    context['images_visible'] = False
+    context['gimages_active'] = False
+    context['simages_active'] = False
+    context['oimages_active'] = False
+    context['oimages_title'] = 'Other'
+    if collection.basecollectionitem_set.not_instance_of(StatisticMap).count() > 0:
+        context['images_visible'] = True
+    else:
+        context['images_visible'] = False
+        if StatisticMap.objects.filter(collection=collection).filter(analysis_level='G').count()\
+                > 0:
+            context['gimages_visible'] = True
+            context['gimages_active'] = True
+
+        if StatisticMap.objects.filter(collection=collection).filter(analysis_level='S').count()\
+                > 0:
+            context['simages_visible'] = True
+            if not context['gimages_visible']:
+                context['simages_active'] = True
+
+        if StatisticMap.objects.filter(collection=collection).filter(~Q(analysis_level__in=['G', 'S'])).count()\
+                > 0:
+            context['oimages_visible'] = True
+            if not (context['gimages_visible'] or context['simages_visible']):
+                context['oimages_active'] = True
+                context['oimages_title'] = 'Images'
 
     communities = collection.communities.all()
     add_communities_context(communities, context)
@@ -1134,6 +1164,24 @@ class ImagesInCollectionJson(BaseDatatableView):
             qs = qs.filter(Q(name__icontains=search)| Q(description__icontains=search))
         return qs
 
+class SingleSubjectImagesInCollectionJson(ImagesInCollectionJson):
+
+    def get_initial_queryset(self):
+        collection = get_collection(self.kwargs['cid'], self.request)
+        return StatisticMap.objects.filter(collection=collection).filter(analysis_level='S')
+
+
+class GroupImagesInCollectionJson(ImagesInCollectionJson):
+
+    def get_initial_queryset(self):
+        collection = get_collection(self.kwargs['cid'], self.request)
+        return StatisticMap.objects.filter(collection=collection).filter(analysis_level='G')
+
+class OtherImagesInCollectionJson(ImagesInCollectionJson):
+
+    def get_initial_queryset(self):
+        collection = get_collection(self.kwargs['cid'], self.request)
+        return StatisticMap.objects.filter(collection=collection).filter(~Q(analysis_level__in=['G', 'S']))
 
 class ImagesByTaskJson(BaseDatatableView):
     columns = ['file.url', 'name', 'cognitive_contrast_cogatlas', 'collection.name']

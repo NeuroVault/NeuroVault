@@ -7,7 +7,8 @@ from neurovault import settings
 from neurovault.apps.statmaps.models import KeyValueTag
 from neurovault.apps.statmaps.views import ImagesInCollectionJson,\
     PublicCollectionsJson, MyCollectionsJson, AtlasesAndParcellationsJson, \
-    ImagesByTaskJson
+    ImagesByTaskJson, GroupImagesInCollectionJson, SingleSubjectImagesInCollectionJson, \
+    OtherImagesInCollectionJson
 from .views import edit_collection, view_image, delete_image, edit_image, \
                 view_collection, delete_collection, download_collection, upload_folder, add_image_for_neurosynth, \
                 serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
@@ -40,6 +41,15 @@ urlpatterns = patterns('',
     url(r'^collections/(?P<cid>\d+|[A-Z]{8})/json$',
         ImagesInCollectionJson.as_view(),
         name='collection_images_json'),
+    url(r'^collections/(?P<cid>\d+|[A-Z]{8})/gjson$',
+        GroupImagesInCollectionJson.as_view(),
+        name='collection_gimages_json'),
+    url(r'^collections/(?P<cid>\d+|[A-Z]{8})/sjson$',
+        SingleSubjectImagesInCollectionJson.as_view(),
+        name='collection_simages_json'),
+    url(r'^collections/(?P<cid>\d+|[A-Z]{8})/ojson$',
+        OtherImagesInCollectionJson.as_view(),
+        name='collection_oimages_json'),
     url(r'^collections/new$',
         edit_collection,
         name='new_collection'),
