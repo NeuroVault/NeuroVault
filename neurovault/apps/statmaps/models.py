@@ -587,9 +587,9 @@ class BaseStatisticMap(Image):
     analysis_level = models.CharField(
                     help_text=("What level of summary data was used as the input to this analysis?"),
                     verbose_name="Analysis level",
-                    max_length=200, null=True, blank=True, choices=ANALYSIS_LEVEL_CHOICES)
+                    max_length=200, null=True, blank=False, choices=ANALYSIS_LEVEL_CHOICES)
     number_of_subjects = models.IntegerField(help_text="Number of subjects used to generate this map", null=True,
-                                             verbose_name="No. of subjects", blank=True)
+                                             verbose_name="No. of subjects", blank=False)
 
     def save(self):
         if self.perc_bad_voxels == None and self.file:

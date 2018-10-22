@@ -36,6 +36,7 @@ def save_statmap_form(image_path,collection,ignore_file_warning=False,image_name
         'modality': 'fMRI-BOLD',
         'map_type': 'T',
         'analysis_level': 'G',
+        'number_of_subjects': 10,
         'target_template_image': 'GenericMNI',
         'collection': collection.pk,
         'ignore_file_warning': ignore_file_warning
