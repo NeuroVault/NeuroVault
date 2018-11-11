@@ -1126,7 +1126,8 @@ class AllDOIPublicGroupImages(BaseDatatableView):
         # simple example:
         search = self.request.GET.get(u'search[value]', None)
         if search:
-            qs = qs.filter(Q(name__icontains=search) | Q(description__icontains=search))
+            qs = qs.filter(Q(name__icontains=search) | Q(description__icontains=search) | Q(
+                collection__name__icontains=search) | Q(collection__description__icontains=search))
         return qs
 
 
