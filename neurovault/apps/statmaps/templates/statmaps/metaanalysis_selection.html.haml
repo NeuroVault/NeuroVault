@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>{% block title %}Metaanalysis{% endblock %}</title>
+    <script>
+       $(document).ready(function() {
+    	  var captured = /q=([^&]+)/.exec(window.location.href);
+          var result = captured ? captured[1] : '';
+          var base_url = captured  != '' ? window.location.href.split("?")[0] : window.location.href;
+          $('#collections-table').dataTable({
+                    "bJQueryUI": true,
+                    sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>",
+                    iDisplayLength: 25,
+                    aoColumns: [ { sWidth: '20%' }, { sWidth: '20%'}, { sWidth: '20%' }, {
+                    sWidth: '20%'}, { sWidth: '20%' }],
+                    "processing": true,
+        			"serverSide": true,
+        			"order": [[ 0, "asc" ]],
+        			"ajax": "{% url 'metaanalysis_selection_json' %}",
+        			"oSearch":{"sSearch":result},
+					"fnDrawCallback": function (oSettings) {
+						var curSearch = oSettings.oPreviousSearch.sSearch;
+						history.replaceState({query:curSearch}, "title", base_url+"?q=" + curSearch);
+					}
+				});
+       });
+    </script>
+
+{% endblock %}
+
+{% block content %}
+.row
+	.span11
+		%h2 Group level maps from published studies
+		.lead
+			%p Select maps for meta analysis
+		%table#collections-table.table.table-condensed.table-striped.table-hover
+			%thead
+				%tr
+					%th Collection name
+					%th Collection description
+					%th Map name
+					%th Map description
+					%th Modality
+
+{% endblock %}
