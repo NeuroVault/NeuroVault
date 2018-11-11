@@ -1110,6 +1110,25 @@ class JSONResponse(HttpResponse):
         kwargs['content_type'] = 'application/json'
         super(JSONResponse, self).__init__(content, **kwargs)
 
+class AllDOIPublicGroupImages(BaseDatatableView):
+    columns = ['collection.name', 'collection.description', 'name', 'description', 'modality']
+    order_columns = ['collection.name', 'collection.description', 'name', 'description',
+                     'modality']
+
+    def get_initial_queryset(self):
+        public_collections_ids = Collection.objects.exclude(DOI__isnull=True).exclude(
+            private=True).values_list('id', flat=True)
+        return StatisticMap.objects.filter(analysis_level='G').filter(map_type__in=['T', 'Z', 'F']).filter(collection_id__in=public_collections_ids)
+
+    def filter_queryset(self, qs):
+        # use parameters passed in GET request to filter queryset
+
+        # simple example:
+        search = self.request.GET.get(u'search[value]', None)
+        if search:
+            qs = qs.filter(Q(name__icontains=search) | Q(description__icontains=search))
+        return qs
+
 
 class ImagesInCollectionJson(BaseDatatableView):
     columns = ['file.url', 'pk', 'name', 'polymorphic_ctype.name', 'is_valid']
