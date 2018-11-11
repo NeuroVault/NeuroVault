@@ -8,7 +8,7 @@ from neurovault.apps.statmaps.models import KeyValueTag
 from neurovault.apps.statmaps.views import ImagesInCollectionJson,\
     PublicCollectionsJson, MyCollectionsJson, AtlasesAndParcellationsJson, \
     ImagesByTaskJson, GroupImagesInCollectionJson, SingleSubjectImagesInCollectionJson, \
-    OtherImagesInCollectionJson
+    OtherImagesInCollectionJson, AllDOIPublicGroupImages
 from .views import edit_collection, view_image, delete_image, edit_image, \
                 view_collection, delete_collection, download_collection, upload_folder, add_image_for_neurosynth, \
                 serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
@@ -20,6 +20,13 @@ from .views import edit_collection, view_image, delete_image, edit_image, \
 
 
 urlpatterns = patterns('',
+    url(r'^metaanalysis_selection/$',
+       TemplateView.as_view(
+           template_name='statmaps/metaanalysis_selection.html.haml'),
+       name='metaanalysis_selection'),
+    url(r'^metaanalysis_selection/json$',
+        AllDOIPublicGroupImages.as_view(),
+       name='metaanalysis_selection_json'),
     url(r'^my_collections/$',
         login_required(TemplateView.as_view(template_name='statmaps/my_collections.html.haml')),
         name='my_collections'),
