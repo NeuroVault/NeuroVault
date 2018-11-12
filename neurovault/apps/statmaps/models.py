@@ -800,3 +800,12 @@ class Metaanalysis(models.Model):
                                         ('completed', 'completed')],
                                max_length=200, blank=True, null=True, default='inactive')
     output_maps = models.ForeignKey(Collection, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if self.status == 'active':
+            for m in Metaanalysis.objects.filter(owner=self.owner).filter(status='active'):
+                if m.pk != self.pk :
+                    m.status = 'inactive'
+                    m.save()
+        super(Metaanalysis, self).save(*args, **kwargs)
+

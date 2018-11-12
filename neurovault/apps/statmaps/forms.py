@@ -289,7 +289,7 @@ class ContributorCommaField(ModelMultipleChoiceField):
 class MetaanalysisForm(ModelForm):
 
     class Meta:
-        exclude = ('owner', 'maps', 'status', 'output_maps')
+        exclude = ('owner', 'maps', 'output_maps')
         model = Metaanalysis
         # fieldsets = study_fieldsets
         # row_attrs = study_row_attrs

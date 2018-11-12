@@ -135,7 +135,7 @@ def edit_metaanalysis(request, cid=None):
         form = MetaanalysisForm(request.POST, request.FILES, instance=metaanalysis)
         if form.is_valid():
             metaanalysis.save()
-            return HttpResponseRedirect('my_metaanalyses')
+            return HttpResponseRedirect(reverse('my_metaanalyses'))
     else:
         form = MetaanalysisForm(instance=metaanalysis)
 
@@ -1320,7 +1320,7 @@ class PublicCollectionsJson(BaseDatatableView):
         elif column == 'n_images':
             return row.basecollectionitem_set.count()
         else:
-            return super(PublicCollectionsJson, self).render_column(row, column)
+            return super(BaseDatatableView, self).render_column(row, column)
 
     def filter_queryset(self, qs):
         # use parameters passed in GET request to filter queryset
@@ -1347,6 +1347,9 @@ class MyMetaanalysesJson(PublicCollectionsJson):
     def render_column(self, row, column):
         if column == 'n_images':
             return row.maps.count()
+        elif column == 'name':
+            return "<a href='" + reverse('edit_metaanalysis', kwargs={'cid': row.pk}) + "'>" + \
+                   row.name + "</a>"
         else:
             return super(PublicCollectionsJson, self).render_column(row, column)
 
