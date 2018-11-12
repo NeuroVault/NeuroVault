@@ -44,11 +44,11 @@ from neurovault import settings
 from neurovault.apps.statmaps.ahba import calculate_gene_expression_similarity
 from neurovault.apps.statmaps.forms import CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,NeuropowerStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
-    EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
+    EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm, MetaanalysisForm
 from neurovault.apps.statmaps.models import Collection, Image, Atlas, \
     StatisticMap, NIDMResults, NIDMResultStatisticMap, \
     CognitiveAtlasTask, CognitiveAtlasContrast, BaseStatisticMap, \
-    DEFAULT_TEMPLATE, BaseCollectionItem
+    DEFAULT_TEMPLATE, BaseCollectionItem, Metaanalysis
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
@@ -116,6 +116,31 @@ def get_image(pk,collection_cid,request,mode=None):
             raise PermissionDenied()
     else:
         return image
+
+
+@login_required
+def edit_metaanalysis(request, cid=None):
+    '''edit_collection is a view to edit a collection, meaning showing the edit form for an existing collection, creating a new collection, or passing POST data to update an existing collection
+    :param cid: statmaps.models.Collection.pk the primary key of the collection. If none, will generate form to make a new collection.
+    '''
+    page_header = "Start a new metaanalysis"
+    if cid:
+        metaanalysis = Metaanalysis.objects.get(pk=cid)
+        page_header = 'Edit metaanalysis'
+        if request.user != metaanalysis.owner:
+            return HttpResponseForbidden()
+    else:
+        metaanalysis = Metaanalysis(owner=request.user)
+    if request.method == "POST":
+        form = MetaanalysisForm(request.POST, request.FILES, instance=metaanalysis)
+        if form.is_valid():
+            metaanalysis.save()
+            return HttpResponseRedirect('my_metaanalyses')
+    else:
+        form = MetaanalysisForm(instance=metaanalysis)
+
+    context = {"form": form, "page_header": page_header}
+    return render(request, "statmaps/edit_metaanalysis.html.haml", context)
 
 @login_required
 def edit_collection(request, cid=None):
@@ -1311,6 +1336,28 @@ class MyCollectionsJson(PublicCollectionsJson):
     def get_initial_queryset(self):
         return get_objects_for_user(self.request.user, 'statmaps.change_collection')
 
+
+class MyMetaanalysesJson(PublicCollectionsJson):
+    columns = ['name', 'description', 'n_images', 'status']
+    order_columns = ['name', 'description', '', '']
+
+    def get_initial_queryset(self):
+        return Metaanalysis.objects.filter(owner=self.request.user)
+
+    def render_column(self, row, column):
+        if column == 'n_images':
+            return row.maps.count()
+        else:
+            return super(PublicCollectionsJson, self).render_column(row, column)
+
+    def filter_queryset(self, qs):
+        # use parameters passed in GET request to filter queryset
+
+        # simple example:
+        search = self.request.GET.get(u'search[value]', None)
+        if search:
+            qs = qs.filter(Q(name__icontains=search)| Q(description__icontains=search))
+        return qs
 
 def download_collection(request, cid):
     # Files (local path) to put in the .zip

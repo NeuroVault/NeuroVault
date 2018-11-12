@@ -8,7 +8,7 @@ from neurovault.apps.statmaps.models import KeyValueTag
 from neurovault.apps.statmaps.views import ImagesInCollectionJson,\
     PublicCollectionsJson, MyCollectionsJson, AtlasesAndParcellationsJson, \
     ImagesByTaskJson, GroupImagesInCollectionJson, SingleSubjectImagesInCollectionJson, \
-    OtherImagesInCollectionJson, AllDOIPublicGroupImages
+    OtherImagesInCollectionJson, AllDOIPublicGroupImages, MyMetaanalysesJson
 from .views import edit_collection, view_image, delete_image, edit_image, \
                 view_collection, delete_collection, download_collection, upload_folder, add_image_for_neurosynth, \
                 serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
@@ -16,7 +16,7 @@ from .views import edit_collection, view_image, delete_image, edit_image, \
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
                 view_nidm_results, find_similar, find_similar_json, compare_images, edit_metadata, \
                 export_images_filenames, delete_nidm_results, view_task, search, gene_expression_json, \
-                gene_expression, serve_surface_archive
+                gene_expression, serve_surface_archive, edit_metaanalysis
 
 
 urlpatterns = patterns('',
@@ -24,6 +24,16 @@ urlpatterns = patterns('',
        TemplateView.as_view(
            template_name='statmaps/metaanalysis_selection.html.haml'),
        name='metaanalysis_selection'),
+    url(r'^my_metaanalyses/$',
+        login_required(TemplateView.as_view(
+           template_name='statmaps/my_metaanalyses.html.haml')),
+        name='my_metaanalyses'),
+    url(r'^my_metaanalyses/new$',
+        edit_metaanalysis,
+       name='new_metaanalysis'),
+    url(r'^my_metaanalyses/json$',
+        login_required(MyMetaanalysesJson.as_view()),
+        name='my_metaanalyses_json'),
     url(r'^metaanalysis_selection/json$',
         AllDOIPublicGroupImages.as_view(),
        name='metaanalysis_selection_json'),

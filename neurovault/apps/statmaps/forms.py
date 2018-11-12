@@ -20,7 +20,7 @@ from crispy_forms.layout import Layout, Submit, Button
 from crispy_forms.bootstrap import TabHolder, Tab
 
 from .models import Collection, Image, User, StatisticMap, BaseStatisticMap, \
-    Atlas, NIDMResults, NIDMResultStatisticMap
+    Atlas, NIDMResults, NIDMResultStatisticMap, Metaanalysis
 
 from django.forms.forms import Form
 from django.forms.fields import FileField
@@ -286,6 +286,21 @@ class ContributorCommaField(ModelMultipleChoiceField):
 
         return self.queryset.filter(username__in=split_vals)
 
+class MetaanalysisForm(ModelForm):
+
+    class Meta:
+        exclude = ('owner', 'maps', 'status', 'output_maps')
+        model = Metaanalysis
+        # fieldsets = study_fieldsets
+        # row_attrs = study_row_attrs
+
+    def __init__(self, *args, **kwargs):
+
+        super(MetaanalysisForm, self).__init__(*args, **kwargs)
+
+        self.helper = FormHelper(self)
+        self.helper.form_class = 'form-horizontal'
+        self.helper.add_input(Submit('submit', 'Submit'))
 
 class CollectionForm(ModelForm):
 
