@@ -143,6 +143,13 @@ def edit_metaanalysis(request, cid=None):
     return render(request, "statmaps/edit_metaanalysis.html.haml", context)
 
 @login_required
+def add_to_active_metaanalysis(request, map_pk):
+    metaanalysis = Metaanalysis.objects.filter(owner=request.user).filter(status='active')[0]
+    img = StatisticMap.objects.get(pk=map_pk)
+    metaanalysis.maps.add(img)
+    return JSONResponse({'satatus': 'ok'})
+
+@login_required
 def edit_collection(request, cid=None):
     '''edit_collection is a view to edit a collection, meaning showing the edit form for an existing collection, creating a new collection, or passing POST data to update an existing collection
     :param cid: statmaps.models.Collection.pk the primary key of the collection. If none, will generate form to make a new collection.

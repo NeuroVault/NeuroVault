@@ -5,10 +5,11 @@ from django.views.generic.base import RedirectView
 
 from neurovault import settings
 from neurovault.apps.statmaps.models import KeyValueTag
-from neurovault.apps.statmaps.views import ImagesInCollectionJson,\
+from neurovault.apps.statmaps.views import ImagesInCollectionJson, \
     PublicCollectionsJson, MyCollectionsJson, AtlasesAndParcellationsJson, \
     ImagesByTaskJson, GroupImagesInCollectionJson, SingleSubjectImagesInCollectionJson, \
-    OtherImagesInCollectionJson, AllDOIPublicGroupImages, MyMetaanalysesJson
+    OtherImagesInCollectionJson, AllDOIPublicGroupImages, MyMetaanalysesJson, \
+    add_to_active_metaanalysis
 from .views import edit_collection, view_image, delete_image, edit_image, \
                 view_collection, delete_collection, download_collection, upload_folder, add_image_for_neurosynth, \
                 serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
@@ -34,6 +35,9 @@ urlpatterns = patterns('',
     url(r'^metaanalyses/(?P<cid>\d+)/edit$',
         edit_metaanalysis,
        name='edit_metaanalysis'),
+    url(r'^my_metaanalyses/active/add_map/(?P<map_pk>\d+)$',
+        add_to_active_metaanalysis,
+        name='add_to_active_metaanalysis'),
     url(r'^my_metaanalyses/json$',
         login_required(MyMetaanalysesJson.as_view()),
         name='my_metaanalyses_json'),
