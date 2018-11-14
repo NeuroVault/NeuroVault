@@ -143,11 +143,17 @@ def edit_metaanalysis(request, cid=None):
     return render(request, "statmaps/edit_metaanalysis.html.haml", context)
 
 @login_required
-def add_to_active_metaanalysis(request, map_pk):
+def toggle_active_metaanalysis(request, pk, collection_cid=None):
+    image = get_image(pk,collection_cid,request)
     metaanalysis = Metaanalysis.objects.filter(owner=request.user).filter(status='active')[0]
-    img = StatisticMap.objects.get(pk=map_pk)
-    metaanalysis.maps.add(img)
-    return JSONResponse({'satatus': 'ok'})
+    if metaanalysis in image.metaanalysis_set.all():
+        metaanalysis.maps.remove(image)
+        new_status = 'out'
+    else:
+        metaanalysis.maps.add(image)
+        new_status = 'in'
+    return JSONResponse({'new_status': new_status})
+
 
 @login_required
 def edit_collection(request, cid=None):
@@ -298,6 +304,22 @@ def view_image(request, pk, collection_cid=None):
     pycortex_compatible = is_target_template_image_pycortex_compatible( image.target_template_image )
     neurosynth_compatible = is_target_template_image_neurosynth_compatible( image.target_template_image )
 
+    is_there_an_active_metaanalysis = request.user.is_authenticated() and (Metaanalysis.objects.filter(
+        owner=request.user).filter(status='active').count() != 0)
+    is_metaanalysis_compatible = isinstance(image, StatisticMap) and image.analysis_level=='G' \
+                                                                                          and \
+                                                                                          image.map_type in ['T', 'Z', 'F']
+    show_metaanalysis_button = is_there_an_active_metaanalysis and is_metaanalysis_compatible
+
+    if not show_metaanalysis_button:
+        meta_status = 'invalid'
+    else:
+        metaanalysis = Metaanalysis.objects.filter(owner=request.user).filter(status='active')[0]
+        if metaanalysis in image.metaanalysis_set.all():
+            meta_status = 'in'
+        else:
+            meta_status = 'out'
+
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
     context = {
@@ -307,7 +329,9 @@ def view_image(request, pk, collection_cid=None):
         'api_cid': api_cid,
         'neurosynth_compatible': neurosynth_compatible,
         'pycortex_compatible': pycortex_compatible,
-        'comparison_is_possible': comparison_is_possible
+        'comparison_is_possible': comparison_is_possible,
+        'show_metaanalysis_button': show_metaanalysis_button,
+        'meta_status': meta_status
     }
 
     communities = image.collection.communities.all()

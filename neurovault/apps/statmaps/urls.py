@@ -9,7 +9,7 @@ from neurovault.apps.statmaps.views import ImagesInCollectionJson, \
     PublicCollectionsJson, MyCollectionsJson, AtlasesAndParcellationsJson, \
     ImagesByTaskJson, GroupImagesInCollectionJson, SingleSubjectImagesInCollectionJson, \
     OtherImagesInCollectionJson, AllDOIPublicGroupImages, MyMetaanalysesJson, \
-    add_to_active_metaanalysis
+    toggle_active_metaanalysis
 from .views import edit_collection, view_image, delete_image, edit_image, \
                 view_collection, delete_collection, download_collection, upload_folder, add_image_for_neurosynth, \
                 serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
@@ -35,9 +35,6 @@ urlpatterns = patterns('',
     url(r'^metaanalyses/(?P<cid>\d+)/edit$',
         edit_metaanalysis,
        name='edit_metaanalysis'),
-    url(r'^my_metaanalyses/active/add_map/(?P<map_pk>\d+)$',
-        add_to_active_metaanalysis,
-        name='add_to_active_metaanalysis'),
     url(r'^my_metaanalyses/json$',
         login_required(MyMetaanalysesJson.as_view()),
         name='my_metaanalyses_json'),
@@ -123,6 +120,13 @@ urlpatterns = patterns('',
     url(r'^images/(?P<pk>\d+)/$',
         view_image,
         name='image_details'),
+    url(r'^images/(?P<pk>\d+)/toggle_active_meta$',
+        toggle_active_metaanalysis,
+        name='toggle_active_metaanalysis'),
+    url(
+        r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/images/(?P<pk>\d+)/toggle_active_meta$',
+        toggle_active_metaanalysis,
+        name="private_toggle_active_metaanalysis"),
     url(r'^images/(?P<pk>\d+)/pycortex$',
         view_image_with_pycortex,
         name='pycortex_view_image'),

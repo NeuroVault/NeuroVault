@@ -103,7 +103,22 @@ a.disabled-link:hover {
             if (navigator.userAgent.indexOf("Safari") > -1 && navigator.userAgent.indexOf("Chrome") === -1) {
               return $('a[href="pycortex"]').hide();
             }
+
+            meta_status = '{{ meta_status }}'
+
+            if (meta_status != 'invalid') {
+                msg_dict = {'in': 'Remove from the active metaanalysis',
+                            'out': 'Add to the active metaanalysis'}
+                $("#toggle_meta").html(msg_dict[meta_status]);
+
+                $("#toggle_meta").click(function(e) {
+                    $.ajax({url: "toggle_active_meta", success: function(result){
+                        $("#toggle_meta").html(msg_dict[result.new_status]);
+                    }});
+                 });
+            }
           });
+
         }).call(this);
 
 {% include 'statmaps/_papaya_viewer_head.html.haml' %}
@@ -191,12 +206,12 @@ a.disabled-link:hover {
                         %li
                             %a{:href => "http://neurosynth.org/decode/?neurovault={{ api_cid }}"}
                                 %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Cognitive decoding using coordiante based data collected from thousands of papers."}
-                                Cognitive decoding (neurosynth)
+                                    Cognitive decoding (neurosynth)
                     - else
                         %li
                             %a.disabled-link{:href => ""}
                                 %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Cognitive decoding using coordiante based data collected from thousands of papers."}
-                                Cognitive decoding (neurosynth)
+                                    Cognitive decoding (neurosynth)
                     - if comparison_is_possible
                         %li
                             %a{:href => "{% url 'find_similar' image.id %}"}
@@ -220,6 +235,11 @@ a.disabled-link:hover {
                         %a{:href => "http://neuropowertools.org/neuropower/neuropowerinput/?neurovault={{ api_cid }}"}
                             %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Use neuropower to estimate how many subjects would be required to find an effect of similar size as in this map."}
                                 Power analysis (neuropower)
+                    - if show_metaanalysis_button
+                        %li
+                            %a#toggle_meta{:href => "#"}
+                                %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Include this map in thecurrently active metaanalysis"}
+                                    Add to the active metaanalysis
 
             - if user_owns_image
                 %a.btn.btn-primary.btn{href: "{% url 'edit_image' image.id %}" } Edit details
