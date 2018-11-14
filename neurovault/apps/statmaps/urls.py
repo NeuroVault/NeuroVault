@@ -17,7 +17,7 @@ from .views import edit_collection, view_image, delete_image, edit_image, \
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
                 view_nidm_results, find_similar, find_similar_json, compare_images, edit_metadata, \
                 export_images_filenames, delete_nidm_results, view_task, search, gene_expression_json, \
-                gene_expression, serve_surface_archive, edit_metaanalysis
+                gene_expression, serve_surface_archive, edit_metaanalysis, view_metaanalysis, activate_metaanalysis
 
 
 urlpatterns = patterns('',
@@ -32,9 +32,18 @@ urlpatterns = patterns('',
     url(r'^my_metaanalyses/new$',
         edit_metaanalysis,
        name='new_metaanalysis'),
-    url(r'^metaanalyses/(?P<cid>\d+)/edit$',
+    url(r'^metaanalyses/(?P<metaanalysis_id>\d+)/edit$',
         edit_metaanalysis,
        name='edit_metaanalysis'),
+    url(r'^metaanalyses/(?P<metaanalysis_id>\d+)/activate$',
+        activate_metaanalysis,
+       name='activate_metaanalysis'),
+    url(r'^metaanalyses/(?P<metaanalysis_id>\d+)$',
+       view_metaanalysis,
+       name='view_metaanalysis'),
+    url(r'^metaanalyses/(?P<metaanalysis_id>\d+)/images_json',
+        AllDOIPublicGroupImages.as_view(),
+       name='metaanalysis_images_json'),
     url(r'^my_metaanalyses/json$',
         login_required(MyMetaanalysesJson.as_view()),
         name='my_metaanalyses_json'),

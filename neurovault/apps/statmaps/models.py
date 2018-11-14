@@ -809,3 +809,6 @@ class Metaanalysis(models.Model):
                     m.save()
         super(Metaanalysis, self).save(*args, **kwargs)
 
+    def get_absolute_url(self):
+        return reverse('view_metaanalysis', args=[str(self.id)])
+

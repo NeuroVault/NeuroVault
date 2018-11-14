@@ -119,13 +119,13 @@ def get_image(pk,collection_cid,request,mode=None):
 
 
 @login_required
-def edit_metaanalysis(request, cid=None):
+def edit_metaanalysis(request, metaanalysis_id=None):
     '''edit_collection is a view to edit a collection, meaning showing the edit form for an existing collection, creating a new collection, or passing POST data to update an existing collection
     :param cid: statmaps.models.Collection.pk the primary key of the collection. If none, will generate form to make a new collection.
     '''
     page_header = "Start a new metaanalysis"
-    if cid:
-        metaanalysis = Metaanalysis.objects.get(pk=cid)
+    if metaanalysis_id:
+        metaanalysis = Metaanalysis.objects.get(pk=metaanalysis_id)
         page_header = 'Edit metaanalysis'
         if request.user != metaanalysis.owner:
             return HttpResponseForbidden()
@@ -135,7 +135,31 @@ def edit_metaanalysis(request, cid=None):
         form = MetaanalysisForm(request.POST, request.FILES, instance=metaanalysis)
         if form.is_valid():
             metaanalysis.save()
-            return HttpResponseRedirect(reverse('my_metaanalyses'))
+            return HttpResponseRedirect(metaanalysis.get_absolute_url())
+    else:
+        form = MetaanalysisForm(instance=metaanalysis)
+
+    context = {"form": form, "page_header": page_header}
+    return render(request, "statmaps/edit_metaanalysis.html.haml", context)
+
+@login_required
+def edit_metaanalysis(request, metaanalysis_id=None):
+    '''edit_collection is a view to edit a collection, meaning showing the edit form for an existing collection, creating a new collection, or passing POST data to update an existing collection
+    :param cid: statmaps.models.Collection.pk the primary key of the collection. If none, will generate form to make a new collection.
+    '''
+    page_header = "Start a new metaanalysis"
+    if metaanalysis_id:
+        metaanalysis = Metaanalysis.objects.get(pk=metaanalysis_id)
+        page_header = 'Edit metaanalysis'
+        if request.user != metaanalysis.owner:
+            return HttpResponseForbidden()
+    else:
+        metaanalysis = Metaanalysis(owner=request.user)
+    if request.method == "POST":
+        form = MetaanalysisForm(request.POST, request.FILES, instance=metaanalysis)
+        if form.is_valid():
+            metaanalysis.save()
+            return HttpResponseRedirect(metaanalysis.get_absolute_url())
     else:
         form = MetaanalysisForm(instance=metaanalysis)
 
@@ -146,6 +170,8 @@ def edit_metaanalysis(request, cid=None):
 def toggle_active_metaanalysis(request, pk, collection_cid=None):
     image = get_image(pk,collection_cid,request)
     metaanalysis = Metaanalysis.objects.filter(owner=request.user).filter(status='active')[0]
+    if request.user != metaanalysis.owner:
+        return HttpResponseForbidden()
     if metaanalysis in image.metaanalysis_set.all():
         metaanalysis.maps.remove(image)
         new_status = 'out'
@@ -153,6 +179,15 @@ def toggle_active_metaanalysis(request, pk, collection_cid=None):
         metaanalysis.maps.add(image)
         new_status = 'in'
     return JSONResponse({'new_status': new_status})
+
+@login_required
+def activate_metaanalysis(request, metaanalysis_id):
+    metaanalysis = Metaanalysis.objects.get(pk=metaanalysis_id)
+    if request.user != metaanalysis.owner or metaanalysis.status == 'completed':
+        return HttpResponseForbidden()
+    metaanalysis.status = 'active'
+    metaanalysis.save()
+    return HttpResponseRedirect(metaanalysis.get_absolute_url())
 
 
 @login_required
@@ -361,6 +396,14 @@ def view_image(request, pk, collection_cid=None):
         template = 'statmaps/statisticmap_details.html.haml'
     return render(request, template, context)
 
+
+def view_metaanalysis(request, metaanalysis_id):
+    '''view_collection returns main view to see an entire collection of images, meaning a viewer and list of images to load into it.
+    :param cid: statmaps.models.Collection.pk the primary key of the collection
+    '''
+    metaanalysis = get_object_or_404(Metaanalysis, pk=metaanalysis_id)
+    context = {'metaanalysis': metaanalysis}
+    return render(request, 'statmaps/metaanalysis_details.html.haml', context)
 
 def view_collection(request, cid):
     '''view_collection returns main view to see an entire collection of images, meaning a viewer and list of images to load into it.
@@ -1172,9 +1215,13 @@ class AllDOIPublicGroupImages(BaseDatatableView):
                      'modality']
 
     def get_initial_queryset(self):
-        public_collections_ids = Collection.objects.exclude(DOI__isnull=True).exclude(
-            private=True).values_list('id', flat=True)
-        return StatisticMap.objects.filter(analysis_level='G').filter(map_type__in=['T', 'Z', 'F']).filter(collection_id__in=public_collections_ids)
+        if 'metaanalysis_id' in self.kwargs.keys():
+            metaanalysis = Metaanalysis.objects.get(pk=self.kwargs['metaanalysis_id'])
+            return metaanalysis.maps.all()
+        else:
+            public_collections_ids = Collection.objects.exclude(DOI__isnull=True).exclude(
+                private=True).values_list('id', flat=True)
+            return StatisticMap.objects.filter(analysis_level='G').filter(map_type__in=['T', 'Z', 'F']).filter(collection_id__in=public_collections_ids)
 
     def filter_queryset(self, qs):
         # use parameters passed in GET request to filter queryset
@@ -1379,7 +1426,8 @@ class MyMetaanalysesJson(PublicCollectionsJson):
         if column == 'n_images':
             return row.maps.count()
         elif column == 'name':
-            return "<a href='" + reverse('edit_metaanalysis', kwargs={'cid': row.pk}) + "'>" + \
+            return "<a href='" + reverse('view_metaanalysis', kwargs={'metaanalysis_id': row.pk})\
+                   + "'>" + \
                    row.name + "</a>"
         else:
             return super(PublicCollectionsJson, self).render_column(row, column)

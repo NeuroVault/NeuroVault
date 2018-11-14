@@ -1,11 +1,9 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>{% block title %}My Metaanalyses{% endblock %}</title>
+<title>{% block title %}Metaanalysis{% endblock %}</title>
     <script>
-        $(document).ready(function() {
-          var prevSearch;
-    	  var saveState = true;
+       $(document).ready(function() {
     	  var captured = /q=([^&]+)/.exec(window.location.href);
           var result = captured ? captured[1] : '';
           var base_url = captured  != '' ? window.location.href.split("?")[0] : window.location.href;
@@ -13,12 +11,12 @@
                     "bJQueryUI": true,
                     sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>",
                     iDisplayLength: 25,
-                    aoColumns: [ { sWidth: '40%' }, { sWidth: '45%'}, { sWidth: '10%'}, { sWidth:
-                     '5%'}],
+                    aoColumns: [ { sWidth: '20%' }, { sWidth: '20%'}, { sWidth: '20%' }, {
+                    sWidth: '20%'}, { sWidth: '20%' }],
                     "processing": true,
         			"serverSide": true,
         			"order": [[ 0, "asc" ]],
-        			"ajax": "{% url 'my_metaanalyses_json' %}",
+        			"ajax": "{% url 'metaanalysis_images_json' metaanalysis_id=metaanalysis.id %}",
         			"oSearch":{"sSearch":result},
 					"fnDrawCallback": function (oSettings) {
 						var curSearch = oSettings.oPreviousSearch.sSearch;
@@ -27,23 +25,36 @@
 				});
        });
     </script>
+
 {% endblock %}
 
 {% block content %}
 .row
 	.span11
-		%h2 My metanalyses
+		%h2 Metaanalysis: {{ metaanalysis.name }}
 		.lead
-			%p
+			%p {{ metaanalysis.description }}
+			%p Status: {{ metaanalysis.status }}
+.row
+	%a.btn.btn-primary{href: "{% url 'edit_metaanalysis' metaanalysis_id=metaanalysis.id %}" } Edit
+	- if metaanalysis.status == 'inactive'
+		%a.btn.btn-primary{href: "{% url 'activate_metaanalysis' metaanalysis_id=metaanalysis.id %}" } Activate
+	- if metaanalysis.status != 'completed'
+		%a.btn.btn-primary{href: "{% url 'new_collection' %}" } Finalize
 
+.row
+	.span11
+		%h3 Maps included in this metaanalysis
+
+.row
+  	.span11
 		%table#collections-table.table.table-condensed.table-striped.table-hover
 			%thead
 				%tr
-					%th Name
-					%th Description
-					%th Num. images
-					%th Status
+					%th Collection name
+					%th Collection description
+					%th Map name
+					%th Map description
+					%th Modality
 
-.row
-	%a.btn.btn-primary{href: "{% url 'new_metaanalysis' %}" } Start a new metaanalysis
 {% endblock %}
