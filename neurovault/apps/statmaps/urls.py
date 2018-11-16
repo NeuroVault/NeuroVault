@@ -17,7 +17,8 @@ from .views import edit_collection, view_image, delete_image, edit_image, \
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
                 view_nidm_results, find_similar, find_similar_json, compare_images, edit_metadata, \
                 export_images_filenames, delete_nidm_results, view_task, search, gene_expression_json, \
-                gene_expression, serve_surface_archive, edit_metaanalysis, view_metaanalysis, activate_metaanalysis
+                gene_expression, serve_surface_archive, edit_metaanalysis, view_metaanalysis, \
+                activate_metaanalysis, finalize_metaanalysis
 
 
 urlpatterns = patterns('',
@@ -38,6 +39,9 @@ urlpatterns = patterns('',
     url(r'^metaanalyses/(?P<metaanalysis_id>\d+)/activate$',
         activate_metaanalysis,
        name='activate_metaanalysis'),
+    url(r'^metaanalyses/(?P<metaanalysis_id>\d+)/finalize$',
+        finalize_metaanalysis,
+       name='finalize_metaanalysis'),
     url(r'^metaanalyses/(?P<metaanalysis_id>\d+)$',
        view_metaanalysis,
        name='view_metaanalysis'),

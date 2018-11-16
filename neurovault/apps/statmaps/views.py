@@ -3,7 +3,7 @@ import functools
 import gzip
 import json
 import nibabel as nib
-import nidmresults
+import shutil
 import numpy as np
 import os
 import re
@@ -38,6 +38,13 @@ from rest_framework.renderers import JSONRenderer
 from sendfile import sendfile
 from sklearn.externals import joblib
 from xml.dom import minidom
+from django.core.files.uploadedfile import SimpleUploadedFile
+from nimare.meta.ibma import fishers
+from nimare.utils import t_to_z
+from nilearn.masking import apply_mask
+from nilearn.image import resample_to_img
+
+from neurovault.apps.statmaps.models import get_possible_templates, DEFAULT_TEMPLATE
 
 import neurovault
 from neurovault import settings
@@ -143,28 +150,67 @@ def edit_metaanalysis(request, metaanalysis_id=None):
     return render(request, "statmaps/edit_metaanalysis.html.haml", context)
 
 @login_required
-def edit_metaanalysis(request, metaanalysis_id=None):
-    '''edit_collection is a view to edit a collection, meaning showing the edit form for an existing collection, creating a new collection, or passing POST data to update an existing collection
-    :param cid: statmaps.models.Collection.pk the primary key of the collection. If none, will generate form to make a new collection.
-    '''
-    page_header = "Start a new metaanalysis"
-    if metaanalysis_id:
-        metaanalysis = Metaanalysis.objects.get(pk=metaanalysis_id)
-        page_header = 'Edit metaanalysis'
-        if request.user != metaanalysis.owner:
-            return HttpResponseForbidden()
-    else:
-        metaanalysis = Metaanalysis(owner=request.user)
-    if request.method == "POST":
-        form = MetaanalysisForm(request.POST, request.FILES, instance=metaanalysis)
-        if form.is_valid():
-            metaanalysis.save()
-            return HttpResponseRedirect(metaanalysis.get_absolute_url())
-    else:
-        form = MetaanalysisForm(instance=metaanalysis)
+def finalize_metaanalysis(request, metaanalysis_id):
+    metaanalysis = Metaanalysis.objects.get(pk=metaanalysis_id)
+    if request.user != metaanalysis.owner or metaanalysis.status == 'completed':
+        return HttpResponseForbidden()
 
-    context = {"form": form, "page_header": page_header}
-    return render(request, "statmaps/edit_metaanalysis.html.haml", context)
+    new_collection = Collection(name="Metaanalyais %d: %s" % (metaanalysis.pk, metaanalysis.name),
+                                owner=metaanalysis.owner)
+    new_collection.save()
+
+    POSSIBLE_TEMPLATES = get_possible_templates()
+    mask_path = POSSIBLE_TEMPLATES[DEFAULT_TEMPLATE]['mask']
+    this_path = os.path.abspath(os.path.dirname(__file__))
+    mask_img = nib.load(os.path.join(this_path, "static", 'anatomical',mask_path))
+
+    z_imgs = []
+    for img in metaanalysis.maps.all():
+        if img.map_type == 'Z':
+            z_imgs.append(resample_to_img(nib.load(img.file.path), mask_img))
+        elif img.map_type == 'T' and img.number_of_subjects:
+            t_map_nii = nib.load(img.file.path)
+            # assuming one sided test
+            z_map_nii = nib.Nifti1Image(t_to_z(t_map_nii.get_fdata(), img.number_of_subjects - 1),
+                                        t_map_nii.affine)
+            z_imgs.append(resample_to_img(z_map_nii, mask_img))
+
+    z_data = apply_mask(z_imgs, mask_img)
+    result = fishers(z_data, mask_img)
+
+    z_map = StatisticMap(name='FWE corrected Z map', description='', collection=new_collection,
+                         modality='Other',
+                         map_type='Z',
+                         analysis_level='M',
+                         number_of_subjects=-1,
+                         target_template_image='GenericMNI')
+    p_map = StatisticMap(name='FWE corrected P map', description='', collection=new_collection,
+                         modality='Other',
+                         map_type='P',
+                         analysis_level='M',
+                         number_of_subjects=-1,
+                         target_template_image='GenericMNI')
+
+    tmp_dir = tempfile.mkdtemp()
+    try:
+        z_path = os.path.join(tmp_dir, 'z_fwe_corr.nii.gz')
+        result.images['z'].to_filename(z_path)
+        z_map.file = SimpleUploadedFile('z_fwe_corr.nii.gz',
+                                        open(z_path).read())
+        z_map.save()
+
+        p_path = os.path.join(tmp_dir, 'p_fwe_corr.nii.gz')
+        result.images['p'].to_filename(p_path)
+        p_map.file = SimpleUploadedFile('p_fwe_corr.nii.gz',
+                                        open(p_path).read())
+        p_map.save()
+    finally:
+        shutil.rmtree(tmp_dir)
+
+    metaanalysis.status= 'completed'
+    metaanalysis.save()
+
+    return HttpResponseRedirect(new_collection.get_absolute_url())
 
 @login_required
 def toggle_active_metaanalysis(request, pk, collection_cid=None):

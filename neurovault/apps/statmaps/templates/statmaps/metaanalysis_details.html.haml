@@ -40,7 +40,7 @@
 	- if metaanalysis.status == 'inactive'
 		%a.btn.btn-primary{href: "{% url 'activate_metaanalysis' metaanalysis_id=metaanalysis.id %}" } Activate
 	- if metaanalysis.status != 'completed'
-		%a.btn.btn-primary{href: "{% url 'new_collection' %}" } Finalize
+		%a.btn.btn-primary{href: "{% url 'finalize_metaanalysis' %}" } Finalize
 
 .row
 	.span11
