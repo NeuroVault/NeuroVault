@@ -791,4 +791,24 @@ class Comparison(models.Model):
         verbose_name = "pairwise image comparison"
         verbose_name_plural = "pairwise image comparisons"
 
+class Metaanalysis(models.Model):
+    owner = models.ForeignKey(User)
+    name = models.CharField(max_length=200, unique=True, null=False)
+    description = models.TextField(blank=True, null=True)
+    maps = models.ManyToManyField(StatisticMap, blank=True, null=True)
+    status =  models.CharField(choices=[('active', 'active'), ('inactive', 'inactive'),
+                                        ('completed', 'completed')],
+                               max_length=200, blank=True, null=True, default='active')
+    output_maps = models.ForeignKey(Collection, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if self.status == 'active':
+            for m in Metaanalysis.objects.filter(owner=self.owner).filter(status='active'):
+                if m.pk != self.pk :
+                    m.status = 'inactive'
+                    m.save()
+        super(Metaanalysis, self).save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse('view_metaanalysis', args=[str(self.id)])
 

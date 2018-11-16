@@ -80,6 +80,17 @@
                         <li><a href="{% url 'collections_list' %}">See all collections</a></li>
                     </ul>
                 </li>
+                <li class="dropdown">
+                    <a href="" class="dropdown-toggle" id="collections_nav" data-toggle="dropdown">
+                        Metaanalyses
+                        <b class="caret"></b>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="{% url 'my_metaanalyses' %}">My metaanalyses</a></li>
+                        <li><a href="{% url 'metaanalysis_selection' %}">Search for group
+                            level maps</a></li>
+                    </ul>
+                </li>
                 <li><a href="{% url 'cite' %}">How to cite</a></li>
                 <li><a href="{% url 'FAQ' %}">FAQ</a></li>
                 <li><a href="javascript:void(0)" data-uv-lightbox="classic_widget" data-uv-mode="full"

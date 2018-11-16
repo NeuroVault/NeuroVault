@@ -63,6 +63,7 @@ RUN pip install html5lib
 RUN pip install https://github.com/gallantlab/pycortex/archive/fe58400c8c3a3187d930b8a696cda8fec62c0f19.zip
 RUN pip install git+https://github.com/benkonrath/django-guardian.git@7cded9081249e9a4cd9f5cd85e67cf843c138b0c#egg=django-guardian
 RUN pip install nidmviewer==0.1.3
+RUN pip install git+git://github.com/neurostuff/NiMARE.git@608516ec3034e356326dfe70df5e9ed77efd2be8
 
 RUN pip install tables
 RUN pip install statsmodels
