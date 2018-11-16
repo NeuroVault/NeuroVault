@@ -155,8 +155,9 @@ def finalize_metaanalysis(request, metaanalysis_id):
     if request.user != metaanalysis.owner or metaanalysis.status == 'completed':
         return HttpResponseForbidden()
 
-    new_collection = Collection(name="Metaanalyais %d: %s" % (metaanalysis.pk, metaanalysis.name),
-                                owner=metaanalysis.owner)
+    new_collection = Collection(name="Metaanalysis %d: %s" % (metaanalysis.pk, metaanalysis.name),
+                                owner=metaanalysis.owner,
+                                full_dataset_url=metaanalysis.get_absolute_url())
     new_collection.save()
 
     POSSIBLE_TEMPLATES = get_possible_templates()
@@ -175,14 +176,16 @@ def finalize_metaanalysis(request, metaanalysis_id):
                                         t_map_nii.affine)
             z_imgs.append(resample_to_img(z_map_nii, mask_img))
 
+    new_collection.description = "Two sided Fisher's image-based meta-analysis on %d statistic maps with FWE correction."% len(z_imgs)
+    new_collection.save()
+
     z_data = apply_mask(z_imgs, mask_img)
-    result = fishers(z_data, mask_img)
+    result = fishers(z_data, mask_img, corr='FWE', two_sided=True)
 
     z_map = StatisticMap(name='FWE corrected Z map', description='', collection=new_collection,
                          modality='Other',
                          map_type='Z',
                          analysis_level='M',
-                         number_of_subjects=-1,
                          target_template_image='GenericMNI')
     p_map = StatisticMap(name='FWE corrected P map', description='', collection=new_collection,
                          modality='Other',
@@ -190,6 +193,11 @@ def finalize_metaanalysis(request, metaanalysis_id):
                          analysis_level='M',
                          number_of_subjects=-1,
                          target_template_image='GenericMNI')
+    ffx_map = StatisticMap(name='FFX map', description='', collection=new_collection,
+                           modality='Other',
+                           map_type='Other',
+                           analysis_level='M',
+                           target_template_image='GenericMNI')
 
     tmp_dir = tempfile.mkdtemp()
     try:
@@ -204,10 +212,17 @@ def finalize_metaanalysis(request, metaanalysis_id):
         p_map.file = SimpleUploadedFile('p_fwe_corr.nii.gz',
                                         open(p_path).read())
         p_map.save()
+
+        ffx_path = os.path.join(tmp_dir, 'ffx_stat.nii.gz')
+        result.images['ffx_stat'].to_filename(ffx_path)
+        ffx_map.file = SimpleUploadedFile('ffx_stat.nii.gz',
+                                        open(ffx_path).read())
+        ffx_map.save()
     finally:
         shutil.rmtree(tmp_dir)
 
-    metaanalysis.status= 'completed'
+    metaanalysis.output_maps = new_collection
+    metaanalysis.status='completed'
     metaanalysis.save()
 
     return HttpResponseRedirect(new_collection.get_absolute_url())

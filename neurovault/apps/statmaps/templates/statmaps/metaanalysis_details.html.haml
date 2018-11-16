@@ -31,16 +31,19 @@
 {% block content %}
 .row
 	.span11
-		%h2 Metaanalysis: {{ metaanalysis.name }}
+		%h2 Metaanalysis {{ metaanalysis.pk }}: {{ metaanalysis.name }}
 		.lead
 			%p {{ metaanalysis.description }}
 			%p Status: {{ metaanalysis.status }}
+			- if metaanalysis.status == 'completed'
+			  %p
+			    %a{href: "{{ metaanalysis.output_maps.get_absolute_url }}"} Results
 .row
 	%a.btn.btn-primary{href: "{% url 'edit_metaanalysis' metaanalysis_id=metaanalysis.id %}" } Edit
 	- if metaanalysis.status == 'inactive'
 		%a.btn.btn-primary{href: "{% url 'activate_metaanalysis' metaanalysis_id=metaanalysis.id %}" } Activate
 	- if metaanalysis.status != 'completed'
-		%a.btn.btn-primary{href: "{% url 'finalize_metaanalysis' %}" } Finalize
+		%a.btn.btn-primary{href: "{% url 'finalize_metaanalysis' metaanalysis_id=metaanalysis.id %}" } Finalize
 
 .row
 	.span11
