@@ -798,7 +798,7 @@ class Metaanalysis(models.Model):
     maps = models.ManyToManyField(StatisticMap, blank=True, null=True)
     status =  models.CharField(choices=[('active', 'active'), ('inactive', 'inactive'),
                                         ('completed', 'completed')],
-                               max_length=200, blank=True, null=True, default='inactive')
+                               max_length=200, blank=True, null=True, default='active')
     output_maps = models.ForeignKey(Collection, blank=True, null=True)
 
     def save(self, *args, **kwargs):

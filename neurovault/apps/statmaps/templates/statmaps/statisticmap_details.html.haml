@@ -235,17 +235,15 @@ a.disabled-link:hover {
                         %a{:href => "http://neuropowertools.org/neuropower/neuropowerinput/?neurovault={{ api_cid }}"}
                             %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Use neuropower to estimate how many subjects would be required to find an effect of similar size as in this map."}
                                 Power analysis (neuropower)
-                    - if show_metaanalysis_button
-                        %li
-                            %a#toggle_meta{:href => "#"}
-                                %div.tooltip-wrapper{style: "display: inline-block", data-toggle: "tooltip", title: "Include this map in thecurrently active metaanalysis"}
-                                    Add to the active metaanalysis
 
             - if user_owns_image
                 %a.btn.btn-primary.btn{href: "{% url 'edit_image' image.id %}" } Edit details
                 .float-right-wrapper
                     - if not image.nidm_results
                         %a.btn.btn-danger.btn{href: "{% url 'delete_image' image.id %}", id: 'delete_image' } Delete
+
+            - if show_metaanalysis_button
+                %a#toggle_meta.btn.btn-primary.btn{href: "#"} Add to the active metaanalysis
 
 
         - if warning

@@ -39,7 +39,7 @@ from sendfile import sendfile
 from sklearn.externals import joblib
 from xml.dom import minidom
 from django.core.files.uploadedfile import SimpleUploadedFile
-from nimare.meta.ibma import fishers
+from nimare.meta.ibma import stouffers, weighted_stouffers
 from nimare.utils import t_to_z
 from nilearn.masking import apply_mask
 from nilearn.image import resample_to_img
@@ -166,21 +166,46 @@ def finalize_metaanalysis(request, metaanalysis_id):
     mask_img = nib.load(os.path.join(this_path, "static", 'anatomical',mask_path))
 
     z_imgs = []
+    sizes = []
     for img in metaanalysis.maps.all():
+        valid = False
         if img.map_type == 'Z':
             z_imgs.append(resample_to_img(nib.load(img.file.path), mask_img))
+            valid = True
         elif img.map_type == 'T' and img.number_of_subjects:
             t_map_nii = nib.load(img.file.path)
             # assuming one sided test
             z_map_nii = nib.Nifti1Image(t_to_z(t_map_nii.get_fdata(), img.number_of_subjects - 1),
                                         t_map_nii.affine)
             z_imgs.append(resample_to_img(z_map_nii, mask_img))
+            valid = True
 
-    new_collection.description = "Two sided Fisher's image-based meta-analysis on %d statistic maps with FWE correction."% len(z_imgs)
+        if valid and img.number_of_subjects:
+            sizes.append(img.number_of_subjects)
+
+    do_weighted = len(sizes) == len(z_imgs)
+
+    if do_weighted:
+        new_collection.description = "Two sided Stouffer's fixed-effects image-based " \
+                                     "meta-analysis on " \
+                                     "%d " \
+                                     "maps weighted by their corresponding sample sizes. FWE " \
+                                     "corrected with theoretical null distribution."% len(z_imgs)
+    else:
+        new_collection.description = "Two sided Stouffer's fixed-effects image-based " \
+                                     "meta-analysis on %d " \
+                                     "maps. FWE " \
+                                     "corrected with theoretical null distribution." % len(
+            z_imgs)
+
     new_collection.save()
 
     z_data = apply_mask(z_imgs, mask_img)
-    result = fishers(z_data, mask_img, corr='FWE', two_sided=True)
+    if do_weighted:
+        result = weighted_stouffers(z_data, np.array(sizes), mask_img, corr='FWE', two_sided=True)
+    else:
+        result = stouffers(z_data, mask_img, inference='ffx', null='theoretical', corr='FWE',
+                           two_sided=True)
 
     z_map = StatisticMap(name='FWE corrected Z map', description='', collection=new_collection,
                          modality='Other',
@@ -193,11 +218,12 @@ def finalize_metaanalysis(request, metaanalysis_id):
                          analysis_level='M',
                          number_of_subjects=-1,
                          target_template_image='GenericMNI')
-    ffx_map = StatisticMap(name='FFX map', description='', collection=new_collection,
-                           modality='Other',
-                           map_type='Other',
-                           analysis_level='M',
-                           target_template_image='GenericMNI')
+    if do_weighted:
+        ffx_map = StatisticMap(name='FFX map', description='', collection=new_collection,
+                               modality='Other',
+                               map_type='Other',
+                               analysis_level='M',
+                               target_template_image='GenericMNI')
 
     tmp_dir = tempfile.mkdtemp()
     try:
@@ -212,12 +238,12 @@ def finalize_metaanalysis(request, metaanalysis_id):
         p_map.file = SimpleUploadedFile('p_fwe_corr.nii.gz',
                                         open(p_path).read())
         p_map.save()
-
-        ffx_path = os.path.join(tmp_dir, 'ffx_stat.nii.gz')
-        result.images['ffx_stat'].to_filename(ffx_path)
-        ffx_map.file = SimpleUploadedFile('ffx_stat.nii.gz',
-                                        open(ffx_path).read())
-        ffx_map.save()
+        if do_weighted:
+            ffx_path = os.path.join(tmp_dir, 'ffx_stat.nii.gz')
+            result.images['ffx_stat'].to_filename(ffx_path)
+            ffx_map.file = SimpleUploadedFile('ffx_stat.nii.gz',
+                                            open(ffx_path).read())
+            ffx_map.save()
     finally:
         shutil.rmtree(tmp_dir)
 
@@ -404,7 +430,7 @@ def view_image(request, pk, collection_cid=None):
         owner=request.user).filter(status='active').count() != 0)
     is_metaanalysis_compatible = isinstance(image, StatisticMap) and image.analysis_level=='G' \
                                                                                           and \
-                                                                                          image.map_type in ['T', 'Z', 'F']
+                                                                                          image.map_type in ['T', 'Z']
     show_metaanalysis_button = is_there_an_active_metaanalysis and is_metaanalysis_compatible
 
     if not show_metaanalysis_button:
@@ -1282,7 +1308,7 @@ class AllDOIPublicGroupImages(BaseDatatableView):
         else:
             public_collections_ids = Collection.objects.exclude(DOI__isnull=True).exclude(
                 private=True).values_list('id', flat=True)
-            return StatisticMap.objects.filter(analysis_level='G').filter(map_type__in=['T', 'Z', 'F']).filter(collection_id__in=public_collections_ids)
+            return StatisticMap.objects.filter(analysis_level='G').filter(map_type__in=['T', 'Z']).filter(collection_id__in=public_collections_ids)
 
     def filter_queryset(self, qs):
         # use parameters passed in GET request to filter queryset

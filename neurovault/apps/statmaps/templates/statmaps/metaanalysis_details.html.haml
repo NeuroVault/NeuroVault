@@ -39,10 +39,13 @@
 			  %p
 			    %a{href: "{{ metaanalysis.output_maps.get_absolute_url }}"} Results
 .row
-	%a.btn.btn-primary{href: "{% url 'edit_metaanalysis' metaanalysis_id=metaanalysis.id %}" } Edit
+	- if metaanalysis.status != 'completed'
+		%a.btn.btn-primary{href: "{% url 'edit_metaanalysis' metaanalysis_id=metaanalysis.id %}" } Edit
 	- if metaanalysis.status == 'inactive'
 		%a.btn.btn-primary{href: "{% url 'activate_metaanalysis' metaanalysis_id=metaanalysis.id %}" } Activate
-	- if metaanalysis.status != 'completed'
+	- if metaanalysis.status == 'active'
+		%a.btn.btn-primary{href: "{% url 'metaanalysis_selection' %}" } Find compatible maps
+	- if metaanalysis.status != 'completed' and metaanalysis.maps.count > 0
 		%a.btn.btn-primary{href: "{% url 'finalize_metaanalysis' metaanalysis_id=metaanalysis.id %}" } Finalize
 
 .row

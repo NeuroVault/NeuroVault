@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>{% block title %}Metaanalysis{% endblock %}</title>
+<title>{% block title %}Search maps for metaanalysis{% endblock %}</title>
     <script>
        $(document).ready(function() {
     	  var captured = /q=([^&]+)/.exec(window.location.href);
@@ -33,7 +33,8 @@
 	.span11
 		%h2 Group level maps from published studies
 		.lead
-			%p Select maps for meta analysis
+			%p This list includes only group level maps T/Z from collections with a corresponding
+			paper
 		%table#collections-table.table.table-condensed.table-striped.table-hover
 			%thead
 				%tr
