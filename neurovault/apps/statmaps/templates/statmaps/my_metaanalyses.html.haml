@@ -1,9 +1,11 @@
 {% extends "base.html" %}
 
 {% block head %}
-<title>{% block title %}Search maps for metaanalysis{% endblock %}</title>
+<title>{% block title %}My Metaanalyses{% endblock %}</title>
     <script>
-       $(document).ready(function() {
+        $(document).ready(function() {
+          var prevSearch;
+    	  var saveState = true;
     	  var captured = /q=([^&]+)/.exec(window.location.href);
           var result = captured ? captured[1] : '';
           var base_url = captured  != '' ? window.location.href.split("?")[0] : window.location.href;
@@ -11,12 +13,12 @@
                     "bJQueryUI": true,
                     sDom: "<'row-fluid'<'span6'l><'span6'f>r>t<'row-fluid'<'span6'i><'span6'p>>",
                     iDisplayLength: 25,
-                    aoColumns: [ { sWidth: '20%' }, { sWidth: '20%'}, { sWidth: '20%' }, {
-                    sWidth: '20%'}, { sWidth: '20%' }],
+                    aoColumns: [ { sWidth: '40%' }, { sWidth: '45%'}, { sWidth: '10%'}, { sWidth:
+                     '5%'}],
                     "processing": true,
         			"serverSide": true,
         			"order": [[ 0, "asc" ]],
-        			"ajax": "{% url 'metaanalysis_selection_json' %}",
+        			"ajax": "{% url 'my_metaanalyses_json' %}",
         			"oSearch":{"sSearch":result},
 					"fnDrawCallback": function (oSettings) {
 						var curSearch = oSettings.oPreviousSearch.sSearch;
@@ -25,23 +27,25 @@
 				});
        });
     </script>
-
 {% endblock %}
 
 {% block content %}
 .row
 	.span11
-		%h2 Group level maps from published studies
+		%h2 My metanalyses
 		.lead
-			%p This list includes only group level maps T/Z from collections with a corresponding
-			paper
+			%p Here you can create, activate, and finalize (run inference on) your metaanalyses.
+			When you will have an active metaanalysis an "Add to the active metaanalysis" button
+			become present on comaptible (group level T or Z) maps.
+
 		%table#collections-table.table.table-condensed.table-striped.table-hover
 			%thead
 				%tr
-					%th Collection name
-					%th Collection description
-					%th Map name
-					%th Map description
-					%th Modality
+					%th Name
+					%th Description
+					%th Num. images
+					%th Status
 
+.row
+	%a.btn.btn-primary{href: "{% url 'new_metaanalysis' %}" } Start a new metaanalysis
 {% endblock %}
