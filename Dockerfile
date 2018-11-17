@@ -44,7 +44,7 @@ RUN pip install networkx
 RUN pip install nibabel==2.1.0
 RUN pip install nidmresults==0.3.2
 RUN pip install nidmfsl==0.3.4
-RUN pip install nilearn
+RUN pip install nilearn==0.4.2
 RUN pip install numexpr
 RUN pip install raven==6.9.0
 RUN pip install Pillow

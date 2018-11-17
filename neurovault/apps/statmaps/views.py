@@ -175,7 +175,7 @@ def finalize_metaanalysis(request, metaanalysis_id):
         elif img.map_type == 'T' and img.number_of_subjects:
             t_map_nii = nib.load(img.file.path)
             # assuming one sided test
-            z_map_nii = nib.Nifti1Image(t_to_z(t_map_nii.get_fdata(), img.number_of_subjects - 1),
+            z_map_nii = nib.Nifti1Image(t_to_z(t_map_nii.get_data(), img.number_of_subjects - 1),
                                         t_map_nii.affine)
             z_imgs.append(resample_to_img(z_map_nii, mask_img))
             valid = True
@@ -1485,7 +1485,7 @@ class PublicCollectionsJson(BaseDatatableView):
         elif column == 'n_images':
             return row.basecollectionitem_set.count()
         else:
-            return super(BaseDatatableView, self).render_column(row, column)
+            return super(PublicCollectionsJson, self).render_column(row, column)
 
     def filter_queryset(self, qs):
         # use parameters passed in GET request to filter queryset

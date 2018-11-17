@@ -7,8 +7,11 @@ import os
 
 
 def clearDB():
-    Image.objects.all().delete()
-    Collection.objects.all().delete()
+    try:
+        Image.objects.all().delete()
+        Collection.objects.all().delete()
+    except Exception, e:
+        print e
     if os.path.exists(PRIVATE_MEDIA_ROOT):
         for the_file in os.listdir(PRIVATE_MEDIA_ROOT):
             file_path = os.path.join(PRIVATE_MEDIA_ROOT, the_file)
