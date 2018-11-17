@@ -12,4 +12,4 @@ for image in StatisticMap.objects.all():
     print image.id
     if not image.thumbnail or not os.path.exists(image.thumbnail.path):
        generate_glassbrain_image.apply_async([image.id])
-    #save_resampled_transformation_single.apply_async([image.id])
+       save_resampled_transformation_single.apply_async([image.id])

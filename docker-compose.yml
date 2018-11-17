@@ -8,8 +8,8 @@ services:
     volumes:
       - .:/code
       - /var/www/static
-      - ./images:/var/www/image_data/images
-      - ./pycortex:/usr/local/share/pycortex
+      - /efs/images:/var/www/image_data/images
+      - /efs/pycortex:/usr/local/share/pycortex
     depends_on:
       - redis
 
@@ -18,9 +18,12 @@ services:
     image: nginx
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./uwsgi_params.par:/etc/nginx/uwsgi_params.par:ro
+      - ./certs:/etc/letsencrypt
+      - ./certs-data:/data/letsencrypt
     volumes_from:
       - uwsgi
     depends_on:

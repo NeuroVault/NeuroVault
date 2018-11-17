@@ -409,7 +409,7 @@ def repopulate_cognitive_atlas(CognitiveAtlasTask=None,CognitiveAtlasContrast=No
                     print "Found %s contrasts!" %(len(task_details.json["contrasts"]))
                     for contrast in task_details.json["contrasts"]:
                         contrast, _ = CognitiveAtlasContrast.objects.update_or_create(cog_atlas_id=contrast["id"], 
-                                                                                      defaults={"name":contrast["contrast_text"],
+                                                                                      defaults={"name":contrast["name"],
                                                                                       "task":task})
                         contrast.save() 
 
