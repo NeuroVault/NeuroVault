@@ -271,3 +271,27 @@
 {% if collection.motion_correction_metric %}
 <meta name="motion_correction_metric" content="{{ collection.motion_correction_metric }}">
 {% endif %}
+
+
+<script type="application/ld+json">
+{
+
+"@context" : "http://schema.org/",
+"@type" : "Dataset",
+"@id" : "neurovault.collection:{{ collection.id }}",
+"url" : "https://doi.org/10.5061/dryad.8nm16",
+"identifier": "neurovault.collection:{{ collection.id }}",
+"name": "{{ collection.description }}",
+"description": "{{ collection.description }}",
+"publisher" : {
+    "@type" : "Organization",
+    "name" : "NeuroVault",
+    "url" : "https://neurovault.org"
+},
+{% if collection.DOI %}
+"citation":  {
+  "@type" : "Article",
+  "identifier" : "doi:{{ collection.DOI }}",
+}
+{% endif %}
+</script>
