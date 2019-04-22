@@ -275,23 +275,35 @@
 
 <script type="application/ld+json">
 {
-
-"@context" : "http://schema.org/",
-"@type" : "Dataset",
-"@id" : "neurovault.collection:{{ collection.id }}",
-"url" : "https://doi.org/10.5061/dryad.8nm16",
-"identifier": "neurovault.collection:{{ collection.id }}",
-"name": "{{ collection.description }}",
-"description": "{{ collection.description }}",
-"publisher" : {
-    "@type" : "Organization",
-    "name" : "NeuroVault",
-    "url" : "https://neurovault.org"
-},
-{% if collection.DOI %}
-"citation":  {
-  "@type" : "Article",
-  "identifier" : "doi:{{ collection.DOI }}",
+    "@context" : "http://schema.org/",
+    "@type" : "Dataset",
+    "@id" : "https://neurovault.org/collections/{{ collection.id }}",
+    "url" : "https://neurovault.org/collections/{{ collection.id }}",
+    "identifier": "neurovault.collection:{{ collection.id }}",
+    {% if collection.private_token %}
+    "identifier" : "https://neurovault.org/collections/{{ collection.private_token }}",
+    {% endif %}
+    "name": "{{ collection.name }}",
+    "description": "{{ collection.description }}",
+    "keywords" : [ "neuroscience", "neuroimaging" ],
+    "publisher" : {
+        "@type" : "Organization",
+        "name" : "NeuroVault",
+        "url" : "https://neurovault.org"
+    },
+    "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "distribution":[
+     {
+        "@type":"DataDownload",
+        "encodingFormat":"zip",
+        "contentUrl":"https://neurovault.org/{% url 'download_collection' collection.id %}"
+     }
+    ],
+    {% if collection.DOI %}
+    "citation":  {
+      "@type" : "Article",
+      "identifier" : "doi:{{ collection.DOI }}"
+    }
+    {% endif %}
 }
-{% endif %}
 </script>
