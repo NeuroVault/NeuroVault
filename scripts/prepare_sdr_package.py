@@ -16,7 +16,7 @@ def mkdir_p(path):
 
 collections = []
 next_url_url = "http://neurovault.org/api/collections/?format=json"
-target_folder = "/c/scratch/neurovault_backup"
+target_folder = "D:/scratch/neurovault_backup"
 
 while next_url_url:
     print("fetching %s"%next_url_url)
@@ -43,9 +43,12 @@ for collection in collections:
         continue
 
     mkdir_p(target_folder + "/%d"%collection['id'])
-    json.dump(collections, open(target_folder + "/%d/images.json"%collection['id'], "w"), indent=4, sort_keys=True)
+    json.dump(images, open(target_folder + "/%d/images.json"%collection['id'], "w"), indent=4, sort_keys=True)
     for image in images:
         print("fetching %s"%image['file'])
-        urllib.request.urlretrieve(image['file'], target_folder + "/%d/"%collection['id'] + str(image['id']) + ".nii.gz")
+        try:
+            urllib.request.urlretrieve(image['file'], target_folder + "/%d/"%collection['id'] + str(image['id']) + ".nii.gz")
+        except:
+            print("failed to download %s"%image['file'])
 
 json.dump(collections, open(target_folder + "/collections.json", "w"), indent=4, sort_keys=True)

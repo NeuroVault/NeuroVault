@@ -11,3 +11,35 @@
 {% if image.collection.private %}
 <meta name="robots" content="noindex">
 {% endif %}
+
+<script type="application/ld+json">
+{
+    "@context" : "http://schema.org/",
+    "@type" : "Dataset",
+    "@id" : "https://neurovault.org/images/{{ image.id }}",
+    "url" : "https://neurovault.org/images/{{ image.id }}",
+    "identifier": "neurovault.image:{{ image.id }}",
+    "name": "{{ image.name }}",
+    "description": "{{ image.description }}",
+    "keywords" : [ "neuroscience", "neuroimaging" ],
+    "publisher" : {
+        "@type" : "Organization",
+        "name" : "NeuroVault",
+        "url" : "https://neurovault.org"
+    },
+    "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "distribution":[
+     {
+        "@type":"DataDownload",
+        "encodingFormat":"NIfTI",
+        "contentUrl":"https://neurovault.org/{{ image.file.url }}"
+     }
+    ],
+    {% if image.collection.DOI %}
+    "citation":  {
+      "@type" : "Article",
+      "identifier" : "doi:{{ image.collection.DOI }}"
+    }
+    {% endif %}
+}
+</script>
