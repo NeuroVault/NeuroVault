@@ -3,7 +3,7 @@ import functools
 import gzip
 import json
 import nibabel as nib
-import nidmresults
+import shutil
 import numpy as np
 import os
 import re
@@ -38,17 +38,24 @@ from rest_framework.renderers import JSONRenderer
 from sendfile import sendfile
 from sklearn.externals import joblib
 from xml.dom import minidom
+from django.core.files.uploadedfile import SimpleUploadedFile
+from nimare.meta.ibma import stouffers, weighted_stouffers
+from nimare.utils import t_to_z
+from nilearn.masking import apply_mask
+from nilearn.image import resample_to_img
+
+from neurovault.apps.statmaps.models import get_possible_templates, DEFAULT_TEMPLATE
 
 import neurovault
 from neurovault import settings
 from neurovault.apps.statmaps.ahba import calculate_gene_expression_similarity
 from neurovault.apps.statmaps.forms import CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,NeuropowerStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
-    EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm
+    EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm, MetaanalysisForm
 from neurovault.apps.statmaps.models import Collection, Image, Atlas, \
     StatisticMap, NIDMResults, NIDMResultStatisticMap, \
     CognitiveAtlasTask, CognitiveAtlasContrast, BaseStatisticMap, \
-    DEFAULT_TEMPLATE, BaseCollectionItem
+    DEFAULT_TEMPLATE, BaseCollectionItem, Metaanalysis
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
 from neurovault.apps.statmaps.utils import split_filename, generate_pycortex_volume, \
     generate_pycortex_static, generate_url_token, HttpRedirectException, get_paper_properties, \
@@ -116,6 +123,159 @@ def get_image(pk,collection_cid,request,mode=None):
             raise PermissionDenied()
     else:
         return image
+
+
+@login_required
+def edit_metaanalysis(request, metaanalysis_id=None):
+    '''edit_collection is a view to edit a collection, meaning showing the edit form for an existing collection, creating a new collection, or passing POST data to update an existing collection
+    :param cid: statmaps.models.Collection.pk the primary key of the collection. If none, will generate form to make a new collection.
+    '''
+    page_header = "Start a new metaanalysis"
+    if metaanalysis_id:
+        metaanalysis = Metaanalysis.objects.get(pk=metaanalysis_id)
+        page_header = 'Edit metaanalysis'
+        if request.user != metaanalysis.owner:
+            return HttpResponseForbidden()
+    else:
+        metaanalysis = Metaanalysis(owner=request.user)
+    if request.method == "POST":
+        form = MetaanalysisForm(request.POST, request.FILES, instance=metaanalysis)
+        if form.is_valid():
+            metaanalysis.save()
+            return HttpResponseRedirect(metaanalysis.get_absolute_url())
+    else:
+        form = MetaanalysisForm(instance=metaanalysis)
+
+    context = {"form": form, "page_header": page_header}
+    return render(request, "statmaps/edit_metaanalysis.html.haml", context)
+
+@login_required
+def finalize_metaanalysis(request, metaanalysis_id):
+    metaanalysis = Metaanalysis.objects.get(pk=metaanalysis_id)
+    if request.user != metaanalysis.owner or metaanalysis.status == 'completed':
+        return HttpResponseForbidden()
+
+    new_collection = Collection(name="Metaanalysis %d: %s" % (metaanalysis.pk, metaanalysis.name),
+                                owner=metaanalysis.owner,
+                                full_dataset_url=metaanalysis.get_absolute_url())
+    new_collection.save()
+
+    POSSIBLE_TEMPLATES = get_possible_templates()
+    mask_path = POSSIBLE_TEMPLATES[DEFAULT_TEMPLATE]['mask']
+    this_path = os.path.abspath(os.path.dirname(__file__))
+    mask_img = nib.load(os.path.join(this_path, "static", 'anatomical',mask_path))
+
+    z_imgs = []
+    sizes = []
+    for img in metaanalysis.maps.all():
+        valid = False
+        if img.map_type == 'Z':
+            z_imgs.append(resample_to_img(nib.load(img.file.path), mask_img))
+            valid = True
+        elif img.map_type == 'T' and img.number_of_subjects:
+            t_map_nii = nib.load(img.file.path)
+            # assuming one sided test
+            z_map_nii = nib.Nifti1Image(t_to_z(t_map_nii.get_data(), img.number_of_subjects - 1),
+                                        t_map_nii.affine)
+            z_imgs.append(resample_to_img(z_map_nii, mask_img))
+            valid = True
+
+        if valid and img.number_of_subjects:
+            sizes.append(img.number_of_subjects)
+
+    do_weighted = len(sizes) == len(z_imgs)
+
+    if do_weighted:
+        new_collection.description = "Two sided Stouffer's fixed-effects image-based " \
+                                     "meta-analysis on " \
+                                     "%d " \
+                                     "maps weighted by their corresponding sample sizes. FWE " \
+                                     "corrected with theoretical null distribution."% len(z_imgs)
+    else:
+        new_collection.description = "Two sided Stouffer's fixed-effects image-based " \
+                                     "meta-analysis on %d " \
+                                     "maps. FWE " \
+                                     "corrected with theoretical null distribution." % len(
+            z_imgs)
+
+    new_collection.save()
+
+    z_data = apply_mask(z_imgs, mask_img)
+    if do_weighted:
+        result = weighted_stouffers(z_data, np.array(sizes), mask_img, corr='FWE', two_sided=True)
+    else:
+        result = stouffers(z_data, mask_img, inference='ffx', null='theoretical', corr='FWE',
+                           two_sided=True)
+
+    z_map = StatisticMap(name='FWE corrected Z map', description='', collection=new_collection,
+                         modality='Other',
+                         map_type='Z',
+                         analysis_level='M',
+                         target_template_image='GenericMNI')
+    p_map = StatisticMap(name='FWE corrected P map', description='', collection=new_collection,
+                         modality='Other',
+                         map_type='P',
+                         analysis_level='M',
+                         number_of_subjects=-1,
+                         target_template_image='GenericMNI')
+    if do_weighted:
+        ffx_map = StatisticMap(name='FFX map', description='', collection=new_collection,
+                               modality='Other',
+                               map_type='Other',
+                               analysis_level='M',
+                               target_template_image='GenericMNI')
+
+    tmp_dir = tempfile.mkdtemp()
+    try:
+        z_path = os.path.join(tmp_dir, 'z_fwe_corr.nii.gz')
+        result.images['z'].to_filename(z_path)
+        z_map.file = SimpleUploadedFile('z_fwe_corr.nii.gz',
+                                        open(z_path).read())
+        z_map.save()
+
+        p_path = os.path.join(tmp_dir, 'p_fwe_corr.nii.gz')
+        result.images['p'].to_filename(p_path)
+        p_map.file = SimpleUploadedFile('p_fwe_corr.nii.gz',
+                                        open(p_path).read())
+        p_map.save()
+        if do_weighted:
+            ffx_path = os.path.join(tmp_dir, 'ffx_stat.nii.gz')
+            result.images['ffx_stat'].to_filename(ffx_path)
+            ffx_map.file = SimpleUploadedFile('ffx_stat.nii.gz',
+                                            open(ffx_path).read())
+            ffx_map.save()
+    finally:
+        shutil.rmtree(tmp_dir)
+
+    metaanalysis.output_maps = new_collection
+    metaanalysis.status='completed'
+    metaanalysis.save()
+
+    return HttpResponseRedirect(new_collection.get_absolute_url())
+
+@login_required
+def toggle_active_metaanalysis(request, pk, collection_cid=None):
+    image = get_image(pk,collection_cid,request)
+    metaanalysis = Metaanalysis.objects.filter(owner=request.user).filter(status='active')[0]
+    if request.user != metaanalysis.owner:
+        return HttpResponseForbidden()
+    if metaanalysis in image.metaanalysis_set.all():
+        metaanalysis.maps.remove(image)
+        new_status = 'out'
+    else:
+        metaanalysis.maps.add(image)
+        new_status = 'in'
+    return JSONResponse({'new_status': new_status})
+
+@login_required
+def activate_metaanalysis(request, metaanalysis_id):
+    metaanalysis = Metaanalysis.objects.get(pk=metaanalysis_id)
+    if request.user != metaanalysis.owner or metaanalysis.status == 'completed':
+        return HttpResponseForbidden()
+    metaanalysis.status = 'active'
+    metaanalysis.save()
+    return HttpResponseRedirect(metaanalysis.get_absolute_url())
+
 
 @login_required
 def edit_collection(request, cid=None):
@@ -266,6 +426,22 @@ def view_image(request, pk, collection_cid=None):
     pycortex_compatible = is_target_template_image_pycortex_compatible( image.target_template_image )
     neurosynth_compatible = is_target_template_image_neurosynth_compatible( image.target_template_image )
 
+    is_there_an_active_metaanalysis = request.user.is_authenticated() and (Metaanalysis.objects.filter(
+        owner=request.user).filter(status='active').count() != 0)
+    is_metaanalysis_compatible = isinstance(image, StatisticMap) and image.analysis_level=='G' \
+                                                                                          and \
+                                                                                          image.map_type in ['T', 'Z']
+    show_metaanalysis_button = is_there_an_active_metaanalysis and is_metaanalysis_compatible
+
+    if not show_metaanalysis_button:
+        meta_status = 'invalid'
+    else:
+        metaanalysis = Metaanalysis.objects.filter(owner=request.user).filter(status='active')[0]
+        if metaanalysis in image.metaanalysis_set.all():
+            meta_status = 'in'
+        else:
+            meta_status = 'out'
+
     if image.collection.private:
         api_cid = '%s-%s' % (image.collection.private_token,pk)
     context = {
@@ -275,7 +451,9 @@ def view_image(request, pk, collection_cid=None):
         'api_cid': api_cid,
         'neurosynth_compatible': neurosynth_compatible,
         'pycortex_compatible': pycortex_compatible,
-        'comparison_is_possible': comparison_is_possible
+        'comparison_is_possible': comparison_is_possible,
+        'show_metaanalysis_button': show_metaanalysis_button,
+        'meta_status': meta_status
     }
 
     communities = image.collection.communities.all()
@@ -305,6 +483,14 @@ def view_image(request, pk, collection_cid=None):
         template = 'statmaps/statisticmap_details.html.haml'
     return render(request, template, context)
 
+
+def view_metaanalysis(request, metaanalysis_id):
+    '''view_collection returns main view to see an entire collection of images, meaning a viewer and list of images to load into it.
+    :param cid: statmaps.models.Collection.pk the primary key of the collection
+    '''
+    metaanalysis = get_object_or_404(Metaanalysis, pk=metaanalysis_id)
+    context = {'metaanalysis': metaanalysis}
+    return render(request, 'statmaps/metaanalysis_details.html.haml', context)
 
 def view_collection(request, cid):
     '''view_collection returns main view to see an entire collection of images, meaning a viewer and list of images to load into it.
@@ -1110,6 +1296,30 @@ class JSONResponse(HttpResponse):
         kwargs['content_type'] = 'application/json'
         super(JSONResponse, self).__init__(content, **kwargs)
 
+class AllDOIPublicGroupImages(BaseDatatableView):
+    columns = ['collection.name', 'collection.description', 'name', 'description', 'modality']
+    order_columns = ['collection.name', 'collection.description', 'name', 'description',
+                     'modality']
+
+    def get_initial_queryset(self):
+        if 'metaanalysis_id' in self.kwargs.keys():
+            metaanalysis = Metaanalysis.objects.get(pk=self.kwargs['metaanalysis_id'])
+            return metaanalysis.maps.all()
+        else:
+            public_collections_ids = Collection.objects.exclude(DOI__isnull=True).exclude(
+                private=True).values_list('id', flat=True)
+            return StatisticMap.objects.filter(analysis_level='G').filter(map_type__in=['T', 'Z']).filter(collection_id__in=public_collections_ids)
+
+    def filter_queryset(self, qs):
+        # use parameters passed in GET request to filter queryset
+
+        # simple example:
+        search = self.request.GET.get(u'search[value]', None)
+        if search:
+            qs = qs.filter(Q(name__icontains=search) | Q(description__icontains=search) | Q(
+                collection__name__icontains=search) | Q(collection__description__icontains=search))
+        return qs
+
 
 class ImagesInCollectionJson(BaseDatatableView):
     columns = ['file.url', 'pk', 'name', 'polymorphic_ctype.name', 'is_valid']
@@ -1291,6 +1501,32 @@ class MyCollectionsJson(PublicCollectionsJson):
     def get_initial_queryset(self):
         return get_objects_for_user(self.request.user, 'statmaps.change_collection')
 
+
+class MyMetaanalysesJson(PublicCollectionsJson):
+    columns = ['name', 'description', 'n_images', 'status']
+    order_columns = ['name', 'description', '', '']
+
+    def get_initial_queryset(self):
+        return Metaanalysis.objects.filter(owner=self.request.user)
+
+    def render_column(self, row, column):
+        if column == 'n_images':
+            return row.maps.count()
+        elif column == 'name':
+            return "<a href='" + reverse('view_metaanalysis', kwargs={'metaanalysis_id': row.pk})\
+                   + "'>" + \
+                   row.name + "</a>"
+        else:
+            return super(PublicCollectionsJson, self).render_column(row, column)
+
+    def filter_queryset(self, qs):
+        # use parameters passed in GET request to filter queryset
+
+        # simple example:
+        search = self.request.GET.get(u'search[value]', None)
+        if search:
+            qs = qs.filter(Q(name__icontains=search)| Q(description__icontains=search))
+        return qs
 
 def download_collection(request, cid):
     # Files (local path) to put in the .zip

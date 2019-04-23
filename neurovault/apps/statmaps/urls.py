@@ -5,10 +5,11 @@ from django.views.generic.base import RedirectView
 
 from neurovault import settings
 from neurovault.apps.statmaps.models import KeyValueTag
-from neurovault.apps.statmaps.views import ImagesInCollectionJson,\
+from neurovault.apps.statmaps.views import ImagesInCollectionJson, \
     PublicCollectionsJson, MyCollectionsJson, AtlasesAndParcellationsJson, \
     ImagesByTaskJson, GroupImagesInCollectionJson, SingleSubjectImagesInCollectionJson, \
-    OtherImagesInCollectionJson
+    OtherImagesInCollectionJson, AllDOIPublicGroupImages, MyMetaanalysesJson, \
+    toggle_active_metaanalysis
 from .views import edit_collection, view_image, delete_image, edit_image, \
                 view_collection, delete_collection, download_collection, upload_folder, add_image_for_neurosynth, \
                 serve_image, serve_pycortex, view_collection_with_pycortex, add_image, \
@@ -16,10 +17,43 @@ from .views import edit_collection, view_image, delete_image, edit_image, \
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
                 view_nidm_results, find_similar, find_similar_json, compare_images, edit_metadata, \
                 export_images_filenames, delete_nidm_results, view_task, search, gene_expression_json, \
-                gene_expression, serve_surface_archive
+                gene_expression, serve_surface_archive, edit_metaanalysis, view_metaanalysis, \
+                activate_metaanalysis, finalize_metaanalysis
 
 
 urlpatterns = patterns('',
+    url(r'^metaanalysis_selection/$',
+       TemplateView.as_view(
+           template_name='statmaps/metaanalysis_selection.html.haml'),
+       name='metaanalysis_selection'),
+    url(r'^my_metaanalyses/$',
+        login_required(TemplateView.as_view(
+           template_name='statmaps/my_metaanalyses.html.haml')),
+        name='my_metaanalyses'),
+    url(r'^my_metaanalyses/new$',
+        edit_metaanalysis,
+       name='new_metaanalysis'),
+    url(r'^metaanalyses/(?P<metaanalysis_id>\d+)/edit$',
+        edit_metaanalysis,
+       name='edit_metaanalysis'),
+    url(r'^metaanalyses/(?P<metaanalysis_id>\d+)/activate$',
+        activate_metaanalysis,
+       name='activate_metaanalysis'),
+    url(r'^metaanalyses/(?P<metaanalysis_id>\d+)/finalize$',
+        finalize_metaanalysis,
+       name='finalize_metaanalysis'),
+    url(r'^metaanalyses/(?P<metaanalysis_id>\d+)$',
+       view_metaanalysis,
+       name='view_metaanalysis'),
+    url(r'^metaanalyses/(?P<metaanalysis_id>\d+)/images_json',
+        AllDOIPublicGroupImages.as_view(),
+       name='metaanalysis_images_json'),
+    url(r'^my_metaanalyses/json$',
+        login_required(MyMetaanalysesJson.as_view()),
+        name='my_metaanalyses_json'),
+    url(r'^metaanalysis_selection/json$',
+        AllDOIPublicGroupImages.as_view(),
+       name='metaanalysis_selection_json'),
     url(r'^my_collections/$',
         login_required(TemplateView.as_view(template_name='statmaps/my_collections.html.haml')),
         name='my_collections'),
@@ -99,6 +133,13 @@ urlpatterns = patterns('',
     url(r'^images/(?P<pk>\d+)/$',
         view_image,
         name='image_details'),
+    url(r'^images/(?P<pk>\d+)/toggle_active_meta$',
+        toggle_active_metaanalysis,
+        name='toggle_active_metaanalysis'),
+    url(
+        r'^collections/(?P<collection_cid>\d+|[A-Z]{8})/images/(?P<pk>\d+)/toggle_active_meta$',
+        toggle_active_metaanalysis,
+        name="private_toggle_active_metaanalysis"),
     url(r'^images/(?P<pk>\d+)/pycortex$',
         view_image_with_pycortex,
         name='pycortex_view_image'),

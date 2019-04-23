@@ -49,9 +49,6 @@
 </script>
 
 <div id="fade"></div>
-<!-- UserVoice JavaScript SDK (only needed once on a page) -->
-<script>(function(){var uv=document.createElement('script');uv.type='text/javascript';uv.async=true;uv.src='//widget.uservoice.com/py7m8MbdHZIXptw3qAaw.js';var s=document.getElementsByTagName('script')[0];s.parentNode.insertBefore(uv,s)})()</script>
-
 
 <div class="container navigation-container">
 
@@ -80,11 +77,20 @@
                         <li><a href="{% url 'collections_list' %}">See all collections</a></li>
                     </ul>
                 </li>
+                <li class="dropdown">
+                    <a href="" class="dropdown-toggle" id="collections_nav" data-toggle="dropdown">
+                        Metaanalyses
+                        <b class="caret"></b>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="{% url 'my_metaanalyses' %}">My metaanalyses</a></li>
+                        <li><a href="{% url 'metaanalysis_selection' %}">Search for group
+                            level maps</a></li>
+                    </ul>
+                </li>
                 <li><a href="{% url 'cite' %}">How to cite</a></li>
                 <li><a href="{% url 'FAQ' %}">FAQ</a></li>
-                <li><a href="javascript:void(0)" data-uv-lightbox="classic_widget" data-uv-mode="full"
-                       data-uv-primary-color="#cc6d00" data-uv-link-color="#007dbf" data-uv-default-mode="feedback"
-                       data-uv-forum-id="210717">Give feedback</a>
+                <li><a href="https://neurostars.org/tags/neurovault">Give feedback</a>
                 </li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
