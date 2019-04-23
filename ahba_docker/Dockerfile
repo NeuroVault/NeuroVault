@@ -1,6 +1,8 @@
 FROM python:2.7.15-jessie
 ENV PYTHONUNBUFFERED 1
 
+RUN sed -i '/jessie-updates/d' /etc/apt/sources.list  # Now archived
+
 RUN apt-get update && apt-get install -y \
     libhdf5-dev \
     libhdf5-8 && \
