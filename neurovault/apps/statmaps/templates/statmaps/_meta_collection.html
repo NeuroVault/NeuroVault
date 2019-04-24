@@ -279,10 +279,8 @@
     "@type" : "Dataset",
     "@id" : "https://neurovault.org/collections/{{ collection.id }}",
     "url" : "https://neurovault.org/collections/{{ collection.id }}",
-    "identifier": "neurovault.collection:{{ collection.id }}",
-    {% if collection.private_token %}
-    "identifier" : "https://neurovault.org/collections/{{ collection.private_token }}",
-    {% endif %}
+    "identifier": [ "neurovault.collection:{{ collection.id }}"{% if collection.private_token %},
+                    "https://neurovault.org/collections/{{ collection.private_token }}"{% endif %} ],
     "name": "{{ collection.name }}",
     "description": "{{ collection.description }}",
     "keywords" : [ "neuroscience", "neuroimaging" ],
