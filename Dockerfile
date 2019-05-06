@@ -9,64 +9,65 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install --upgrade pip
 
-RUN pip install numpy
-RUN pip install cython scipy
-RUN pip install scikit-learn pandas h5py matplotlib
-
-RUN pip install celery[redis]==3.1.24
-RUN pip install certifi==2015.04.28
-RUN pip install cognitiveatlas
-RUN pip install 'Django==1.8.8'
-RUN pip install djangorestframework==3.4.7
-RUN pip install django-celery
-RUN pip install django-chosen
-RUN pip install django-cleanup==0.4.2
-RUN pip install django-crispy-forms
-RUN pip install django-datatables-view
-RUN pip install 'django-dbbackup<2.3'
-RUN pip install django-dirtyfields
-RUN pip install django-file-resubmit==0.4.3
-RUN pip install django-filter==1.1.0
-RUN pip install django-fixture-media
-RUN pip install django-form-utils
-RUN pip install 'django-hstore==1.4.1'
-RUN pip install 'django-oauth-toolkit==0.10.0'
-RUN pip install django-polymorphic==0.9.2
-RUN pip install django-sendfile
-RUN pip install django-taggit==0.22.2
-RUN pip install django-taggit-templatetags
-RUN pip install django-mailgun
-RUN pip install 'dropbox==1.6'
-RUN pip install hamlpy
-RUN pip install lxml
-RUN pip install markdown
-RUN pip install networkx
-RUN pip install nibabel==2.1.0
-RUN pip install nidmresults==0.3.2
-RUN pip install nidmfsl==0.3.4
-RUN pip install nilearn==0.4.2
-RUN pip install numexpr
-RUN pip install raven==6.9.0
-RUN pip install Pillow
-RUN pip install psycopg2==2.7.3.2
-RUN pip install pybraincompare==0.1.18
-RUN pip install python-openid
-RUN pip install 'python-social-auth==0.2.13'
-RUN pip install 'rdflib>=4.1.0'
-RUN pip install requests
-RUN pip install requests-oauthlib
-RUN pip install shapely
-RUN pip install uwsgi
-RUN pip install zipstream
-
-RUN pip install html5lib
-RUN pip install https://github.com/gallantlab/pycortex/archive/fe58400c8c3a3187d930b8a696cda8fec62c0f19.zip
-RUN pip install git+https://github.com/benkonrath/django-guardian.git@7cded9081249e9a4cd9f5cd85e67cf843c138b0c#egg=django-guardian
-RUN pip install nidmviewer==0.1.3
-RUN pip install git+git://github.com/neurostuff/NiMARE.git@608516ec3034e356326dfe70df5e9ed77efd2be8
-
-RUN pip install tables
-RUN pip install statsmodels
+RUN pip install numpy==1.11.0
+RUN pip install cython \
+                scipy \
+                scikit-learn==0.17.1 \
+                pandas==0.20.3 \
+                h5py==2.6.0 \
+                matplotlib==1.5.1 \
+                scikit-image==0.12.3 \ celery[redis]==3.1.24 \
+                certifi==2015.04.28 \
+                cognitiveatlas \
+                'Django==1.8.8' \
+                djangorestframework==3.4.7 \
+                django-celery \
+                django-chosen \
+                django-cleanup==0.4.2 \
+                django-crispy-forms \
+                django-datatables-view \
+                'django-dbbackup<2.3' \
+                django-dirtyfields \
+                django-file-resubmit==0.4.3 \
+                django-filter==1.1.0 \
+                django-fixture-media \
+                django-form-utils \
+                'django-hstore==1.4.1' \
+                'django-oauth-toolkit==0.10.0' \
+                django-polymorphic==0.9.2 \
+                django-sendfile \
+                django-taggit==0.22.2 \
+                django-taggit-templatetags \
+                django-mailgun \
+                'dropbox==1.6' \
+                hamlpy \
+                lxml \
+                markdown \
+                networkx \
+                nibabel==2.1.0 \
+                nidmresults==0.3.2 \
+                nidmfsl==0.3.4 \
+                nilearn==0.4.2 \
+                numexpr \
+                raven==6.9.0 \
+                Pillow==4.1.1 \
+                psycopg2==2.7.3.2 \
+                pybraincompare==0.1.18 \
+                python-openid \
+                'python-social-auth==0.2.13' \
+                'rdflib>=4.1.0' \
+                requests \
+                requests-oauthlib \
+                shapely \
+                uwsgi \
+                zipstream \
+                html5lib \
+                https://github.com/gallantlab/pycortex/archive/fe58400c8c3a3187d930b8a696cda8fec62c0f19.zip \
+                git+https://github.com/benkonrath/django-guardian.git@7cded9081249e9a4cd9f5cd85e67cf843c138b0c#egg=django-guardian \
+                nidmviewer==0.1.3 \
+                git+git://github.com/neurostuff/NiMARE.git@608516ec3034e356326dfe70df5e9ed77efd2be8 \
+                tables \
+                statsmodels
 
 WORKDIR /code
 RUN /usr/bin/yes | pip uninstall cython
