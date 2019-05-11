@@ -20,14 +20,18 @@
     "url" : "https://neurovault.org/images/{{ image.id }}",
     "identifier": "neurovault.image:{{ image.id }}",
     "name": "{{ image.name }}",
-    "description": "{{ image.description }}",
+    "description": "{{ image.description }}{%  if image.thumbnail %}\n\n![](https://neurovault.org/{{ image.thumbnail }}) {%  endif %}\n\nCollection name: {{ image.collection.name }}\n\nSubject species: {{ image.subject_species }}\n\nModality: {{ image.modality }}",
     "keywords" : [ "neuroscience", "neuroimaging" ],
     "publisher" : {
         "@type" : "Organization",
         "name" : "NeuroVault",
         "url" : "https://neurovault.org"
     },
-    "license": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "license":{
+        "@type":"CreativeWork",
+        "name":"CC0 1.0",
+        "url":"https://creativecommons.org/publicdomain/zero/1.0/"
+    },
     "distribution":[
      {
         "@type":"DataDownload",
