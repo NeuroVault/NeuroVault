@@ -284,7 +284,7 @@
     "identifier" : "https://neurovault.org/collections/{{ collection.private_token }}",
     {% endif %}
     "name": "{{ collection.name }}",
-    "description": "{{ collection.description }}",
+    "description": "A collection of {{ collection.basecollectionitem_set.count }} brain maps.\n\n{{ collection.description }}",
     "keywords" : [ "neuroscience", "neuroimaging" ],
     "publisher" : {
         "@type" : "Organization",
