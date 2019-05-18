@@ -279,7 +279,7 @@
     "@type" : "Dataset",
     "@id" : "https://neurovault.org/collections/{{ collection.id }}",
     "url" : "https://neurovault.org/collections/{{ collection.id }}",
-    "identifier": [ "neurovault.collection:{{ collection.id }}"{% if collection.private_token %},
+    "identifier": [ "https://identifiers.org/neurovault.collection:{{ collection.id }}"{% if collection.private_token %},
                     "https://neurovault.org/collections/{{ collection.private_token }}"{% endif %} ],
     "name": "{{ collection.name }}",
     "description": "A collection of {{ collection.basecollectionitem_set.count }} brain maps.\n\n{{ collection.description }}",
@@ -300,11 +300,10 @@
         "encodingFormat":"zip",
         "contentUrl":"https://neurovault.org/{% url 'download_collection' collection.id %}"
      }
-    ],
-    {% if collection.DOI %}
+    ]{% if collection.DOI %},
     "citation":  {
       "@type" : "Article",
-      "identifier" : "doi:{{ collection.DOI }}"
+      "identifier" : "https://doi.org/{{ collection.DOI }}"
     }
     {% endif %}
 }
