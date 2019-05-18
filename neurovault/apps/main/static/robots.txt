@@ -1,4 +1,6 @@
-Sitemap: https://neurovault.org/sitemap.xml
-User-agent: *
-Disallow: /images/*/find_similar
-Disallow: /*/*/pycortex
+sitemap: https://neurovault.org/sitemap.xml
+
+user-agent: *
+disallow: /images/*/find_similar
+disallow: /*/*/pycortex
+disallow: /search
