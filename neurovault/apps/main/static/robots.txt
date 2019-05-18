@@ -1,3 +1,4 @@
 Sitemap: https://neurovault.org/sitemap.xml
 User-agent: *
 Disallow: /images/*/find_similar
+Disallow: /*/*/pycortex
