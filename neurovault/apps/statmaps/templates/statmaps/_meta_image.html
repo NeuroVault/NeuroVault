@@ -19,14 +19,10 @@
     "@id" : "https://neurovault.org/images/{{ image.id }}",
     "url" : "https://neurovault.org/images/{{ image.id }}",
     "identifier": "https://identifiers.org/neurovault.image:{{ image.id }}",
-    "name": "{{ image.collection.name }}: {{ image.name }}",
-    "description": "{{ image.description }}{% if image.thumbnail %}\n\n ![glassbrain][1] {% endif %}\n\n### Collection description\n\n {{ image.collection.description }}\n\n### Subject species\n\n {{ image.subject_species }}\n\n### Modality\n\n {{ image.modality }}{% if image.thumbnail %}\n\n\n  [1]: https://neurovault.org/media/{{ image.thumbnail }}{% endif %}",
+    "name": "{{ image.collection.name|escape|linebreaks }}: {{ image.name }}",
+    "description": "{{ image.description|escape|linebreaks }}{% if image.thumbnail %}\n\n ![glassbrain][1]
+{% endif %}\n\n### Collection description\n\n {{ image.collection.description|escape|linebreaks }}\n\n### Subject species\n\n {{ image.subject_species }}\n\n### Modality\n\n {{ image.modality }}{% if image.thumbnail %}\n\n\n  [1]: https://neurovault.org/media/{{ image.thumbnail }}{% endif %}",
     "keywords" : [ "neuroscience", "neuroimaging" ],
-    "publisher" : {
-        "@type" : "Organization",
-        "name" : "NeuroVault",
-        "url" : "https://neurovault.org"
-    },
     "includedInDataCatalog" : {
         "@type" : "DataCatalog",
         "name" : "NeuroVault",

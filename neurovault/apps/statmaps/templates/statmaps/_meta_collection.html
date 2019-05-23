@@ -281,14 +281,9 @@
     "url" : "https://neurovault.org/collections/{{ collection.id }}",
     "identifier": [ "https://identifiers.org/neurovault.collection:{{ collection.id }}"{% if collection.private_token %},
                     "https://neurovault.org/collections/{{ collection.private_token }}"{% endif %} ],
-    "name": "{{ collection.name }}",
-    "description": "A collection of {{ collection.basecollectionitem_set.count }} brain maps.\n\n{{ collection.description }}",
+    "name": "{{ collection.name|escape|linebreaks }}",
+    "description": "A collection of {{ collection.basecollectionitem_set.count }} brain maps.\n\n{{ collection.description|escape|linebreaks }}",
     "keywords" : [ "neuroscience", "neuroimaging" ],
-    "publisher" : {
-        "@type" : "Organization",
-        "name" : "NeuroVault",
-        "url" : "https://neurovault.org"
-    },
     "includedInDataCatalog" : {
         "@type" : "DataCatalog",
         "name" : "NeuroVault",
