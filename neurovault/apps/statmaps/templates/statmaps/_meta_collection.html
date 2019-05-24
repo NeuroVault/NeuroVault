@@ -282,13 +282,10 @@
     "identifier": [ "https://identifiers.org/neurovault.collection:{{ collection.id }}"{% if collection.private_token %},
                     "https://neurovault.org/collections/{{ collection.private_token }}"{% endif %} ],
     "name": "{{ collection.name }}",
-    "description": "A collection of {{ collection.basecollectionitem_set.count }} brain maps.\n\n{{ collection.description }}",
+    "description": "A collection of {{ collection.basecollectionitem_set.count }} brain maps.\n\n{{ collection.description|escape|linebreaks }}",
+    "dateCreated": "{{ collection.add_date|date:"Y-m-d\TH:i:s" }}",
+    "dateModified": "{{ collection.modify_date|date:"Y-m-d\TH:i:s" }}",
     "keywords" : [ "neuroscience", "neuroimaging" ],
-    "publisher" : {
-        "@type" : "Organization",
-        "name" : "NeuroVault",
-        "url" : "https://neurovault.org"
-    },
     "includedInDataCatalog" : {
         "@type" : "DataCatalog",
         "name" : "NeuroVault",
