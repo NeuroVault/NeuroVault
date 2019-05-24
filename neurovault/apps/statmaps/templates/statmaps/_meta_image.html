@@ -19,9 +19,10 @@
     "@id" : "https://neurovault.org/images/{{ image.id }}",
     "url" : "https://neurovault.org/images/{{ image.id }}",
     "identifier": "https://identifiers.org/neurovault.image:{{ image.id }}",
-    "name": "{{ image.collection.name|escape|linebreaks }}: {{ image.name }}",
-    "description": "{{ image.description|escape|linebreaks }}{% if image.thumbnail %}\n\n ![glassbrain][1]
-{% endif %}\n\n### Collection description\n\n {{ image.collection.description|escape|linebreaks }}\n\n### Subject species\n\n {{ image.subject_species }}\n\n### Modality\n\n {{ image.modality }}{% if image.thumbnail %}\n\n\n  [1]: https://neurovault.org/media/{{ image.thumbnail }}{% endif %}",
+    "name": "{{ image.collection.name }}: {{ image.name }}",
+    "description": "{{ image.description|escape|linebreaks }}\n\n{% if image.thumbnail %} [![glassbrain](https://neurovault.org/media/{{ image.thumbnail }})](https://neurovault.org/images/{{ image.id }})\n\n{% endif %}### Collection description\n\n{{ image.collection.description|escape|linebreaks }}\n\n{% if image.subject_species %}### Subject species\n\n{{ image.subject_species }}\n\n{% endif %}{% if image.modality %}### Modality\n\n {{ image.modality }}}\n\n{% endif %}{% if image.analysis_level %}### Analysis level\n\n{{ image.analysis_level }}\n\n{% endif %}",
+    "dateCreated": "{{ image.add_date|date:"Y-m-d\TH:i:s" }}",
+    "dateModified": "{{ image.modify_date|date:"Y-m-d\TH:i:s" }}",
     "keywords" : [ "neuroscience", "neuroimaging" ],
     "includedInDataCatalog" : {
         "@type" : "DataCatalog",
