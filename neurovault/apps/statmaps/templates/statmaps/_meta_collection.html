@@ -3,6 +3,8 @@
 <meta name="database" content="neurovault.org">
 {% if collection.private %}
 <meta name="robots" content="noindex">
+{% else %}
+<link rel="canonical" href="https://neurovault.org/collections/{{ collection.id }}" />
 {% endif %}
 {% if collection.authors %}
 <meta name="authors" content="{{ collection.authors }}">
