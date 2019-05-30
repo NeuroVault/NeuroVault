@@ -25,6 +25,7 @@ class ImageSitemap(BaseSitemap):
 
 class CollectionSitemap(BaseSitemap):
     changefreq = "weekly"
+    priority = 1.0
 
     def items(self):
         return Collection.objects.filter(private=False) \
