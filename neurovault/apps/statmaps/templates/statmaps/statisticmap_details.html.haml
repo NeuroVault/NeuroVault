@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% load static from staticfiles %}
 {% block includes %}
-<script type="text/javascript" src="{% static "scripts/papaya.js"%}"></script>
 {% include "statmaps/_meta_image.html" %}
 <meta name="map_type" content="{{ image.map_type }}">
 <meta name="modality" content="{{ image.modality }}">
@@ -43,7 +42,7 @@
 {% if image.cognitive_paradigm_cogatlas %}
 <meta name="cognitive_paradigm_cogatlas" content="{{ image.cognitive_paradigm_cogatlas }}">
 {% endif %}
-
+{% include 'statmaps/_papaya_viewer_head.html.haml' %}
 {% endblock %}
 {% block head %}
 <title>{% block title %}NeuroVault: {{image.name}}{% endblock %}</title>
@@ -55,7 +54,7 @@ a.disabled-link:hover {
     background-color:#d9d9d9 !important;
     color:#aaa !important;
 }
-+</style>
+</style>
     :javascript
          var params = [];
          params["worldSpace"] = true;
@@ -121,7 +120,6 @@ a.disabled-link:hover {
 
         }).call(this);
 
-{% include 'statmaps/_papaya_viewer_head.html.haml' %}
 
 {% endblock %}
 
