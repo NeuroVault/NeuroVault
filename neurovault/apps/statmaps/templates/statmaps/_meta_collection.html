@@ -305,10 +305,7 @@
         "contentUrl":"https://neurovault.org/{% url 'download_collection' collection.id %}"
      }
     ]{% if collection.DOI %},
-    "citation":  {
-      "@type" : "Article",
-      "identifier" : "https://doi.org/{{ collection.DOI }}"
-    }
+    "citation": "https://doi.org/{{ collection.DOI }}"
     {% endif %}
 }
 </script>

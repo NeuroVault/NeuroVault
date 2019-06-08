@@ -44,10 +44,7 @@
         "contentUrl":"https://neurovault.org/{{ image.file.url }}"
      }
     ]{% if image.collection.DOI %},
-    "citation":  {
-      "@type" : "Article",
-      "identifier" : "https://doi.org/{{ image.collection.DOI }}"
-    }
+    "citation": "https://doi.org/{{ image.collection.DOI }}"
     {% endif %}
 }
 </script>
