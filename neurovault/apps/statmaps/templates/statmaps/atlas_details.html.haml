@@ -1,8 +1,7 @@
 {% extends "base.html" %}
 {% load static from staticfiles %}
 {% block includes %}
-<script type="text/javascript" src="{% static "scripts/papaya.js"%}"/></script>
-
+{% include 'statmaps/_papaya_viewer_head.html.haml' %}
 {% endblock %}
 {% block head %}
     :javascript
@@ -38,8 +37,6 @@
 	    }
 	  });
 	}).call(this);
-
-{% include 'statmaps/_papaya_viewer_head.html.haml' %}
 {% include "statmaps/_meta_image.html" %}
 <meta name="pagetype" content="atlas">
 <title>{% block title %}{{image.name}}{% endblock %}</title>
