@@ -45,7 +45,18 @@
               "https://twitter.com/vaultneuro" ]
 }
     </script>
-
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "url": "https://neurovault.org/",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://neurovault.org/search?q={% templatetag openbrace %}search_term_string{% templatetag closebrace %}",
+    "query-input": "required name=search_term_string"
+  }
+}
+    </script>
     {% endblock %}
     {% block includes %}{% endblock %}
     {% block head %}{% endblock %}
