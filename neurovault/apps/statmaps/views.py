@@ -76,7 +76,7 @@ def owner_or_contrib(request,collection):
 
 
 def get_button_html(url, type, target_template_image):
-    return '<a class="btn btn-default viewimage" ' \
+    return '<a role="button" class="btn btn-outline-secondary btn-sm viewimage" ' \
            'onclick="viewimage(this)" filename="%s" type="%s" ' \
            'target_template_image="%s"><i class="fa fa-lg ' \
            'fa-eye"></i></a>' % (url,

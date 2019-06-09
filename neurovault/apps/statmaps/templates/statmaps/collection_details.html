@@ -260,19 +260,23 @@
     <!-- Content-->
     <div class="row mt-2 mb-2">
         {% if is_empty and edit_permission %}
-            <div class="center-text" style="margin-top:60px;">
-                <div style="font-size:34px;" style="margin-bottom:30px">
+            <div class="col-12 center-text">
+                <div class="lead">
                     This collection is empty. You can:
                 </div>
-                <br><br>
-                <ul class="list-group">
-                    <li class="list-group-item"><a href="{% url 'add_image' cid %}">Add images one by one</a></li>
-                    <li class="list-group-item"><a class="upload_archive" href="#">Upload an archive with images (.zip or .tar.gz)</a></li>
-                    <li class="list-group-item"><a class="upload_archive" href="#">Upload a NIDM-Results file (.nidm.zip)</a></li>
+                <div class="btn-group-vertical w-100">
+                    <a type="button" class="btn btn-light" href="{% url 'add_image' cid %}">Add
+                        images one by one</a>
+                    <a type="button" class="btn btn-light" class="upload_archive"
+                       href="#">Upload an archive with images (.zip or .tar.gz)</a>
+                    <a type="button" class="btn btn-light" class="upload_archive"
+                       href="#">Upload a NIDM-Results file (.nidm.zip)</a>
                     <!--[if !IE]> -->
-                    <li class="list-group-item"><a class="upload_folder" href="#">Upload a folder with images</a></li>
+                    <a type="button" class="btn btn-light" class="upload_folder" href="#">Upload a
+                        folder with images</a>
                     <!-- <![endif]-->
-                </ul>
+                    </ul>
+                </div>
                 <div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false"></div>
             </div>
         {% elif not is_empty %} <!-- close if not empty -->
