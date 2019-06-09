@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load static from staticfiles %}
+{% block head %}
+<title>{% block title %}NeuroVault: a new home for all brain statistical maps!{% endblock %}</title>
+{% endblock %}
+{% block content %}
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <p><img class="mw-100" src='{% static "images/neurovault-logo.png"%}' alt="triangle with equal sides" srcset='{% static "images/neurovault-logo.svg"%}'></p>
+            <div class="lead"> {{ tagline | safe }}</div>
+        </div>
+    </div>
+
+    <div class="row mt-1 mb-1">
+        <div class="col">
+            <h4>What is it?</h4>
+            <p>{{ what_is_it | safe }}</p>
+        </div>
+        <div class="col">
+            <h4>Why use it?</h4>
+            <ul>
+                <li>Interactive visualization</li>
+                <li>A permanent URL</li>
+                <li>Publicly shareable</li>
+                <li>Improves meta-analyses</li>
+            </ul>
+        </div>
+        <div class="col">
+            <h4>Supported by</h4>
+            <a href="http://www.incf.org">
+                <img class="mw-100" src="{% static "images/incf-logo.png"%}", width="80", title="International Neuroinformatics Coordination Facility" />
+            </a>
+            <a href="http://www.cbs.mpg.de">
+                <img class="mw-100" src="{% static "images/MPG_LOGO.gif"%}", width="60", title="Max Planck Institute for Human Cognitive and Brain Sciences" />
+            </a>
+            <a href="http://www.stanford.edu">
+                <img class="mw-100" src="{% static "images/SUSig_Stack.png"%}", width="110", title="Stanford University" />
+            </a>
+            <a href="https://www.nudge-it.eu/">
+                <img class="mw-100" src="{% static "images/nudge-it-logo.png"%}", width="110", title="Nudge-it" />
+            </a>
+        </div>
+    </div>
+
+    <div class="row mt-4 mb-4">
+        <div class="col-12 text-center">
+            <a class="btn btn-primary btn-lg" href="/collections/new">Get started and upload an image!</a>
+        </div>
+    </div>
+
+    <div class="row mt-1 mb-1">
+        <div class="col-12">
+            <h6>{{ query_explanation }}</h6>
+            <table class="table table-striped table-sm">
+                <thead>
+                    <tr>
+                        <th scope="row">Name</th>
+                        <th scope="row">Number of images</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for collection in recent_collections %}
+                        <tr>
+                            <th scope="column">
+                                <a href="{% url 'collection_details' collection.id %}">{{ collection.name }}</a>
+                            </th>
+                            <td>
+                                {{ collection.basecollectionitem_set.all.count }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+{% endblock %}

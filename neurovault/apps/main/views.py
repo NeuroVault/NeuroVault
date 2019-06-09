@@ -17,7 +17,7 @@ def index_view(request):
                           "parcellations, and atlases of the brain",
                'what_is_it': "A place where researchers can publicly store and share unthresholded statistical maps, parcellations, and atlases produced by MRI and PET studies."}
 
-    return render(request, 'index.html.haml', context)
+    return render(request, 'index.html', context)
 
 
 def community_view(request, community_label):
@@ -36,5 +36,5 @@ def community_view(request, community_label):
                'what_is_it': "A place where %s researchers can publicly store and share unthresholded statistical maps, parcellations, and atlases produced by MRI and PET studies."%community.short_desc,
                'name_subscript': community.label,
                'name_subscript_url': reverse('view_community', kwargs={'community_label': community_label})}
-    return render(request, 'index.html.haml', context)
+    return render(request, 'index.html', context)
 
