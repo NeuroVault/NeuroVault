@@ -196,9 +196,11 @@
             </div>
          </div>
      {% endif %}
+
+    <form action="upload_folder" enctype="multipart/form-data" method= "POST" name="upload_folder_form">
     <div class="row">
         <div class="col-12">
-             <form action="upload_folder" enctype="multipart/form-data" method= "POST" name="upload_folder_form">
+
 
             {% if not is_empty %}
                 {% if pycortex_compatible %}
@@ -228,10 +230,10 @@
                         Upload
                     </button>
                     <div class="dropdown-menu" aria-labelledby="btnGroupDropUpload">
-                        <a class="dropdown-item" class="upload_archive" href="#">Archive (.zip)</a>
-                        <a class="dropdown-item" class="upload_archive" href="#">NIDM-Results (.nidm.zip)</a>
+                        <a class="dropdown-item upload_archive" href="#">Archive (.zip)</a>
+                        <a class="dropdown-item upload_archive" href="#">NIDM-Results (.nidm.zip)</a>
                         <!--[if !IE]> -->
-                        <a class="dropdown-item" class="upload_folder" href="#">Folder</a>
+                        <a class="dropdown-item upload_folder" href="#">Folder</a>
                         <!-- <![endif]-->
                     </div>
                 </div>
@@ -257,7 +259,6 @@
                 </div>
                 {% endif %}
             {% endif %}<!-- close edit permissions-->
-            </form>
         </div>
     </div>
     <!-- Content-->
@@ -270,15 +271,14 @@
                 <div class="btn-group-vertical w-100">
                     <a type="button" class="btn btn-light" href="{% url 'add_image' cid %}">Add
                         images one by one</a>
-                    <a type="button" class="btn btn-light" class="upload_archive"
+                    <a type="button" class="btn btn-light upload_archive"
                        href="#">Upload an archive with images (.zip or .tar.gz)</a>
-                    <a type="button" class="btn btn-light" class="upload_archive"
+                    <a type="button" class="btn btn-light upload_archive"
                        href="#">Upload a NIDM-Results file (.nidm.zip)</a>
                     <!--[if !IE]> -->
                     <a type="button" class="btn btn-light" class="upload_folder" href="#">Upload a
                         folder with images</a>
                     <!-- <![endif]-->
-                    </ul>
                 </div>
                 <div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false"></div>
             </div>
@@ -383,6 +383,7 @@
             </div>
         {% endif %}
     </div>
+    </form>
 
 
 <div id='spinny' class='modal neuron_loader' style='margin-top: 175px; left:45%; top:15%' data-keyboard='false'>
@@ -501,7 +502,7 @@ $(document).ready(function() {
         "createdRow": function( row, data, dataIndex ) {
               if (data[4] == false) {
                 $(row).removeClass('odd');
-                $(row).addClass('invalid');
+                $(row).addClass('table-danger');
               }
         },
         {% if collection.private %}
