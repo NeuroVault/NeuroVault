@@ -480,7 +480,7 @@ def view_image(request, pk, collection_cid=None):
             context['warning'] += "Some of the NeuroVault functions such as decoding might not work properly. "
             context['warning'] += "Please use unthresholded maps whenever possible."
 
-        template = 'statmaps/statisticmap_details.html.haml'
+        template = 'statmaps/statisticmap_details.html'
     return render(request, template, context)
 
 
