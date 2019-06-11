@@ -7,7 +7,7 @@ admin.autodiscover()
 urlpatterns = patterns('',
     url(r'^$', index_view,
         name="index"),
-    url(r'^cite', TemplateView.as_view(template_name="cite.html.haml"),
+    url(r'^cite', TemplateView.as_view(template_name="cite.html"),
         name="cite"),
     url(r'^FAQ', TemplateView.as_view(template_name="FAQ.html.haml"), 
         name="FAQ"),
