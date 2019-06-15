@@ -6,11 +6,10 @@
     <title>{% block title %}Edit metaanalysis{% endblock %}</title>
 {% endblock %}
 {% block content %}
-.row
-    .col-md-12
-        %h2 {{page_header}}
-.row
-    .col-md-12
-        %hr
+<div class="row">
+    <div class="col">
+        <h2>{{page_header}}</h2>
         {% crispy form %}
+    </div>
+</div>
 {% endblock %}

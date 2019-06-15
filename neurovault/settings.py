@@ -253,7 +253,7 @@ LOGIN_REDIRECT_URL = '/my_collections/'
 #LOGIN_URL          = '/login-form/'
 #LOGIN_ERROR_URL    = '/login-error/'
 
-CRISPY_TEMPLATE_PACK = 'bootstrap3'
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 DBBACKUP_STORAGE = 'dbbackup.storage.dropbox_storage'
 DBBACKUP_TOKENS_FILEPATH = '/home/filo/dbtokens'

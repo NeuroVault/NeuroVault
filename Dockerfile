@@ -24,7 +24,7 @@ RUN pip install cython \
                 django-celery \
                 django-chosen \
                 django-cleanup==0.4.2 \
-                django-crispy-forms \
+                git+git://github.com/maraujop/django-crispy-forms.git@bc3a520dffafac3613631fb95ec1a8bab53c1160#egg=django-crispy-forms \
                 django-datatables-view \
                 'django-dbbackup<2.3' \
                 django-dirtyfields \

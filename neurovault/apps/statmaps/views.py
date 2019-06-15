@@ -327,7 +327,7 @@ def edit_collection(request, cid=None):
             form = CollectionForm(instance=collection)
 
     context = {"form": form, "page_header": page_header, "is_owner": is_owner}
-    return render(request, "statmaps/edit_collection.html.haml", context)
+    return render(request, "statmaps/edit_collection.html", context)
 
 
 def choice_datasources(model):
