@@ -809,6 +809,11 @@ class EditStatisticMapForm(StatisticMapForm):
         user = kwargs['user']
         del kwargs['user']
         super(EditStatisticMapForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-lg-2'
+        self.helper.field_class = 'col-lg-10'
+        self.helper.form_tag = False
         if user.is_superuser:
             self.fields['collection'].queryset = Collection.objects.all()
         else:
