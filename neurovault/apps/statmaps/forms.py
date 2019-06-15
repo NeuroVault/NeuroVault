@@ -304,8 +304,8 @@ class MetaanalysisForm(ModelForm):
         self.helper.field_class = 'col-lg-10'
         self.helper.add_input(Submit('submit', 'Submit'))
 
-class CollectionForm(ModelForm):
 
+class CollectionForm(ModelForm):
     class Meta:
         exclude = ('owner', 'private_token', 'contributors', 'private')
         model = Collection
@@ -625,6 +625,8 @@ class ImageForm(ModelForm, ImageValidationMixin):
         self.helper.label_class = 'col-lg-2'
         self.helper.field_class = 'col-lg-10'
         self.helper.form_tag = False
+        self.helper.form_method = 'post'
+        self.helper.add_input(Submit('submit', 'Submit'))
 
     class Meta:
         model = Image
@@ -641,14 +643,9 @@ class ImageForm(ModelForm, ImageValidationMixin):
         return self.clean_and_validate(cleaned_data)
 
 
-
-
 class StatisticMapForm(ImageForm):
-
     def __init__(self, *args, **kwargs):
         super(StatisticMapForm, self).__init__(*args, **kwargs)
-        self.helper.form_tag = False
-        self.helper.add_input(Submit('submit', 'Submit'))
 
     def clean(self, **kwargs):
         cleaned_data = super(StatisticMapForm, self).clean()
@@ -779,6 +776,8 @@ class PolymorphicImageForm(ImageForm):
         self.helper.form_class = 'form-horizontal'
         self.helper.label_class = 'col-lg-2'
         self.helper.field_class = 'col-lg-10'
+        self.helper.form_method = 'post'
+        self.helper.add_input(Submit('submit', 'Submit'))
         if self.instance.polymorphic_ctype is not None:
             if self.instance.polymorphic_ctype.model == 'atlas':
                 self.fields = AtlasForm.base_fields
@@ -804,16 +803,10 @@ class PolymorphicImageForm(ImageForm):
 
 
 class EditStatisticMapForm(StatisticMapForm):
-
     def __init__(self, *args, **kwargs):
         user = kwargs['user']
         del kwargs['user']
         super(EditStatisticMapForm, self).__init__(*args, **kwargs)
-        self.helper = FormHelper(self)
-        self.helper.form_class = 'form-horizontal'
-        self.helper.label_class = 'col-lg-2'
-        self.helper.field_class = 'col-lg-10'
-        self.helper.form_tag = False
         if user.is_superuser:
             self.fields['collection'].queryset = Collection.objects.all()
         else:
@@ -844,8 +837,6 @@ class EditAtlasForm(AtlasForm):
         user = kwargs['user']
         del kwargs['user']
         super(EditAtlasForm, self).__init__(*args, **kwargs)
-        self.helper.form_tag = True
-        self.helper.add_input(Submit('submit', 'Submit'))
         if user.is_superuser:
             self.fields['collection'].queryset = Collection.objects.all()
         else:
@@ -1120,10 +1111,6 @@ class NIDMResultStatisticMapForm(ImageForm):
 
     def __init__(self, *args, **kwargs):
         super(NIDMResultStatisticMapForm, self).__init__(*args, **kwargs)
-        self.helper = FormHelper(self)
-        self.helper.form_class = 'form-horizontal'
-        self.helper.label_class = 'col-lg-2'
-        self.helper.field_class = 'col-lg-10'
         # problem with exclude() and fields()
         self.fields['hdr_file'].widget = HiddenInput()
         if self.instance.pk is None:

@@ -147,7 +147,7 @@ def edit_metaanalysis(request, metaanalysis_id=None):
         form = MetaanalysisForm(instance=metaanalysis)
 
     context = {"form": form, "page_header": page_header}
-    return render(request, "statmaps/edit_metaanalysis.html.haml", context)
+    return render(request, "statmaps/edit_metaanalysis.html", context)
 
 @login_required
 def finalize_metaanalysis(request, metaanalysis_id):
@@ -464,7 +464,7 @@ def view_image(request, pk, collection_cid=None):
         context['ttl_basename'] = os.path.basename(image.nidm_results.ttl_file.url)
 
     if isinstance(image, Atlas):
-        template = 'statmaps/atlas_details.html.haml'
+        template = 'statmaps/atlas_details.html'
     else:
         if np.isnan(image.perc_bad_voxels) or np.isnan(image.perc_voxels_outside):
             context['warning'] = "Warning: This map seems to be empty!"
@@ -490,7 +490,7 @@ def view_metaanalysis(request, metaanalysis_id):
     '''
     metaanalysis = get_object_or_404(Metaanalysis, pk=metaanalysis_id)
     context = {'metaanalysis': metaanalysis}
-    return render(request, 'statmaps/metaanalysis_details.html.haml', context)
+    return render(request, 'statmaps/metaanalysis_details.html', context)
 
 def view_collection(request, cid):
     '''view_collection returns main view to see an entire collection of images, meaning a viewer and list of images to load into it.
@@ -959,7 +959,7 @@ def view_images_by_tag(request, tag):
         images = Image.objects.filter(tags__name__in=[tag]).filter(
                                         collection__private=False)
     context = {'images': images, 'tag': tag}
-    return render(request, 'statmaps/images_by_tag.html.haml', context)
+    return render(request, 'statmaps/images_by_tag.html', context)
 
 
 def view_image_with_pycortex(request, pk, collection_cid=None):
@@ -1065,14 +1065,14 @@ def stats_view(request):
                'non_empty_collections_count': non_empty_collections_count,
                'public_collections_count': public_collections_count,
                'public_collections_with_DOIs_count': public_collections_with_DOIs_count}
-    return render(request, 'statmaps/stats.html.haml', context)
+    return render(request, 'statmaps/stats.html', context)
 
 
 def papaya_js_embed(request, pk, iframe=None):
     tpl = 'papaya_embed.tpl.js'
     mimetype = "text/javascript"
     if iframe is not None:
-        tpl = 'papaya_frame.html.haml'
+        tpl = 'papaya_frame.html'
         mimetype = "text/html"
     image = get_image(pk,None,request)
     if image.collection.private:
@@ -1245,7 +1245,7 @@ def find_similar(request, pk):
         'image_title': image_title,
         'query_png': query_png
     }
-    template = 'statmaps/compare_search.html.haml'
+    template = 'statmaps/compare_search.html'
     return render(request, template, context)
 
 
@@ -1285,7 +1285,7 @@ def gene_expression(request, pk, collection_cid=None):
         'api_cid': api_cid,
         'mask': request.GET.get('mask', 'full')
     }
-    template = 'statmaps/gene_expression.html.haml'
+    template = 'statmaps/gene_expression.html'
     return render(request, template, context)
 
 def gene_expression_json(request, pk, collection_cid=None):

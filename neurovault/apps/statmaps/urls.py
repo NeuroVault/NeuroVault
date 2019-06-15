@@ -24,11 +24,11 @@ from .views import edit_collection, view_image, delete_image, edit_image, \
 urlpatterns = patterns('',
     url(r'^metaanalysis_selection/$',
        TemplateView.as_view(
-           template_name='statmaps/metaanalysis_selection.html.haml'),
+           template_name='statmaps/metaanalysis_selection.html'),
        name='metaanalysis_selection'),
     url(r'^my_metaanalyses/$',
         login_required(TemplateView.as_view(
-           template_name='statmaps/my_metaanalyses.html.haml')),
+           template_name='statmaps/my_metaanalyses.html')),
         name='my_metaanalyses'),
     url(r'^my_metaanalyses/new$',
         edit_metaanalysis,
@@ -125,7 +125,7 @@ urlpatterns = patterns('',
         ListView.as_view(
             queryset=KeyValueTag.objects.all(),
             context_object_name='tags',
-            template_name='statmaps/tags_index.html.haml'),
+            template_name='statmaps/tags_index.html'),
         name='tags_list'),
     url(r'^images/tags/(?P<tag>[A-Za-z0-9@\.\+\-\_\s]+)/$',
         view_images_by_tag,

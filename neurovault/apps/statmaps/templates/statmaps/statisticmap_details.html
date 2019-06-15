@@ -42,7 +42,7 @@
 {% if image.cognitive_paradigm_cogatlas %}
 <meta name="cognitive_paradigm_cogatlas" content="{{ image.cognitive_paradigm_cogatlas }}">
 {% endif %}
-{% include 'statmaps/_papaya_viewer_head.html.haml' %}
+{% include 'statmaps/_papaya_viewer_head.html' %}
 {% endblock %}
 {% block head %}
 <title>{% block title %}NeuroVault: {{image.name}}{% endblock %}</title>

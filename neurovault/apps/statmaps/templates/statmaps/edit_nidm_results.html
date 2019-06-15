@@ -3,7 +3,6 @@
 {% load static from staticfiles %}
 {% block head %}
     <title>{% block title %}Edit NIDM-Results{% endblock %}</title>
-    <link href="{% static 'css/studies.css' %}" media="screen" rel="stylesheet" type="text/css"></link>
     <link rel="stylesheet" type="text/css" href="{% static "css/papaya.css"%}" />
     <script src="{% static "scripts/papaya.js"%}" type="text/javascript"></script>
 {% endblock %}
@@ -34,8 +33,6 @@ $("#nidm_images").click(function(){
 </script>
 
 {% crispy form %}
-
-<link rel="stylesheet" href="/static/css/style.css">
 
 {% endblock %}
 
