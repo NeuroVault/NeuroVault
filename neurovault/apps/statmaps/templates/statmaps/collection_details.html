@@ -304,6 +304,7 @@
                 <div class='tab-content mt-3'>
                     {% if images_visible %}
                        <div id='images' class='tab-pane active'>
+                       <div class="table-responsive-md">
                            <table id="collection-images-datatable" class="table table-striped table-sm">
                                <thead>
                                       <tr>
@@ -315,9 +316,11 @@
                                </thead>
                            </table>
                        </div>
+                       </div>
                     {% endif %}
                     {% if gimages_visible %}
                        <div id='gimages' class='tab-pane {%  if gimages_active %}active{%  endif %}'>
+                       <div class="table-responsive-md">
                            <table id="collection-gimages-datatable" class="table table-striped table-sm">
                                <thead>
                                       <tr>
@@ -329,9 +332,11 @@
                                </thead>
                            </table>
                        </div>
+                       </div>
                     {% endif %}
                     {% if simages_visible %}
                        <div id='simages' class='tab-pane {%  if simages_active %}active{%  endif %}'>
+                       <div class="table-responsive-md">
                            <table id="collection-simages-datatable" class="table table-striped table-sm">
                                <thead>
                                       <tr>
@@ -343,9 +348,11 @@
                                </thead>
                            </table>
                        </div>
+                       </div>
                     {% endif %}
                     {% if oimages_visible %}
                        <div id='oimages' class='tab-pane {%  if oimages_active %}active{%  endif %}'>
+                       <div class="table-responsive-md">
                            <table id="collection-oimages-datatable" class="table table-striped table-sm">
                                <thead>
                                       <tr>
@@ -356,9 +363,11 @@
                                       </tr>
                                </thead>
                            </table>
+                       </div>
                       </div><!-- Close images tab-->
                     {% endif %}
                       <div id="details" class="tab-pane">
+                          <div class="table-responsive-md">
                           <table id="collection-details-datatable" class="table table-striped table-sm">
                               <thead>
                                   <tr>
@@ -377,6 +386,7 @@
                                   <tr><td>Add Date</td><td>{{ collection.add_date }}</td></tr>
                               </tbody>
                           </table>
+                          </div>
                       </div><!-- close details tab-->
                       <div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false"></div>
                 </div><!-- close tab content-->

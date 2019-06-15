@@ -5,11 +5,17 @@
 {% block head %}
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.7/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.7/js/select2.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/gh/ttskch/select2-bootstrap4-theme@1.2.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
 {% endblock %}
 
 {% block content %}
+
 <div class="row">
     <div class="col">
+        <h2>{{page_header}}</h2>
+        {%  if preamble %}
+            <p>{{ preamble | safe }}</p>
+        {% endif %}
         {% if form.instance.nidm_results %}
             <div class="alert alert-info">
                 <button type="button" class="close" data-dismiss="alert">&times;</button>
