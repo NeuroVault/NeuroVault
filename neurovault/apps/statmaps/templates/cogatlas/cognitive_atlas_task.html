@@ -81,8 +81,7 @@
             There are no maps in NeuroVault tagged with this task.
             </div>
     {% else %}
-            <div class="col-md-6 mt-1 mb-1" style="margin-top:20px; min-height:470px;"
-                 id="for_papaya">
+            <div class="col-md-6 mt-1 mb-1 d-none d-md-block" style="margin-top:20px" id="for_papaya">
             </div>
             <div class="col-md-6 mt-1 mb-1">
                 <div id='images' class='tab-pane active'>
@@ -90,7 +89,7 @@
                        <table id="collection-images-datatable" class="table table-striped table-sm">
                            <thead>
                                   <tr>
-                                      <th>View</th>
+                                      <th scope="col" class="d-none d-md-table-cell">View</th>
                                       <th>Name</th>
                                       <th>Contrast</th>
                                       <th>Collection</th>
@@ -115,15 +114,17 @@
 					"iDisplayLength": 7,
                     "lengthMenu": [7, 10, 25, 50, 75, 100],
                     "columnDefs": [
-                        {"orderable": false, "targets": 0}
+                        {"orderable": false, "targets": 0, className: "d-none d-md-table-cell"}
                     ],
                     "order": [[3, 'asc'], [2, 'asc'], [1, 'asc']],
                     "ajax": "{% url 'task_images_json' task.cog_atlas_id %}",
                     "initComplete": function(settings, json) {
-                        $("#for_papaya").append("<div class=\"papaya\" class=\"mw-100\" style=\"float:left;\"></div>")
-                        papaya.Container.startPapaya();
-                        var collection_images = $(".viewimage")
-                        viewimage($(collection_images[0]))
+                        if($('#for_papaya').is(':visible')) {
+                            $("#for_papaya").append("<div class=\"papaya\" class=\"mw-100\" style=\"float:left;\"></div>")
+                            papaya.Container.startPapaya();
+                            var collection_images = $(".viewimage")
+                            viewimage($(collection_images[0]))
+                        }
                     }
                 });
             });
