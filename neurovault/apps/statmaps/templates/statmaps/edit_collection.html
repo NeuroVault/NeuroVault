@@ -4,16 +4,12 @@
 
 {% block head %}
     <title>{% block title %}Edit metaanalysis{% endblock %}</title>
-    %link{ href:"{% static 'css/studies.css' %}", media:"screen", rel:"stylesheet", type:"text/css"}
 {% endblock %}
 {% block content %}
-.row
-    .col-md-12
-        %h2 {{page_header}}
-        .lead
-            %p
-.row
-    .col-md-12
-        %hr
+<div class="row">
+    <div class="col">
+        <h2>{{page_header}}</h2>
         {% crispy form %}
+    </div>
+</div>
 {% endblock %}

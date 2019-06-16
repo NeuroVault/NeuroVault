@@ -135,7 +135,7 @@ collection_fieldsets = [
                 'used_high_pass_filter',
                 'high_pass_filter_method',
                 'autocorrelation_model'],
-     'legend': '1st Level'}),
+     'legend': 'First Level'}),
     ('GroupModeling', {
      'fields': ['group_model_type',
                 'group_estimation_type',
@@ -144,7 +144,7 @@ collection_fieldsets = [
                 'group_model_multilevel',
                 'group_repeated_measures',
                 'group_repeated_measures_method'],
-     'legend': '2nd Level'}),
+     'legend': 'Second Level'}),
     ('Nutritional', {
         'fields': ['nutbrain_hunger_state',
                    'nutbrain_food_viewing_conditions',
@@ -300,10 +300,12 @@ class MetaanalysisForm(ModelForm):
 
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-lg-2'
+        self.helper.field_class = 'col-lg-10'
         self.helper.add_input(Submit('submit', 'Submit'))
 
-class CollectionForm(ModelForm):
 
+class CollectionForm(ModelForm):
     class Meta:
         exclude = ('owner', 'private_token', 'contributors', 'private')
         model = Collection
@@ -345,6 +347,8 @@ class CollectionForm(ModelForm):
 
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-lg-2'
+        self.helper.field_class = 'col-lg-10'
         self.helper.layout = Layout()
         tab_holder = TabHolder()
         for fs in collection_fieldsets:
@@ -618,7 +622,11 @@ class ImageForm(ModelForm, ImageValidationMixin):
         ModelForm.__init__(self, *args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-lg-2'
+        self.helper.field_class = 'col-lg-10'
         self.helper.form_tag = False
+        self.helper.form_method = 'post'
+        self.helper.add_input(Submit('submit', 'Submit'))
 
     class Meta:
         model = Image
@@ -635,14 +643,9 @@ class ImageForm(ModelForm, ImageValidationMixin):
         return self.clean_and_validate(cleaned_data)
 
 
-
-
 class StatisticMapForm(ImageForm):
-
     def __init__(self, *args, **kwargs):
         super(StatisticMapForm, self).__init__(*args, **kwargs)
-        self.helper.form_tag = False
-        self.helper.add_input(Submit('submit', 'Submit'))
 
     def clean(self, **kwargs):
         cleaned_data = super(StatisticMapForm, self).clean()
@@ -772,7 +775,9 @@ class PolymorphicImageForm(ImageForm):
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
         self.helper.label_class = 'col-lg-2'
-        self.helper.field_class = 'col-lg-8'
+        self.helper.field_class = 'col-lg-10'
+        self.helper.form_method = 'post'
+        self.helper.add_input(Submit('submit', 'Submit'))
         if self.instance.polymorphic_ctype is not None:
             if self.instance.polymorphic_ctype.model == 'atlas':
                 self.fields = AtlasForm.base_fields
@@ -798,7 +803,6 @@ class PolymorphicImageForm(ImageForm):
 
 
 class EditStatisticMapForm(StatisticMapForm):
-
     def __init__(self, *args, **kwargs):
         user = kwargs['user']
         del kwargs['user']
@@ -833,8 +837,6 @@ class EditAtlasForm(AtlasForm):
         user = kwargs['user']
         del kwargs['user']
         super(EditAtlasForm, self).__init__(*args, **kwargs)
-        self.helper.form_tag = True
-        self.helper.add_input(Submit('submit', 'Submit'))
         if user.is_superuser:
             self.fields['collection'].queryset = Collection.objects.all()
         else:
@@ -1035,6 +1037,8 @@ class NIDMResultsForm(forms.ModelForm, NIDMResultsValidationMixin):
 
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-lg-2'
+        self.helper.field_class = 'col-lg-10'
         self.helper.form_tag = True
         self.helper.add_input(Submit('submit', 'Submit'))
         self.helper.add_input(
@@ -1093,6 +1097,8 @@ class NIDMViewForm(forms.ModelForm):
 
         self.helper = FormHelper(self)
         self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-lg-2'
+        self.helper.field_class = 'col-lg-10'
         self.helper.form_tag = True
 
 
@@ -1105,8 +1111,6 @@ class NIDMResultStatisticMapForm(ImageForm):
 
     def __init__(self, *args, **kwargs):
         super(NIDMResultStatisticMapForm, self).__init__(*args, **kwargs)
-        self.helper = FormHelper(self)
-        self.helper.form_class = 'form-horizontal'
         # problem with exclude() and fields()
         self.fields['hdr_file'].widget = HiddenInput()
         if self.instance.pk is None:

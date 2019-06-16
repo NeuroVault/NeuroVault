@@ -16,7 +16,8 @@ RUN pip install cython \
                 pandas==0.20.3 \
                 h5py==2.6.0 \
                 matplotlib==1.5.1 \
-                scikit-image==0.12.3 \ celery[redis]==3.1.24 \
+                scikit-image==0.12.3 \
+                celery[redis]==3.1.24 \
                 certifi==2015.04.28 \
                 cognitiveatlas \
                 'Django==1.8.8' \
@@ -24,7 +25,7 @@ RUN pip install cython \
                 django-celery \
                 django-chosen \
                 django-cleanup==0.4.2 \
-                django-crispy-forms \
+                git+git://github.com/mariagardbraga/django-crispy-forms.git@78a34a0db9715ed57fc912805751a987c82e25e5#egg=django-crispy-forms \
                 django-datatables-view \
                 'django-dbbackup<2.3' \
                 django-dirtyfields \
@@ -40,7 +41,6 @@ RUN pip install cython \
                 django-taggit-templatetags \
                 django-mailgun \
                 'dropbox==1.6' \
-                hamlpy \
                 lxml \
                 markdown \
                 networkx \
