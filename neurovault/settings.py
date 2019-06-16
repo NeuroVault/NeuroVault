@@ -123,9 +123,7 @@ TEMPLATES = [
                                             "django.core.context_processors.tz",
                                             "django.contrib.messages.context_processors.messages",
                                             'django.core.context_processors.request'),
-                    'loaders': ('hamlpy.template.loaders.HamlPyFilesystemLoader',
-                                'hamlpy.template.loaders.HamlPyAppDirectoriesLoader',
-                                'django.template.loaders.filesystem.Loader',
+                    'loaders': ('django.template.loaders.filesystem.Loader',
                                 'django.template.loaders.app_directories.Loader',
                                 )}
     }
@@ -254,7 +252,7 @@ LOGIN_REDIRECT_URL = '/my_collections/'
 #LOGIN_URL          = '/login-form/'
 #LOGIN_ERROR_URL    = '/login-error/'
 
-CRISPY_TEMPLATE_PACK = 'bootstrap3'
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 DBBACKUP_STORAGE = 'dbbackup.storage.dropbox_storage'
 DBBACKUP_TOKENS_FILEPATH = '/home/filo/dbtokens'

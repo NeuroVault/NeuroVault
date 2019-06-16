@@ -76,7 +76,7 @@ def owner_or_contrib(request,collection):
 
 
 def get_button_html(url, type, target_template_image):
-    return '<a class="btn btn-default viewimage" ' \
+    return '<a role="button" class="btn btn-outline-secondary btn-sm viewimage" ' \
            'onclick="viewimage(this)" filename="%s" type="%s" ' \
            'target_template_image="%s"><i class="fa fa-lg ' \
            'fa-eye"></i></a>' % (url,
@@ -147,7 +147,7 @@ def edit_metaanalysis(request, metaanalysis_id=None):
         form = MetaanalysisForm(instance=metaanalysis)
 
     context = {"form": form, "page_header": page_header}
-    return render(request, "statmaps/edit_metaanalysis.html.haml", context)
+    return render(request, "statmaps/edit_metaanalysis.html", context)
 
 @login_required
 def finalize_metaanalysis(request, metaanalysis_id):
@@ -327,7 +327,7 @@ def edit_collection(request, cid=None):
             form = CollectionForm(instance=collection)
 
     context = {"form": form, "page_header": page_header, "is_owner": is_owner}
-    return render(request, "statmaps/edit_collection.html.haml", context)
+    return render(request, "statmaps/edit_collection.html", context)
 
 
 def choice_datasources(model):
@@ -464,7 +464,7 @@ def view_image(request, pk, collection_cid=None):
         context['ttl_basename'] = os.path.basename(image.nidm_results.ttl_file.url)
 
     if isinstance(image, Atlas):
-        template = 'statmaps/atlas_details.html.haml'
+        template = 'statmaps/atlas_details.html'
     else:
         if np.isnan(image.perc_bad_voxels) or np.isnan(image.perc_voxels_outside):
             context['warning'] = "Warning: This map seems to be empty!"
@@ -480,7 +480,7 @@ def view_image(request, pk, collection_cid=None):
             context['warning'] += "Some of the NeuroVault functions such as decoding might not work properly. "
             context['warning'] += "Please use unthresholded maps whenever possible."
 
-        template = 'statmaps/statisticmap_details.html.haml'
+        template = 'statmaps/statisticmap_details.html'
     return render(request, template, context)
 
 
@@ -490,7 +490,7 @@ def view_metaanalysis(request, metaanalysis_id):
     '''
     metaanalysis = get_object_or_404(Metaanalysis, pk=metaanalysis_id)
     context = {'metaanalysis': metaanalysis}
-    return render(request, 'statmaps/metaanalysis_details.html.haml', context)
+    return render(request, 'statmaps/metaanalysis_details.html', context)
 
 def view_collection(request, cid):
     '''view_collection returns main view to see an entire collection of images, meaning a viewer and list of images to load into it.
@@ -692,7 +692,8 @@ def view_task(request, cog_atlas_id=None):
                "task": task }
     return render(request, 'cogatlas/cognitive_atlas_task.html', context)
 
-def add_image_redirect(request,formclass,template_path,redirect_url,is_private):
+def add_image_redirect(request, formclass, redirect_url,
+                       is_private, preamble):
     temp_collection_name = "%s's temporary collection" % request.user.username
     #this is a hack we need to make sure this collection can be only
     #owned by the same user
@@ -717,20 +718,42 @@ def add_image_redirect(request,formclass,template_path,redirect_url,is_private):
     else:
         form = formclass(user=request.user, instance=image)
     contrasts = get_contrast_lookup()
-    context = {"form": form,"contrasts":json.dumps(contrasts)}
-    return render(request,template_path , context)
+    context = {"form": form,
+               "contrasts": json.dumps(contrasts),
+               "preamble": preamble}
+    return render(request, "statmaps/edit_image.html", context)
 
 @login_required
 def add_image_for_neurosynth(request):
     redirect_url = "http://neurosynth.org/decode/?neurovault=%(private_token)s-%(image_id)s"
-    template_path = "statmaps/add_image_for_neurosynth.html"
-    return add_image_redirect(request,SimplifiedStatisticMapForm,template_path,redirect_url,False)
+    preamble = """Welcome to NeuroVault - a  public web repository for statistical 
+maps of the brain. After filling in the minimum
+information outlined below (only the fields with an 
+asterisk [*] are compulsory), your map 
+will be sent back to <a href="http://neurosynth.org">Neurosynth.org</a> for
+decoding. <b>Remember that your map needs to be unthresholded and in MNI152
+space for decoding to work correctly!</b>.
+<b>By uploading your map you agree to make it publicly available under <a href="http://creativecommons.org/about/cc0">CC0 license</a>.</b>
+You can always come back to <a href="/">NeuroVault.org</a> to 
+inspect, modify, and/or delete your maps. If you wish to use Neurosynth decoding, but keep 
+your maps private, consider creating a private collection."""
+
+    return add_image_redirect(request, SimplifiedStatisticMapForm,
+                              redirect_url, False, preamble)
 
 @login_required
 def add_image_for_neuropower(request):
     redirect_url = "http://neuropowertools.org/neuropower/neuropowerinput/?neurovault=%(private_token)s-%(image_id)s"
-    template_path = "statmaps/add_image_for_neuropower.html"
-    return add_image_redirect(request,NeuropowerStatisticMapForm,template_path,redirect_url,True)
+    preamble = """Welcome to NeuroVault - a  public web repository for statistical
+maps of the brain. After filling in the minimum
+information outlined below (only the fields with an
+asterisk [*] are compulsory), your map
+will be sent back to <a href="http://neuropowertools.org">Neuropowertools.org</a> for
+a power analysis. Your (pilot or preliminary) data will not be public, but we strongly encourage you to upload your full dataset after collection to Neurovault and make it public.
+You can always come back to <a href="/">NeuroVault.org</a> to
+inspect, modify, and/or delete your maps."""
+    return add_image_redirect(request, NeuropowerStatisticMapForm,
+                              redirect_url, True, preamble)
 
 @login_required
 def add_image(request, collection_cid):
@@ -747,8 +770,10 @@ def add_image(request, collection_cid):
         form = AddStatisticMapForm(instance=image)
 
     contrasts = get_contrast_lookup()
-    context = {"form": form,"contrasts": json.dumps(contrasts)}
-    return render(request, "statmaps/add_image.html", context)
+    context = {"form": form,
+               "contrasts": json.dumps(contrasts),
+               "page_header": "Upload a statistical map"}
+    return render(request, "statmaps/edit_image.html", context)
 
 
 @login_required
@@ -934,7 +959,7 @@ def view_images_by_tag(request, tag):
         images = Image.objects.filter(tags__name__in=[tag]).filter(
                                         collection__private=False)
     context = {'images': images, 'tag': tag}
-    return render(request, 'statmaps/images_by_tag.html.haml', context)
+    return render(request, 'statmaps/images_by_tag.html', context)
 
 
 def view_image_with_pycortex(request, pk, collection_cid=None):
@@ -1040,14 +1065,14 @@ def stats_view(request):
                'non_empty_collections_count': non_empty_collections_count,
                'public_collections_count': public_collections_count,
                'public_collections_with_DOIs_count': public_collections_with_DOIs_count}
-    return render(request, 'statmaps/stats.html.haml', context)
+    return render(request, 'statmaps/stats.html', context)
 
 
 def papaya_js_embed(request, pk, iframe=None):
     tpl = 'papaya_embed.tpl.js'
     mimetype = "text/javascript"
     if iframe is not None:
-        tpl = 'papaya_frame.html.haml'
+        tpl = 'papaya_frame.html'
         mimetype = "text/html"
     image = get_image(pk,None,request)
     if image.collection.private:
@@ -1220,7 +1245,7 @@ def find_similar(request, pk):
         'image_title': image_title,
         'query_png': query_png
     }
-    template = 'statmaps/compare_search.html.haml'
+    template = 'statmaps/compare_search.html'
     return render(request, template, context)
 
 
@@ -1260,7 +1285,7 @@ def gene_expression(request, pk, collection_cid=None):
         'api_cid': api_cid,
         'mask': request.GET.get('mask', 'full')
     }
-    template = 'statmaps/gene_expression.html.haml'
+    template = 'statmaps/gene_expression.html'
     return render(request, template, context)
 
 def gene_expression_json(request, pk, collection_cid=None):

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>{% block title %}Search maps for metaanalysis{% endblock %}</title>
+<script>
+   $(document).ready(function() {
+      var captured = /q=([^&]+)/.exec(window.location.href);
+      var result = captured ? captured[1] : '';
+      var base_url = captured  != '' ? window.location.href.split("?")[0] : window.location.href;
+      $('#collections-table').dataTable({
+                "bJQueryUI": true,
+                iDisplayLength: 25,
+                aoColumns: [ { sWidth: '20%' }, { sWidth: '20%'}, { sWidth: '20%' }, {
+                sWidth: '20%'}, { sWidth: '20%' }],
+                "processing": true,
+                "serverSide": true,
+                "order": [[ 0, "asc" ]],
+                "ajax": "{% url 'metaanalysis_selection_json' %}",
+                "oSearch":{"sSearch":result},
+                "fnDrawCallback": function (oSettings) {
+                    var curSearch = oSettings.oPreviousSearch.sSearch;
+                    history.replaceState({query:curSearch}, "title", base_url+"?q=" + curSearch);
+                }
+            });
+   });
+</script>
+
+{% endblock %}
+
+{% block content %}
+<div class="row mt-1 mb-1">
+	<div class="col">
+        <h2>Group level maps from published studies</h2>
+        <p>This list includes only group level maps T/Z from collections with a corresponding
+            paper</p>
+        <div class="table-responsive-md">
+           <table id="collections-table" class="table table-striped table-sm">
+               <thead>
+                      <tr>
+                          <th>Collection name</th>
+                          <th>Collection description</th>
+                          <th>Map name</th>
+                          <th>Map description</th>
+                          <th>Modality</th>
+                      </tr>
+               </thead>
+           </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+{% load static from staticfiles %}
+{% block includes %}
+{% include "statmaps/_meta_image.html" %}
+<meta name="map_type" content="{{ image.map_type }}">
+<meta name="modality" content="{{ image.modality }}">
+{% if image.smoothness_fwhm %}
+<meta name="smoothness_fwhm" content="{{ image.smoothness_fwhm }}">
+{% endif %}
+{% if image.analysis_level %}
+<meta name="analysis_level" content="{{ image.analysis_level }}">
+{% endif %}
+{% if image.number_of_subjects %}
+<meta name="number_of_subjects" content="{{ image.number_of_subjects }}">
+{% endif %}
+{% if image.figure %}
+<meta name="figure" content="{{ image.figure }}">
+{% endif %}
+
+{% if image.map_type == 'Pa' %}
+<meta name="pagetype" content="atlas">
+{% else %}
+<meta name="pagetype" content="statmap">
+{% endif %}
+
+{% if image.not_mni == False %}
+<meta name="mni" content="true">
+{% else %}
+<meta name="mni" content="false">
+{% endif %}
+
+<!-- Cognitive Atlas -->
+{% if image.cognitive_contrast_cogatlas_id %}
+<meta name="cognitive_contrast_cogatlas_id" content="{{ image.cognitive_contrast_cogatlas_id }}">
+{% endif %}
+{% if image.cognitive_contrast_cogatlas %}
+<meta name="cognitive_contrast_cogatlas" content="{{ image.cognitive_contrast_cogatlas }}">
+{% endif %}
+{% if image.cognitive_paradigm_cogatlas_id %}
+<meta name="cognitive_paradigm_cogatlas_id" content="{{ image.cognitive_paradigm_cogatlas_id }}">
+{% endif %}
+{% if image.cognitive_paradigm_cogatlas %}
+<meta name="cognitive_paradigm_cogatlas" content="{{ image.cognitive_paradigm_cogatlas }}">
+{% endif %}
+{% include 'statmaps/_papaya_viewer_head.html' %}
+{% endblock %}
+{% block head %}
+<title>{% block title %}NeuroVault: {{image.name}}{% endblock %}</title>
+<script>
+$(document).ready(function(){
+  $('[data-toggle="tooltip"]').tooltip();
+});
+</script>
+<script>
+     var params = [];
+     params["worldSpace"] = true;
+     params["expandable"] = true;
+     params["combineParametric"] = true;
+     params["smoothDisplay"] = false;
+     params["showControls"] = false;
+     params["allowScroll"] = false;
+     params["luts"] = [{"name":"PuBu", "data":[[0,1,0.968627,0.984314],[0.125,0.92549,0.905882,0.94902],[0.25,0.815686,0.819608,0.901961],[0.375,0.65098,0.741176,0.858824],[0.5,0.454902,0.662745,0.811765],[0.625,0.211765,0.564706,0.752941],[0.75,0.0196078,0.439216,0.690196],[0.875,0.0156863,0.352941,0.552941],[1,0.00784314,0.219608,0.345098]]},
+     {"name":"OrRd", "data":[[0,1,0.968627,0.92549],[0.125,0.996078,0.909804,0.784314],[0.25,0.992157,0.831373,0.619608],[0.375,0.992157,0.733333,0.517647],[0.5,0.988235,0.552941,0.34902],[0.625,0.937255,0.396078,0.282353],[0.75,0.843137,0.188235,0.121569],[0.875,0.701961,0,0],[1,0.498039,0,0]]}];
+
+     var filename = "{{ image.file.url }}".replace(/^.*[\\\/]/, '').replace(/ /g, '%20')
+     {% if image.map_type == "Pa" %}
+         params["images"] = ["{% static "images/"%}{{ image.target_template_image }}.nii.gz", "{{ image.file.url|urlencode }}"];
+         params[filename] = {"parametric": true,  "lut":"Spectrum", "alpha":"0.75", "minPercent": 0.0, "maxPercent": 1.0};
+     {% elif image.map_type == "R" %}
+         params["images"] = ["{% static "images/"%}{{ image.target_template_image }}.nii.gz", "{{ image.file.url|urlencode }}"];
+         params[filename] = {"parametric": true,  "lut":"Overlay (Negatives)", "alpha":"0.75", "minPercent": 0.0, "maxPercent": 1.0};
+     {% elif image.map_type == "A" %}
+         params["images"] = ["{{ image.file.url|urlencode }}"];
+     {% elif image.data_origin == "surface" %}
+         params["images"] = ["{% static "images/"%}{{ image.target_template_image }}.nii.gz", "{{ image.file.url|urlencode }}"];
+         params[filename] = {"parametric": true,  "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric": true, "minPercent": 0.0, "maxPercent": 1.0};
+     {% else %}
+         params["images"] = ["{% static "images/"%}{{ image.target_template_image }}.nii.gz", "{{ image.file.url|urlencode }}"];
+         params[filename] = {"parametric": true,  "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric": true};
+    {% endif %}
+
+</script>
+<script>
+    (function() {
+      $(document).ready(function() {
+        $(".disabled-link").click(function(e) {
+          return event.preventDefault();
+        });
+        $('#collection-tabs a:first').tab('show');
+        $('#image-details-datatable').dataTable({
+          sAjaxSource: "/api/images/" + "{{ api_cid }}" + "/datatable/?format=json",
+          iDisplayLength: 25
+        });
+        $('#delete_image').click(function(e) {
+          return confirm("Are you sure you want to delete this image? This operation cannot be undone!");
+        });
+        if (navigator.userAgent.indexOf("Safari") > -1 && navigator.userAgent.indexOf("Chrome") === -1) {
+          return $('a[href="pycortex"]').hide();
+        }
+
+        meta_status = '{{ meta_status }}'
+
+        if (meta_status != 'invalid') {
+            msg_dict = {'in': 'Remove from the active metaanalysis',
+                        'out': 'Add to the active metaanalysis'}
+            $("#toggle_meta").html(msg_dict[meta_status]);
+
+            $("#toggle_meta").click(function(e) {
+                $.ajax({url: "toggle_active_meta", success: function(result){
+                    $("#toggle_meta").html(msg_dict[result.new_status]);
+                }});
+             });
+        }
+      });
+
+    }).call(this);
+</script>
+
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col">
+        <h2>{{ image.name }}</h2>
+        {% if not image.collection.private %}
+            <p>Contributed by {{ user.username }} on {{ image.add_date|date:"N j, Y" }}</p>
+            <p><b>Collection</b>: <a href="{{ image.collection.get_absolute_url }}">{{ image.collection.name }}</a></p>
+        {% endif %}
+        {% if image.collection.communities.all %}
+            <p>Communities:
+                {% for community in image.collection.communities.all %}
+                   <a href="{%  url 'view_community' community_label=community.label %}">{{ community.label }}</a>
+                {% endfor %}
+            </p>
+        {% endif %}
+        {% if image.nidm_results %}
+            <p><b>Source</b>: <a href="{{ image.nidm_results.get_absolute_url }}">{{ image.nidm_results.name }}.zip</a></p>
+        {% endif %}
+        {% if image.description %}
+            <p><b>Description</b>: {{ image.description }}</p>
+        {% endif %}
+        {% if image.tags.all %}
+            <p>
+                <b>Tags</b>:
+                {% for tag in image.tags.all %}
+                    <a href="/images/tags/{{ tag.name }}">{{ tag.name }}</a>
+                {% endfor %}
+            </p>
+        {% endif %}
+        {% if image.cognitive_paradigm_cogatlas_id %}
+            <a class="btn btn-primary" href="{% url 'view_task' image.cognitive_paradigm_cogatlas_id %}">Task View</a>
+        {% endif %}
+        {% if image.data_origin == "volume" and pycortex_compatible %}
+            <a class="btn btn-primary" href="pycortex">3D View</a>
+        {% endif %}
+        {% if image.nidm_results %}
+            <div class="btn-group" role="group">
+                <button id="btnGroupDropDownloads" type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Download
+                </button>
+                <div class="dropdown-menu" aria-labelledby="btnGroupDropDownloads">
+                    <a class="dropdown-item" href="{{ image.nidm_results.zip_file.url }}"}>
+                            NIDM Results
+                    </a>
+                    <a class="dropdown-item" href="{{ image.file.url }}"}>
+                            Statistical Map
+                    </a>
+                    <a class="dropdown-item" href="{{ image.nidm_results.ttl_file.url }}"}>
+                            Turtle File
+                    </a>
+                </div>
+            </div>
+        {% else %}
+            <div class="btn-group" role="group">
+                <button id="btnGroupDropDownloads" type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Download
+                </button>
+                <div class="dropdown-menu" aria-labelledby="btnGroupDropDownloads">
+                    {% if image.file %}
+                        <a class="dropdown-item" href="{{ image.file.url|urlencode }}">
+                            Volume
+                        </a>
+                    {% endif %}
+                    {% if image.surface_right_file %}
+                        <a class="dropdown-item" href="download_surfaces">
+                            Surface
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+
+
+        <div class="btn-group" role="group">
+            <button id="btnGroupDropAnalysis" type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Analysis
+            </button>
+            <div class="dropdown-menu" aria-labelledby="btnGroupDropAnalysis">
+                {% if neurosynth_compatible %}
+                    <a class="dropdown-item" href="http://neurosynth.org/decode/?neurovault={{ api_cid }}" data-toggle="tooltip" title="Cognitive decoding using coordiante based data collected from thousands of papers.">
+                        Cognitive decoding (neurosynth)
+                    </a>
+                {% endif %}
+                {% if comparison_is_possible %}
+                    <a class="dropdown-item" href="{% url 'find_similar' image.id %}" data-toggle="tooltip" title="Find maps with similar patters.">
+                        Similar maps search
+                    </a>
+                    <a class="dropdown-item" href="{% url 'gene_expression' image.id %}" data-toggle="tooltip" title="Find genes with similar expression patters.">
+                        Gene expression decoding
+                    </a>
+                {% else %}
+                    <a class="dropdown-item disabled" tabindex="-1" role="button" aria-disabled="true" href="#" data-toggle="tooltip" title="Find maps with similar patters. This function is only enabled for public group level unthresholded statistical maps.">
+                        Similar maps search
+                    </a>
+                    <a class="dropdown-item disabled" tabindex="-1" role="button" aria-disabled="true" href="#" data-toggle="tooltip" title="Find genes with similar expression patters. This function is only enabled for public group level unthresholded statistical maps.">
+                        Gene expression decoding
+                    </a>
+                {% endif %}
+                <a class="dropdown-item" href="http://neuropowertools.org/neuropower/neuropowerinput/?neurovault={{ api_cid }}" data-toggle="tooltip" title="Use neuropower to estimate how many subjects would be required to find an effect of similar size as in this map.">
+                    Power analysis (neuropower)
+                </a>
+            </div>
+        </div>
+
+        {% if user_owns_image %}
+            <a class="btn btn-primary" href="{% url 'edit_image' image.id %}">Edit details</a>
+            {% if not image.nidm_results %}
+                <a class="btn btn-danger" href="{% url 'delete_image' image.id %}" id="delete_image">Delete</a>
+            {% endif %}
+        {% endif %}
+
+        {% if show_metaanalysis_button %}
+            <a id="toggle_meta" class="btn btn-primary" href="#">Add to the active metaanalysis</a>
+        {% endif %}
+        {% if warning %}
+            <div class="alert alert-danger">
+                {{ warning| safe }}
+            </div>
+        {% endif %}
+    </div>
+</div>
+<div class="row">
+    <div class="col">
+        <div id="NeuroVaultPapayaHolder" class="w-100">
+            <div class="papaya" data-params="params"></div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col">
+        <h5>Metadata</h5>
+        <div class="table-responsive-md">
+             <table id="image-details-datatable" class="table table-striped table-sm w-100">
+                 <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Value</th>
+                    </tr>
+                 </thead>
+             </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

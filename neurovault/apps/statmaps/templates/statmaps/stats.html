@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block head %}
+<title>{% block title %}Statistics{% endblock %}</title>
+{% endblock %}
+{% block content %}
+
+<div class="row">
+    <div class="col">
+        <p>Total number of collections: {{ non_empty_collections_count }}</p>
+        <p>Public collections: {{ public_collections_count }} ({% widthratio public_collections_count non_empty_collections_count 100 %}%)</p>
+        <p>Collections linked to a paper: {{ public_collections_with_DOIs_count }} ({% widthratio public_collections_with_DOIs_count non_empty_collections_count 100 %}%)</p>
+        <h5>Collections split by journals</h5>
+        <div class="table-responsive-md">
+             <table id="image-details-datatable" class="table table-striped table-sm w-100">
+                 <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Number of collections</th>
+                    </tr>
+                 </thead>
+                 <tbody>
+                 {% for journal_name, journal_count in collections_by_journals.items %}
+                     <tr>
+                     <td>{{ journal_name }}</td>
+                     <td>{{ journal_count }}</td>
+                     </tr>
+                 {% endfor %}
+
+                 </tbody>
+             </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

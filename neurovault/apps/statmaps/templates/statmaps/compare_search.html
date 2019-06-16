@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>{% block title %} Similarity search {% endblock %}</title>
+<script>
+    $(document).ready(function() {
+        $('#similarity-table').dataTable({
+                bFilter: false,
+                bInfo: false,
+                lengthChange: false,
+                paging: false,
+                aoColumns: [ { sWidth: '40%' }, { sWidth: '0%'}, { sWidth: '20%'}, { sWidth: '30%'}, { sWidth: '10%'}, { sWidth: '5%'}],
+                "columnDefs": [
+                                {
+                                    "render": function ( data, type, row ) {
+                                    return "<a href='http://www.neurovault.org/images/" + row[1] +"'>" + data + "</a>";
+                                    },
+                                    "targets":[ 2 ]
+                                },
+                                {
+                                    "render": function ( data, type, row ) {
+                                    return "<a href='http://www.neurovault.org/images/compare/" + {{ image.pk }} + "/" + row[1] +"' class='btn btn-info' role='button' >" + {{ image.pk }} + " vs " + row[1] + "</a>";
+                                    },
+                                    "targets":[ 5 ]
+                                },
+                                {
+                                    "render": function ( data, type, row ) {
+                                    return "<img src=" + data + " />";
+                                    },
+                                    "targets":[ 3 ]
+                                },
+              {
+                render: function ( data, type, row ) {
+                    return Math.abs(row[4].toFixed(4));
+                },
+                targets: 4
+              },
+              {
+                render: $('#similarity-table').dataTable.render.number( ',', '.', 4 ),
+              },
+
+                                { "orderable": false, "targets": 3 },
+                                { "targets": [ 1 ], "visible": false },
+                                ],
+                "order": [[ 4, "desc" ]],
+                "ajax": "{% url 'find_similar_json' pk=image.pk %}",
+            });
+   });
+</script>
+
+{% endblock %}
+
+
+{% block content %}
+<div class="row">
+	<div class="col">
+        <h2>Similarity search</h2>
+        <h3><a href="{{ image.get_absolute_url }}">{{ image_title }}</a> <img src="{{ query_png }} " /></h3>
+
+        <div class="table-responsive-md">
+            <table id="similarity-table" class="table table-condensed table-striped table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th scope="row">Collection</th>
+                        <th scope="row">ID</th>
+                        <th scope="row">Name</th>
+                        <th scope="row">png</th>
+                        <th scope="row">score</th>
+                        <th scope="row">Comparison</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+</div>
+<div class="row">
+	<div class="col">
+        <h5><strong>About</strong></h5>
+		<p>Whole-brain pearson correlations are calculated from a brain-masked, 4mm transformation of the original image with
+        complete-case analysis, meaning only using voxels that are present in both images are used in the calculation.
+        The search is limited to images linked to published papers. Images that are tagged as "thresholded," meaning
+        that the image has less than 25% of coverage for a standard brain mask, are not included in the comparison.
+            Similarly single subject maps, parcellations, atlases and ROI maps are excluded.</p>
+        </div>
+</div>
+{% endblock %}

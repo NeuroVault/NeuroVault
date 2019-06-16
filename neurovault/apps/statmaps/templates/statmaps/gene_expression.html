@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <title>{% block title %}Gene expression decoding: ({ image.name
+        }}{% endblock %}</title>
+    <script src="//cdn.datatables.net/plug-ins/1.10.11/sorting/natural.js"
+            type="text/javascript"></script>
+    <script>
+        $(document).ready(function () {
+            var prevSearch;
+            var saveState = true;
+            var captured = /q=([^&]+)/.exec(window.location.href);
+            var result = captured ? captured[1] : '';
+            var base_url = captured != '' ? window.location.href.split("?")[0] : window.location.href;
+            $('#genes-table').dataTable({
+                "bJQueryUI": true,
+                iDisplayLength: 25,
+                "ajax": "{% url 'gene_expression_json' pk=image.pk %}?mask={{ mask }}",
+                "order": [[4, "asc"]],
+                "columnDefs": [
+                    {
+                        "render": function (data, type, row) {
+                            return data + " <a href='http://www.ncbi.nlm.nih.gov/gene/" + row[1] + "'>[NCBI]</a> <a href='http://neurosynth.org/genes/" + data + "'>[Neurosynth]</a>";
+                        },
+                        "targets": [0]
+                    },
+                    {
+                        "render": function (data, type, row) {
+                            return data.toFixed(6);
+                        },
+                        "searchable": false,
+                        "targets": [4, 5]
+                    },
+                    {
+                        "render": function (data, type, row) {
+                            return data.toFixed(2);
+                        },
+                        "searchable": false,
+                        "targets": [3, 6, 7]
+                    },
+                    {"visible": false, "targets": [1]}
+                ],
+                "oSearch": {"sSearch": result},
+                "fnDrawCallback": function (oSettings) {
+                    var curSearch = oSettings.oPreviousSearch.sSearch;
+                    history.replaceState({query: curSearch}, "title", base_url + "?q=" + curSearch + "&mask={{ mask }}");
+                    $("#full_button").attr("href", base_url + "?q=" + curSearch + "&mask=full");
+                    $("#cortex_button").attr("href", base_url + "?q=" + curSearch + "&mask=cortex");
+                    $("#subcortex_button").attr("href", base_url + "?q=" + curSearch + "&mask=subcortex");
+
+                    if ("{{ mask }}" == "full") {
+                        $("#full_button").removeClass("btn-secondary");
+                        $("#full_button").addClass("btn-primary");
+                    }
+                    if ("{{ mask }}" == "cortex") {
+                        $("#cortex_button").removeClass("btn-secondary");
+                        $("#cortex_button").addClass("btn-primary");
+                    }
+                    if ("{{ mask }}" == "subcortex") {
+                        $("#subcortex_button").removeClass("btn-secondary");
+                        $("#subcortex_button").addClass("btn-primary");
+                    }
+                }
+            });
+        });
+
+    </script>
+
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col">
+            <h2>Gene expression decoding of the <a
+                    href="{{ image.get_absolute_url }}">{{ image.name }}</a>
+                statistical map</h2>
+            <p>Limit decoding to :
+                <a class="btn btn-secondary btn-sm" type="button"
+                   id="full_button">Full brain</a>
+                <a class="btn btn-secondary btn-sm" type="button"
+                   id="subcortex_button">Subcortex</a>
+                <a class="btn btn-secondary btn-sm" type="button"
+                   id="cortex_button">Cortex</a>
+            </p>
+            <div class="table-responsive-md">
+                <table id="genes-table"
+                       class="table table-condensed table-striped table-sm table-hover">
+                    <thead>
+                    <tr>
+                        <th scope="row">Symbol</th>
+                        <th scope="row">entrez_id</th>
+                        <th scope="row">Name</th>
+                        <th scope="row">t</th>
+                        <th scope="row">p</th>
+                        <th scope="row">p&nbsp;(corr)</th>
+                        <th scope="row">Variance explained [%]</th>
+                        <th scope="row">± [%]</th>
+                    </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <p><strong>About</strong></p>
+            <p>This map has been compared with gene expression data obtained
+                from <a href="http://human.brain-map.org/">Allen Human Brain
+                    Atlas</a>. For every
+                gene and each of the six brains donated to the Allen Brain
+                Institute a linear model has been fitted to see
+                how similar they are to the evaluated map. A one sample t test
+                has been used see how consistent the relation
+                between the gene expression and evaluated map values are across
+                the six donated brains. To account for
+                the number of tested genes False Discovery Rate correction has
+                been applied.</p>
+            <p>Decoding can be performed on the full brain or alternatively to
+                subcortical or cortical areas. <a
+                        href="http://neurovault.org/images/39877/">This
+                    mask</a> is used to
+                limit the datapoints for the subcortical analysis variant and
+                its inverse in the cortical case.</p>
+            <p>Please cite: <a
+                    href="https://f1000research.com/posters/1097120">Gorgolewski
+                KJ, Fox AS, Chang L et al. Tight fitting genes: finding
+                relations between statistical maps and gene expression
+                patterns. F1000Posters 2014, 5:1607 (poster)</a></p>
+        </div>
+    </div>
+
+{% endblock %}
