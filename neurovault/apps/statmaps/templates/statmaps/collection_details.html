@@ -283,7 +283,7 @@
                 <div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false"></div>
             </div>
         {% elif not is_empty %} <!-- close if not empty -->
-            <div class="col-md-6 mt-1 mb-1" style="margin-top:20px; min-height:470px;"
+            <div class="col-md-6 mt-1 mb-1 d-none d-md-block" style="margin-top:20px; min-height:470px;"
                  id="for_papaya">
             </div>
             <div class="col-md-6 mt-1 mb-1">
@@ -309,7 +309,7 @@
                                <table id="collection-images-datatable" class="table table-striped table-sm">
                                    <thead>
                                           <tr>
-                                              <th>View</th>
+                                              <th scope="col" class="d-none d-md-table-cell">View</th>
                                               <th>ID</th>
                                               <th>Name</th>
                                               <th>Type</th>
@@ -325,7 +325,7 @@
                            <table id="collection-gimages-datatable" class="table table-striped table-sm">
                                <thead>
                                       <tr>
-                                          <th>View</th>
+                                          <th scope="col" class="d-none d-md-table-cell">View</th>
                                           <th>ID</th>
                                           <th>Name</th>
                                           <th>Type</th>
@@ -341,7 +341,7 @@
                            <table id="collection-simages-datatable" class="table table-striped table-sm">
                                <thead>
                                       <tr>
-                                          <th>View</th>
+                                          <th scope="col" class="d-none d-md-table-cell">View</th>
                                           <th>ID</th>
                                           <th>Name</th>
                                           <th>Type</th>
@@ -357,7 +357,7 @@
                            <table id="collection-oimages-datatable" class="table table-striped table-sm">
                                <thead>
                                       <tr>
-                                          <th>View</th>
+                                          <th scope="col" class="d-none d-md-table-cell">View</th>
                                           <th>ID</th>
                                           <th>Name</th>
                                           <th>Type</th>
@@ -414,7 +414,7 @@ $(document).ready(function() {
 		"iDisplayLength": 7,
         "lengthMenu": [7, 10, 25, 50, 75, 100],
         "columnDefs": [
-    		{ "orderable": false, "targets": 0 }
+    		{ "orderable": false, "targets": 0, className: "d-none d-md-table-cell" }
   		],
         "order": [[ 1, "asc" ]],
         "createdRow": function( row, data, dataIndex ) {
@@ -428,10 +428,12 @@ $(document).ready(function() {
         {% else %}
         "ajax": "{% url 'collection_images_json' collection.id %}"{% endif %}{% if not is_empty %},
         "initComplete": function(settings, json) {
-            $("#for_papaya").append("<div class=\"papaya\" class=\"mw-100\" style=\"float:left;\"></div>")
-            papaya.Container.startPapaya();
-            var collection_images = $(".viewimage")
-            viewimage($(collection_images[0]))
+            if($('#for_papaya').is(':visible')) {
+                $("#for_papaya").append("<div class=\"papaya\" class=\"mw-100\" style=\"float:left;\"></div>")
+                papaya.Container.startPapaya();
+                var collection_images = $(".viewimage")
+                viewimage($(collection_images[0]))
+            }
   		}
   		{% endif %}
     });
@@ -444,7 +446,7 @@ $(document).ready(function() {
 		"iDisplayLength": 7,
         "lengthMenu": [7, 10, 25, 50, 75, 100],
         "columnDefs": [
-    		{ "orderable": false, "targets": 0 }
+    		{ "orderable": false, "targets": 0, className: "d-none d-md-table-cell" }
   		],
         "order": [[ 1, "asc" ]],
         "createdRow": function( row, data, dataIndex ) {
@@ -459,10 +461,12 @@ $(document).ready(function() {
         "ajax": "{% url 'collection_gimages_json' collection.id %}"{% endif %}
         {% if not is_empty and gimages_active %},
         "initComplete": function(settings, json) {
-            $("#for_papaya").append("<div class=\"papaya\" class=\"mw-100\" style=\"float:left;\"></div>")
-            papaya.Container.startPapaya();
-            var collection_images = $(".viewimage")
-            viewimage($(collection_images[0]))
+            if($('#for_papaya').is(':visible')) {
+                $("#for_papaya").append("<div class=\"papaya\" class=\"mw-100\" style=\"float:left;\"></div>")
+                papaya.Container.startPapaya();
+                var collection_images = $(".viewimage")
+                viewimage($(collection_images[0]))
+            }
   		}
   		{% endif %}
     });
@@ -475,7 +479,7 @@ $(document).ready(function() {
 		"iDisplayLength": 7,
         "lengthMenu": [7, 10, 25, 50, 75, 100],
         "columnDefs": [
-    		{ "orderable": false, "targets": 0 }
+    		{ "orderable": false, "targets": 0, className: "d-none d-md-table-cell" }
   		],
         "order": [[ 1, "asc" ]],
         "createdRow": function( row, data, dataIndex ) {
@@ -491,10 +495,12 @@ $(document).ready(function() {
         {% endif %}
         {% if not is_empty and simages_active %},
         "initComplete": function(settings, json) {
-            $("#for_papaya").append("<div class=\"papaya\" class=\"mw-100\" style=\"float:left;\"></div>")
-            papaya.Container.startPapaya();
-            var collection_images = $(".viewimage")
-            viewimage($(collection_images[0]))
+            if($('#for_papaya').is(':visible')) {
+                $("#for_papaya").append("<div class=\"papaya\" class=\"mw-100\" style=\"float:left;\"></div>")
+                papaya.Container.startPapaya();
+                var collection_images = $(".viewimage")
+                viewimage($(collection_images[0]))
+            }
   		}
   		{% endif %}
     });
@@ -507,7 +513,7 @@ $(document).ready(function() {
 		"iDisplayLength": 7,
         "lengthMenu": [7, 10, 25, 50, 75, 100],
         "columnDefs": [
-    		{ "orderable": false, "targets": 0 }
+    		{ "orderable": false, "targets": 0, className: "d-none d-md-table-cell" }
   		],
         "order": [[ 1, "asc" ]],
         "createdRow": function( row, data, dataIndex ) {
@@ -522,10 +528,12 @@ $(document).ready(function() {
         "ajax": "{% url 'collection_oimages_json' collection.id %}"{% endif %}
         {% if not is_empty and oimages_active %},
         "initComplete": function(settings, json) {
-            $("#for_papaya").append("<div class=\"papaya\" class=\"mw-100\" style=\"float:left;\"></div>")
-            papaya.Container.startPapaya();
-            var collection_images = $(".viewimage")
-            viewimage($(collection_images[0]))
+            if($('#for_papaya').is(':visible')) {
+                $("#for_papaya").append("<div class=\"papaya\" class=\"mw-100\" style=\"float:left;\"></div>")
+                papaya.Container.startPapaya();
+                var collection_images = $(".viewimage")
+                viewimage($(collection_images[0]))
+            }
   		}
   		{% endif %}
     });
