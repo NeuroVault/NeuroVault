@@ -143,7 +143,7 @@ $(document).ready(function(){
             <p>
                 <b>Tags</b>:
                 {% for tag in image.tags.all %}
-                    <a href="/images/tags/{{tag.name}}">tag.name</a>
+                    <a href="/images/tags/{{ tag.name }}">{{ tag.name }}</a>
                 {% endfor %}
             </p>
         {% endif %}

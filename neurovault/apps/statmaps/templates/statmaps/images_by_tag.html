@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block head %}
+<title>{% block title %}Images tagged with "{{ tag }}"{% endblock %}</title>
+<script>
+        (function() {
+          $(document).ready(function() {
+            return $("#images-table").dataTable({
+              iDisplayLength: 25,
+              aoColumns: [ { sWidth: '6%'}, { sWidth: '20%' }, { sWidth: '20%'}, { sWidth: '54%'}],
+              fnRowCallback: function(nRow, aData, iDisplayIndex) {
+                return nRow;
+              }
+            });
+          });
+        }).call(this);
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col">
+        <h2>Images tagged with "{{ tag }}"</h2>
+        <p>Found {{ images|length }} images.</p>
+        <div class="table-responsive-md">
+            <table id="images-table" class="table table-striped table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th scope="row">ID</th>
+                        <th scope="row">Name</th>
+                        <th scope="row">Collection(s)</th>
+                        <th scope="row">Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for image in images %}
+                    <tr>
+                        <td>{{ image.id }}</td>
+                        <td><a href="{{image.get_absolute_url}}">{{ image.name }}</a></td>
+                        <td>{{ image.collection.name }}</td>
+                        <td>{{ image.description }}</td>
+                    </tr>
+                    {% endfor %}
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
