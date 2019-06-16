@@ -198,7 +198,7 @@
      {% endif %}
 
     <form action="upload_folder" enctype="multipart/form-data" method= "POST" name="upload_folder_form">
-    <div class="row">
+    <div class="row mt-1 mb-1">
         <div class="col-12">
 
 
@@ -264,7 +264,7 @@
     <!-- Content-->
     <div class="row mt-2 mb-2">
         {% if is_empty and edit_permission %}
-            <div class="col-12 center-text">
+            <div class="col-12 center-text mt-1 mb-1">
                 <div class="lead">
                     This collection is empty. You can:
                 </div>
@@ -283,9 +283,9 @@
                 <div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false"></div>
             </div>
         {% elif not is_empty %} <!-- close if not empty -->
-            <div class="col-md-6" style="margin-top:20px" id="for_papaya">
+            <div class="col-md-6 mt-1 mb-1" style="margin-top:20px; min-height:500px;" id="for_papaya">
             </div>
-            <div class="col-md-6">
+            <div class="col-md-6 mt-1 mb-1">
                 <!-- COLLECTION TABS -->
 
                 <ul id='collection-tabs' class="nav nav-tabs" role="tablist">
