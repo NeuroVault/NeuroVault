@@ -13,8 +13,8 @@ def index_view(request):
     
     context = {'recent_collections': recent_collections,
                'query_explanation': "Recently added collections of images from published papers",
-               'tagline': "A public repository of unthresholded statistical maps,"
-                          "parcellations, and atlases of the brain",
+               'tagline': "A public repository of unthresholded statistical maps, "
+                          "parcellations, and atlases of the brain.",
                'what_is_it': "A place where researchers can publicly store and share unthresholded statistical maps, parcellations, and atlases produced by MRI and PET studies."}
 
     return render(request, 'index.html', context)
@@ -32,7 +32,7 @@ def community_view(request, community_label):
                'query_explanation': "Recently added collections of images from the %s Community"%community.short_desc,
                'tagline': "A public repository of unthresholded statistical maps, "
                           "parcellations, and atlases of the brain "
-                          "from the %s Community"%community.short_desc,
+                          "from the %s Community."%community.short_desc,
                'what_is_it': "A place where %s researchers can publicly store and share unthresholded statistical maps, parcellations, and atlases produced by MRI and PET studies."%community.short_desc,
                'name_subscript': community.label,
                'name_subscript_url': reverse('view_community', kwargs={'community_label': community_label})}
