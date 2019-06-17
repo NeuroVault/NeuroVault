@@ -166,21 +166,17 @@
                     <a href="{%  url 'view_community' community_label=community.label %}">{{ community.label }}</a>
                 {% endfor %}
             {% endif %}
-
-            {% if not collection.private %}
-                <p>Contributed by {{ collection.owner }}</p>
-            {% endif %}
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-12">
             {% if collection.DOI %}
-            If you use data from this collection please cite:<br />
-            <a href="http://doi.org/{{ collection.DOI }}" id="citation">http://doi.org/{{ collection.DOI }}</a><br />
+                <p>Related article:
+                    <a href="http://doi.org/{{ collection.DOI }}" id="citation">http://doi.org/{{ collection.DOI }}</a></p>
             {% endif %}
             {% if collection.full_dataset_url %}
-            <div class="lead"><a href="{{ collection.full_dataset_url }}">Source data</a>
-            </div>
+                <p><a href="{{ collection.full_dataset_url }}">Source data:</a></p>
+            {% endif %}
+            {% if collection.private %}
+                <p><em>Private Collection</em>: To share the link to this collection, please use the private url:
+                                <a href="{{ request.path }}">https://neurovault.org{{ request.path }}</a>
+                </p>
             {% endif %}
         </div>
     </div>
@@ -250,14 +246,6 @@
                      <input type="hidden" name="paths" id="paths">
                 </div>
 
-                {% if collection.private %}
-                <div class="lead">
-                    <div style="font-size:16px; margin-top:20px;">
-                        <em>Private Collection</em>: To share the link to this collection, please use the private url:
-                                    <a href="{{ request.path }}">{{ request.path }}</a>
-                    </div>
-                </div>
-                {% endif %}
             {% endif %}<!-- close edit permissions-->
         </div>
     </div>
@@ -377,14 +365,14 @@
                                   </tr>
                               </thead>
                               <tbody>
-                                  <tr><td>Authors</td><td>{{ collection.authors }}</td></tr>
-                                  <tr><td>Description</td><td>{{ collection.description }}</td></tr>
-                                  <tr><td>Journal</td><td>{{ collection.journal_name }}</td></tr>
-                                  <tr><td>Contributors</td><td>{{ collection.contributor }}</td></tr>
-                                  <tr><td>DOI</td><td>{{ collection.DOI }}</td></tr>
-                                  <tr><td>Field Strength</td><td>{{ collection.field_strength }}</td></tr>
-                                  <tr><td>id</td><td>{{ collection.id }}</td></tr>
+                                  <tr><td>Compact Identifier</td><td>https://identifiers.org/neurovault.collection:{{ collection.id }}</td></tr>
                                   <tr><td>Add Date</td><td>{{ collection.add_date }}</td></tr>
+                                  {% if not collection.private %}
+                                      <tr><td>Uploaded by</td><td>{{ collection.owner }}</td></tr>
+                                  {% endif %}
+                                  <tr><td>Contributors</td><td>{{ collection.contributor }}</td></tr>
+                                  <tr><td>Related article DOI</td><td>{{ collection.DOI }}</td></tr>
+                                  <tr><td>Related article authors</td><td>{{ collection.authors }}</td></tr>
                               </tbody>
                           </table>
                           </div>
@@ -396,6 +384,23 @@
     </div>
     </form>
 
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+            <div class="card-header">Citation guidelines</div>
+              <div class="card-body">
+                <p class="card-text">If you use the data from this collection
+                    please include the following persistent identifier in the text of your manuscript:</p>
+                  <pre>https://identifiers.org/neurovault.collection:{{ collection.id }}</pre>
+                  <p class="card-text">This will help to track the use of this data in the literature.
+                    {% if collection.DOI %}
+                        In addition, consider also citing <a href="http://doi.org/{{ collection.DOI }}">the paper related to this collection.</a>
+                    {% endif %}
+                </p>
+              </div>
+            </div>
+        </div>
+    </div>
 
 <div id='spinny' class='modal neuron_loader' style='margin-top: 175px; left:45%; top:15%' data-keyboard='false'>
      <img src="{% static "images/spinner.gif"%}"/>
