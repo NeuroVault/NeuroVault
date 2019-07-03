@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% load static from staticfiles %}
 {% block includes %}
-{% include 'statmaps/_papaya_viewer_head.html' %}
 {% endblock %}
 {% block head %}
 <script>
@@ -127,4 +126,10 @@
         </div>
     </div>
 </div>
+<script type="application/javascript">
+if($('#for_papaya').is(':visible')) {
+    document.write('<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/rii-mango/Papaya@build-1449/release/current/minimal/papaya.js"><\/script>');
+    document.write('<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/rii-mango/Papaya@build-1449/release/current/minimal/papaya.css"\/>');
+}
+</script>
 {% endblock %}
