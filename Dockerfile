@@ -42,7 +42,6 @@ RUN pip install cython \
                 django-mailgun \
                 'dropbox==1.6' \
                 lxml \
-                markdown \
                 networkx \
                 nibabel==2.1.0 \
                 nidmresults==0.3.2 \
