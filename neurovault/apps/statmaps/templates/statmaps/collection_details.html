@@ -365,7 +365,7 @@
                               <tbody>
                                   <tr><td>Compact Identifier</td><td>https://identifiers.org/neurovault.collection:{{ collection.id }}</td></tr>
                                   <tr><td>Add Date</td><td>{{ collection.add_date }}</td></tr>
-                                  {% if not collection.private %}
+                                  {% if not collection.private  and 'NARPS' not in collection.name %}
                                       <tr><td>Uploaded by</td><td>{{ collection.owner }}</td></tr>
                                   {% endif %}
                                   <tr><td>Contributors</td><td>{{ collection.contributor }}</td></tr>
