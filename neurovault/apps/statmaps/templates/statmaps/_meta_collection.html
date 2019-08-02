@@ -274,7 +274,7 @@
 <meta name="motion_correction_metric" content="{{ collection.motion_correction_metric }}">
 {% endif %}
 
-
+{% if collection.basecollectionitem_set.count > 0 %}
 <script type="application/ld+json">
 {
     "@context" : "http://schema.org/",
@@ -284,7 +284,7 @@
     "identifier": [ "https://identifiers.org/neurovault.collection:{{ collection.id }}"{% if collection.private_token %},
                     "https://neurovault.org/collections/{{ collection.private_token }}"{% endif %} ],
     "name": "{{ collection.name }}",
-    "description": "A collection of {{ collection.basecollectionitem_set.count }} brain maps.\n\n{{ collection.description|escape|linebreaks }}",
+    "description": "A collection of {{ collection.basecollectionitem_set.count }} brain maps. Each brain map is a 3D array of values representing properties of the brain at different locations. \n\n### Collection description\n\n{{ collection.description|escape|linebreaks }}",
     "dateCreated": "{{ collection.add_date|date:"Y-m-d\TH:i:s" }}",
     "dateModified": "{{ collection.modify_date|date:"Y-m-d\TH:i:s" }}",
     "keywords" : [ "neuroscience", "neuroimaging" ],
@@ -309,3 +309,4 @@
     {% endif %}
 }
 </script>
+{% endif %}
