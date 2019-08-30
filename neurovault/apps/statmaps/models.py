@@ -554,6 +554,7 @@ class BaseStatisticMap(Image):
     G = 'G'
     M = 'M'
     A = 'A'
+    V = 'V'
     MAP_TYPE_CHOICES = (
         (T, 'T map'),
         (Z, 'Z map'),
@@ -566,6 +567,7 @@ class BaseStatisticMap(Image):
         (R, 'ROI/mask'),
         (Pa, 'parcellation'),
         (A, 'anatomical'),
+        (V, 'variance'),
         (OTHER, 'other'),
     )
     ANALYSIS_LEVEL_CHOICES = (
