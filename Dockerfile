@@ -17,6 +17,7 @@ RUN pip install cython \
                 h5py==2.6.0 \
                 matplotlib==1.5.1 \
                 scikit-image==0.12.3 \
+                redis==2.10.6 \
                 celery[redis]==3.1.24 \
                 certifi==2015.04.28 \
                 cognitiveatlas \
