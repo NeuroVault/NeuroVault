@@ -2,11 +2,26 @@
 {% load static from staticfiles %}
 {% block head %}
 <title>{% block title %}NeuroVault: an open data repository for brain maps{% endblock %}</title>
+<style>
+@media (prefers-color-scheme: dark) {
+  .invert {
+    filter: invert(100%)
+  }
+
+  .binarize {
+    filter: grayscale(100%) brightness(1000%) contrast(10000000%);
+  }
+
+  .invert-binarize {
+    filter: invert(100%) grayscale(100%) brightness(1000%) contrast(10000000%);
+  }
+}
+</style>
 {% endblock %}
 {% block content %}
     <div class="row mb-4">
         <div class="col-12 text-center">
-            <p><img class="mw-100" src='{% static "images/neurovault-logo.png"%}' alt="triangle with equal sides" srcset='{% static "images/neurovault-logo.svg"%}'></p>
+            <p><img class="mw-100 invert" src='{% static "images/neurovault-logo.png"%}' alt="triangle with equal sides" srcset='{% static "images/neurovault-logo.svg"%}'></p>
             <div class="lead"> {{ tagline | safe }}</div>
         </div>
     </div>
@@ -28,16 +43,16 @@
         <div class="col">
             <h4>Supported by</h4>
             <a href="http://www.incf.org">
-                <img class="mw-100" src="{% static "images/incf-logo.png"%}", width="80", title="International Neuroinformatics Coordination Facility" />
+                <img class="mw-100 binarize" src="{% static "images/incf-logo.png"%}", width="80", title="International Neuroinformatics Coordination Facility" />
             </a>
             <a href="http://www.cbs.mpg.de">
-                <img class="mw-100" src="{% static "images/MPG_LOGO.gif"%}", width="60", title="Max Planck Institute for Human Cognitive and Brain Sciences" />
+                <img class="mw-100 invert" src="{% static "images/MPG_LOGO.gif"%}", width="60", title="Max Planck Institute for Human Cognitive and Brain Sciences" />
             </a>
             <a href="http://www.stanford.edu">
-                <img class="mw-100" src="{% static "images/SUSig_Stack.png"%}", width="110", title="Stanford University" />
+                <img class="mw-100 binarize" src="{% static "images/SUSig_Stack.png"%}", width="110", title="Stanford University" />
             </a>
             <a href="https://www.nudge-it.eu/">
-                <img class="mw-100" src="{% static "images/nudge-it-logo.png"%}", width="110", title="Nudge-it" />
+                <img class="mw-100 invert-binarize" src="{% static "images/nudge-it-logo.png"%}", width="110", title="Nudge-it" />
             </a>
         </div>
     </div>
