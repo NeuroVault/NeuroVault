@@ -1,4 +1,4 @@
-FROM neurovault/ahba
+FROM python:2.7-jessie
 
 RUN apt-get update && apt-get install -y \
     libopenblas-dev \
