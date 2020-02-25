@@ -365,7 +365,7 @@ def basecollectionitem_created(sender, instance, created, **kwargs):
 
 
 class Image(BaseCollectionItem):
-    file = models.FileField(upload_to=upload_img_to, null=False, blank=False, storage=DoubleExtensionStorage(), verbose_name='File with the unthresholded volume map (.img, .nii, .nii.gz)')
+    file = models.FileField(upload_to=upload_img_to, null=False, blank=False, storage=DoubleExtensionStorage(), max_length=500, verbose_name='File with the unthresholded volume map (.img, .nii, .nii.gz)')
     surface_left_file = models.FileField(upload_to=upload_img_to, null=True, blank=True, storage=DoubleExtensionStorage(), verbose_name='File with the unthresholded LEFT hemisphere fsaverage surface map (.mgh, .curv, .gii)')
     surface_right_file = models.FileField(upload_to=upload_img_to, null=True, blank=True, storage=DoubleExtensionStorage(), verbose_name='File with the unthresholded RIGHT hemisphere fsaverage surface map (.mgh, .curv, .gii)')
     data_origin = models.CharField(
