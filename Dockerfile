@@ -40,7 +40,7 @@ RUN pip install cython \
                 django-sendfile \
                 django-taggit==0.22.2 \
                 django-taggit-templatetags \
-                django-mailgun \
+                django-mailgun-provider \
                 'dropbox==1.6' \
                 lxml \
                 networkx \
