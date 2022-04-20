@@ -108,7 +108,10 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer,
             )
 
     def get_file_size(self, obj):
-        return obj.file.size
+        try:
+            return obj.file.size
+        except OSError as e:
+            return 0
 
     def to_representation(self, obj):
         """

@@ -14,9 +14,9 @@ def make_node(nid,name,color,url=None):
     :param url: a url for the node to link to when clicked (be careful giving this to non base nodes)
     '''
     if url == None:
-        return {"nid":str(nid),"name":str(name),"color":color}
+        return {"nid":unicode(nid),"name":unicode(name),"color":color}
     else:
-        return {"nid":str(nid),"name":str(name),"color":color,"url":url}
+        return {"nid":unicode(nid),"name":unicode(name),"color":color,"url":url}
 
 
 def get_task_graph(task_id, images=None):
