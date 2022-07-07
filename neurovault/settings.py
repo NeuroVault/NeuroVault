@@ -18,7 +18,7 @@ DOMAIN_NAME = "https://neurovault.org"
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
-    (('Chris', 'krzysztof.gorgolewski@gmail.com'), ('Ross', 'rosswilsonblair@gmail.com'))
+    (('Ross', 'rosswilsonblair@gmail.com'))
 )
 
 MANAGERS = ADMINS
