@@ -71,16 +71,16 @@ class TestImage(APITestCase):
         self.assertEqual(resp_dict['id'], self.image2.pk)
 
     def test_pagination(self):
-        print "\nTesting API pagination..."
-        print "Max limit is set to %s" % StandardResultPagination.max_limit
+        print("\nTesting API pagination...")
+        print("Max limit is set to %s" % StandardResultPagination.max_limit)
         self.assertEqual(1000, StandardResultPagination.max_limit)
-        print "Default limit is set to %s" % (
+        print("Default limit is set to %s" % (
             StandardResultPagination.default_limit
-        )
+        ))
         self.assertEqual(100, StandardResultPagination.default_limit)
-        print "Page size (equal to default) is set to %s" % (
+        print("Page size (equal to default) is set to %s" % (
             StandardResultPagination.PAGE_SIZE
-        )
+        ))
         self.assertEqual(100, StandardResultPagination.PAGE_SIZE)
 
         url = '/api/images/?limit=1'

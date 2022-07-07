@@ -12,6 +12,6 @@ class Command(BaseCommand):
         for col in collections:
             for image in col.basecollectionitem_set.instance_of(Image).all():
                 if image.pk:
-                    print "Generating glassbrain and similarity for %s" %image.name
+                    print("Generating glassbrain and similarity for %s" %image.name)
                     generate_glassbrain_image.apply([image.pk])
                     run_voxelwise_pearson_similarity.apply([image.pk])

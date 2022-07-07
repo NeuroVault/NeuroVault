@@ -23,10 +23,10 @@ class TestNIDMResults(APITestCase):
             zip_file=zip_file, collection=self.collection)
 
     def test_fetch_nidm_results_list(self):
-        print "\nTesting NIDM results API...."
+        print("\nTesting NIDM results API....")
         response = self.client.get('/api/nidm_results/')
-        descriptions = [item[u'description']
-                        for item in response.data['results'][0][u'statmaps']]
+        descriptions = [item['description']
+                        for item in response.data['results'][0]['statmaps']]
         self.assertIn(
             'NIDM Results: spm_example.nidm.zip > TStatistic.nii.gz',
             descriptions
@@ -36,7 +36,7 @@ class TestNIDMResults(APITestCase):
         url = '/api/nidm_results/%d/' % self.nidm.pk
         response = self.client.get(url)
         self.assertTrue('spm_example.nidm.ttl' in response.data['ttl_file'])
-        self.assertEqual(response.data['statmaps'][0][u'figure'], None)
+        self.assertEqual(response.data['statmaps'][0]['figure'], None)
 
     def tearDown(self):
         clearDB()
@@ -69,7 +69,7 @@ class TestNIDMResultsChange(BaseTestCases.TestCollectionItemChange):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         self.assertEqual(response.data['description'], put_dict['description'])
-        self.assertRegexpMatches(response.data['ttl_file'],
+        self.assertRegex(response.data['ttl_file'],
                                  r'fsl_course_fluency2\.nidm\.ttl$')
 
     def test_nidm_results_destroy(self):

@@ -48,4 +48,4 @@ for user in User.objects.all():
         send_mail("Time to update your NeuroVault maps", email, "team@neurovault.org",
                   [user.email], html_message=email, fail_silently=True)
         counter += 1
-print "Sent %d emails" % counter
+print("Sent %d emails" % counter)

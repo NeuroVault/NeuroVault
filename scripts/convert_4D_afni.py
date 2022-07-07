@@ -31,7 +31,7 @@ def populate_afni(image):
             brick_img.save()
 
     finally:
-        print 'converted afni4d %s to %s sub-brick images.' % (orig_name,len(bricks))
+        print('converted afni4d %s to %s sub-brick images.' % (orig_name,len(bricks)))
         shutil.rmtree(tmpdir)
         os.remove(image.file.path)
         image.delete()
@@ -46,17 +46,17 @@ if __name__ == '__main__':
         if os.path.exists(image.file.path):
             try:
                 if detect_4D(image.file.path):
-                    print 'found afni4d: %s' % image.file.path
+                    print('found afni4d: %s' % image.file.path)
                     populate_afni(image)
             except:
                 error.append(image.file.path)
         else:
             bad_link.append(image.file.path)
 
-    print '\n other issues:'
+    print('\n other issues:')
     for bd in bad_link:
-        print 'found bad path: %s' % bd
+        print('found bad path: %s' % bd)
 
-    print '\n\n\n'
+    print('\n\n\n')
     for er in error:
-        print 'unable to parse file %s' % er
+        print('unable to parse file %s' % er)

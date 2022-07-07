@@ -6,7 +6,7 @@ import shutil
 import string
 import subprocess
 import tempfile
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import zipfile
 from ast import literal_eval
 from datetime import datetime,date
@@ -115,7 +115,7 @@ def generate_pycortex_volume(image):
                                          "--nofix",
                                          "--fslregout",
                                          mni_mat])
-        except CalledProcessError, e:
+        except CalledProcessError as e:
             raise RuntimeError(str(e.cmd) + " returned code " +
                                str(e.returncode) + " with output " + e.output)
 
@@ -155,7 +155,7 @@ def generate_pycortex_static(volumes, output_dir, title=None):
     app_path = os.path.abspath(os.path.dirname(__file__))
     tpl_path = os.path.join(app_path, 'templates/pycortex/dataview.html')
     ds = cortex.Dataset(**volumes)
-    title = title or ', '.join(volumes.keys())
+    title = title or ', '.join(list(volumes.keys()))
     cortex.webgl.make_static(output_dir, ds, template=tpl_path, html_embed=False,
                              copy_ctmfiles=False, title=title)
 
@@ -170,9 +170,9 @@ def generate_url_token(length=8):
 
 def get_paper_properties(doi):
     xmlurl = 'http://doi.crossref.org/servlet/query'
-    xmlpath = xmlurl + '?pid=k.j.gorgolewski@sms.ed.ac.uk&format=unixref&id=' + urllib2.quote(doi)
-    print xmlpath
-    xml_str = urllib2.urlopen(xmlpath).read()
+    xmlpath = xmlurl + '?pid=k.j.gorgolewski@sms.ed.ac.uk&format=unixref&id=' + urllib.parse.quote(doi)
+    print(xmlpath)
+    xml_str = urllib.request.urlopen(xmlpath).read()
     doc = etree.fromstring(xml_str)
     if len(doc.getchildren()) == 0 or len(doc.findall('.//crossref/error')) > 0:
         raise Exception("DOI %s was not found" % doi)
@@ -229,7 +229,7 @@ def send_email_notification(notif_type, subject, users, tpl_context=None):
     html_tpl = os.path.join('email','%s.html' % notif_type)
 
     for user in users:
-        context = dict(tpl_context.items() + [('username', user.username)])
+        context = dict(list(tpl_context.items()) + [('username', user.username)])
         dest = user.email
         text_content = render_to_string(plain_tpl,context)
         html_content = render_to_string(html_tpl,context)

@@ -21,7 +21,7 @@ class ComparisonTestCase(TestCase):
     pknan = None
     
     def setUp(self):
-        print "Preparing to test image comparison..."
+        print("Preparing to test image comparison...")
         self.tmpdir = tempfile.mkdtemp()
         app_path = os.path.abspath(os.path.dirname(__file__))
         self.u1 = User.objects.create(username='neurovault')
@@ -88,49 +88,49 @@ class ComparisonTestCase(TestCase):
     def test_interpolated_transform_zeros(self): 
         img = save_resampled_transformation_single(self.pknan, resample_dim=[4, 4, 4])
         data = numpy.load(img.reduced_representation.file)
-        print "Does transformation calculation maintain NaN values?: %s" %(numpy.isnan(data).any())
+        print("Does transformation calculation maintain NaN values?: %s" %(numpy.isnan(data).any()))
         assert_equal(numpy.isnan(data).any(),True)
 
     def test_save_pearson_similarity(self):
         # Should be 1
-        print "Testing %s vs. %s: same images, different ids" %(self.pk1,self.pk1_copy)
+        print("Testing %s vs. %s: same images, different ids" %(self.pk1,self.pk1_copy))
         save_voxelwise_pearson_similarity(self.pk1,self.pk1_copy)
  
         # Should not be saved
         with self.assertRaises(Exception):
-            print "Testing %s vs. %s: same pks, success is raising exception" %(self.pk1,self.pk1)
+            print("Testing %s vs. %s: same pks, success is raising exception" %(self.pk1,self.pk1))
             save_voxelwise_pearson_similarity(self.pk1,self.pk1)
 
-        print "Testing %s vs. %s, different image set 1" %(self.pk1,self.pk2)
+        print("Testing %s vs. %s, different image set 1" %(self.pk1,self.pk2))
         save_voxelwise_pearson_similarity(self.pk1,self.pk2)
 
-        print "Testing %s vs. %s, different image set 2" %(self.pk2,self.pk3)
+        print("Testing %s vs. %s, different image set 2" %(self.pk2,self.pk3))
         save_voxelwise_pearson_similarity(self.pk2,self.pk3)
 
         # Should not exist
-        print "Success for this test means there are no comparisons returned."
+        print("Success for this test means there are no comparisons returned.")
         image1, image1_copy = get_images_by_ordered_id(self.pk1, self.pk1)
         comparison = Comparison.objects.filter(image1=image1,image2=image1_copy,similarity_metric=self.pearson_metric)
         self.assertEqual(len(comparison), 0)
 
         # Should be 1        
-        print "Success for this test means a score of 1.0"
+        print("Success for this test means a score of 1.0")
         image1, image2 = get_images_by_ordered_id(self.pk1, self.pk1_copy)
         comparison = Comparison.objects.filter(image1=image1,image2=image2,similarity_metric=self.pearson_metric)
         self.assertEqual(len(comparison), 1)
         self.assertAlmostEqual(comparison[0].similarity_score, 1.0)
 
-        print "Success for the remaining tests means a specific comparison score."
+        print("Success for the remaining tests means a specific comparison score.")
         image1, image2 = get_images_by_ordered_id(self.pk1, self.pk2)
         comparison = Comparison.objects.filter(image1=image1,image2=image2,similarity_metric=self.pearson_metric)
         self.assertEqual(len(comparison), 1)
-        print comparison[0].similarity_score
+        print(comparison[0].similarity_score)
         assert_almost_equal(comparison[0].similarity_score, 0.214495998015581,decimal=5)
 
         image2, image3 = get_images_by_ordered_id(self.pk3, self.pk2)
         comparison = Comparison.objects.filter(image1=image2,image2=image3,similarity_metric=self.pearson_metric)
         self.assertEqual(len(comparison), 1)
-        print comparison[0].similarity_score
+        print(comparison[0].similarity_score)
         assert_almost_equal(comparison[0].similarity_score, 0.312548260435768,decimal=5)
         
     def test_private_to_public_switch(self):
@@ -151,15 +151,15 @@ class ComparisonTestCase(TestCase):
         comparison = Comparison.objects.filter(image1=private_image1,image2=private_image2)
         self.assertEqual(len(comparison), 0)
         
-        print "before private: %s"%Comparison.objects.all().count()
+        print("before private: %s"%Comparison.objects.all().count())
         private_collection1 = Collection.objects.get(pk=private_collection1.pk)
         private_collection1.private = False
         private_collection1.save()
         private_collection2 = Collection.objects.get(pk=private_collection2.pk)
         private_collection2.private = False
         private_collection2.save()
-        print "after private: %s"%Comparison.objects.all().count()
-        print private_collection1.basecollectionitem_set.instance_of(Image).all()
+        print("after private: %s"%Comparison.objects.all().count())
+        print(private_collection1.basecollectionitem_set.instance_of(Image).all())
         comparison = Comparison.objects.filter(image1=private_image1,image2=private_image2)
         self.assertEqual(len(comparison), 1)
 
@@ -179,12 +179,12 @@ class ComparisonTestCase(TestCase):
         comparison = Comparison.objects.filter(image1=image1,image2=image2)
         self.assertEqual(len(comparison), 0)
 
-        print "without DOI: %s"%Comparison.objects.all().count()
+        print("without DOI: %s"%Comparison.objects.all().count())
         collection = Collection.objects.get(pk=collection1.pk)
         collection.DOI = '10.3389/fninf.2015.00020'
         collection.save()
-        print "with DOI: %s"%Comparison.objects.all().count()
-        print collection.basecollectionitem_set.instance_of(Image).all()
+        print("with DOI: %s"%Comparison.objects.all().count())
+        print(collection.basecollectionitem_set.instance_of(Image).all())
         comparison = Comparison.objects.filter(image1=image1,image2=image2)
         self.assertEqual(len(comparison), 1)
 
@@ -207,6 +207,6 @@ class ComparisonTestCase(TestCase):
 
         similar_images = get_similar_images(int(image1.pk))
 
-        print "Success for this test means the pandas DataFrame shows the copy in first position with score of 1"
+        print("Success for this test means the pandas DataFrame shows the copy in first position with score of 1")
         self.assertEqual(similar_images['image_id'][0], int(image2.pk))
         self.assertEqual(similar_images['score'][0], 1)

@@ -31,15 +31,15 @@ counter = 0
 for img in Image.objects.all():
     if not img.reduced_representation or not os.path.exists(img.reduced_representation.path):
         if hasattr(img, "is_thresholded") and not img.is_thresholded:
-            print "Working on image %d"%img.pk
+            print("Working on image %d"%img.pk)
     	    save_resampled_transformation_single(img.pk)
     counter += 1
-    print "Recreated %d npys out of %d (pk = %d)"%(counter, total_images, img.pk)
+    print("Recreated %d npys out of %d (pk = %d)"%(counter, total_images, img.pk))
 
 # Filter down to images that are not private, not thresholded
 # Now, we need to generate a "comparison" object for all files in the database
 # We will use a celery task (as this will be integrated into upload workflow)
 for collection in Collection.objects.filter(DOI__isnull=False):
     for image in collection.basecollectionitem_set.instance_of(Image).all():
-      print "Calculating pearson similarity for images %s" %image
+      print("Calculating pearson similarity for images %s" %image)
       run_voxelwise_pearson_similarity(image.pk)

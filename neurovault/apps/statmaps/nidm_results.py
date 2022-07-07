@@ -6,7 +6,7 @@ import zipfile
 from collections import Counter
 from fnmatch import fnmatch
 from rdflib.plugins.parsers.notation3 import BadSyntax
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 
 class NIDMUpload:
@@ -93,7 +93,7 @@ class NIDMUpload:
             self.contrasts.append(c_row)
 
         # uniquify contrast values by file
-        self.contrasts = {v['statFile']:v for v in self.contrasts}.values()
+        self.contrasts = list({v['statFile']:v for v in self.contrasts}.values())
 
         return self.contrasts
 
@@ -106,7 +106,7 @@ class NIDMUpload:
         try:
             self.zip.extractall(path=self.workdir)
             self.unzipped = True
-        except Exception,e:
+        except Exception as e:
             raise self.ParseException("Unable to unzip: %s" % e)
 
     def get_statmaps(self):
@@ -157,7 +157,7 @@ class NIDMUpload:
 
     @classmethod
     def uri_to_path(self,map_uri):
-        print map_uri
+        print(map_uri)
         # NIDM schema namespace url, or arbitrary string just in case
         uri = urlparse(map_uri)
         if not uri.path:
@@ -200,10 +200,10 @@ class NIDMUpload:
     def print_sparql_results(res):
         for idx, row in enumerate(res.bindings):
             rowfmt = []
-            print "Item %d" % idx
+            print("Item %d" % idx)
             for key, val in sorted(row.items()):
                 rowfmt.append('%s-->%s' % (key, val.decode()))
-            print '\n'.join(rowfmt)
+            print('\n'.join(rowfmt))
 
     @staticmethod
     def fix_spm12_ttl(ttl):

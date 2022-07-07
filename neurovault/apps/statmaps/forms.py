@@ -3,7 +3,7 @@ import re
 import shutil
 import subprocess
 from subprocess import CalledProcessError
-from cStringIO import StringIO
+from io import StringIO
 
 import nibabel as nb
 import numpy as np
@@ -251,7 +251,7 @@ class ContributorCommaSepInput(forms.Widget):
 
     def render(self, name, value, attrs=None):
         final_attrs = self.build_attrs(attrs, type='text', name=name)
-        if not type(value) == unicode and value is not None:
+        if not type(value) == str and value is not None:
             out_vals = []
             for val in value:
                 try:
@@ -263,7 +263,7 @@ class ContributorCommaSepInput(forms.Widget):
                 final_attrs['value'] = smart_str(value)
         else:
             final_attrs['value'] = smart_str(value)
-        return mark_safe(u'<input%s />' % flatatt(final_attrs))
+        return mark_safe('<input%s />' % flatatt(final_attrs))
 
 
 class ContributorCommaField(ModelMultipleChoiceField):
@@ -386,13 +386,13 @@ class ImageValidationMixin(object):
         self.afni_tmp = None
 
     def clean_and_validate(self, cleaned_data):
-        print "enter clean_and_validate"
+        print("enter clean_and_validate")
         file = cleaned_data.get('file')
         surface_left_file = cleaned_data.get('surface_left_file')
         surface_right_file = cleaned_data.get('surface_right_file')
 
         if surface_left_file and surface_right_file and not file:
-            if "file" in self._errors.keys():
+            if "file" in list(self._errors.keys()):
                 del self._errors["file"]
             cleaned_data["data_origin"] = 'surface'
             tmp_dir = tempfile.mkdtemp()
@@ -406,7 +406,7 @@ class ImageValidationMixin(object):
                                "rh": "CortexRight"}
 
                 for hemi in ["lh", "rh"]:
-                    print hemi
+                    print(hemi)
                     surface_file = cleaned_data.get(inputs_dict[hemi])
                     _, ext = splitext_nii_gz(surface_file.name)
 
@@ -419,8 +419,8 @@ class ImageValidationMixin(object):
 
                     infile = os.path.join(tmp_dir, hemi + ext)
 
-                    print "write " + hemi
-                    print surface_file.file
+                    print("write " + hemi)
+                    print(surface_file.file)
                     surface_file.open()
                     surface_file = StringIO(surface_file.read())
                     with open(infile, 'w') as fd:
@@ -466,7 +466,7 @@ class ImageValidationMixin(object):
                              "--trgsubject", "ICBM2009c_asym_nlin",
                              "--trgsurfval",
                              os.path.join(tmp_dir, hemi+'.MNI.gii')])
-                    except CalledProcessError, e:
+                    except CalledProcessError as e:
                         raise RuntimeError(str(e.cmd) + " returned code " +
                                            str(e.returncode) + " with output " + e.output)
 
@@ -476,7 +476,7 @@ class ImageValidationMixin(object):
                 cleaned_data['surface_right_file'] = memory_uploadfile(
                     os.path.join(tmp_dir, 'rh.gii'),
                     new_name[:-7] + ".fsaverage.rh.func.gii", None)
-                print "surf2vol"
+                print("surf2vol")
                 try:
                     subprocess.check_output(
                         [os.path.join(os.environ['FREESURFER_HOME'],
@@ -492,7 +492,7 @@ class ImageValidationMixin(object):
                          os.path.join(os.environ['FREESURFER_HOME'],
                                       "subjects", "ICBM2009c_asym_nlin", "surf", "rh.white"),
                          os.path.join(tmp_dir, 'rh.MNI.gii')])
-                except CalledProcessError, e:
+                except CalledProcessError as e:
                     raise RuntimeError(str(e.cmd) + " returned code " +
                                        str(e.returncode) + " with output " + e.output)
 
@@ -591,7 +591,7 @@ class ImageValidationMixin(object):
                         nii_tmp = os.path.join(tmp_dir, new_name)
                         nb.save(nii, nii_tmp)
 
-                        print "updating file in cleaned_data"
+                        print("updating file in cleaned_data")
 
                         cleaned_data['file'] = memory_uploadfile(
                             nii_tmp, new_name, cleaned_data['file']
@@ -655,13 +655,13 @@ class StatisticMapForm(ImageForm):
         cleaned_data["tags"] = clean_tags(cleaned_data)
         # print cleaned_data
 
-        if "analysis_level" in cleaned_data.keys():
+        if "analysis_level" in list(cleaned_data.keys()):
             if cleaned_data.get('analysis_level') == 'S':
                 cleaned_data['number_of_subjects'] = 1
                 if 'number_of_subjects' in self._errors:
                     del self._errors['number_of_subjects']
 
-        if "data_origin" in cleaned_data.keys() and cleaned_data["data_origin"] == "surface":
+        if "data_origin" in list(cleaned_data.keys()) and cleaned_data["data_origin"] == "surface":
             cleaned_data["is_thresholded"] = False
             cleaned_data["not_mni"] = False
             cleaned_data["perc_bad_voxels"] = 0
@@ -788,12 +788,12 @@ class PolymorphicImageForm(ImageForm):
                 self.fields = StatisticMapForm.base_fields
 
     def clean(self, **kwargs):
-        if "label_description_file" in self.fields.keys():
+        if "label_description_file" in list(self.fields.keys()):
             use_form = AtlasForm
-        elif "map_type" in self.fields.keys():
+        elif "map_type" in list(self.fields.keys()):
             use_form = StatisticMapForm
         else:
-            raise Exception("unknown image type! %s" % str(self.fields.keys()))
+            raise Exception("unknown image type! %s" % str(list(self.fields.keys())))
 
         new_instance = use_form(self)
         new_instance.cleaned_data = self.cleaned_data
@@ -927,14 +927,14 @@ class NIDMResultsValidationMixin(object):
 
         try:
             self.nidm = NIDMUpload(zip_file)
-        except Exception, e:
+        except Exception as e:
             raise ValidationError(
                 "The NIDM file was not readable: {0}".format(e)
             )
 
         try:
             self.clean_nidm(data)
-        except Exception, e:
+        except Exception as e:
             raise ValidationError(e)
 
         # delete existing images and files when changing file
@@ -975,7 +975,7 @@ class NIDMResultsValidationMixin(object):
             try:
                 s['statmap'].clean_fields(exclude=('nidm_results', 'file'))
                 s['statmap'].validate_unique()
-            except Exception, e:
+            except Exception as e:
                 import traceback
                 raise ValidationError(
                     "There was a problem validating the Statistic Maps " +

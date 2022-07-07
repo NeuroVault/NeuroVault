@@ -3,10 +3,10 @@ import nibabel
 import xml.etree.ElementTree as ET
 import numpy
 import os.path
-from __builtin__ import True
-import urllib2
+from builtins import True
+import urllib.request, urllib.error, urllib.parse
 import networkx as nx
-import cPickle as pickle
+import pickle as pickle
 import numpy.linalg as npl
 
 
@@ -63,8 +63,8 @@ def getSynonyms(keyword):
 	keywordQuery = keywordQuery.replace('\\', '')
 	hdr = {'Accept': 'ext/html,application/xhtml+xml,application/xml,*/*'}
 	target_url = 'http://nif-services.neuinfo.org/servicesv1/v1/literature/search?q=' + keywordQuery
-	request = urllib2.Request(target_url,headers=hdr)
-	synFile = urllib2.urlopen(request)
+	request = urllib.request.Request(target_url,headers=hdr)
+	synFile = urllib.request.urlopen(request)
 	tree = ET.parse(synFile)
 	root = tree.getroot()
 	syn_list_loc = root.findall('query/clauses/clauses/expansion/expansion')
@@ -75,7 +75,7 @@ def getSynonyms(keyword):
 	return syn_list
 
 def findNodes(graph, startNode, atlasRegions, synonymsDict, direction = 'children'):
-	matches = [key for key in synonymsDict.keys() if graph.node[startNode]['name'] in synonymsDict[key]]
+	matches = [key for key in list(synonymsDict.keys()) if graph.node[startNode]['name'] in synonymsDict[key]]
 	if matches != []:
 		return matches
 	else:

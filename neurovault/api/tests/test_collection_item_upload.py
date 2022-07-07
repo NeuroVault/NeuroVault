@@ -42,7 +42,7 @@ class TestCollectionItemUpload(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         self.assertEqual(response.data['collection_id'], self.coll.id)
-        self.assertRegexpMatches(response.data['file'], r'\.nii\.gz$')
+        self.assertRegex(response.data['file'], r'\.nii\.gz$')
 
         self.assertEqual(response.data['cognitive_paradigm_cogatlas'],
                          'action observation task')
@@ -75,7 +75,7 @@ class TestCollectionItemUpload(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         self.assertEqual(response.data['collection_id'], self.coll.id)
-        self.assertRegexpMatches(response.data['file'], r'\.nii\.gz$')
+        self.assertRegex(response.data['file'], r'\.nii\.gz$')
 
         exclude_keys = set([
             'file',
@@ -84,7 +84,7 @@ class TestCollectionItemUpload(APITestCase):
             'custom_metadata_string_field'
         ])
 
-        test_keys = post_dict.viewkeys() - exclude_keys
+        test_keys = post_dict.keys() - exclude_keys
         for key in test_keys:
             self.assertEqual(response.data[key], post_dict[key])
 
@@ -144,8 +144,8 @@ class TestCollectionItemUpload(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         self.assertEqual(response.data['collection_id'], self.coll.id)
-        self.assertRegexpMatches(response.data['file'], r'\.nii\.gz$')
-        self.assertRegexpMatches(response.data['label_description_file'],
+        self.assertRegex(response.data['file'], r'\.nii\.gz$')
+        self.assertRegex(response.data['label_description_file'],
                                  r'\.xml$')
 
         self.assertEqual(response.data['name'], post_dict['name'])
@@ -154,7 +154,7 @@ class TestCollectionItemUpload(APITestCase):
         self.client.force_authenticate(user=self.user)
         url = '/api/collections/%s/nidm_results/' % self.coll.pk
 
-        for name, data in NIDM_TEST_FILES.items():
+        for name, data in list(NIDM_TEST_FILES.items()):
             self._test_upload_nidm_results(url, name, data)
 
     def _test_upload_nidm_results(self, url, name, data):
@@ -170,18 +170,18 @@ class TestCollectionItemUpload(APITestCase):
         response = self.client.post(url, post_dict, format='multipart')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['collection'], self.coll.id)
-        self.assertRegexpMatches(response.data['zip_file'], r'\.nidm\.zip$')
-        self.assertRegexpMatches(response.data['url'], r'\.nidm$')
+        self.assertRegex(response.data['zip_file'], r'\.nidm\.zip$')
+        self.assertRegex(response.data['url'], r'\.nidm$')
 
         nidm = NIDMResults.objects.get(pk=response.data['id'])
-        self.assertEquals(len(nidm.nidmresultstatisticmap_set.all()),
+        self.assertEqual(len(nidm.nidmresultstatisticmap_set.all()),
                           data['num_statmaps'])
 
         map_type = data['output_row']['type'][0]
         map_img = nidm.nidmresultstatisticmap_set.filter(
             map_type=map_type).first()
 
-        self.assertEquals(map_img.name, data['output_row']['name'])
+        self.assertEqual(map_img.name, data['output_row']['name'])
 
     def test_missing_required_fields(self):
         self.client.force_authenticate(user=self.user)
@@ -195,9 +195,9 @@ class TestCollectionItemUpload(APITestCase):
         response = self.client.post(url, post_dict, format='multipart')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-        expect_dict = {'map_type': [u'This field is required.'],
-                       'modality': [u'This field is required.'],
-                       'file': [u'No file was submitted.']}
+        expect_dict = {'map_type': ['This field is required.'],
+                       'modality': ['This field is required.'],
+                       'file': ['No file was submitted.']}
 
         self.assertEqual(response.data, expect_dict)
 

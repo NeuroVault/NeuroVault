@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 import taggit.managers
 from django.db import connection
@@ -12,7 +12,7 @@ def move_collection_data(apps, schema_editor):
     ContentType = apps.get_model("contenttypes", "ContentType")
     count = Image.objects.count()
     for i, image in enumerate(Image.objects.all()):
-        print "Fixing image %d (%d/%d)"%(image.id, i+1, count)
+        print("Fixing image %d (%d/%d)"%(image.id, i+1, count))
         new_basebollectionitem = BaseCollectionItem()
         new_basebollectionitem.id = image.id
         new_basebollectionitem.name = image.name

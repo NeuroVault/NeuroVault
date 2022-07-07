@@ -1,4 +1,4 @@
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import zipfile
 import os
 import numpy as np
@@ -20,12 +20,12 @@ download_dir = "/ahba_data"
 os.makedirs(download_dir)
 
 for i, url in enumerate(urls):
-    print "Downloading %s" % url
-    urllib.urlretrieve(url, os.path.join(download_dir, "donor%d.zip" % (i + 1)))
+    print("Downloading %s" % url)
+    urllib.request.urlretrieve(url, os.path.join(download_dir, "donor%d.zip" % (i + 1)))
     zipfile.ZipFile(os.path.join(download_dir, "donor%d.zip" % (i + 1)))
 
 # Dowloading MNI coordinates
-urllib.urlretrieve(
+urllib.request.urlretrieve(
     "https://raw.githubusercontent.com/chrisfilo/alleninf/master/alleninf/data/corrected_mni_coordinates.csv",
     os.path.join(download_dir, "corrected_mni_coordinates.csv"))
 
@@ -50,7 +50,7 @@ for coord_mni in samples[['corrected_mni_x', 'corrected_mni_y', 'corrected_mni_z
 samples["reduced_coordinate"] = reduced_coord
 
 #Downloading gene selections list
-urllib.urlretrieve(
+urllib.request.urlretrieve(
     "http://science.sciencemag.org/highwire/filestream/631209/field_highwire_adjunct_files/2/Richiardi_Data_File_S2.xlsx",
     os.path.join(download_dir, "Richiardi_Data_File_S2.xlsx"))
 

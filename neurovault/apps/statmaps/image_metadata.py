@@ -62,12 +62,12 @@ def to_verbose_name(obj, field_name):
 
 
 def prepare_messages(obj, message_dict):
-    return dict((to_verbose_name(obj, field_name), map(clean_u_prefix, v))
-                for field_name, v in message_dict.items())
+    return dict((to_verbose_name(obj, field_name), list(map(clean_u_prefix, v)))
+                for field_name, v in list(message_dict.items()))
 
 
 def wrap_error(value):
-    return u"Value '%s' is not a valid choice." % value
+    return "Value '%s' is not a valid choice." % value
 
 
 def pair_data_and_objects(metadata_dict, image_obj_dict):
@@ -78,7 +78,7 @@ def pair_data_and_objects(metadata_dict, image_obj_dict):
             "Missing metadata for %s. Specify metadata rows "
             "for every image in the collection." % ', '.join(extra_files))
 
-    for image_filename, metadata in metadata_dict.items():
+    for image_filename, metadata in list(metadata_dict.items()):
         image_obj = image_obj_dict.get(image_filename)
         if not image_obj:
             raise ValidationError('File is not found in the collection: %s' %
@@ -194,8 +194,8 @@ def get_field_by_name(model, field_name):
 
 
 def get_fixed_fields(model):
-    fields = map(functools.partial(get_field_by_name, model),
-               model.get_fixed_fields())
+    fields = list(map(functools.partial(get_field_by_name, model),
+               model.get_fixed_fields()))
     return sorted(fields, key=lambda field: field.blank)
 
 
@@ -223,10 +223,10 @@ def get_data_headers(image_obj_list):
             'name': header
         }
 
-    fixed_field_headers = map(to_fixed_header,
-                              get_fixed_fields(StatisticMap))
+    fixed_field_headers = list(map(to_fixed_header,
+                              get_fixed_fields(StatisticMap)))
 
-    extra_field_headers = map(to_extra_field_header, metadata_keys)
+    extra_field_headers = list(map(to_extra_field_header, metadata_keys))
 
     return index_header + fixed_field_headers + extra_field_headers
 
@@ -240,7 +240,7 @@ def get_images_metadata(image_obj_list):
         display = getattr(obj, "get_%s_display" % field, None)
 
         if isinstance(value, Model):
-            return unicode(value)
+            return str(value)
         elif display:
             return display()
         else:
@@ -253,7 +253,7 @@ def get_images_metadata(image_obj_list):
                 [serialize(image, field.name) for field in fixed_fields] +
                 [data.get(key, '') for key in metadata_keys])
 
-    return map(list_metadata, image_obj_list)
+    return list(map(list_metadata, image_obj_list))
 
 
 def get_images_filenames(collection):

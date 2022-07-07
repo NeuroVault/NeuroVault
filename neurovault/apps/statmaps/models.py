@@ -43,7 +43,7 @@ def get_target_template_list():
 COMMUNITIES = {'developmental': {'short_desc': 'Developmental Neuroscience'},
                'nutrition': {'short_desc': 'Nutrition Neuroscience'}}
 community_choices = []
-for k in COMMUNITIES.keys():
+for k in list(COMMUNITIES.keys()):
     community_choices.append((k, COMMUNITIES[k]['short_desc']))
 
 class Community(models.Model):
@@ -236,7 +236,7 @@ class Collection(models.Model):
         try:
             shutil.rmtree(collDir)
         except OSError:
-            print 'Image directory for collection %s does not exist' %cid
+            print('Image directory for collection %s does not exist' %cid)
 
         return ret
 
@@ -468,7 +468,7 @@ class Image(BaseCollectionItem):
 
         # If a .img file was loaded then load the correspoding .hdr file as well
         _, ext = os.path.splitext(my_file_name)
-        print ext
+        print(ext)
         if ext in ['.img']:
             f = open(my_file[:-3] + "hdr")
             hdrFile = File(f)

@@ -1,7 +1,7 @@
 import os
 import shutil
 import tempfile
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import zipfile
 
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -50,13 +50,13 @@ class FeatDirectoryTest(TestCase):
         self.coll.save()
 
         # FEAT test data is large so it lives in the external data repo
-        for fname, info in self.testfiles.items():
+        for fname, info in list(self.testfiles.items()):
             self.testfiles[fname]['file'] = os.path.join(testpath,fname)
             if not os.path.exists(self.testfiles[fname]['file']):
-                print '\ndownloading test data {}'.format(fname)
+                print('\ndownloading test data {}'.format(fname))
                 furl = '{0}{1}'.format(testdata_repo, info['fileuri'])
                 try:
-                    urllib.urlretrieve(furl, self.testfiles[fname]['file'])
+                    urllib.request.urlretrieve(furl, self.testfiles[fname]['file'])
                 except:
                     os.remove(os.path.join(testpath,fname))
                     raise
@@ -82,11 +82,11 @@ class FeatDirectoryTest(TestCase):
     def testFEAT_NIDM(self):
 
         # test feat parsing
-        for fname, info in self.testfiles.items():
+        for fname, info in list(self.testfiles.items()):
             info['found_feat'] = False
             for root, dirs, files in os.walk(info['dir']):
                 if detect_feat_directory(root):
-                    print 'Found FEAT directory at {}.'.format(root)
+                    print('Found FEAT directory at {}.'.format(root))
                     info['found_feat'] = True
                     fslnidm = FSLtoNIDMExporter(feat_dir=root, version="1.2.0")
                     fslnidm.parse()
@@ -96,7 +96,7 @@ class FeatDirectoryTest(TestCase):
                     self.assertTrue(os.path.exists(info['nidm_file']))
 
         # test upload nidm
-        for fname, info in self.testfiles.items():
+        for fname, info in list(self.testfiles.items()):
 
             zname = os.path.basename(info['nidm_file'])
             post_dict = {
@@ -114,11 +114,11 @@ class FeatDirectoryTest(TestCase):
             nidm = form.save()
 
             statmaps = nidm.nidmresultstatisticmap_set.all()
-            self.assertEquals(len(statmaps),info['num_statmaps'])
+            self.assertEqual(len(statmaps),info['num_statmaps'])
 
             map_types = [v.map_type for v in statmaps]
-            self.assertEquals(sorted(map_types), sorted(info['map_types']))
+            self.assertEqual(sorted(map_types), sorted(info['map_types']))
 
             names = [v.name for v in statmaps]
-            self.assertEquals(sorted(names), sorted(info['names']))
+            self.assertEqual(sorted(names), sorted(info['names']))
 
