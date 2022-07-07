@@ -10,6 +10,7 @@ services:
       - /var/www/static
       - /efs/images:/var/www/image_data/images
       - /efs/pycortex:/usr/local/share/pycortex
+      - ./pycortex/pycortex/options.cfg:/root/.config/pycortex/options.cfg
     depends_on:
       - redis
 
