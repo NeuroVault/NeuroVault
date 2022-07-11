@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.urls import re_path
 from rest_framework import routers
 
 from .views import (
@@ -13,5 +13,5 @@ router.register(r'collections', CollectionViewSet,)
 router.register(r'my_collections', MyCollectionsViewSet, '')
 router.register(r'nidm_results', NIDMResultsViewSet)
 
-api_urls = router.urls + [url(r'^user/?$', AuthUserView.as_view(),
+api_urls = router.urls + [re_path(r'^user/?$', AuthUserView.as_view(),
                           name='api-auth-user')]

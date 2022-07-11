@@ -2,7 +2,7 @@ import os
 import shutil
 import tarfile
 import tempfile
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.test import TestCase, Client
 from zipfile import ZipFile
 

@@ -7,7 +7,7 @@ from django.utils.crypto import get_random_string
 from django.shortcuts import render, get_object_or_404, render_to_response
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.core.urlresolvers import reverse, reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.contrib.auth import authenticate, login
 from .forms import UserEditForm, UserCreateForm, ApplicationEditForm
 from django.contrib.auth.decorators import login_required

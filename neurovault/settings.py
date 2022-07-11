@@ -27,19 +27,14 @@ SITE_ID = 1
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'postgres',
-        # The following settings are not used with sqlite3:
-        'USER': 'postgres',
-        'HOST': 'db',                      # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
-        'PORT': '5432',        # Set to empty string for default.
+        'ENGINE': 'django.db.backends.sqlite3'
     }
 }
 
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False
 # See https://docs.djangoproject.com/en/1.5/ref/settings/#allowed-hosts
-ALLOWED_HOSTS = "*"
+ALLOWED_HOSTS = ["*"]
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -143,24 +138,24 @@ INSTALLED_APPS = (
     # Uncomment the next line to enable the admin:
     'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
-     #'django.contrib.admindocs',
-    'social.apps.django_app.default',
+    #'django.contrib.admindocs',
+    #'social.apps.django_app.default',
+    'social_django',
     'rest_framework',
     'taggit',
     'crispy_forms',
-    'taggit_templatetags',
     #'south',
-    'dbbackup',
+    # 'dbbackup',
     'polymorphic',
-    'djcelery',
+    # 'djcelery',
     'django_cleanup',
     'file_resubmit',
-    'django_mailgun',
-    'django_hstore',
+    # 'django_mailgun',
+    # 'django_hstore',
     'guardian',
     'oauth2_provider',
-    'fixture_media',
-    'raven.contrib.django.raven_compat',
+    # 'fixture_media',
+    # 'raven.contrib.django.raven_compat',
 )
 
 # A sample logging configuration. The only tangible logging
@@ -194,10 +189,10 @@ INSTALLED_APPS = (
 # }
 
 AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
-    'social.backends.facebook.FacebookOAuth2',
-    'social.backends.google.GoogleOAuth2',
+    'social_core.backends.facebook.FacebookOAuth2',
+    'social_core.backends.google.GoogleOAuth2',
     'guardian.backends.ObjectPermissionBackend',
+    'django.contrib.auth.backends.ModelBackend',
 )
 
 SOCIAL_AUTH_PIPELINE = (
@@ -235,12 +230,13 @@ REST_FRAMEWORK = {
     ],
 
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'oauth2_provider.ext.rest_framework.OAuth2Authentication',
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
     ),
     'DEFAULT_RENDERER_CLASSES': (
         'neurovault.api.utils.ExplicitUnicodeJSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
     ),
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'UNICODE_JSON': True,
 }
 

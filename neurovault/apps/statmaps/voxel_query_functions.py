@@ -1,11 +1,10 @@
-
 import nibabel
 import xml.etree.ElementTree as ET
 import numpy
 import os.path
-from builtins import True
+# from __builtin__ import True
 import urllib.request, urllib.error, urllib.parse
-import networkx as nx
+# import networkx as nx
 import pickle as pickle
 import numpy.linalg as npl
 

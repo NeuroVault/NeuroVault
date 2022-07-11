@@ -1,7 +1,7 @@
 import nibabel as nb
 import os
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.test import TestCase, Client
 
 from neurovault.apps.statmaps.forms import StatisticMapForm

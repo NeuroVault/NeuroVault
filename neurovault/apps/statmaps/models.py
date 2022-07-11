@@ -8,14 +8,13 @@ from gzip import GzipFile
 import nibabel as nb
 from django.contrib.auth.models import User
 from django.core.files import File
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Q
 from django.db.models.fields.files import FieldFile
 from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch.dispatcher import receiver
-from django_hstore import hstore
 from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
 from polymorphic.models import PolymorphicModel
 from taggit.managers import TaggableManager
@@ -61,7 +60,7 @@ class Collection(models.Model):
     journal_name = models.CharField(max_length=200, blank=True, null=True, default=None)
     description = models.TextField(blank=True, null=True)
     full_dataset_url = models.URLField(max_length=200, blank=True, null=True, verbose_name="Full dataset URL", help_text="Link to an external dataset the maps in this collection have been generated from (for example: \"https://openfmri.org/dataset/ds000001\" or \"http://dx.doi.org/10.15387/fcp_indi.corr.mpg1\")")
-    owner = models.ForeignKey(User)
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     contributors = models.ManyToManyField(User,related_name="collection_contributors",related_query_name="contributor", blank=True,help_text="Select other NeuroVault users to add as contributes to the collection.  Contributors can add, edit and delete images in the collection.",verbose_name="Contributors")
     private = models.BooleanField(choices=((False, 'Public (The collection will be accessible by anyone and all the data in it will be distributed under CC0 license)'),
                                            (True, 'Private (The collection will be not listed in the NeuroVault index. It will be possible to shared it with others at a private URL.)')), default=False,verbose_name="Accessibility")
@@ -290,7 +289,7 @@ class CognitiveAtlasTask(models.Model):
 class CognitiveAtlasContrast(models.Model):
     name = models.CharField(max_length=200, null=False, blank=False)
     cog_atlas_id = models.CharField(primary_key=True, max_length=200, null=False, blank=False)
-    task = models.ForeignKey(CognitiveAtlasTask)
+    task = models.ForeignKey(CognitiveAtlasTask, on_delete=models.SET_NULL, null=True)
 
     def __str__(self):
         return self.name
@@ -322,13 +321,13 @@ class KeyValueTag(TagBase):
 
 
 class ValueTaggedItem(GenericTaggedItemBase):
-    tag = models.ForeignKey(KeyValueTag, related_name="tagged_items")
+    tag = models.ForeignKey(KeyValueTag, related_name="tagged_items", on_delete=models.CASCADE)
 
 
 class BaseCollectionItem(PolymorphicModel, models.Model):
     name = models.CharField(max_length=200, null=False, blank=False, db_index=True)
     description = models.TextField(blank=True)
-    collection = models.ForeignKey(Collection)
+    collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
     add_date = models.DateTimeField('date published', auto_now_add=True)
     modify_date = models.DateTimeField('date modified', auto_now=True)
     tags = TaggableManager(through=ValueTaggedItem, blank=True)
@@ -437,8 +436,8 @@ class Image(BaseCollectionItem):
                                               verbose_name="Reduced representation of the image",
                                               null=True, blank=True, upload_to=upload_img_to,
                                               storage=OverwriteStorage())
-    data = hstore.DictionaryField(blank=True, null=True)
-    hstore_objects = hstore.HStoreManager()
+    data = models.JSONField(blank=True, null=True)
+    # hstore_objects = hstore.HStoreManager()
 
 
     def get_absolute_url(self):
@@ -744,7 +743,7 @@ post_save.connect(basecollectionitem_created, sender=NIDMResults, weak=True)
 
 
 class NIDMResultStatisticMap(BaseStatisticMap):
-    nidm_results = models.ForeignKey(NIDMResults)
+    nidm_results = models.ForeignKey(NIDMResults, on_delete=models.CASCADE)
 
 post_save.connect(basecollectionitem_created, sender=NIDMResultStatisticMap, weak=True)
 
@@ -776,9 +775,9 @@ class Similarity(models.Model):
 
 
 class Comparison(models.Model):
-    image1 = models.ForeignKey(Image,related_name="image1",db_index=True)
-    image2 = models.ForeignKey(Image,related_name="image2",db_index=True)
-    similarity_metric = models.ForeignKey(Similarity)
+    image1 = models.ForeignKey(Image,related_name="image1",db_index=True, on_delete=models.CASCADE)
+    image2 = models.ForeignKey(Image,related_name="image2",db_index=True, on_delete=models.CASCADE)
+    similarity_metric = models.ForeignKey(Similarity, on_delete=models.CASCADE)
     similarity_score = models.FloatField(help_text="the comparison score between two or more statistical maps", verbose_name="the comparison score between two or more statistical maps")
 
     def __unicode__(self):
@@ -794,14 +793,14 @@ class Comparison(models.Model):
         verbose_name_plural = "pairwise image comparisons"
 
 class Metaanalysis(models.Model):
-    owner = models.ForeignKey(User)
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     name = models.CharField(max_length=200, unique=True, null=False)
     description = models.TextField(blank=True, null=True)
     maps = models.ManyToManyField(StatisticMap, blank=True, null=True)
     status =  models.CharField(choices=[('active', 'active'), ('inactive', 'inactive'),
                                         ('completed', 'completed')],
                                max_length=200, blank=True, null=True, default='active')
-    output_maps = models.ForeignKey(Collection, blank=True, null=True)
+    output_maps = models.ForeignKey(Collection, blank=True, null=True, on_delete=models.SET_NULL)
 
     def save(self, *args, **kwargs):
         if self.status == 'active':

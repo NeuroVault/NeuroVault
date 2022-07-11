@@ -13,7 +13,6 @@ import tempfile
 import traceback
 import urllib.request, urllib.parse, urllib.error
 import zipfile
-import zipstream
 from collections import OrderedDict
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -28,11 +27,11 @@ from django.template.context import RequestContext
 from django.utils.encoding import filepath_to_uri
 from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from fnmatch import fnmatch
 from guardian.shortcuts import get_objects_for_user
 from nidmviewer.viewer import generate
-from pybraincompare.compare.scatterplot import scatterplot_compare_vector
+# from pybraincompare.compare.scatterplot import scatterplot_compare_vector
 from nidmresults.graph import Graph
 from rest_framework.renderers import JSONRenderer
 from sendfile import sendfile
@@ -1153,6 +1152,7 @@ def atlas_query_voxel(request):
 
 # Compare Two Images
 def compare_images(request,pk1,pk2):
+    ''' disable calls to brain compare functions for upgrade
     import numpy as np
     image1 = get_image(pk1,None,request)
     image2 = get_image(pk2,None,request)
@@ -1220,6 +1220,8 @@ def compare_images(request,pk1,pk2):
         context["warnings"] = warnings
 
     return render(request, 'statmaps/compare_images.html', context)
+    '''
+    raise Http404('disabled for upgrade')
 
 
 # Return search interface for one image vs rest

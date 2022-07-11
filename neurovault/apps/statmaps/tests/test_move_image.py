@@ -1,5 +1,5 @@
 from django.test import TestCase, Client, override_settings, RequestFactory
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from neurovault.apps.statmaps.models import Collection,User, Atlas, Image
 from django.core.files.uploadedfile import SimpleUploadedFile
 from uuid import uuid4

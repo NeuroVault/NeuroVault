@@ -7,8 +7,7 @@ from django.http import HttpResponse
 from guardian.shortcuts import get_objects_for_user
 
 from rest_framework import mixins, permissions, status, viewsets
-from rest_framework.decorators import detail_route, list_route
-from rest_framework.filters import DjangoFilterBackend
+from rest_framework.decorators import action
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -98,7 +97,7 @@ class ImageViewSet(mixins.RetrieveModelMixin,
             collection_cid = base_image.collection.id
         return get_image(pk, collection_cid, request, mode='api')
 
-    @detail_route()
+    @action(detail=True)
     def datatable(self, request, pk=None):
         ''' A wrapper around standard retrieve() request that formats the
         object for the Datatables plugin. '''
@@ -138,7 +137,7 @@ class AtlasViewSet(ImageViewSet):
     serializer_class = AtlasSerializer
     permission_classes = (ObjectOnlyPolymorphicPermissions,)
 
-    @detail_route()
+    @action(detail=True)
     def datatable(self, request, pk=None):
         """
         A wrapper around standard retrieve() request that formats
@@ -149,7 +148,7 @@ class AtlasViewSet(ImageViewSet):
         return APIHelper.wrap_for_datatables(data, ['name', 'modify_date',
                                                     'description', 'add_date'])
 
-    @detail_route()
+    @action(detail=True)
     def regions_table(self, request, pk=None):
         """
         A wrapper around standard retrieve() request that formats
@@ -174,7 +173,7 @@ class AtlasViewSet(ImageViewSet):
         return Response(
             {'aaData': list(zip(indices, regions))})
 
-    @list_route()
+    @action(detail=False)
     def atlas_query_region(self, request, pk=None):
         """
         Returns a dictionary containing a list of voxels that match
@@ -236,7 +235,7 @@ class AtlasViewSet(ImageViewSet):
 
             return Response(data)
 
-    @list_route()
+    @action(detail=False)
     def atlas_query_voxel(self, request, pk=None):
         """
         Returns the region name that matches specified coordinates
@@ -281,10 +280,9 @@ class CollectionViewSet(viewsets.ModelViewSet):
     queryset = Collection.objects.filter(private=False)
     filter_fields = ('name', 'DOI', 'owner')
     serializer_class = CollectionSerializer
-    filter_backends = (DjangoFilterBackend,)
     permission_classes = (ObjectOnlyPermissions,)
 
-    @detail_route()
+    @action(detail=True)
     def datatable(self, request, pk=None):
         collection = get_collection(pk, request, mode='api')
         data = CollectionSerializer(
@@ -374,7 +372,7 @@ class TagViewSet(viewsets.ModelViewSet):
 
     model = Tag
 
-    @detail_route()
+    @action(detail=True)
     def datatable(self, request, pk=None):
         from django.db.models import Count
         data = Tag.objects.annotate(action_count=Count('action'))

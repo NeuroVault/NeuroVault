@@ -1,6 +1,6 @@
 from django.test import TestCase, Client
 from django.http import HttpResponse
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.conf.urls import patterns, url, include
 from django.contrib.auth import get_user_model
 
