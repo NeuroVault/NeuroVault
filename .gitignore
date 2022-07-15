@@ -71,3 +71,6 @@ docs/_build/
 # PyBuilder
 target/
 
+local_data/
+.env
+.envs/

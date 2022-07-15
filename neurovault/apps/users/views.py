@@ -4,7 +4,7 @@ from django.conf import settings
 from django.http.response import (HttpResponseRedirect, HttpResponseForbidden,
                                   Http404)
 from django.utils.crypto import get_random_string
-from django.shortcuts import render, get_object_or_404, render_to_response
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.urls import reverse, reverse_lazy
@@ -61,7 +61,7 @@ def edit_user(request):
                              'Your profile has been successfully updated.')
 
             return HttpResponseRedirect(reverse("edit_user"))
-    return render_to_response("registration/edit_profile.html",
+    return render(request, "registration/edit_profile.html",
                               {'form': edit_form},
                               context_instance=RequestContext(request))
 
@@ -72,7 +72,7 @@ def delete_profile(request):
             request.user.delete()
         else: messages.warning(request,'Username did not match, deletion not completed')
         return HttpResponseRedirect(reverse("delete_profile"))
-    return render_to_response("registration/delete_profile.html",
+    return render(request, "registration/delete_profile.html",
                               context_instance=RequestContext(request))
 
 @login_required
@@ -84,7 +84,7 @@ def password_change_done(request):
 
 
 # def login(request):
-#     return render_to_response('home.html', {
+#     return render(request, 'home.html', {
 #         'plus_id': getattr(settings, 'SOCIAL_AUTH_GOOGLE_PLUS_KEY', None)
 #     }, RequestContext(request))
 

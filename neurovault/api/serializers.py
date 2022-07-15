@@ -1,9 +1,9 @@
 import os
 import json
 import pandas as pd
+from urllib.parse import quote
 from django.contrib.auth.models import User
 from django.forms.utils import ErrorDict, ErrorList
-from django.utils.http import urlquote
 from rest_framework import serializers
 from rest_framework.relations import PrimaryKeyRelatedField, StringRelatedField
 
@@ -34,7 +34,7 @@ class HyperlinkedFileField(serializers.FileField):
     def to_representation(self, value):
         if value:
             request = self.context.get('request', None)
-            return request.build_absolute_uri(urlquote(value.url))
+            return request.build_absolute_uri(quote(value.url))
 
 
 class HyperlinkedDownloadURL(serializers.RelatedField):

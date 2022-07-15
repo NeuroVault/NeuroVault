@@ -292,7 +292,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
         return APIHelper.wrap_for_datatables(data, ['owner', 'modify_date',
                                                     'images'])
 
-    @detail_route(methods=['get', 'post'])
+    @action(detail=True, methods=['get', 'post'])
     def images(self, request, pk=None):
         if request.method == 'POST':
             return self.add_item(request, pk, EditableStatisticMapSerializer)
@@ -308,14 +308,14 @@ class CollectionViewSet(viewsets.ModelViewSet):
             page, context={'request': request}, many=True)
         return paginator.get_paginated_response(serializer.data)
 
-    @detail_route(methods=['get', 'post'])
+    @action(detail=True, methods=['get', 'post'])
     def atlases(self, request, pk):
         if request.method == 'POST':
             return self.add_item(request, pk, EditableAtlasSerializer)
 
         return self._get_paginated_results(Atlas, pk, request, AtlasSerializer)
 
-    @detail_route(methods=['get', 'post'])
+    @action(detail=True, methods=['get', 'post'])
     def nidm_results(self, request, pk):
         if request.method == 'POST':
             return self.add_item(request, pk, EditableNIDMResultsSerializer)

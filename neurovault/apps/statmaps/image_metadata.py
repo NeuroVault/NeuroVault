@@ -6,7 +6,7 @@ from collections import defaultdict
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db.models import Model
-from django.db.models.fields import FieldDoesNotExist
+from django.core.exceptions import FieldDoesNotExist
 from django.db.models.fields.related import ForeignKey
 
 from .models import StatisticMap, Image

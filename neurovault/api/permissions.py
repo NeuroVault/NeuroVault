@@ -1,6 +1,6 @@
 from rest_framework.permissions import (DjangoObjectPermissions,
                                         SAFE_METHODS, Http404)
-from guardian.ctypes import get_ctype_from_polymorphic
+from guardian.ctypes import get_content_type
 
 
 class ObjectOnlyPermissions(DjangoObjectPermissions):
@@ -16,7 +16,7 @@ class ObjectOnlyPermissions(DjangoObjectPermissions):
 class ObjectOnlyPolymorphicPermissions(ObjectOnlyPermissions):
 
     def has_object_permission(self, request, view, obj):
-        ctype = get_ctype_from_polymorphic(obj)
+        ctype = get_content_type(obj)
 
         model_cls = ctype.model_class()
         user = request.user

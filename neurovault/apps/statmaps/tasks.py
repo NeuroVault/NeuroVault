@@ -242,10 +242,10 @@ def generate_surface_image(image_pk):
 
 # IMAGE TRANSFORMATION ################################################################################
 
-''' disable for upgrade
 # Save 4mm, brain masked image vector in pkl file in image folder
 @shared_task
 def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
+    ''' Disabled for upgrade - pybraincompare dependency
     from neurovault.apps.statmaps.models import Image
     from six import BytesIO
     import numpy as np
@@ -261,7 +261,8 @@ def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
     img.reduced_representation.save("transform_%smm_%s.npy" %(resample_dim[0],img.pk), content_file)
 
     return img
-'''
+    '''
+    return
 
 
 # SIMILARITY CALCULATION ##############################################################################

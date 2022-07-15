@@ -3,6 +3,7 @@ import os
 import sys
 import tempfile
 from datetime import timedelta
+from pathlib import Path
 
 import matplotlib
 from kombu import Exchange, Queue
@@ -10,6 +11,7 @@ from kombu import Exchange, Queue
 matplotlib.use('Agg')
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+APPS_DIR = Path(BASE_DIR)  / "neurovault" / "apps"
 
 DEBUG = True
 
@@ -27,9 +29,15 @@ SITE_ID = 1
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3'
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_NAME'),
+        'USER': os.getenv('POSTGRES_USER'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+        'HOST':os.getenv('POSTGRES_HOST'),
+        'PORT': os.getenv('POSTGRES_PORT'),
     }
 }
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False
@@ -81,50 +89,58 @@ STATIC_URL = '/static/'
 
 # List of finder classes that know how to find static files in
 # various locations.
-STATICFILES_FINDERS = (
+STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
-)
+]
 
-MIDDLEWARE_CLASSES = (
-    'django.middleware.common.CommonMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'neurovault.apps.statmaps.middleware.CollectionRedirectMiddleware',
-    # Uncomment the next line for simple clickjacking protection:
-    # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
-)
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.common.BrokenLinkEmailsMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
 
 ROOT_URLCONF = 'neurovault.urls'
 
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 # Python dotted path to the WSGI application used by Django's runserver.
-WSGI_APPLICATION = 'neurovault.wsgi.application'
-
+WSGI_APPLICATION = "neurovault.wsgi.application"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': (),
-        'OPTIONS': {'context_processors': ("django.contrib.auth.context_processors.auth",
-                                            "django.core.context_processors.debug",
-                                            "django.core.context_processors.i18n",
-                                            "django.core.context_processors.media",
-                                            "django.core.context_processors.static",
-                                            "django.core.context_processors.tz",
-                                            "django.contrib.messages.context_processors.messages",
-                                            'django.core.context_processors.request'),
-                    'loaders': ('django.template.loaders.filesystem.Loader',
-                                'django.template.loaders.app_directories.Loader',
-                                )}
+        # https://docs.djangoproject.com/en/dev/ref/settings/#std:setting-TEMPLATES-BACKEND
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        # https://docs.djangoproject.com/en/dev/ref/settings/#dirs
+        "DIRS": [str(APPS_DIR / "templates")],
+        # https://docs.djangoproject.com/en/dev/ref/settings/#app-dirs
+        "APP_DIRS": True,
+        "OPTIONS": {
+            # https://docs.djangoproject.com/en/dev/ref/settings/#template-context-processors
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.template.context_processors.i18n",
+                "django.template.context_processors.media",
+                "django.template.context_processors.static",
+                "django.template.context_processors.tz",
+                "django.contrib.messages.context_processors.messages",
+                "test_django_cookiecutter.users.context_processors.allauth_settings",
+            ],
+        },
     }
 ]
 
-INSTALLED_APPS = (
+INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -156,7 +172,7 @@ INSTALLED_APPS = (
     'oauth2_provider',
     # 'fixture_media',
     # 'raven.contrib.django.raven_compat',
-)
+]
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
@@ -352,6 +368,7 @@ if "test" in sys.argv or "benchmark" in sys.argv:
 
 
 TAGGIT_CASE_INSENSITIVE=True
+GUARDIAN_GET_CONTENT_TYPE = 'polymorphic.contrib.guardian.get_polymorphic_base_content_type'
 
 FIXTURE_DIRS = (
     'apps/statmaps/fixtures/',

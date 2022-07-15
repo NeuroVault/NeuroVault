@@ -33,9 +33,9 @@ class NIDMStatisticMapAdmin(PolymorphicChildModelAdmin, BaseImageAdmin):
 class ImageAdmin(PolymorphicParentModelAdmin):
     base_model = Image
     child_models = (
-        (StatisticMap, StatisticMapAdmin),
-        (Atlas, AtlasAdmin),
-        (NIDMResultStatisticMap, NIDMStatisticMapAdmin)
+        StatisticMap,
+        Atlas,
+        NIDMResultStatisticMap
     )
 
 
@@ -49,6 +49,12 @@ class NIDMResultsAdmin(BaseImageAdmin):
         form.update_ttl_urls()
         form.save_m2m()
 
+
+
+admin.site.register(StatisticMap, StatisticMapAdmin),
+admin.site.register(Atlas, AtlasAdmin),
+admin.site.register(NIDMResultStatisticMap, NIDMStatisticMapAdmin)
+ 
 admin.site.register(Image, ImageAdmin)
 admin.site.register(Collection)
 admin.site.register(NIDMResults,NIDMResultsAdmin)

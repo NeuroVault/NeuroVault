@@ -22,7 +22,7 @@ from django.db.models import Q
 from django.db.models.aggregates import Count
 from django.http import Http404, HttpResponse, StreamingHttpResponse
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
-from django.shortcuts import get_object_or_404, render_to_response, render, redirect
+from django.shortcuts import get_object_or_404, render, redirect
 from django.template.context import RequestContext
 from django.utils.encoding import filepath_to_uri
 from django.views.decorators.csrf import csrf_exempt
@@ -30,16 +30,16 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.urls import reverse
 from fnmatch import fnmatch
 from guardian.shortcuts import get_objects_for_user
-from nidmviewer.viewer import generate
+# from nidmviewer.viewer import generate
 # from pybraincompare.compare.scatterplot import scatterplot_compare_vector
 from nidmresults.graph import Graph
 from rest_framework.renderers import JSONRenderer
 from sendfile import sendfile
-from sklearn.externals import joblib
+import joblib
 from xml.dom import minidom
 from django.core.files.uploadedfile import SimpleUploadedFile
-from nimare.meta.ibma import stouffers, weighted_stouffers
-from nimare.utils import t_to_z
+from nimare.meta.ibma import Stouffers
+from nimare.transforms import t_to_z
 from nilearn.masking import apply_mask
 from nilearn.image import resample_to_img
 
@@ -201,9 +201,9 @@ def finalize_metaanalysis(request, metaanalysis_id):
 
     z_data = apply_mask(z_imgs, mask_img)
     if do_weighted:
-        result = weighted_stouffers(z_data, np.array(sizes), mask_img, corr='FWE', two_sided=True)
+        result = weighted_stouffers(z_data, np.array(sizes), mask_img, corr='FWE', two_sided=True, use_sample_size=True)
     else:
-        result = stouffers(z_data, mask_img, inference='ffx', null='theoretical', corr='FWE',
+        result = Stouffers(z_data, mask_img, inference='ffx', null='theoretical', corr='FWE',
                            two_sided=True)
 
     z_map = StatisticMap(name='FWE corrected Z map', description='', collection=new_collection,
@@ -555,7 +555,7 @@ def view_collection(request, cid):
         form = UploadFileForm()
         c = RequestContext(request)
         c.update(context)
-        return render_to_response('statmaps/collection_details.html', {'form': form}, c)
+        return render(request, 'statmaps/collection_details.html', {'form': form}, c)
     else:
         return render(request, 'statmaps/collection_details.html', context)
 
@@ -596,6 +596,7 @@ def edit_image(request, pk):
 
 
 def view_nidm_results(request, collection_cid, nidm_name):
+    '''
     collection = get_collection(collection_cid,request)
     nidmr = get_object_or_404(NIDMResults, collection=collection,name=nidm_name)
     if request.method == "POST":
@@ -639,6 +640,8 @@ def view_nidm_results(request, collection_cid, nidm_name):
 
     context = {"form": form,"nidm_viewer":html_snippet}
     return render(request, "statmaps/edit_nidm_results.html", context)
+    '''
+    raise Http404('Disabled for upgrade')
 
 @login_required
 def delete_nidm_results(request, collection_cid, nidm_name):
@@ -934,7 +937,7 @@ def upload_folder(request, collection_cid):
             return HttpResponseRedirect(collection.get_absolute_url())
     else:
         form = UploadFileForm()
-    return render_to_response("statmaps/upload_folder.html",
+    return render(request, "statmaps/upload_folder.html",
                               {'form': form},  RequestContext(request))
 
 
@@ -1077,7 +1080,7 @@ def papaya_js_embed(request, pk, iframe=None):
     if image.collection.private:
         return HttpResponseForbidden()
     context = {'image': image, 'request':request}
-    return render_to_response('statmaps/%s' % tpl,
+    return render(request, 'statmaps/%s' % tpl,
                               context, content_type=mimetype)
 
 

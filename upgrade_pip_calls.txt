@@ -1,0 +1,18 @@
+pip install scipy celery[redis] requests lxml django-oauth-toolkit pandas nibabel matplotlib django-taggit nilearn django-datatables-view statsmodels django-cleanup django-polymorphic djangorestframework 
+pip install psycopg
+pip install nidmresults nidmfsl cognitiveatlas 
+pip install social-app-django
+pip install social-auth-app-django
+pip install crispy_forms
+pip install django-crispy-forms
+pip install django-file-resubmit 
+pip install django-guardian
+pip install pycortex
+pip install django filter
+pip install django-sendfile
+pip install joblib
+pip install NiMARE
+pip install django-braces
+pip install corsheaders
+pip install django-cors-headers
+
