@@ -40,7 +40,7 @@ class NeuroVaultStorage(FileSystemStorage):
 class DoubleExtensionStorage(NeuroVaultStorage):
     _extensions = ["nii.gz", "nidm.zip"]
 
-    def get_available_name(self, name):
+    def get_available_name(self, name, max_length=None):
         """
         Returns a filename that's free on the target storage system, and
         available for new content to be written to.
@@ -66,7 +66,7 @@ class DoubleExtensionStorage(NeuroVaultStorage):
 
 
 class OverwriteStorage(NeuroVaultStorage):
-    def get_available_name(self, name):
+    def get_available_name(self, name, max_length=None):
         return name
 
     def _save(self, name, content):

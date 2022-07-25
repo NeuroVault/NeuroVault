@@ -1,6 +1,5 @@
 import numpy as np
 from cognitiveatlas.api import get_task, get_concept
-from exceptions import ValueError
 
 from neurovault.apps.statmaps.models import CognitiveAtlasTask, CognitiveAtlasContrast, StatisticMap
 

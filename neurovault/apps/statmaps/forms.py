@@ -3,7 +3,7 @@ import re
 import shutil
 import subprocess
 from subprocess import CalledProcessError
-from io import StringIO
+from io import BytesIO, StringIO
 
 import nibabel as nb
 import numpy as np
@@ -249,8 +249,8 @@ collection_row_attrs = {
 
 class ContributorCommaSepInput(forms.Widget):
 
-    def render(self, name, value, attrs=None):
-        final_attrs = self.build_attrs(attrs, type='text', name=name)
+    def render(self, name, value, attrs=None, renderer=None):
+        final_attrs = self.build_attrs(attrs, {'type': 'text', name: name})
         if not type(value) == str and value is not None:
             out_vals = []
             for val in value:
@@ -319,7 +319,7 @@ class CollectionForm(ModelForm):
     def clean(self):
         cleaned_data = super(CollectionForm, self).clean()
         doi = self.cleaned_data['DOI']
-        if doi.strip() == '':
+        if doi is not None and doi.strip() == '':
             self.cleaned_data['DOI'] = None
 
         if self.cleaned_data['DOI']:
@@ -668,7 +668,7 @@ class StatisticMapForm(ImageForm):
             cleaned_data["brain_coverage"] = 100
         elif django_file and "file" not in self._errors and "hdr_file" not in self._errors:
             django_file.open()
-            fileobj = StringIO(django_file.read())
+            fileobj = BytesIO(django_file.read())
             django_file.seek(0)
             gzfileobj = GzipFile(
                 filename=django_file.name, mode='rb', fileobj=fileobj)
@@ -887,13 +887,13 @@ class UploadFileForm(Form):
 
 class PathOnlyWidget(forms.Widget):
 
-    def render(self, name, value, attrs=None):
+    def render(self, name, value, attrs=None, renderer=None):
         return mark_safe('<a target="_blank" href="%s">%s</a><br /><br />' % (value.url, value.url))
 
 
 class MapTypeListWidget(forms.Widget):
 
-    def render(self, name, value, attrs=None):
+    def render(self, name, value, attrs=None, renderer=None):
         map_type = [
             v for k, v in BaseStatisticMap.MAP_TYPE_CHOICES if k == value].pop()
         input = '<input type="hidden" name="%s" value="%s" />' % (name, value)

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static from staticfiles %}
+{% load static %}
 {% block global_includes %}
 
 <style type="text/css">
@@ -26,7 +26,7 @@ body {margin:0;padding:0;background:none transparent;}
 
      $(document).ready(function() {
         $('#NeuroVaultPapayaHolder').addClass('well');
-        $('#NeuroVaultPapayaHolder').prepend($('<div style="margin: 8px;"><h4>NeuroVault Image: <a target="_top" href="http://{{ request.get_host }}{% url 'image_details' image.pk %}">{{image.name|truncatechars:35}}</a></h4></div>'));
+        $('#NeuroVaultPapayaHolder').prepend($('<div style="margin: 8px;"><h4>NeuroVault Image: <a target="_top" href="http://{{ request.get_host }}{% url 'statmaps:image_details' image.pk %}">{{image.name|truncatechars:35}}</a></h4></div>'));
         $('#NeuroVaultPapayaHolder').css("width","470px").css("height","auto").css("padding","5px");
         $('#NeuroVaultPapayaHolder').append($('<div style="height: 90px; overflow: auto; margin: 7px;"><p><b>Description:</b> {{image.description}}</p></div>'));
     });

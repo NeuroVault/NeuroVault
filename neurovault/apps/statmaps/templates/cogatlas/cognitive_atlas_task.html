@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static from staticfiles %}
+{% load static %}
 
 {% block includes %}
     <!--Meta data for Google Search-->
@@ -120,7 +120,7 @@ if($('#for_papaya').is(':visible')) {
                         {"orderable": false, "targets": 0, className: "d-none d-md-table-cell"}
                     ],
                     "order": [[3, 'asc'], [2, 'asc'], [1, 'asc']],
-                    "ajax": "{% url 'task_images_json' task.cog_atlas_id %}",
+                    "ajax": "{% url 'statmaps:task_images_json' task.cog_atlas_id %}",
                     "initComplete": function(settings, json) {
                         if($('#for_papaya').is(':visible')) {
                             $("#for_papaya").append("<div class=\"papaya\" class=\"mw-100\" style=\"float:left;\"></div>")

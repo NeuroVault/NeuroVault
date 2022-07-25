@@ -19,6 +19,7 @@ defusedxml==0.7.1
 Deprecated==1.2.13
 Django==4.0.6
 django-braces==1.15.0
+django-celery-results==2.4.0
 django-cleanup==6.0.0
 django-cors-headers==3.13.0
 django-crispy-forms==1.14.0

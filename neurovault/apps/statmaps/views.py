@@ -23,7 +23,6 @@ from django.db.models.aggregates import Count
 from django.http import Http404, HttpResponse, StreamingHttpResponse
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render, redirect
-from django.template.context import RequestContext
 from django.utils.encoding import filepath_to_uri
 from django.views.decorators.csrf import csrf_exempt
 from django_datatables_view.base_datatable_view import BaseDatatableView
@@ -335,7 +334,7 @@ def choice_datasources(model):
     fixed_fields = list(model.get_fixed_fields())
     field_choices = ((f, statmap_field_obj(f).choices) for f in fixed_fields)
     fields_with_choices = (t for t in field_choices if t[1])
-    return dict((field_name, pick_second_item(choices))
+    return dict((field_name, list(pick_second_item(choices)))
                 for field_name, choices in fields_with_choices)
 
 
@@ -405,7 +404,7 @@ def add_communities_context(communities, context):
     if len(communities) == 1:
         main_community = communities[0]
         context['name_subscript'] = main_community.label
-        context['name_subscript_url'] = reverse('view_community',
+        context['name_subscript_url'] = reverse('statmaps:view_community',
                                                 kwargs={'community_label': main_community.label})
 
 def view_image(request, pk, collection_cid=None):
@@ -425,7 +424,7 @@ def view_image(request, pk, collection_cid=None):
     pycortex_compatible = is_target_template_image_pycortex_compatible( image.target_template_image )
     neurosynth_compatible = is_target_template_image_neurosynth_compatible( image.target_template_image )
 
-    is_there_an_active_metaanalysis = request.user.is_authenticated() and (Metaanalysis.objects.filter(
+    is_there_an_active_metaanalysis = request.user.is_authenticated and (Metaanalysis.objects.filter(
         owner=request.user).filter(status='active').count() != 0)
     is_metaanalysis_compatible = isinstance(image, StatisticMap) and image.analysis_level=='G' \
                                                                                           and \
@@ -553,11 +552,8 @@ def view_collection(request, cid):
 
     if owner_or_contrib(request,collection):
         form = UploadFileForm()
-        c = RequestContext(request)
-        c.update(context)
-        return render(request, 'statmaps/collection_details.html', {'form': form}, c)
-    else:
-        return render(request, 'statmaps/collection_details.html', context)
+        context["form"] = UploadFileForm()
+    return render(request, 'statmaps/collection_details.html', context)
 
 
 @login_required
@@ -937,8 +933,8 @@ def upload_folder(request, collection_cid):
             return HttpResponseRedirect(collection.get_absolute_url())
     else:
         form = UploadFileForm()
-    return render(request, "statmaps/upload_folder.html",
-                              {'form': form},  RequestContext(request))
+    context["form"] = form
+    return render(request, "statmaps/upload_folder.html", context)
 
 
 @login_required
@@ -1543,7 +1539,7 @@ class MyMetaanalysesJson(PublicCollectionsJson):
         if column == 'n_images':
             return row.maps.count()
         elif column == 'name':
-            return "<a href='" + reverse('view_metaanalysis', kwargs={'metaanalysis_id': row.pk})\
+            return "<a href='" + reverse('statmaps:view_metaanalysis', kwargs={'metaanalysis_id': row.pk})\
                    + "'>" + \
                    row.name + "</a>"
         else:

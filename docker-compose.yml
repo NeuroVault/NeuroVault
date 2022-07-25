@@ -5,6 +5,8 @@ services:
     image: neurovault/neurovault
     build: .
     command: python manage.py runserver 0.0.0.0:8000
+    ports: 
+      - "8000:8000"
     volumes:
       - .:/code
       - ${NV_IMAGE_DATA}:/image_data
@@ -28,7 +30,7 @@ services:
 
   worker:
     image: neurovault/neurovault
-    command: celery worker -A neurovault.celery -Q default -n default@%h
+    command: celery -A neurovault.celery worker -Q default -n default@%h
     volumes_from:
       - uwsgi
     depends_on:

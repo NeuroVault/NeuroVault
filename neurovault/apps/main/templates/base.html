@@ -1,6 +1,7 @@
-{% load static from staticfiles %}
+{% load static %}
 <!doctype html>
 <html lang="en">
+
 <head>
 <!-- Global site tag (gtag.js) - Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=UA-339450-10"></script>
@@ -37,10 +38,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="msapplication-TileImage" content="/mstile-144x144.png">
-    <script src="https://browser.sentry-cdn.com/5.4.0/bundle.min.js" crossorigin="anonymous"></script>
-    <script>
-    Sentry.init({ dsn: 'https://8381dd47c23b47fb83ed76274243b311@sentry.io/1235478' });
-    </script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" media="(prefers-color-scheme: light)" crossorigin="anonymous">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootswatch/4.3.1/cyborg/bootstrap.min.css" crossorigin="anonymous" media="(prefers-color-scheme: dark)">
@@ -96,7 +93,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <div class="container">
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <a class="navbar-brand" href="{% url 'index' %}">NeuroVault</a>
+        <a class="navbar-brand" href="{% url 'main:index' %}">NeuroVault</a>
         <a class="navbar-brand" style="margin-left: -12px" href="{{ name_subscript_url }}"><sub>{{ name_subscript }}</sub></a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -110,9 +107,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         Collections
                     </a>
                     <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                        <a class="dropdown-item" href="{% url 'my_collections' %}">My collections</a>
-                        <a class="dropdown-item" href="{% url 'new_collection' %}">Add new collection</a>
-                        <a class="dropdown-item" href="{% url 'collections_list' %}">See all collections</a>
+                        <a class="dropdown-item" href="{% url 'statmaps:my_collections' %}">My collections</a>
+                        <a class="dropdown-item" href="{% url 'statmaps:new_collection' %}">Add new collection</a>
+                        <a class="dropdown-item" href="{% url 'statmaps:collections_list' %}">See all collections</a>
                     </div>
                 </li>
 
@@ -121,8 +118,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         Metaanalyses
                     </a>
                     <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                        <a class="dropdown-item" href="{% url 'my_metaanalyses' %}">My metaanalyses</a>
-                        <a class="dropdown-item" href="{% url 'metaanalysis_selection' %}">Search for group
+                        <a class="dropdown-item" href="{% url 'statmaps:my_metaanalyses' %}">My metaanalyses</a>
+                        <a class="dropdown-item" href="{% url 'statmaps:metaanalysis_selection' %}">Search for group
                             level maps</a>
                     </div>
                 </li>
@@ -132,8 +129,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                         About
                     </a>
                     <div class="dropdown-menu" aria-labelledby="aboutDropdown">
-                        <a class="dropdown-item" href="{% url 'cite' %}">How to cite</a>
-                        <a class="dropdown-item" href="{% url 'FAQ' %}">FAQ</a>
+                        <a class="dropdown-item" href="{% url 'main:cite' %}">How to cite</a>
+                        <a class="dropdown-item" href="{% url 'main:FAQ' %}">FAQ</a>
                         <a class="dropdown-item" href="https://neurostars.org/tags/neurovault">Give feedback</a>
                     </div>
                 </li>
@@ -146,18 +143,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                             {{ request.user.username }}
                         </a>
                         <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <a class="dropdown-item" href="{% url 'my_collections' %}">My collections</a>
+                            <a class="dropdown-item" href="{% url 'statmaps:my_collections' %}">My collections</a>
                             <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="{% url 'edit_user' %}">Settings</a>
-                            <a class="dropdown-item" href="{% url 'logout' %}">Logout</a>
+                            <a class="dropdown-item" href="{% url 'users:edit_user' %}">Settings</a>
+                            <a class="dropdown-item" href="{% url 'users:logout' %}">Logout</a>
                         </div>
                     </li>
                 {% else %}
-                    <li class="nav-item"><a class="nav-link"  href="{% url 'login' %}">Log in</a></li>
+                    <li class="nav-item"><a class="nav-link"  href="{% url 'users:login' %}">Log in</a></li>
                 {% endif %}
 
                            <!-- Search Icon -->
-                <form class="form-inline" action="{% url 'search' %}" method="GET">
+                <form class="form-inline" action="{% url 'statmaps:search' %}" method="GET">
                     <input class="form-control form-control-sm mr-sm-2" type="search" name="q" placeholder="Search" aria-label="Search">
                     <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
                 </form>

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static from staticfiles %}
+{% load static %}
 
 {% block includes %}
 {% include "statmaps/_meta_collection.html" %}
@@ -200,20 +200,20 @@
                 {% if pycortex_compatible %}
                     <a class="btn btn-primary" href="pycortex">3D View</a>
                 {% endif %}
-                <a class="btn btn-primary" href="{% url 'download_collection' cid %}">Download</a>
+                <a class="btn btn-primary" href="{% url 'statmaps:download_collection' 1 %}">Download</a>
             {% endif %}
 
             {% if edit_permission %}
-                <a class="btn btn-primary" href="{% url 'add_image' cid %}">Add image</a>
+                <a class="btn btn-primary" href="{% url 'statmaps:add_image' 1 %}" >Add image</a>
 
                 <div class="btn-group" role="group">
                     <button id="btnGroupDropEdit" type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         Edit
                     </button>
                     <div class="dropdown-menu" aria-labelledby="btnGroupDropEdit">
-                        <a class="dropdown-item" href="{% url 'edit_collection' cid %}">Collection Metadata</a>
+                        <a class="dropdown-item" href="{% url 'statmaps:edit_collection' cid %}">Collection Metadata</a>
                         {% if collection.is_statisticmap_set %}
-                        <a class="dropdown-item" href="{% url 'edit_metadata' cid %}">Images Metadata</a>
+                        <a class="dropdown-item" href="{% url 'statmaps:edit_metadata' cid %}">Images Metadata</a>
                         {% else %}
                         <a class="dropdown-item disabled" href="#">Images Metadata</a>
                         {% endif %}
@@ -233,7 +233,7 @@
                 </div>
 
                 {% if delete_permission %}
-                    <a class="btn btn-danger" href="{% url 'delete_collection' cid %}" id="delete_collection"> Delete collection</a>
+                    <a class="btn btn-danger" href="{% url 'statmaps:delete_collection' cid %}" id="delete_collection"> Delete collection</a>
                 {% endif %}<!--close delete permission-->
 
                 <!-- Hidden file upload fields -->
@@ -255,7 +255,7 @@
                     This collection is empty. You can:
                 </div>
                 <div class="btn-group-vertical w-100">
-                    <a type="button" class="btn btn-light" href="{% url 'add_image' cid %}">Add
+                    <a type="button" class="btn btn-light" href="{% url 'statmaps:add_image' cid %}">Add
                         images one by one</a>
                     <a type="button" class="btn btn-light upload_archive"
                        href="#">Upload an archive with images (.zip or .tar.gz)</a>
@@ -433,9 +433,9 @@ $(document).ready(function() {
               }
         },
         {% if collection.private %}
-        "ajax": "{% url 'collection_images_json' collection.private_token %}"
+        "ajax": "{% url 'statmaps:collection_images_json' collection.private_token %}"
         {% else %}
-        "ajax": "{% url 'collection_images_json' collection.id %}"{% endif %}{% if not is_empty %},
+        "ajax": "{% url 'statmaps:collection_images_json' collection.id %}"{% endif %}{% if not is_empty %},
         "initComplete": function(settings, json) {
             if($('#for_papaya').is(':visible')) {
                 $("#for_papaya").append("<div class=\"papaya\" class=\"mw-100\" style=\"float:left;\"></div>")
@@ -465,9 +465,9 @@ $(document).ready(function() {
               }
         },
         {% if collection.private %}
-        "ajax": "{% url 'collection_gimages_json' collection.private_token %}"
+        "ajax": "{% url 'statmaps:collection_gimages_json' collection.private_token %}"
         {% else %}
-        "ajax": "{% url 'collection_gimages_json' collection.id %}"{% endif %}
+        "ajax": "{% url 'statmaps:collection_gimages_json' collection.id %}"{% endif %}
         {% if not is_empty and gimages_active %},
         "initComplete": function(settings, json) {
             if($('#for_papaya').is(':visible')) {
@@ -498,9 +498,9 @@ $(document).ready(function() {
               }
         },
         {% if collection.private %}
-        "ajax": "{% url 'collection_simages_json' collection.private_token %}"
+        "ajax": "{% url 'statmaps:collection_simages_json' collection.private_token %}"
         {% else %}
-        "ajax": "{% url 'collection_simages_json' collection.id %}"
+        "ajax": "{% url 'statmaps:collection_simages_json' collection.id %}"
         {% endif %}
         {% if not is_empty and simages_active %},
         "initComplete": function(settings, json) {
@@ -532,9 +532,9 @@ $(document).ready(function() {
               }
         },
         {% if collection.private %}
-        "ajax": "{% url 'collection_oimages_json' collection.private_token %}"
+        "ajax": "{% url 'statmaps:collection_oimages_json' collection.private_token %}"
         {% else %}
-        "ajax": "{% url 'collection_oimages_json' collection.id %}"{% endif %}
+        "ajax": "{% url 'statmaps:collection_oimages_json' collection.id %}"{% endif %}
         {% if not is_empty and oimages_active %},
         "initComplete": function(settings, json) {
             if($('#for_papaya').is(':visible')) {

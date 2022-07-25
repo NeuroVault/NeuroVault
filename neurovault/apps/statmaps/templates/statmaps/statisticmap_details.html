@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static from staticfiles %}
+{% load static %}
 {% block includes %}
 {% include "statmaps/_meta_image.html" %}
 <meta name="map_type" content="{{ image.map_type }}">
@@ -148,7 +148,7 @@ $(document).ready(function(){
             </p>
         {% endif %}
         {% if image.cognitive_paradigm_cogatlas_id %}
-            <a class="btn btn-primary" href="{% url 'view_task' image.cognitive_paradigm_cogatlas_id %}">Task View</a>
+            <a class="btn btn-primary" href="{% url 'statmaps:view_task' image.cognitive_paradigm_cogatlas_id %}">Task View</a>
         {% endif %}
         {% if image.data_origin == "volume" and pycortex_compatible %}
             <a class="btn btn-primary" href="pycortex">3D View</a>
@@ -202,10 +202,10 @@ $(document).ready(function(){
                     </a>
                 {% endif %}
                 {% if comparison_is_possible %}
-                    <a class="dropdown-item" href="{% url 'find_similar' image.id %}" data-toggle="tooltip" title="Find maps with similar patters.">
+                    <a class="dropdown-item" href="{% url 'statmaps:find_similar' image.id %}" data-toggle="tooltip" title="Find maps with similar patters.">
                         Similar maps search
                     </a>
-                    <a class="dropdown-item" href="{% url 'gene_expression' image.id %}" data-toggle="tooltip" title="Find genes with similar expression patters.">
+                    <a class="dropdown-item" href="{% url 'statmaps:gene_expression' image.id %}" data-toggle="tooltip" title="Find genes with similar expression patters.">
                         Gene expression decoding
                     </a>
                 {% else %}
@@ -223,9 +223,9 @@ $(document).ready(function(){
         </div>
 
         {% if user_owns_image %}
-            <a class="btn btn-primary" href="{% url 'edit_image' image.id %}">Edit details</a>
+            <a class="btn btn-primary" href="{% url 'statmaps:edit_image' image.id %}">Edit details</a>
             {% if not image.nidm_results %}
-                <a class="btn btn-danger" href="{% url 'delete_image' image.id %}" id="delete_image">Delete</a>
+                <a class="btn btn-danger" href="{% url 'statmaps:delete_image' image.id %}" id="delete_image">Delete</a>
             {% endif %}
         {% endif %}
 

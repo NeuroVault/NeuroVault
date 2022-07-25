@@ -13,7 +13,6 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 COPY ./requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
-COPY . /code
 WORKDIR /code
 
 EXPOSE 8000

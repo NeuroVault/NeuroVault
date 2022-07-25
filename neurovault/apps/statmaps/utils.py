@@ -463,9 +463,9 @@ def not_in_mni(nii, target_template_image=DEFAULT_TEMPLATE, plot=False):
         nan_mask = np.isnan(nii.get_data())
         if nan_mask.sum() > 0:
             nii.get_data()[nan_mask] = 0
-        nii = resample_img(nii, target_affine=mask_nii.get_affine(), target_shape=mask_nii.get_shape(),interpolation='nearest')
+        nii = resample_img(nii, target_affine=mask_nii.affine, target_shape=mask_nii.shape, interpolation='nearest')
     else:
-        mask_nii = resample_img(mask_nii, target_affine=nii.get_affine(), target_shape=nii.get_shape(),interpolation='nearest')
+        mask_nii = resample_img(mask_nii, target_affine=nii.affine, target_shape=nii.shape, interpolation='nearest')
 
     brain_mask = mask_nii.get_data() > 0
     excursion_set = np.logical_not(np.logical_or(nii.get_data() == 0, np.isnan(nii.get_data())))

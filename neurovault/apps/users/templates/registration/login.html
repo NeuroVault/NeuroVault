@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static from staticfiles %}
+{% load static %}
 {% block head %}
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js" type="text/javascript"></script>
 
@@ -21,7 +21,7 @@
 <p>Your username and password didn't match. Please try again.</p>
 {% endif %}
 
-<form method="post" action="{% url 'login' %}">
+<form method="post" action="{% url 'users:login' %}">
 {% csrf_token %}
 <table>
 <tr>
@@ -40,7 +40,7 @@
 
 
 
-<a href="{% url 'create_user' %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}">Register new account</a>
+<a href="{% url 'users:create_user' %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}">Register new account</a>
 <br \>
 <a class="zocial facebook"  href="{% url "social:begin" "facebook" %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}">Login using Facebook</a>
 <br \>

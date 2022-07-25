@@ -1,7 +1,7 @@
 from django.test import TestCase, Client
 from django.http import HttpResponse
 from django.urls import reverse
-from django.conf.urls import patterns, url, include
+from django.conf.urls import url, include
 from django.contrib.auth import get_user_model
 
 from rest_framework import permissions
@@ -22,13 +22,12 @@ class OAuth2View(MockView):
     authentication_classes = [OAuth2Authentication]
 
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     url(r'^oauth2/', include('oauth2_provider.urls')),
     url(r'^oauth2-test/$', OAuth2View.as_view()),
     url(r'^accounts/', include('neurovault.apps.users.urls')),
 
-)
+]
 
 
 class TestPersonalAccessTokens(TestCase):

@@ -190,7 +190,7 @@ class Collection(models.Model):
         return_cid = self.id
         if self.private:
             return_cid = self.private_token
-        return reverse('collection_details', args=[str(return_cid)])
+        return reverse('statmaps:collection_details', args=[str(return_cid)])
 
     def __unicode__(self):
         return self.name
@@ -281,7 +281,7 @@ class CognitiveAtlasTask(models.Model):
 
     def get_absolute_url(self):
         cog_atlas_id = self.cog_atlas_id
-        return reverse('view_task', args=[str(cog_atlas_id)])
+        return reverse('statmaps:view_task', args=[str(cog_atlas_id)])
 
     class Meta:
         ordering = ['name']
@@ -442,10 +442,10 @@ class Image(BaseCollectionItem):
 
     def get_absolute_url(self):
         return_args = [str(self.id)]
-        url_name = 'image_details'
+        url_name = 'statmaps:image_details'
         if self.collection.private:
             return_args.insert(0,str(self.collection.private_token))
-            url_name = 'private_image_details'
+            url_name = 'statmaps:private_image_details'
         return reverse(url_name, args=return_args)
 
     def get_thumbnail_url(self):
@@ -716,7 +716,7 @@ class NIDMResults(BaseCollectionItem):
 
     def get_absolute_url(self):
         return_args = [str(self.collection_id),self.name]
-        url_name = 'view_nidm_results'
+        url_name = 'statmaps:view_nidm_results'
         if self.collection.private:
             return_args[0] = str(self.collection.private_token)
         return reverse(url_name, args=return_args)
@@ -811,5 +811,5 @@ class Metaanalysis(models.Model):
         super(Metaanalysis, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return reverse('view_metaanalysis', args=[str(self.id)])
+        return reverse('statmaps:view_metaanalysis', args=[str(self.id)])
 

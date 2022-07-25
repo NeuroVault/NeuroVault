@@ -58,7 +58,7 @@ def clean_u_prefix(s):
 
 
 def to_verbose_name(obj, field_name):
-    return obj._meta.get_field_by_name(field_name)[0].verbose_name.capitalize()
+    return obj._meta.get_field(field_name).verbose_name.capitalize()
 
 
 def prepare_messages(obj, message_dict):
@@ -95,7 +95,7 @@ def set_object_attribute(obj, key, value):
     field_type = None
 
     try:
-        field_type, _, _, _ = obj._meta.get_field_by_name(key)
+        field_type, _, _, _ = obj._meta.get_field(key)
     except FieldDoesNotExist:
         raise FieldDoesNotExist("Error in fixed field name in "
                                 "get_fixed_fields. Field %s "
@@ -190,7 +190,7 @@ def get_all_metadata_keys(image_obj_list):
 
 
 def get_field_by_name(model, field_name):
-    return model._meta.get_field_by_name(field_name)[0]
+    return model._meta.get_field(field_name)
 
 
 def get_fixed_fields(model):

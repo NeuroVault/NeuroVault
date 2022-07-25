@@ -302,7 +302,7 @@
      {
         "@type":"DataDownload",
         "encodingFormat":"zip",
-        "contentUrl":"https://neurovault.org/{% url 'download_collection' collection.id %}"
+        "contentUrl":"https://neurovault.org/{% url 'statmaps:download_collection' collection.id %}"
      }
     ]{% if collection.DOI %},
     "citation": "https://doi.org/{{ collection.DOI }}"

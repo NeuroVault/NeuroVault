@@ -25,7 +25,7 @@ oauth_urlpatterns = [
 
 urlpatterns = [
     re_path('', include('social_django.urls', namespace='social')),
-    re_path(r'^', include('neurovault.apps.main.urls', namespace='main')),
+    re_path(r'^', include('neurovault.apps.main.urls')),
     re_path(r'^', include('neurovault.apps.statmaps.urls', namespace='statmaps')),
     re_path(r'^accounts/', include('neurovault.apps.users.urls', namespace='users')),
     re_path(r'^admin/', admin.site.urls),

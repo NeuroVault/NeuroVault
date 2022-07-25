@@ -15,7 +15,7 @@
             $('#genes-table').dataTable({
                 "bJQueryUI": true,
                 iDisplayLength: 25,
-                "ajax": "{% url 'gene_expression_json' pk=image.pk %}?mask={{ mask }}",
+                "ajax": "{% url 'statmaps:gene_expression_json' pk=image.pk %}?mask={{ mask }}",
                 "order": [[4, "asc"]],
                 "columnDefs": [
                     {

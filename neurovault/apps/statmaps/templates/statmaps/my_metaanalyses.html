@@ -18,7 +18,7 @@
                     "processing": true,
         			"serverSide": true,
         			"order": [[ 0, "asc" ]],
-        			"ajax": "{% url 'my_metaanalyses_json' %}",
+        			"ajax": "{% url 'statmaps:my_metaanalyses_json' %}",
         			"oSearch":{"sSearch":result},
 					"fnDrawCallback": function (oSettings) {
 						var curSearch = oSettings.oPreviousSearch.sSearch;
@@ -48,7 +48,7 @@
             </thead>
         </table>
     </div>
-    <a class="btn btn-primary" href="{% url 'new_metaanalysis' %}">Start a new metaanalysis</a>
+    <a class="btn btn-primary" href="{% url 'statmaps:new_metaanalysis' %}">Start a new metaanalysis</a>
     </div>
 </div>
 {% endblock %}

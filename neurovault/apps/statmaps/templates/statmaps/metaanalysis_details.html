@@ -15,7 +15,7 @@
                 "processing": true,
                 "serverSide": true,
                 "order": [[ 0, "asc" ]],
-                "ajax": "{% url 'metaanalysis_images_json' metaanalysis_id=metaanalysis.id %}",
+                "ajax": "{% url 'statmaps:metaanalysis_images_json' metaanalysis_id=metaanalysis.id %}",
                 "oSearch":{"sSearch":result},
                 "fnDrawCallback": function (oSettings) {
                     var curSearch = oSettings.oPreviousSearch.sSearch;
@@ -41,16 +41,16 @@
 <div class="row mt-1 mb-1">
 	<div class="col">
 	{% if metaanalysis.status != 'completed' %}
-        <a class="btn btn-primary" href="{% url 'edit_metaanalysis' metaanalysis_id=metaanalysis.id %}">Edit</a>
+        <a class="btn btn-primary" href="{% url 'statmaps:edit_metaanalysis' metaanalysis_id=metaanalysis.id %}">Edit</a>
     {% endif %}
 	{% if metaanalysis.status == 'inactive' %}
-        <a class="btn btn-primary" href="{% url 'activate_metaanalysis' metaanalysis_id=metaanalysis.id %}">Activate</a>
+        <a class="btn btn-primary" href="{% url 'statmaps:activate_metaanalysis' metaanalysis_id=metaanalysis.id %}">Activate</a>
     {% endif %}
 	{% if metaanalysis.status == 'active' %}
-        <a class="btn btn-primary" href="{% url 'metaanalysis_selection' %}">Find compatible maps</a>
+        <a class="btn btn-primary" href="{% url 'statmaps:metaanalysis_selection' %}">Find compatible maps</a>
     {% endif %}
 	{% if metaanalysis.status != 'completed' and metaanalysis.maps.count > 0 %}
-        <a class="btn btn-primary" href="{% url 'finalize_metaanalysis' metaanalysis_id=metaanalysis.id %}">Finalize</a>
+        <a class="btn btn-primary" href="{% url 'statmaps:finalize_metaanalysis' metaanalysis_id=metaanalysis.id %}">Finalize</a>
     {% endif %}
     </div>
 </div>

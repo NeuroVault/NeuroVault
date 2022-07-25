@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static from staticfiles %}
+{% load static %}
 {% block head %}
 <title>{% block title %}Atlases and parcellations{% endblock %}</title>
 {% endblock %}
@@ -34,7 +34,7 @@ $(document).ready(function() {
             { "visible": false, "targets": 0 }
   		],
         "order": [[ 1, "asc" ]],
-        "ajax": "{% url 'atlases_and_parcellations_json' %}",
+        "ajax": "{% url 'statmaps:atlases_and_parcellations_json' %}",
         "initComplete": function(settings, json) {
     		var collection_images = $(".viewimage")
         	$(collection_images[0]).addClass("active")
