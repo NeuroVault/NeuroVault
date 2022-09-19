@@ -74,3 +74,5 @@ target/
 local_data/
 .env
 .envs/
+
+*.swp
