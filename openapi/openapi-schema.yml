@@ -4,9 +4,9 @@ info:
   version: ''
   description: All ur images R belong to us
 paths:
-  neurovault.org/api/images/:
+  /api/images/:
     get:
-      operationId: listImages
+      operationId: retrieveListImage
       description: ''
       parameters:
       - name: limit
@@ -48,7 +48,7 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/images/{id}/:
+  /api/images/{id}/:
     get:
       operationId: retrieveImage
       description: ''
@@ -143,9 +143,9 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/images/{id}/datatable/:
+  /api/images/{id}/datatable/:
     get:
-      operationId: datatableImage
+      operationId: retrieveDatatableImage
       description: 'A wrapper around standard retrieve() request that formats the
 
         object for the Datatables plugin.'
@@ -165,9 +165,9 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/atlases/:
+  /api/atlases/:
     get:
-      operationId: listAtlas
+      operationId: retrieveListAtlas
       description: ''
       parameters:
       - name: limit
@@ -209,9 +209,9 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/atlases/atlas_query_region/:
+  /api/atlases/atlas_query_region/:
     get:
-      operationId: atlasQueryRegionAtlas
+      operationId: retrieveAtlasQueryRegionAtlas
       description: 'Returns a dictionary containing a list of voxels that match
 
         the searched term (or related searches) in the specified atlas.'
@@ -225,9 +225,9 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/atlases/atlas_query_voxel/:
+  /api/atlases/atlas_query_voxel/:
     get:
-      operationId: atlasQueryVoxelAtlas
+      operationId: retrieveAtlasQueryVoxelAtlas
       description: 'Returns the region name that matches specified coordinates
 
         in the specified atlas.'
@@ -241,7 +241,7 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/atlases/{id}/:
+  /api/atlases/{id}/:
     get:
       operationId: retrieveAtlas
       description: ''
@@ -336,9 +336,9 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/atlases/{id}/datatable/:
+  /api/atlases/{id}/datatable/:
     get:
-      operationId: datatableAtlas
+      operationId: retrieveDatatableAtlas
       description: 'A wrapper around standard retrieve() request that formats
 
         the object for the Datatables plugin.'
@@ -358,9 +358,9 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/atlases/{id}/regions_table/:
+  /api/atlases/{id}/regions_table/:
     get:
-      operationId: regionsTableAtlas
+      operationId: retrieveRegionsTableAtlas
       description: 'A wrapper around standard retrieve() request that formats
 
         the object for the regions_table plugin.'
@@ -380,9 +380,9 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/collections/:
+  /api/collections/:
     get:
-      operationId: listCollections
+      operationId: retrieveListCollection
       description: ''
       parameters:
       - name: limit
@@ -448,7 +448,7 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/collections/{id}/:
+  /api/collections/{id}/:
     get:
       operationId: retrieveCollection
       description: ''
@@ -543,9 +543,9 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/collections/{id}/atlases/:
+  /api/collections/{id}/atlases/:
     get:
-      operationId: atlasesCollection
+      operationId: retrieveAtlasesCollection
       description: ''
       parameters:
       - name: id
@@ -564,7 +564,7 @@ paths:
       tags:
       - api
     post:
-      operationId: atlasesCollection
+      operationId: createAtlasesCollection
       description: ''
       parameters:
       - name: id
@@ -593,9 +593,9 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/collections/{id}/datatable/:
+  /api/collections/{id}/datatable/:
     get:
-      operationId: datatableCollection
+      operationId: retrieveDatatableCollection
       description: ''
       parameters:
       - name: id
@@ -613,9 +613,9 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/collections/{id}/images/:
+  /api/collections/{id}/images/:
     get:
-      operationId: imagesCollection
+      operationId: retrieveImagesCollection
       description: ''
       parameters:
       - name: id
@@ -634,7 +634,7 @@ paths:
       tags:
       - api
     post:
-      operationId: imagesCollection
+      operationId: createImagesCollection
       description: ''
       parameters:
       - name: id
@@ -663,9 +663,9 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/collections/{id}/nidm_results/:
+  /api/collections/{id}/nidm_results/:
     get:
-      operationId: nidmResultsCollection
+      operationId: retrieveNidmResultsCollection
       description: ''
       parameters:
       - name: id
@@ -684,7 +684,7 @@ paths:
       tags:
       - api
     post:
-      operationId: nidmResultsCollection
+      operationId: createNidmResultsCollection
       description: ''
       parameters:
       - name: id
@@ -713,9 +713,9 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/my_collections/:
+  /api/my_collections/:
     get:
-      operationId: listCollections
+      operationId: retrieveListMyCollection
       description: ''
       parameters:
       - name: limit
@@ -758,7 +758,7 @@ paths:
       tags:
       - api
     post:
-      operationId: createCollection
+      operationId: createMyCollection
       description: ''
       parameters: []
       requestBody:
@@ -781,9 +781,9 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/my_collections/{id}/:
+  /api/my_collections/{id}/:
     get:
-      operationId: retrieveCollection
+      operationId: retrieveMyCollection
       description: ''
       parameters:
       - name: id
@@ -802,7 +802,7 @@ paths:
       tags:
       - api
     put:
-      operationId: updateCollection
+      operationId: updateMyCollection
       description: ''
       parameters:
       - name: id
@@ -832,7 +832,7 @@ paths:
       tags:
       - api
     patch:
-      operationId: partialUpdateCollection
+      operationId: partialUpdateMyCollection
       description: ''
       parameters:
       - name: id
@@ -862,7 +862,7 @@ paths:
       tags:
       - api
     delete:
-      operationId: destroyCollection
+      operationId: destroyMyCollection
       description: ''
       parameters:
       - name: id
@@ -876,9 +876,9 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/my_collections/{id}/atlases/:
+  /api/my_collections/{id}/atlases/:
     get:
-      operationId: atlasesCollection
+      operationId: retrieveAtlasesMyCollection
       description: ''
       parameters:
       - name: id
@@ -897,7 +897,7 @@ paths:
       tags:
       - api
     post:
-      operationId: atlasesCollection
+      operationId: createAtlasesMyCollection
       description: ''
       parameters:
       - name: id
@@ -926,9 +926,9 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/my_collections/{id}/datatable/:
+  /api/my_collections/{id}/datatable/:
     get:
-      operationId: datatableCollection
+      operationId: retrieveDatatableMyCollection
       description: ''
       parameters:
       - name: id
@@ -946,9 +946,9 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/my_collections/{id}/images/:
+  /api/my_collections/{id}/images/:
     get:
-      operationId: imagesCollection
+      operationId: retrieveImagesMyCollection
       description: ''
       parameters:
       - name: id
@@ -967,7 +967,7 @@ paths:
       tags:
       - api
     post:
-      operationId: imagesCollection
+      operationId: createImagesMyCollection
       description: ''
       parameters:
       - name: id
@@ -996,9 +996,9 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/my_collections/{id}/nidm_results/:
+  /api/my_collections/{id}/nidm_results/:
     get:
-      operationId: nidmResultsCollection
+      operationId: retrieveNidmResultsMyCollection
       description: ''
       parameters:
       - name: id
@@ -1017,7 +1017,7 @@ paths:
       tags:
       - api
     post:
-      operationId: nidmResultsCollection
+      operationId: createNidmResultsMyCollection
       description: ''
       parameters:
       - name: id
@@ -1046,9 +1046,9 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/nidm_results/:
+  /api/nidm_results/:
     get:
-      operationId: listNIDMResults
+      operationId: retrieveListNIDMResults
       description: ''
       parameters:
       - name: limit
@@ -1090,7 +1090,7 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/nidm_results/{id}/:
+  /api/nidm_results/{id}/:
     get:
       operationId: retrieveNIDMResults
       description: ''
@@ -1185,9 +1185,9 @@ paths:
           description: ''
       tags:
       - api
-  neurovault.org/api/user/:
+  /api/user/:
     get:
-      operationId: listAuthUsers
+      operationId: retrieveListAuthUser
       description: ''
       parameters: []
       responses:
