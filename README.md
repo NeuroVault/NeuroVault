@@ -19,9 +19,12 @@ docker-compose up -d
 The webpage will be available at 127.0.0.1.
 Initially, some data will be available by default with _username/password_ neurovault/neurovault and neurovault2/neurovault2.
 
+### Migrating the database
 ```
-docker-compose up
+docker-compose exec uwsgi python manage.py migrate
 ```
+The first time you run the application, you must migrate the db. You must also do this if you update any database models.
+
 ### Stopping the server
 ```
 docker-compose stop
