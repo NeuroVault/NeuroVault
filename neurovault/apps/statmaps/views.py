@@ -562,7 +562,7 @@ def delete_collection(request, cid):
     if not request.user.has_perm('statmaps.delete_collection', collection):
         return HttpResponseForbidden()
     collection.delete()
-    return redirect('my_collections')
+    return redirect('statmaps:my_collections')
 
 
 @login_required
@@ -646,7 +646,7 @@ def delete_nidm_results(request, collection_cid, nidm_name):
 
     if request.user.has_perm("statmaps.delete_basecollectionitem", nidmr):
         nidmr.delete()
-        return redirect('collection_details', cid=collection_cid)
+        return redirect('statmaps:collection_details', cid=collection_cid)
     else:
         return HttpResponseForbidden()
 

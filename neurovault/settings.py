@@ -70,11 +70,14 @@ USE_TZ = True
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/var/www/example.com/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR,'media')
-#MEDIA_ROOT = '/var/www/image_data'
+if os.path.isabs(os.environ["NV_IMAGE_DATA"]):
+    MEDIA_BASE = os.environ["NV_IMAGE_DATA"]
+else:
+    MEDIA_BASE = os.path.join(BASE_DIR,os.environ["NV_IMAGE_DATA"])
+MEDIA_ROOT = os.path.join(MEDIA_BASE,'pub')
 MEDIA_URL = '/public/media/'
 
-PRIVATE_MEDIA_ROOT = '/var/www/image_data'
+PRIVATE_MEDIA_ROOT = MEDIA_BASE
 PRIVATE_MEDIA_URL = '/media/images'
 
 

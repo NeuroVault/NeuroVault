@@ -216,9 +216,12 @@ class StatisticMapSerializer(ImageSerializer):
     def to_representation(self, obj):
         ret = super(ImageSerializer, self).to_representation(obj)
         print(dir(obj))
-        for field_name, value in list(obj.data.items()):
-            if field_name not in ret:
-                ret[field_name] = self.value_to_python(value)
+        try:
+            for field_name, value in list(obj.data.items()):
+                if field_name not in ret:
+                    ret[field_name] = self.value_to_python(value)
+        except AttributeError:
+            pass
         return ret
 
 
