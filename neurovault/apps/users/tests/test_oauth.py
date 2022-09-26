@@ -1,7 +1,8 @@
 from django.test import TestCase, Client
 from django.http import HttpResponse
 from django.urls import reverse
-from django.conf.urls import url, include
+from django.conf.urls import re_path, include
+
 from django.contrib.auth import get_user_model
 
 from rest_framework import permissions
@@ -23,9 +24,9 @@ class OAuth2View(MockView):
 
 
 urlpatterns = [
-    url(r'^oauth2/', include('oauth2_provider.urls')),
-    url(r'^oauth2-test/$', OAuth2View.as_view()),
-    url(r'^accounts/', include('neurovault.apps.users.urls')),
+    re_path(r'^oauth2/', include('oauth2_provider.urls')),
+    re_path(r'^oauth2-test/$', OAuth2View.as_view()),
+    re_path(r'^accounts/', include('neurovault.apps.users.urls')),
 
 ]
 
