@@ -9,7 +9,7 @@ class ObjectOnlyPermissions(DjangoObjectPermissions):
         return (
             request.method in SAFE_METHODS or
             request.user and
-            request.user.is_authenticated()
+            request.user.is_authenticated
         )
 
 

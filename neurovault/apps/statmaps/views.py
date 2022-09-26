@@ -949,7 +949,7 @@ def delete_image(request, pk):
 
 
 def view_images_by_tag(request, tag):
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         images = Image.objects.filter(tags__name__in=[tag]).filter(
                                         Q(collection__private=False) |
                                         Q(collection__owner=request.user))
