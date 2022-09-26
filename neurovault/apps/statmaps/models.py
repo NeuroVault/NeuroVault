@@ -15,6 +15,7 @@ from django.db.models import Q
 from django.db.models.fields.files import FieldFile
 from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch.dispatcher import receiver
+from django.utils import timezone
 from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
 from polymorphic.models import PolymorphicModel
 from taggit.managers import TaggableManager
@@ -202,7 +203,7 @@ class Collection(models.Model):
             self.private_token = None
 
         if self.DOI and not self.private and not self.doi_add_date:
-            self.doi_add_date = datetime.now()
+            self.doi_add_date = timezone.now()
 
         # run calculations when collection turns public
         privacy_changed = False
@@ -340,13 +341,13 @@ class BaseCollectionItem(PolymorphicModel, models.Model):
         self.name = new_name
 
     def save(self):
-        self.collection.modify_date = datetime.now()
+        self.collection.modify_date = timezone.now()
         self.collection.save()
         super(BaseCollectionItem, self).save()
         
 
     def delete(self):
-        self.collection.modify_date = datetime.now()
+        self.collection.modify_date = timezone.now()
         self.collection.save()
         super(BaseCollectionItem, self).delete()
 
