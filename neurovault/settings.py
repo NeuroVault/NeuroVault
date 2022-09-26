@@ -255,6 +255,7 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'UNICODE_JSON': True,
+    'DEFAULT_SCHEMA_CLASS': 'neurovault.api.schemas.OpenAPISchema',
 }
 
 OAUTH2_PROVIDER = {
