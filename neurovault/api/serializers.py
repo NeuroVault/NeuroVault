@@ -322,7 +322,7 @@ class CollectionSerializer(serializers.ModelSerializer):
     url = HyperlinkedImageURL(source='get_absolute_url', read_only=True)
     download_url = HyperlinkedDownloadURL(source='get_absolute_url', read_only=True)
     owner = serializers.ReadOnlyField(source='owner.id')
-    images = ImageSerializer(many=True, source='basecollectionitem_set')
+    # images = ImageSerializer(many=True, source='basecollectionitem_set')
     contributors = SerializedContributors(required=False)
     owner_name = serializers.SerializerMethodField()
     number_of_images = serializers.SerializerMethodField('num_im')
@@ -357,6 +357,6 @@ class CollectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Collection
-        exclude = ['private_token', 'images']
+        exclude = ['private_token']
         # Override `required` to allow name fetching by DOI
         extra_kwargs = {'name': {'required': False}}
