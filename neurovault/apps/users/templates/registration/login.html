@@ -42,8 +42,8 @@
 
 <a href="{% url 'users:create_user' %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}">Register new account</a>
 <br \>
-<a class="zocial facebook"  href="{% url "social:begin" "facebook" %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}">Login using Facebook</a>
+<a class="zocial facebook"  href="{% url 'social:begin' 'facebook' %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}">Login using Facebook</a>
 <br \>
-<a class="zocial google"  href="{% url "social:begin" "google-oauth2" %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}">Login using Google</a>
+<a class="zocial google"  href="{% url 'social:begin' 'google-oauth2' %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}">Login using Google</a>
 
 {% endblock %}
