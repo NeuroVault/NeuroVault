@@ -31,7 +31,8 @@ services:
   worker:
     image: neurovault/neurovault
     command: celery -A neurovault.celery worker -Q default -n default@%h
-    volumes_from:
-      - uwsgi
+    volumes:
+      - .:/code
+      - ${NV_IMAGE_DATA}:/image_data
     depends_on:
       - redis
