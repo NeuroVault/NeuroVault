@@ -1,5 +1,6 @@
 import os
 import json
+from typing_extensions import dataclass_transform
 import pandas as pd
 from urllib.parse import quote
 from django.contrib.auth.models import User
@@ -159,7 +160,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer,
     def save(self, *args, **kwargs):
         metadata_dict = getattr(self, '_metadata_dict', None)
         if metadata_dict:
-            data = self.instance.data.copy()
+            data = self.instance.data.copy() if self.instance.data else {}
             data.update(self._metadata_dict)
             kwargs['data'] = data
         self.is_valid = True

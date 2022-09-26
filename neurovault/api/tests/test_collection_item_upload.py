@@ -35,7 +35,7 @@ class TestCollectionItemUpload(APITestCase):
             'map_type': 'T',
             'cognitive_paradigm_cogatlas': 'tsk_4a57abb949846',
             'cognitive_contrast_cogatlas': 'cnt_4e08fefbf0382',
-            'file': SimpleUploadedFile(fname, open(fname).read())
+            'file': SimpleUploadedFile(fname, open(fname, 'rb').read())
         }
 
         response = self.client.post(url, post_dict, format='multipart')
@@ -66,7 +66,7 @@ class TestCollectionItemUpload(APITestCase):
             'name': 'test map',
             'modality': 'fMRI-BOLD',
             'map_type': 'T',
-            'file': SimpleUploadedFile(fname, open(fname).read()),
+            'file': SimpleUploadedFile(fname, open(fname, 'rb').read()),
             'custom_metadata_numeric_field': 42,
             'custom_metadata_string_field': 'forty two',
         }
@@ -110,7 +110,7 @@ class TestCollectionItemUpload(APITestCase):
             'name': 'test map',
             'modality': 'fMRI-BOLD',
             'map_type': 'T',
-            'file': SimpleUploadedFile(fname, open(fname).read()),
+            'file': SimpleUploadedFile(fname, open(fname, 'rb').read()),
             'data': 42
         }
 
@@ -209,7 +209,7 @@ class TestCollectionItemUpload(APITestCase):
             'name': 'test map',
             'modality': 'fMRI-BOLD',
             'map_type': 'T',
-            'file': SimpleUploadedFile(fname, open(fname).read())
+            'file': SimpleUploadedFile(fname, open(fname, 'rb').read())
         }
 
         response = self.client.post(url, post_dict, format='multipart')
@@ -235,7 +235,7 @@ class TestCollectionItemUpload(APITestCase):
             'name': 'test map',
             'modality': 'fMRI-BOLD',
             'map_type': 'T',
-            'file': SimpleUploadedFile(fname, open(fname).read())
+            'file': SimpleUploadedFile(fname, open(fname, 'rb').read())
         }
 
         response = self.client.post(url, post_dict, format='multipart')

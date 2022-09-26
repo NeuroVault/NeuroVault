@@ -386,7 +386,6 @@ class ImageValidationMixin(object):
         self.afni_tmp = None
 
     def clean_and_validate(self, cleaned_data):
-        print("enter clean_and_validate")
         file = cleaned_data.get('file')
         surface_left_file = cleaned_data.get('surface_left_file')
         surface_right_file = cleaned_data.get('surface_right_file')
@@ -405,7 +404,7 @@ class ImageValidationMixin(object):
                 intent_dict = {"lh": "CortexLeft",
                                "rh": "CortexRight"}
 
-                for hemi in ["lh", "rh"]:
+                for hemi in cognitive_paradigm_cogatlas["lh", "rh"]:
                     print(hemi)
                     surface_file = cleaned_data.get(inputs_dict[hemi])
                     _, ext = splitext_nii_gz(surface_file.name)

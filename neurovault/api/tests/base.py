@@ -7,7 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import test as rest_framework_test
 from rest_framework import status
 
-from neurovault.apps.statmaps.models import Collection
+from neurovault.apps.statmaps.models import Collection, CognitiveAtlasTask
 from neurovault.apps.statmaps.tests.utils import clearDB
 
 STATMAPS_TESTS_PATH = '../../apps/statmaps/tests/'
@@ -31,13 +31,17 @@ class BaseTestCases:
 
         def simple_uploaded_file(self, rel_path):
             fname = self.abs_data_path(rel_path)
-            return SimpleUploadedFile(rel_path, open(fname).read())
+            return SimpleUploadedFile(rel_path, open(fname, 'rb').read())
 
         def setUp(self):
             self.user = User.objects.create_user('NeuroGuy')
             self.user.save()
             self.coll = Collection(owner=self.user, name="Test Collection")
             self.coll.save()
+
+            cat = CognitiveAtlasTask.objects.update_or_create(
+                cog_atlas_id="trm_4f24126c22011",defaults={"name": "abstract/concrete task"})
+            cat[0].save()
 
         def tearDown(self):
             clearDB()
