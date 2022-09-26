@@ -53,7 +53,7 @@ docker-compose run --rm uwsgi python manage.py test
 If you add a dependency (e.g., a new pip install) or modify the Dockerfile in any way, you will need to rebuild the docker image:
 
 ```
-docker build -t neurovault/neurovault .
+docker-compose build uwsgi
 ```
 
 ### Using pycortex
