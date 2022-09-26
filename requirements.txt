@@ -93,6 +93,7 @@ sympy==1.10.1
 threadpoolctl==3.1.0
 tornado==6.2
 tqdm==4.64.0
+typing-extensions==4.3.0
 urllib3==1.26.10
 vine==5.0.0
 wcwidth==0.2.5
