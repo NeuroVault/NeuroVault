@@ -141,7 +141,7 @@ class AddStatmapsTests(TestCase):
                 'hdr_file': SimpleUploadedFile(fname_hdr, open(fname_hdr).read())
         }
         cid = self.coll.pk
-        response = client.post(reverse('add_image', kwargs={'collection_cid':cid}), post_dict)
+        response = client.post(reverse('statmaps:add_image', kwargs={'collection_cid':cid}), post_dict)
         self.assertEqual(response.status_code, 403) 
 
 
@@ -163,7 +163,7 @@ class AddStatmapsTests(TestCase):
                 'hdr_file': SimpleUploadedFile(fname_hdr, open(fname_hdr).read())
         }
         cid = self.coll.pk
-        response = self.client.post(reverse('add_image', kwargs={'collection_cid':cid}), post_dict)
+        response = self.client.post(reverse('statmaps:add_image', kwargs={'collection_cid':cid}), post_dict)
         self.assertEqual(response.status_code, 302)
         image_pk = StatisticMap.objects.order_by('-pk')[0].pk
-        self.assertRedirects(response, reverse('image_details', kwargs={'pk':image_pk}))
+        self.assertRedirects(response, reverse('statmaps:image_details', kwargs={'pk':image_pk}))
