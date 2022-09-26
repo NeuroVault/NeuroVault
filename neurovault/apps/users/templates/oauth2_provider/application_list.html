@@ -21,7 +21,7 @@
           <tbody>
           {% for application in applications %}
               <tr>
-                <td><a href="{% url "developerapps_update" application.id %}">{{ application.name }}</a>
+                <td><a href="{% url 'developerapps_update' application.id %}">{{ application.name }}</a>
                 </td>
                 <td>
                   {{ application.client_id }}
