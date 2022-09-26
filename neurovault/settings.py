@@ -293,7 +293,7 @@ CACHES = {
 # Mandrill config
 
 EMAIL_BACKEND = 'django_mailgun.MailgunBackend'
-MAILGUN_ACCESS_KEY = '***REMOVED***' # replace with a real key in production
+MAILGUN_ACCESS_KEY = '' # replace with a real key in production
 MAILGUN_SERVER_NAME = 'neurovault.org'# replace with 'neurovault.org' in production
 DEFAULT_FROM_EMAIL = "noreply@neurovault.org"
 
