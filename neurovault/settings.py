@@ -379,6 +379,3 @@ GUARDIAN_GET_CONTENT_TYPE = 'polymorphic.contrib.guardian.get_polymorphic_base_c
 FIXTURE_DIRS = (
     'apps/statmaps/fixtures/',
 )
-
-# from oauth2_provider.models import Application
-# Application.objects.get_or_create(name=DEFAULT_OAUTH_NAME, redirect_uris=['http://localhost'], pk=DEFAULT_OAUTH_APPLICATION_ID)
