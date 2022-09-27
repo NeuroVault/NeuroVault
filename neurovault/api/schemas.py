@@ -1,7 +1,54 @@
+from django.core.validators import (
+    DecimalValidator, EmailValidator, MaxLengthValidator, MaxValueValidator,
+    MinLengthValidator, MinValueValidator, URLValidator
+)
+from rest_framework import serializers
+from rest_framework.settings import api_settings
 from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.schemas.utils import is_list_view
 
 class OpenAPISchema(AutoSchema):
+
+    def map_field_validators(self, field, schema):
+        """
+        map field validators
+        """
+        for v in field.validators:
+            # "Formats such as "email", "uuid", and so on, MAY be used even though undefined by this specification."
+            # https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#data-types
+            if isinstance(v, EmailValidator):
+                schema['format'] = 'email'
+            if isinstance(v, URLValidator):
+                schema['format'] = 'uri'
+            # JK: HACK REGEX is too long to be interpreted by code-generator
+            # if isinstance(v, RegexValidator):
+            #     # In Python, the token \Z does what \z does in other engines.
+            #     # https://stackoverflow.com/questions/53283160
+            #     schema['pattern'] = v.regex.pattern.replace('\\Z', '\\z')
+            elif isinstance(v, MaxLengthValidator):
+                attr_name = 'maxLength'
+                if isinstance(field, serializers.ListField):
+                    attr_name = 'maxItems'
+                schema[attr_name] = v.limit_value
+            elif isinstance(v, MinLengthValidator):
+                attr_name = 'minLength'
+                if isinstance(field, serializers.ListField):
+                    attr_name = 'minItems'
+                schema[attr_name] = v.limit_value
+            elif isinstance(v, MaxValueValidator):
+                schema['maximum'] = v.limit_value
+            elif isinstance(v, MinValueValidator):
+                schema['minimum'] = v.limit_value
+            elif isinstance(v, DecimalValidator) and \
+                    not getattr(field, 'coerce_to_string', api_settings.COERCE_DECIMAL_TO_STRING):
+                if v.decimal_places:
+                    schema['multipleOf'] = float('.' + (v.decimal_places - 1) * '0' + '1')
+                if v.max_digits:
+                    digits = v.max_digits
+                    if v.decimal_places is not None and v.decimal_places > 0:
+                        digits -= v.decimal_places
+                    schema['maximum'] = int(digits * '9') + 1
+                    schema['minimum'] = -schema['maximum']
 
     def get_operation_id(self, path, method):
         """
