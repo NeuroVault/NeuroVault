@@ -27,7 +27,7 @@
                 <td>
                   {{ rt.application.user.username }}
                 </td>
-                <td><a class="btn btn-danger btn-sm" href="{% url "connection_revoke" rt.application.id %}">Revoke access</a>
+                <td><a class="btn btn-danger btn-sm" href="{% url 'connection_revoke' rt.application.id %}">Revoke access</a>
                 </td>
               </tr>
           {% endfor %}

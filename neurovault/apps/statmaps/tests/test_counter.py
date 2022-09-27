@@ -40,7 +40,7 @@ class Test_Counter(TestCase):
         print("\nTesting Counter - added statistic maps ###") 
         Image1 = StatisticMap(name='Image1', collection=self.Collection1, file='motor_lips.nii.gz',
                               map_type="Z", analysis_level='G', number_of_subjects=10)
-        Image1.file = SimpleUploadedFile('motor_lips.nii.gz', file(os.path.join(self.test_path,'test_data/statmaps/motor_lips.nii.gz')).read())
+        Image1.file = SimpleUploadedFile('motor_lips.nii.gz', open(os.path.join(self.test_path,'test_data/statmaps/motor_lips.nii.gz'), 'rb').read())
         Image1.save()
         images_processing = count_processing_comparisons(Image1.pk)
         print("%s images processing [should be 0]" %(images_processing))
@@ -53,7 +53,7 @@ class Test_Counter(TestCase):
         # setting an image transform field to "None" because on save, all image comparisons are automatically re-calcualted        
         Image2 = StatisticMap(name='Image2', collection=self.Collection2, file='beta_0001.nii.gz',
                               map_type="Other", analysis_level='G', number_of_subjects=10)
-        Image2.file = SimpleUploadedFile('beta_0001.nii.gz', file(os.path.join(self.test_path,'test_data/statmaps/beta_0001.nii.gz')).read())
+        Image2.file = SimpleUploadedFile('beta_0001.nii.gz', open(os.path.join(self.test_path,'test_data/statmaps/beta_0001.nii.gz'), 'rb').read())
         Image2.save()
         images_processing = count_processing_comparisons(Image1.pk)
         print("%s images processing [should be 0]" %(images_processing))

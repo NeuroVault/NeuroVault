@@ -8,23 +8,23 @@ Easy to use web database for brain statistical maps, atlases and parcellation ma
 ### Installing dependencies
 1. Fork the main repository (https://github.com/NeuroVault/NeuroVault)
 2. Clone your fork to your computer: `git clone https://github.com/<your_username>/NeuroVault`
-  3. *Warning: if you are using OS X you have to clone the repository to a subfolder in your home folder - `/Users/<your_username>/...` - otherwise docker-machine will not be able to mount code directories and may fail silently.*
-3. Install docker >= 1.10 (If you are using OS X you'll also need [docker-machine](https://docs.docker.com/machine/install-machine/) and VirtualBox)
-4. Install docker-compose >= 1.6
-  5. If you are using OS X and homebrew steps 3 and 4 can be achieved by: `brew update && brew install docker docker-machine docker-compose`
-6. Make sure your docker daemon is running and environment variables are configured (on OS X: `docker-machine create --driver virtualbox nv && docker-machine start nv && eval "$(docker-machine env nv)"`)
+3. Install docker >= 20
+4. Install docker-compose >= 1.29
+5. Make sure your docker daemon is running and environment variables are configured (`cp .env.example .env`)
 
 ### Running the server
 ```
 docker-compose up -d
 ```
-The webpage will be available at 127.0.0.1 (unless you are using docker-machine - then run `docker-machine ip nv` to figure out which IP address you need to use; remember that your enviroment variables need to be properly configured by running `eval "$(docker-machine env nv)"`).
+The webpage will be available at 127.0.0.1.
 Initially, some data will be available by default with _username/password_ neurovault/neurovault and neurovault2/neurovault2.
 
-You can also run the server in non detached mode (shows all the logs in realtime).
+### Migrating the database
 ```
-docker-compose up
+docker-compose exec uwsgi python manage.py migrate
 ```
+The first time you run the application, you must migrate the db. You must also do this if you update any database models.
+
 ### Stopping the server
 ```
 docker-compose stop
@@ -53,7 +53,7 @@ docker-compose run --rm uwsgi python manage.py test
 If you add a dependency (e.g., a new pip install) or modify the Dockerfile in any way, you will need to rebuild the docker image:
 
 ```
-docker build -t neurovault/neurovault .
+docker-compose build uwsgi
 ```
 
 ### Using pycortex
