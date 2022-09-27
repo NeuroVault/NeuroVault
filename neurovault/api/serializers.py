@@ -269,6 +269,7 @@ class EditableAtlasSerializer(ImageSerializer):
 
     class Meta:
         model = Atlas
+        fields = '__all__'
         read_only_fields = ('collection',)
 
 

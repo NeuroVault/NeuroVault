@@ -17,7 +17,7 @@ def getAtlasVoxels(regions, atlas_image, atlas_xml):
 	atlas_xml.close()
 	atlas=nibabel.load(atlas_image.path)
 	atlas_data = atlas.get_data()
-	aff = atlas.get_affine()
+	aff = atlas.affine
 	atlas_mask = numpy.zeros(atlas_data.shape)
 	for line in root.find('data').findall('label'):
 		name = line.text.replace("'",'').rstrip(' ').lower()
@@ -43,7 +43,7 @@ def voxelToRegion(X,Y,Z, atlas_image, atlas_xml):
 	root = ET.fromstring(atlas_xml.read())
 	atlas_xml.close()
 	atlas=nibabel.load(atlas_image.path)
-	aff = atlas.get_affine()
+	aff = atlas.affine
 	atlas_data = atlas.get_data()
 	XYZ = [float(X),float(Y),float(Z)]
 	XYZmm = nibabel.affines.apply_affine(npl.inv(aff), XYZ)

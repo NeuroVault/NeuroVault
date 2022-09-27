@@ -164,7 +164,7 @@ class AtlasViewSet(ImageViewSet):
             indices = [int(line.get('index')) + 1 for line in lines]
         else:
             indices = [int(line.find('index').text) for line in lines]
-        if line.text:
+        if lines[0].text:
             regions = [line.text.split(
                 '(')[0].replace("'", '').rstrip(' ').lower() for line in lines]
         else:
@@ -269,6 +269,7 @@ class AtlasViewSet(ImageViewSet):
         try:
             data = voxelToRegion(X, Y, Z, atlas_image, atlas_xml)
         except IndexError:
+            import pdb; pdb.set_trace()
             return JSONResponse(
                 'error: one or more coordinates are out of range',
                 status=400

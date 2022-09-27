@@ -228,19 +228,19 @@ def finalize_metaanalysis(request, metaanalysis_id):
         z_path = os.path.join(tmp_dir, 'z_fwe_corr.nii.gz')
         result.images['z'].to_filename(z_path)
         z_map.file = SimpleUploadedFile('z_fwe_corr.nii.gz',
-                                        open(z_path).read())
+                                        open(z_path, 'rb').read())
         z_map.save()
 
         p_path = os.path.join(tmp_dir, 'p_fwe_corr.nii.gz')
         result.images['p'].to_filename(p_path)
         p_map.file = SimpleUploadedFile('p_fwe_corr.nii.gz',
-                                        open(p_path).read())
+                                        open(p_path, 'rb').read())
         p_map.save()
         if do_weighted:
             ffx_path = os.path.join(tmp_dir, 'ffx_stat.nii.gz')
             result.images['ffx_stat'].to_filename(ffx_path)
             ffx_map.file = SimpleUploadedFile('ffx_stat.nii.gz',
-                                            open(ffx_path).read())
+                                            open(ffx_path, 'rb').read())
             ffx_map.save()
     finally:
         shutil.rmtree(tmp_dir)
@@ -891,7 +891,7 @@ def upload_folder(request, collection_cid):
 
                         if squeezable_dimensions < len(nii.shape):
                             new_data = np.squeeze(nii.get_data())
-                            nii = nib.Nifti1Image(new_data, nii.get_affine(),
+                            nii = nib.Nifti1Image(new_data, nii.affine,
                                                   nii.get_header())
 
                         new_file_tmp_dir = tempfile.mkdtemp()
@@ -1145,6 +1145,7 @@ def atlas_query_voxel(request):
     try:
         data = voxelToRegion(X,Y,Z,atlas_image, atlas_xml)
     except IndexError:
+        import pdb; pdb.set_trace()
         return JSONResponse('error: one or more coordinates are out of range', status=400)
     return JSONResponse(data)
 

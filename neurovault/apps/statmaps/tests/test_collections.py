@@ -11,7 +11,7 @@ from django.urls import reverse
 from django.test import TestCase, Client, override_settings, RequestFactory
 from uuid import uuid4
 
-from neurovault.apps.statmaps.models import Collection, User, Image, Atlas
+from neurovault.apps.statmaps.models import Collection, User, Image, Atlas, CognitiveAtlasTask
 from neurovault.apps.statmaps.utils import detect_4D, split_4D_to_3D
 from neurovault.apps.statmaps.views import delete_collection, download_collection
 from neurovault.settings import PRIVATE_MEDIA_ROOT
@@ -171,6 +171,10 @@ class CollectionMetaDataTest(TestCase):
         self.coll = Collection(owner=self.user,
                                name="Test %s" % self.uniqid())
         self.coll.save()
+
+        cat = CognitiveAtlasTask.objects.update_or_create(
+            cog_atlas_id="trm_4f24126c22011",defaults={"name": "abstract/concrete task"})
+        cat[0].save()
 
         def test_data_path(filename):
             return os.path.join(test_path, 'test_data/statmaps/%s' % filename)

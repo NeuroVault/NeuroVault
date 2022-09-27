@@ -579,7 +579,7 @@ class ImageValidationMixin(object):
                         # convert pseudo 4D to 3D
                         if squeezable_dimensions < len(nii.shape):
                             new_data = np.squeeze(nii.get_data())
-                            nii = nb.Nifti1Image(new_data, nii.get_affine(),
+                            nii = nb.Nifti1Image(new_data, nii.affine,
                                                  nii.get_header())
 
                         # Papaya does not handle float64, but by converting
@@ -949,7 +949,7 @@ class NIDMResultsValidationMixin(object):
         data['ttl_file'] = InMemoryUploadedFile(
             # fix ttl for spm12
             file=ContentFile(self.nidm.fix_spm12_ttl(
-                self.nidm.zip.read(self.nidm.ttl))),
+                self.nidm.zip.read(self.nidm.ttl).decode('utf-8'))),
             field_name='file',
             name=ttl_name,
             content_type='text/turtle',
@@ -984,7 +984,7 @@ class NIDMResultsValidationMixin(object):
 def save_nidm_statmaps(nidm, instance):
     for s in nidm.statmaps:
         s['statmap'].nidm_results = instance
-        s['statmap'].file = ContentFile(open(s['file']).read(),
+        s['statmap'].file = ContentFile(open(s['file'], 'rb').read(),
                                         name=os.path.split(s['file'])[-1])
         s['statmap'].save()
 
@@ -994,7 +994,7 @@ def save_nidm_statmaps(nidm, instance):
 
 
 def handle_update_ttl_urls(instance):
-    ttl_content = instance.ttl_file.file.read()
+    ttl_content = instance.ttl_file.file.read().decode('utf-8')
     fname = os.path.basename(
         instance.nidmresultstatisticmap_set.first().file.name)
 
