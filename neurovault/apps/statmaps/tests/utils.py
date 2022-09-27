@@ -46,10 +46,10 @@ def save_statmap_form(image_path,collection,ignore_file_warning=False,image_name
     }
     # If image path is a list, we have img/hdr
     if isinstance(image_path,list):
-        file_dict = {'file': SimpleUploadedFile(image_path[0], open(image_path[0]).read()),
-                     'hdr_file': SimpleUploadedFile(image_path[1], open(image_path[1]).read())}
+        file_dict = {'file': SimpleUploadedFile(image_path[0], open(image_path[0], 'rb').read()),
+                     'hdr_file': SimpleUploadedFile(image_path[1], open(image_path[1], 'rb').read())}
     else:
-        file_dict = {'file': SimpleUploadedFile(image_path, open(image_path).read())}
+        file_dict = {'file': SimpleUploadedFile(image_path, open(image_path, 'rb').read())}
     form = StatisticMapForm(post_dict, file_dict)
     # this is necessary to split 4D volumes
     form.is_valid()
@@ -67,8 +67,9 @@ def save_atlas_form(nii_path,xml_path,collection,ignore_file_warning=False,name=
         'collection':collection.pk,
         'ignore_file_warning': ignore_file_warning
     }
-    file_dict = {'file': SimpleUploadedFile(nii_path, open(nii_path).read()),
-                     'label_description_file': SimpleUploadedFile(xml_path, open(xml_path).read())}
+
+    file_dict = {'file': SimpleUploadedFile(nii_path, open(nii_path, 'rb').read()),
+                     'label_description_file': SimpleUploadedFile(xml_path, open(xml_path, 'rb').read())}
     form = AtlasForm(post_dict, file_dict)
     return form.save()
 
@@ -77,13 +78,13 @@ def save_nidm_form(zip_file,collection,name=None):
     
     if name == None:
         name = "fsl_nidm"
-    zip_file_obj = open(zip_file, 'rb')
-    post_dict = {'name': name,
-                 'description':'{0} upload test'.format('fsl_nidm'),
-                 'collection':collection.pk}
-    fname = os.path.basename(zip_file)
-    file_dict = {'zip_file': SimpleUploadedFile(fname, zip_file_obj.read())}
-    zip_file_obj.close()
-    form = NIDMResultsForm(post_dict, file_dict)
+    with open(zip_file, 'rb') as f:
+        post_dict = {
+            'name': name,
+            'collection':collection.pk,
+            'ignore_file_warning': True
+        }
+        file_dict = {'zip_file': SimpleUploadedFile(zip_file, f.read())}
+        form = NIDMResultsForm(post_dict, file_dict)
     return form.save()
 

@@ -13,7 +13,7 @@
             {% csrf_token %}
             <div class="form-controls">
                 <input type="submit" class="btn btn-danger" name="allow" value="Delete"/>
-                <a class="btn btn-link" href="{% url "developerapps_update" application.id %}">Cancel</a>
+                <a class="btn btn-link" href="{% 'developerapps_update' application.id %}">Cancel</a>
             </div>
         </form>
         </div>

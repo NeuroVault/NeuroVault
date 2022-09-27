@@ -23,7 +23,7 @@
           {% for token in object_list %}
               <tr>
                 <td><samp>{{ token.token }}</samp></td>
-                <td><a class="btn btn-danger btn-sm" href="{% url "token_delete" token.id %}">Delete</a>
+                <td><a class="btn btn-danger btn-sm" href="{% url 'token_delete' token.id %}">Delete</a>
                 </td>
               </tr>
           {% endfor %}

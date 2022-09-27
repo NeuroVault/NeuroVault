@@ -12,7 +12,7 @@ from neurovault.apps.statmaps.models import Atlas
 from neurovault.apps.statmaps.tests.utils import (
     clearDB, save_atlas_form, save_nidm_form, save_statmap_form
 )
-from neurovault.apps.statmaps.models import Collection
+from neurovault.apps.statmaps.models import Collection, CognitiveAtlasTask
 from neurovault.api.tests.base import APITestCase, BaseTestCases
 
 
@@ -23,6 +23,9 @@ class TestAtlas(APITestCase):
         self.client.login(username=self.user)
         self.Collection1 = Collection(name='Collection1', owner=self.user)
         self.Collection1.save()
+        cat = CognitiveAtlasTask.objects.update_or_create(
+            cog_atlas_id="trm_4f24126c22011",defaults={"name": "abstract/concrete task"})
+        cat[0].save()
         self.unorderedAtlas = Atlas(
             name='unorderedAtlas', description='', collection=self.Collection1)
 

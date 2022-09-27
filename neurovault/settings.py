@@ -19,9 +19,9 @@ DOMAIN_NAME = "https://neurovault.org"
 
 TEMPLATE_DEBUG = DEBUG
 
-ADMINS = (
-    (('Ross', 'rosswilsonblair@gmail.com'))
-)
+ADMINS = [
+    ('Ross', 'rosswilsonblair@gmail.com')
+]
 
 MANAGERS = ADMINS
 
