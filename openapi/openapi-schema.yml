@@ -47,7 +47,7 @@ paths:
                       $ref: '#/components/schemas/Image'
           description: ''
       tags:
-      - api
+      - neurovault
   /api/images/{id}/:
     get:
       operationId: retrieveImage
@@ -67,7 +67,7 @@ paths:
                 $ref: '#/components/schemas/Image'
           description: ''
       tags:
-      - api
+      - neurovault
     put:
       operationId: updateImage
       description: ''
@@ -97,7 +97,7 @@ paths:
                 $ref: '#/components/schemas/Image'
           description: ''
       tags:
-      - api
+      - neurovault
     patch:
       operationId: partialUpdateImage
       description: ''
@@ -127,7 +127,7 @@ paths:
                 $ref: '#/components/schemas/Image'
           description: ''
       tags:
-      - api
+      - neurovault
     delete:
       operationId: destroyImage
       description: ''
@@ -142,7 +142,7 @@ paths:
         '204':
           description: ''
       tags:
-      - api
+      - neurovault
   /api/images/{id}/datatable/:
     get:
       operationId: retrieveDatatableImage
@@ -164,7 +164,7 @@ paths:
                 $ref: '#/components/schemas/Image'
           description: ''
       tags:
-      - api
+      - neurovault
   /api/atlases/:
     get:
       operationId: retrieveListAtlas
@@ -208,7 +208,7 @@ paths:
                       $ref: '#/components/schemas/Atlas'
           description: ''
       tags:
-      - api
+      - neurovault
   /api/atlases/atlas_query_region/:
     get:
       operationId: retrieveAtlasQueryRegionAtlas
@@ -224,7 +224,7 @@ paths:
                 $ref: '#/components/schemas/Atlas'
           description: ''
       tags:
-      - api
+      - neurovault
   /api/atlases/atlas_query_voxel/:
     get:
       operationId: retrieveAtlasQueryVoxelAtlas
@@ -240,7 +240,7 @@ paths:
                 $ref: '#/components/schemas/Atlas'
           description: ''
       tags:
-      - api
+      - neurovault
   /api/atlases/{id}/:
     get:
       operationId: retrieveAtlas
@@ -260,7 +260,7 @@ paths:
                 $ref: '#/components/schemas/Atlas'
           description: ''
       tags:
-      - api
+      - neurovault
     put:
       operationId: updateAtlas
       description: ''
@@ -290,7 +290,7 @@ paths:
                 $ref: '#/components/schemas/Atlas'
           description: ''
       tags:
-      - api
+      - neurovault
     patch:
       operationId: partialUpdateAtlas
       description: ''
@@ -320,7 +320,7 @@ paths:
                 $ref: '#/components/schemas/Atlas'
           description: ''
       tags:
-      - api
+      - neurovault
     delete:
       operationId: destroyAtlas
       description: ''
@@ -335,7 +335,7 @@ paths:
         '204':
           description: ''
       tags:
-      - api
+      - neurovault
   /api/atlases/{id}/datatable/:
     get:
       operationId: retrieveDatatableAtlas
@@ -357,7 +357,7 @@ paths:
                 $ref: '#/components/schemas/Atlas'
           description: ''
       tags:
-      - api
+      - neurovault
   /api/atlases/{id}/regions_table/:
     get:
       operationId: retrieveRegionsTableAtlas
@@ -379,7 +379,7 @@ paths:
                 $ref: '#/components/schemas/Atlas'
           description: ''
       tags:
-      - api
+      - neurovault
   /api/collections/:
     get:
       operationId: retrieveListCollection
@@ -423,7 +423,7 @@ paths:
                       $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
     post:
       operationId: createCollection
       description: ''
@@ -447,7 +447,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
   /api/collections/{id}/:
     get:
       operationId: retrieveCollection
@@ -467,7 +467,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
     put:
       operationId: updateCollection
       description: ''
@@ -497,7 +497,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
     patch:
       operationId: partialUpdateCollection
       description: ''
@@ -527,7 +527,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
     delete:
       operationId: destroyCollection
       description: ''
@@ -542,7 +542,7 @@ paths:
         '204':
           description: ''
       tags:
-      - api
+      - neurovault
   /api/collections/{id}/atlases/:
     get:
       operationId: retrieveAtlasesCollection
@@ -562,7 +562,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
     post:
       operationId: createAtlasesCollection
       description: ''
@@ -592,7 +592,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
   /api/collections/{id}/datatable/:
     get:
       operationId: retrieveDatatableCollection
@@ -612,7 +612,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
   /api/collections/{id}/images/:
     get:
       operationId: retrieveImagesCollection
@@ -632,7 +632,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
     post:
       operationId: createImagesCollection
       description: ''
@@ -662,7 +662,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
   /api/collections/{id}/nidm_results/:
     get:
       operationId: retrieveNidmResultsCollection
@@ -682,7 +682,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
     post:
       operationId: createNidmResultsCollection
       description: ''
@@ -712,7 +712,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
   /api/my_collections/:
     get:
       operationId: retrieveListMyCollection
@@ -756,7 +756,7 @@ paths:
                       $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
     post:
       operationId: createMyCollection
       description: ''
@@ -780,7 +780,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
   /api/my_collections/{id}/:
     get:
       operationId: retrieveMyCollection
@@ -800,7 +800,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
     put:
       operationId: updateMyCollection
       description: ''
@@ -830,7 +830,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
     patch:
       operationId: partialUpdateMyCollection
       description: ''
@@ -860,7 +860,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
     delete:
       operationId: destroyMyCollection
       description: ''
@@ -875,7 +875,7 @@ paths:
         '204':
           description: ''
       tags:
-      - api
+      - neurovault
   /api/my_collections/{id}/atlases/:
     get:
       operationId: retrieveAtlasesMyCollection
@@ -895,7 +895,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
     post:
       operationId: createAtlasesMyCollection
       description: ''
@@ -925,7 +925,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
   /api/my_collections/{id}/datatable/:
     get:
       operationId: retrieveDatatableMyCollection
@@ -945,7 +945,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
   /api/my_collections/{id}/images/:
     get:
       operationId: retrieveImagesMyCollection
@@ -965,7 +965,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
     post:
       operationId: createImagesMyCollection
       description: ''
@@ -995,7 +995,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
   /api/my_collections/{id}/nidm_results/:
     get:
       operationId: retrieveNidmResultsMyCollection
@@ -1015,7 +1015,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
     post:
       operationId: createNidmResultsMyCollection
       description: ''
@@ -1045,7 +1045,7 @@ paths:
                 $ref: '#/components/schemas/Collection'
           description: ''
       tags:
-      - api
+      - neurovault
   /api/nidm_results/:
     get:
       operationId: retrieveListNIDMResults
@@ -1089,7 +1089,7 @@ paths:
                       $ref: '#/components/schemas/NIDMResults'
           description: ''
       tags:
-      - api
+      - neurovault
   /api/nidm_results/{id}/:
     get:
       operationId: retrieveNIDMResults
@@ -1109,7 +1109,7 @@ paths:
                 $ref: '#/components/schemas/NIDMResults'
           description: ''
       tags:
-      - api
+      - neurovault
     put:
       operationId: updateNIDMResults
       description: ''
@@ -1139,7 +1139,7 @@ paths:
                 $ref: '#/components/schemas/NIDMResults'
           description: ''
       tags:
-      - api
+      - neurovault
     patch:
       operationId: partialUpdateNIDMResults
       description: ''
@@ -1169,7 +1169,7 @@ paths:
                 $ref: '#/components/schemas/NIDMResults'
           description: ''
       tags:
-      - api
+      - neurovault
     delete:
       operationId: destroyNIDMResults
       description: ''
@@ -1184,7 +1184,7 @@ paths:
         '204':
           description: ''
       tags:
-      - api
+      - neurovault
   /api/user/:
     get:
       operationId: retrieveListAuthUser
@@ -1199,7 +1199,7 @@ paths:
                 items: {}
           description: ''
       tags:
-      - api
+      - neurovault
 components:
   schemas:
     Image:
