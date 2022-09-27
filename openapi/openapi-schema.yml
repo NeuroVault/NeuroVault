@@ -1974,6 +1974,9 @@ components:
         url:
           type: string
           readOnly: true
+        collection:
+          type: integer
+          readOnly: true
         name:
           type: string
           maxLength: 200
@@ -1986,12 +1989,6 @@ components:
         modify_date:
           type: string
           format: date-time
-          readOnly: true
-        polymorphic_ctype:
-          type: string
-          readOnly: true
-        collection:
-          type: string
           readOnly: true
       required:
       - zip_file
