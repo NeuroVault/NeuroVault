@@ -3,6 +3,6 @@
 {% block content %}
 <h1>{{ user.username }}</h1>
 
-<a href="{% url 'edit_user' %}">Edit profile</a>
-<a href="{% url 'delete_profile' %}">Delete profile</a>
+<a href="{% url 'users:edit_user' %}">Edit profile</a>
+<a href="{% url 'users:delete_profile' %}">Delete profile</a>
 {% endblock %}

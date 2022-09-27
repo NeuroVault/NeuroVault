@@ -60,7 +60,7 @@ def edit_user(request):
             messages.success(request,
                              'Your profile has been successfully updated.')
 
-            return HttpResponseRedirect(reverse("user:edit_user"))
+            return HttpResponseRedirect(reverse("users:edit_user"))
     return render(request, "registration/edit_profile.html",
                               {'form': edit_form})
 
@@ -70,7 +70,7 @@ def delete_profile(request):
         if request.user.username == (request.GET.get('delete-text')):
             request.user.delete()
         else: messages.warning(request,'Username did not match, deletion not completed')
-        return HttpResponseRedirect(reverse("user:delete_profile"))
+        return HttpResponseRedirect(reverse("users:delete_profile"))
     return render(request, "registration/delete_profile.html")
 
 @login_required
@@ -78,7 +78,7 @@ def password_change_done(request):
     messages.success(request,
                      'Your password has been successfully updated.')
 
-    return HttpResponseRedirect(reverse("user:password_change"))
+    return HttpResponseRedirect(reverse("users:password_change"))
 
 
 # def login(request):
@@ -122,12 +122,12 @@ class PersonalTokenCreate(LoginRequiredMixin, View):
         messages.success(self.request,
                          'The new token has been successfully generated.')
 
-        return HttpResponseRedirect(reverse('user:token_list'))
+        return HttpResponseRedirect(reverse('users:token_list'))
 
 
 class PersonalTokenDelete(PersonalTokenUserIsRequestUserMixin, DeleteView):
     template_name = 'oauth2_provider/personal_token_confirm_delete.html'
-    success_url = reverse_lazy('user:token_list')
+    success_url = reverse_lazy('users:token_list')
     success_message = ('The token has been successfully deleted.')
 
     def delete(self, request, *args, **kwargs):
@@ -148,7 +148,7 @@ class ApplicationRegistration(LoginRequiredMixin, CreateView):
     template_name = "oauth2_provider/application_registration_form.html"
 
     def get_success_url(self):
-        return reverse('user:developerapps_list')
+        return reverse('users:developerapps_list')
 
     def form_valid(self, form):
         form.instance.user = self.request.user
@@ -171,7 +171,7 @@ class ApplicationUpdate(ApplicationOwnerIsUserMixin, UpdateView):
     form_class = ApplicationEditForm
 
     def get_success_url(self):
-        return reverse('user:developerapps_list')
+        return reverse('users:developerapps_list')
 
     def form_valid(self, form):
         messages.success(self.request,
@@ -185,7 +185,7 @@ class ApplicationDelete(ApplicationOwnerIsUserMixin, DeleteView):
     View used to delete an application owned by the request.user
     """
     context_object_name = 'application'
-    success_url = reverse_lazy('user:developerapps_list')
+    success_url = reverse_lazy('users:developerapps_list')
     template_name = 'oauth2_provider/application_confirm_delete.html'
     success_message = 'The application has been successfully deleted.'
 
