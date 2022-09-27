@@ -82,6 +82,10 @@ class OpenAPISchema(AutoSchema):
                 getattr(field.parent, field.method_name)
             )['return']
             return {'type': TYPE_MAPPING[type_hint]}
+        elif isinstance(field, serializers.PrimaryKeyRelatedField)\
+            and getattr(field.queryset, 'model', None) is None\
+                and getattr(field, 'pk_field', None) is not None:
+            return self.map_field(field.pk_field)
         else:
             return super().map_field(field)
         
