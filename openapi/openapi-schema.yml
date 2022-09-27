@@ -1413,47 +1413,6 @@ components:
         owner:
           type: string
           readOnly: true
-        images:
-          type: array
-          items:
-            type: object
-            properties:
-              url:
-                type: string
-                readOnly: true
-              id:
-                type: string
-                readOnly: true
-              file:
-                type: string
-                format: binary
-              collection:
-                type: string
-                readOnly: true
-              collection_id:
-                type: string
-                readOnly: true
-              file_size:
-                type: string
-                readOnly: true
-              name:
-                type: string
-                maxLength: 200
-              description:
-                type: string
-              add_date:
-                type: string
-                format: date-time
-                readOnly: true
-              modify_date:
-                type: string
-                format: date-time
-                readOnly: true
-              is_valid:
-                type: boolean
-            required:
-            - file
-            - name
         contributors:
           type: string
         owner_name:
@@ -1961,8 +1920,6 @@ components:
           items:
             type: integer
           description: Is this collection part of any special Community?
-      required:
-      - images
     NIDMResults:
       type: object
       properties:
