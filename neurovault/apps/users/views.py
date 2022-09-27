@@ -62,8 +62,7 @@ def edit_user(request):
 
             return HttpResponseRedirect(reverse("user:edit_user"))
     return render(request, "registration/edit_profile.html",
-                              {'form': edit_form},
-                              context_instance=RequestContext(request))
+                              {'form': edit_form})
 
 @login_required
 def delete_profile(request):
@@ -72,8 +71,7 @@ def delete_profile(request):
             request.user.delete()
         else: messages.warning(request,'Username did not match, deletion not completed')
         return HttpResponseRedirect(reverse("user:delete_profile"))
-    return render(request, "registration/delete_profile.html",
-                              context_instance=RequestContext(request))
+    return render(request, "registration/delete_profile.html")
 
 @login_required
 def password_change_done(request):
