@@ -277,7 +277,7 @@ class NIDMResultsSerializer(serializers.ModelSerializer,
                             NIDMResultsValidationMixin):
     zip_file = HyperlinkedFileField()
     ttl_file = HyperlinkedFileField(required=False)
-    statmaps = ImageSerializer(many=True, source='nidmresultstatisticmap_set')
+    statmaps = ImageSerializer(many=True, required=False, source='nidmresultstatisticmap_set')
     url = HyperlinkedImageURL(source='get_absolute_url', read_only=True)
 
     def validate(self, data):

@@ -6,7 +6,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
 
 from neurovault.apps.statmaps.models import (
-    Collection, StatisticMap, NIDMResults
+    Collection, StatisticMap, NIDMResults, CognitiveAtlasTask, CognitiveAtlasContrast
 )
 from neurovault.apps.statmaps.tests.utils import clearDB
 from neurovault.apps.statmaps.tests.test_nidm import NIDM_TEST_FILES
@@ -19,7 +19,13 @@ class TestCollectionItemUpload(APITestCase):
         self.user.save()
         self.coll = Collection(owner=self.user, name="Test Collection")
         self.coll.save()
-
+        cat = CognitiveAtlasTask.objects.update_or_create(
+            cog_atlas_id="tsk_4a57abb949846",defaults={"name": "action observation task"})
+        cat[0].save()
+        contrast, _ = CognitiveAtlasContrast.objects.update_or_create(cog_atlas_id="cnt_4e08fefbf0382", 
+                                                                    defaults={"name":"standard deviation from the mean accuracy score",
+                                                                    "task": cat[0]})
+        contrast.save()
     def tearDown(self):
         clearDB()
 
@@ -178,10 +184,10 @@ class TestCollectionItemUpload(APITestCase):
                           data['num_statmaps'])
 
         map_type = data['output_row']['type'][0]
-        map_img = nidm.nidmresultstatisticmap_set.filter(
-            map_type=map_type).first()
+        map_imgs = nidm.nidmresultstatisticmap_set.filter(
+            map_type=map_type).all()
 
-        self.assertEqual(map_img.name, data['output_row']['name'])
+        self.assertTrue(data['output_row']['name'] in [m.name for m in map_imgs])
 
     def test_missing_required_fields(self):
         self.client.force_authenticate(user=self.user)
