@@ -9,6 +9,13 @@ from rest_framework.schemas.utils import is_list_view
 
 class OpenAPISchema(AutoSchema):
 
+    def __init__(self, tags=None, operation_id_base=None, component_name=None):
+        """
+        :param operation_id_base: user-defined name in operationId. If empty, it will be deducted from the Model/Serializer/View name.
+        :param component_name: user-defined component's name. If empty, it will be deducted from the Serializer's class name.
+        """
+        super().__init__(tags=['neurovault'], operation_id_base=operation_id_base, component_name=component_name)
+
     def map_field_validators(self, field, schema):
         """
         map field validators
