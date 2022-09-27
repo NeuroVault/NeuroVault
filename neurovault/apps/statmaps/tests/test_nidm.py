@@ -164,10 +164,10 @@ class NIDMResultsTest(TestCase):
                               info['num_statmaps'])
 
             map_type = info['output_row']['type'][0]
-            map_img = nidm.nidmresultstatisticmap_set.filter(
-                map_type=map_type).first()
+            map_imgs = nidm.nidmresultstatisticmap_set.filter(
+                map_type=map_type).all()
 
-            self.assertEqual(map_img.name, info['output_row']['name'])
+            self.assertTrue(info['output_row']['name'] in [m.name for m in map_imgs])
 
 
     def testDownloadCollection_NIDM_results(self):

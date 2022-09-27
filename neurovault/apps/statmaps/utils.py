@@ -247,7 +247,7 @@ def get_afni_subbrick_labels(nii):
     # AFNI header is nifti1 header extension 4
     # http://nifti.nimh.nih.gov/nifti-1/AFNIextension1
 
-    extensions = getattr(nii.get_header(), 'extensions', [])
+    extensions = getattr(nii.header, 'extensions', [])
     header = [ext for ext in extensions if ext.get_code() == 4]
     if not header:
         return []
@@ -277,10 +277,10 @@ def split_4D_to_3D(nii,with_labels=True,tmp_dir=None):
     out_dir = tmp_dir or base_dir
     fname = name.replace(ext,'')
 
-    slices = np.split(nii.get_data(), nii.get_shape()[-1], len(nii.get_shape())-1)
+    slices = np.split(nii.get_data(), nii.shape[-1], len(nii.shape)-1)
     labels = get_afni_subbrick_labels(nii)
     for n, slice in enumerate(slices):
-        nifti = nib.Nifti1Image(np.squeeze(slice),nii.get_header().get_best_affine())
+        nifti = nib.Nifti1Image(np.squeeze(slice),nii.header.get_best_affine())
         layer_nm = labels[n] if n < len(labels) else '(volume %s)' % (n+1)
         outpath = os.path.join(out_dir, '%s__%s%s' % (fname, layer_nm, ext))
         nib.save(nifti,outpath)
@@ -292,7 +292,7 @@ def split_4D_to_3D(nii,with_labels=True,tmp_dir=None):
 
 
 def memory_uploadfile(new_file, fname, old_file):
-    cfile = ContentFile(open(new_file).read())
+    cfile = ContentFile(open(new_file, 'rb').read())
     content_type = getattr(old_file,'content_type',False) or 'application/x-gzip',
     charset = getattr(old_file,'charset',False) or None
 

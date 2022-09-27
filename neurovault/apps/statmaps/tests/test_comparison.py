@@ -6,7 +6,7 @@ import tempfile
 from django.test import TestCase
 from numpy.testing import assert_almost_equal, assert_equal
 
-from neurovault.apps.statmaps.models import Comparison, Similarity, User, Collection, Image
+from neurovault.apps.statmaps.models import Comparison, Similarity, User, Collection, Image, CognitiveAtlasTask
 from neurovault.apps.statmaps.tasks import save_voxelwise_pearson_similarity, get_images_by_ordered_id, save_resampled_transformation_single
 from neurovault.apps.statmaps.tests.utils import clearDB, save_statmap_form
 from neurovault.apps.statmaps.utils import split_4D_to_3D, get_similar_images
@@ -41,6 +41,9 @@ class ComparisonTestCase(TestCase):
                                                 DOI='10.3389/fninf.2015.00012')
         self.comparisonCollection5.save()
 
+        cat = CognitiveAtlasTask.objects.update_or_create(
+            cog_atlas_id="trm_4f24126c22011",defaults={"name": "abstract/concrete task"})
+        cat[0].save()
 
         image1 = save_statmap_form(image_path=os.path.join(app_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz'),
                               collection=self.comparisonCollection1,

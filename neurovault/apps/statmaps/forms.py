@@ -580,7 +580,7 @@ class ImageValidationMixin(object):
                         if squeezable_dimensions < len(nii.shape):
                             new_data = np.squeeze(nii.get_data())
                             nii = nb.Nifti1Image(new_data, nii.affine,
-                                                 nii.get_header())
+                                                 nii.header)
 
                         # Papaya does not handle float64, but by converting
                         # files we loose precision

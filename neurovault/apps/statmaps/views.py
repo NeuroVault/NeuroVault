@@ -10,6 +10,7 @@ import re
 import shutil
 import tarfile
 import tempfile
+import zipstream
 import traceback
 import urllib.request, urllib.parse, urllib.error
 import zipfile
@@ -861,10 +862,10 @@ def upload_folder(request, collection_cid):
                 for label,fpath in niftiFiles:
                     # Read nifti file information
                     nii = nib.load(fpath)
-                    if len(nii.get_shape()) > 3 and nii.get_shape()[3] > 1:
+                    if len(nii.shape) > 3 and nii.shape[3] > 1:
                         messages.warning(request, "Skipping %s - not a 3D file."%label)
                         continue
-                    hdr = nii.get_header()
+                    hdr = nii.header
                     raw_hdr = hdr.structarr
 
                     # SPM only !!!
@@ -892,7 +893,7 @@ def upload_folder(request, collection_cid):
                         if squeezable_dimensions < len(nii.shape):
                             new_data = np.squeeze(nii.get_data())
                             nii = nib.Nifti1Image(new_data, nii.affine,
-                                                  nii.get_header())
+                                                  nii.header)
 
                         new_file_tmp_dir = tempfile.mkdtemp()
                         new_file_tmp = os.path.join(new_file_tmp_dir, name) + '.nii.gz'
@@ -1145,7 +1146,6 @@ def atlas_query_voxel(request):
     try:
         data = voxelToRegion(X,Y,Z,atlas_image, atlas_xml)
     except IndexError:
-        import pdb; pdb.set_trace()
         return JSONResponse('error: one or more coordinates are out of range', status=400)
     return JSONResponse(data)
 

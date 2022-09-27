@@ -46,7 +46,7 @@ class CollectionSharingTest(TestCase):
     def testCollectionSharing(self):
 
         #view_url = self.coll.get_absolute_url()
-        edit_url = reverse('edit_collection',kwargs={'cid': self.coll.pk})
+        edit_url = reverse('statmaps:edit_collection',kwargs={'cid': self.coll.pk})
         resp = {}
 
         for role in ['owner','contrib','someguy']:
@@ -63,8 +63,8 @@ class CollectionSharingTest(TestCase):
         """
         assert that only the owner can view/edit contributors:
         """
-        self.assertTrue('contributor' in resp['owner'].content.lower())
-        self.assertFalse('contributor' in resp['contrib'].content.lower())
+        self.assertTrue('contributor' in resp['owner'].content.lower().decode('utf-8'))
+        self.assertFalse('contributor' in resp['contrib'].content.lower().decode('utf-8'))
 
 
 class DeleteCollectionsTest(TestCase):
@@ -78,7 +78,7 @@ class DeleteCollectionsTest(TestCase):
         self.Collection1.save()
         self.unorderedAtlas = Atlas(name='unorderedAtlas', description='',collection=self.Collection1)
         self.unorderedAtlas.file = SimpleUploadedFile('VentralFrontal_thr75_summaryimage_2mm.nii.gz', open(os.path.join(self.test_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz'), 'rb').read())
-        self.unorderedAtlas.label_description_file = SimpleUploadedFile('test_VentralFrontal_thr75_summaryimage_2mm.xml', open(os.path.join(self.test_path,'test_data/api/unordered_VentralFrontal_thr75_summaryimage_2mm.xml')).read())
+        self.unorderedAtlas.label_description_file = SimpleUploadedFile('test_VentralFrontal_thr75_summaryimage_2mm.xml', open(os.path.join(self.test_path,'test_data/api/unordered_VentralFrontal_thr75_summaryimage_2mm.xml'), 'rb').read())
         self.unorderedAtlas.save()
 
         self.Collection2 = Collection(name='Collection2',owner=self.user)
@@ -171,9 +171,12 @@ class CollectionMetaDataTest(TestCase):
         self.coll = Collection(owner=self.user,
                                name="Test %s" % self.uniqid())
         self.coll.save()
+        cat = CognitiveAtlasTask.objects.update_or_create(
+            cog_atlas_id="trm_4f24126c22011",defaults={"name": "Early Social and Communication Scales"})
+        cat[0].save()
 
         cat = CognitiveAtlasTask.objects.update_or_create(
-            cog_atlas_id="trm_4f24126c22011",defaults={"name": "abstract/concrete task"})
+        cog_atlas_id="trm_4f24126122233",defaults={"name": "Cambridge Gambling Task"})
         cat[0].save()
 
         def test_data_path(filename):
@@ -207,7 +210,7 @@ class CollectionMetaDataTest(TestCase):
                 'fMRI-BOLD', cognitive_paradigms[1]]
         ]
 
-        url = reverse('edit_metadata',
+        url = reverse('statmaps:edit_metadata',
                       kwargs={'collection_cid': self.coll.pk})
 
         resp = self.client.post(url,
@@ -237,7 +240,7 @@ class CollectionMetaDataTest(TestCase):
             ['beta_0001.nii.gz', '13', None]
         ]
 
-        url = reverse('edit_metadata',
+        url = reverse('statmaps:edit_metadata',
                       kwargs={'collection_cid': self.coll.pk})
 
         resp = self.client.post(url,
@@ -260,7 +263,7 @@ class CollectionMetaDataTest(TestCase):
             ['file3.nii.gz', '14', '3']
         ]
 
-        url = reverse('edit_metadata',
+        url = reverse('statmaps:edit_metadata',
                       kwargs={'collection_cid': self.coll.pk})
 
         resp = self.client.post(url,
@@ -284,7 +287,7 @@ class CollectionMetaDataTest(TestCase):
                 '-*NOT-EXISTING-MOD*-', 'Cambridge Gambling Task']
         ]
 
-        url = reverse('edit_metadata',
+        url = reverse('statmaps:edit_metadata',
                       kwargs={'collection_cid': self.coll.pk})
 
         resp = self.client.post(url,
@@ -295,11 +298,11 @@ class CollectionMetaDataTest(TestCase):
 
         resp_json = json.loads(resp.content)
 
-        self.assertEqual(resp_json['messages'], {'beta_0001.nii.gz': [{
+        self.assertEqual(resp_json['messages']['beta_0001.nii.gz'], [{
             'Modality & acquisition type': [
                 "Value '-*NOT-EXISTING-MOD*-' is not a valid choice."
             ]
-        }]})
+        }])
 
     def test_incorrect_value_in_fixed_foreign_field(self):
         test_data = [
@@ -311,7 +314,7 @@ class CollectionMetaDataTest(TestCase):
                 "fMRI-BOLD", 'Cambridge Gambling Task']
         ]
 
-        url = reverse('edit_metadata',
+        url = reverse('statmaps:edit_metadata',
                       kwargs={'collection_cid': self.coll.pk})
 
         resp = self.client.post(url,
@@ -322,11 +325,11 @@ class CollectionMetaDataTest(TestCase):
 
         resp_json = json.loads(resp.content)
 
-        self.assertEqual(resp_json['messages'], {'motor_lips.nii.gz': [{
+        self.assertEqual(resp_json['messages']['motor_lips.nii.gz'], [{
             'Cognitive atlas paradigm': [
                 "Value '-*NOT-EXISTING-PARADIGM*-' is not a valid choice."
             ]
-        }]})
+        }])
 
 
 class DownloadCollectionsTest(TestCase):
@@ -339,8 +342,8 @@ class DownloadCollectionsTest(TestCase):
         self.Collection1 = Collection(name='Collection1',owner=self.user)
         self.Collection1.save()
         self.unorderedAtlas = Atlas(name='unorderedAtlas', description='',collection=self.Collection1)
-        self.unorderedAtlas.file = SimpleUploadedFile('VentralFrontal_thr75_summaryimage_2mm.nii.gz', open(os.path.join(self.test_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz')).read())
-        self.unorderedAtlas.label_description_file = SimpleUploadedFile('test_VentralFrontal_thr75_summaryimage_2mm.xml', open(os.path.join(self.test_path,'test_data/api/unordered_VentralFrontal_thr75_summaryimage_2mm.xml')).read())
+        self.unorderedAtlas.file = SimpleUploadedFile('VentralFrontal_thr75_summaryimage_2mm.nii.gz', open(os.path.join(self.test_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz'), 'rb').read())
+        self.unorderedAtlas.label_description_file = SimpleUploadedFile('test_VentralFrontal_thr75_summaryimage_2mm.xml', open(os.path.join(self.test_path,'test_data/api/unordered_VentralFrontal_thr75_summaryimage_2mm.xml'), 'rb').read())
         self.unorderedAtlas.save()
 
     def tearDown(self):
@@ -357,7 +360,8 @@ class DownloadCollectionsTest(TestCase):
         self.assertTrue(response.streaming_content)
         self.assertEqual(response.status_code, 200)
 
-        zf = zipfile.ZipFile(io.BytesIO(''.join(response.streaming_content)))
+        zf = zipfile.ZipFile(response, 'w')
+        # zf = zipfile.ZipFile(io.BytesIO(b''.join(response.streaming_content)))
 
         self.assertEqual(len(zf.filelist), 1)  # 1 Atlas
         self.assertIsNone(zf.testzip())
