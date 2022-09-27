@@ -1,11 +1,24 @@
+from typing import get_type_hints
+
 from django.core.validators import (
     DecimalValidator, EmailValidator, MaxLengthValidator, MaxValueValidator,
     MinLengthValidator, MinValueValidator, URLValidator
 )
+from django.db.models import fields
+from django.utils.encoding import force_str
 from rest_framework import serializers
+from rest_framework.compat import uritemplate
 from rest_framework.settings import api_settings
 from rest_framework.schemas.openapi import AutoSchema
-from rest_framework.schemas.utils import is_list_view
+from rest_framework.schemas.utils import get_pk_description, is_list_view
+
+
+TYPE_MAPPING = {
+        int: 'integer',
+        str: 'string',
+        list: 'array',
+        bool: 'boolean',
+    }
 
 class OpenAPISchema(AutoSchema):
 
@@ -16,46 +29,69 @@ class OpenAPISchema(AutoSchema):
         """
         super().__init__(tags=['neurovault'], operation_id_base=operation_id_base, component_name=component_name)
 
+    #JK HACK: interpret path parameters as correct type
+    def get_path_parameters(self, path, method):
+        """
+        Return a list of parameters from templated path variables.
+        """
+        assert uritemplate, '`uritemplate` must be installed for OpenAPI schema support.'
+
+        model = getattr(getattr(self.view, 'queryset', None), 'model', None)
+        parameters = []
+
+        for variable in uritemplate.variables(path):
+            description = ''
+            if model is not None:  # TODO: test this.
+                # Attempt to infer a field description if possible.
+                try:
+                    model_field = model._meta.get_field(variable)
+                except Exception:
+                    model_field = None
+
+                if model_field is not None and model_field.help_text:
+                    description = force_str(model_field.help_text)
+                elif model_field is not None and model_field.primary_key:
+                    description = get_pk_description(model, model_field)
+
+            if isinstance(model_field, fields.AutoField):
+                schema = {'type': 'integer'}
+            else:
+                schema = {'type': 'string'}
+
+            parameter = {
+                "name": variable,
+                "in": "path",
+                "required": True,
+                "description": description,
+                "schema": schema,
+            }
+            parameters.append(parameter)
+
+        return parameters
+
+    def map_choicefield(self, field):
+        mapping = super().map_choicefield(field)
+        if mapping['type'] == 'boolean':
+            mapping.pop('enum')
+        return mapping
+
+    def map_field(self, field):
+        # JK HACK: use type hints to discover the type of the field
+        if isinstance(field, serializers.SerializerMethodField):
+            type_hint = get_type_hints(
+                getattr(field.parent, field.method_name)
+            )['return']
+            return {'type': TYPE_MAPPING[type_hint]}
+        else:
+            return super().map_field(field)
+        
     def map_field_validators(self, field, schema):
         """
         map field validators
         """
-        for v in field.validators:
-            # "Formats such as "email", "uuid", and so on, MAY be used even though undefined by this specification."
-            # https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#data-types
-            if isinstance(v, EmailValidator):
-                schema['format'] = 'email'
-            if isinstance(v, URLValidator):
-                schema['format'] = 'uri'
-            # JK: HACK REGEX is too long to be interpreted by code-generator
-            # if isinstance(v, RegexValidator):
-            #     # In Python, the token \Z does what \z does in other engines.
-            #     # https://stackoverflow.com/questions/53283160
-            #     schema['pattern'] = v.regex.pattern.replace('\\Z', '\\z')
-            elif isinstance(v, MaxLengthValidator):
-                attr_name = 'maxLength'
-                if isinstance(field, serializers.ListField):
-                    attr_name = 'maxItems'
-                schema[attr_name] = v.limit_value
-            elif isinstance(v, MinLengthValidator):
-                attr_name = 'minLength'
-                if isinstance(field, serializers.ListField):
-                    attr_name = 'minItems'
-                schema[attr_name] = v.limit_value
-            elif isinstance(v, MaxValueValidator):
-                schema['maximum'] = v.limit_value
-            elif isinstance(v, MinValueValidator):
-                schema['minimum'] = v.limit_value
-            elif isinstance(v, DecimalValidator) and \
-                    not getattr(field, 'coerce_to_string', api_settings.COERCE_DECIMAL_TO_STRING):
-                if v.decimal_places:
-                    schema['multipleOf'] = float('.' + (v.decimal_places - 1) * '0' + '1')
-                if v.max_digits:
-                    digits = v.max_digits
-                    if v.decimal_places is not None and v.decimal_places > 0:
-                        digits -= v.decimal_places
-                    schema['maximum'] = int(digits * '9') + 1
-                    schema['minimum'] = -schema['maximum']
+        super().map_field_validators(field, schema)
+        # JK: HACK REGEX is too long to be interpreted by code-generator
+        schema.pop('pattern', None)
 
     def get_operation_id(self, path, method):
         """
