@@ -278,6 +278,7 @@ class NIDMResultsSerializer(serializers.ModelSerializer,
     ttl_file = HyperlinkedFileField(required=False)
     statmaps = ImageSerializer(many=True, source='nidmresultstatisticmap_set')
     url = HyperlinkedImageURL(source='get_absolute_url', read_only=True)
+    collection = serializers.PrimaryKeyRelatedField(read_only=True, pk_field=serializers.IntegerField())
 
     def validate(self, data):
         data['collection'] = self.instance.collection
@@ -296,8 +297,8 @@ class NIDMResultsSerializer(serializers.ModelSerializer,
 
     class Meta:
         model = NIDMResults
-        exclude = ['is_valid']
-        read_only_fields = ('collection',)
+        exclude = ['is_valid', 'polymorphic_ctype']
+        # read_only_fields = ('collection',)
 
 
 class EditableNIDMResultsSerializer(serializers.ModelSerializer,
