@@ -58,7 +58,7 @@ paths:
         required: true
         description: A unique integer value identifying this image.
         schema:
-          type: string
+          type: integer
       responses:
         '200':
           content:
@@ -77,7 +77,7 @@ paths:
         required: true
         description: A unique integer value identifying this image.
         schema:
-          type: string
+          type: integer
       requestBody:
         content:
           application/json:
@@ -107,7 +107,7 @@ paths:
         required: true
         description: A unique integer value identifying this image.
         schema:
-          type: string
+          type: integer
       requestBody:
         content:
           application/json:
@@ -137,7 +137,7 @@ paths:
         required: true
         description: A unique integer value identifying this image.
         schema:
-          type: string
+          type: integer
       responses:
         '204':
           description: ''
@@ -155,7 +155,7 @@ paths:
         required: true
         description: A unique integer value identifying this image.
         schema:
-          type: string
+          type: integer
       responses:
         '200':
           content:
@@ -251,7 +251,7 @@ paths:
         required: true
         description: A unique integer value identifying this atlas.
         schema:
-          type: string
+          type: integer
       responses:
         '200':
           content:
@@ -270,7 +270,7 @@ paths:
         required: true
         description: A unique integer value identifying this atlas.
         schema:
-          type: string
+          type: integer
       requestBody:
         content:
           application/json:
@@ -300,7 +300,7 @@ paths:
         required: true
         description: A unique integer value identifying this atlas.
         schema:
-          type: string
+          type: integer
       requestBody:
         content:
           application/json:
@@ -330,7 +330,7 @@ paths:
         required: true
         description: A unique integer value identifying this atlas.
         schema:
-          type: string
+          type: integer
       responses:
         '204':
           description: ''
@@ -348,7 +348,7 @@ paths:
         required: true
         description: A unique integer value identifying this atlas.
         schema:
-          type: string
+          type: integer
       responses:
         '200':
           content:
@@ -370,7 +370,7 @@ paths:
         required: true
         description: A unique integer value identifying this atlas.
         schema:
-          type: string
+          type: integer
       responses:
         '200':
           content:
@@ -458,7 +458,7 @@ paths:
         required: true
         description: A unique integer value identifying this collection.
         schema:
-          type: string
+          type: integer
       responses:
         '200':
           content:
@@ -477,7 +477,7 @@ paths:
         required: true
         description: A unique integer value identifying this collection.
         schema:
-          type: string
+          type: integer
       requestBody:
         content:
           application/json:
@@ -507,7 +507,7 @@ paths:
         required: true
         description: A unique integer value identifying this collection.
         schema:
-          type: string
+          type: integer
       requestBody:
         content:
           application/json:
@@ -537,7 +537,7 @@ paths:
         required: true
         description: A unique integer value identifying this collection.
         schema:
-          type: string
+          type: integer
       responses:
         '204':
           description: ''
@@ -553,7 +553,7 @@ paths:
         required: true
         description: A unique integer value identifying this collection.
         schema:
-          type: string
+          type: integer
       responses:
         '200':
           content:
@@ -572,7 +572,7 @@ paths:
         required: true
         description: A unique integer value identifying this collection.
         schema:
-          type: string
+          type: integer
       requestBody:
         content:
           application/json:
@@ -603,7 +603,7 @@ paths:
         required: true
         description: A unique integer value identifying this collection.
         schema:
-          type: string
+          type: integer
       responses:
         '200':
           content:
@@ -623,7 +623,7 @@ paths:
         required: true
         description: A unique integer value identifying this collection.
         schema:
-          type: string
+          type: integer
       responses:
         '200':
           content:
@@ -642,7 +642,7 @@ paths:
         required: true
         description: A unique integer value identifying this collection.
         schema:
-          type: string
+          type: integer
       requestBody:
         content:
           application/json:
@@ -673,7 +673,7 @@ paths:
         required: true
         description: A unique integer value identifying this collection.
         schema:
-          type: string
+          type: integer
       responses:
         '200':
           content:
@@ -692,7 +692,7 @@ paths:
         required: true
         description: A unique integer value identifying this collection.
         schema:
-          type: string
+          type: integer
       requestBody:
         content:
           application/json:
@@ -791,7 +791,7 @@ paths:
         required: true
         description: A unique integer value identifying this collection.
         schema:
-          type: string
+          type: integer
       responses:
         '200':
           content:
@@ -810,7 +810,7 @@ paths:
         required: true
         description: A unique integer value identifying this collection.
         schema:
-          type: string
+          type: integer
       requestBody:
         content:
           application/json:
@@ -840,7 +840,7 @@ paths:
         required: true
         description: A unique integer value identifying this collection.
         schema:
-          type: string
+          type: integer
       requestBody:
         content:
           application/json:
@@ -870,7 +870,7 @@ paths:
         required: true
         description: A unique integer value identifying this collection.
         schema:
-          type: string
+          type: integer
       responses:
         '204':
           description: ''
@@ -886,7 +886,7 @@ paths:
         required: true
         description: A unique integer value identifying this collection.
         schema:
-          type: string
+          type: integer
       responses:
         '200':
           content:
@@ -905,7 +905,7 @@ paths:
         required: true
         description: A unique integer value identifying this collection.
         schema:
-          type: string
+          type: integer
       requestBody:
         content:
           application/json:
@@ -936,7 +936,7 @@ paths:
         required: true
         description: A unique integer value identifying this collection.
         schema:
-          type: string
+          type: integer
       responses:
         '200':
           content:
@@ -956,7 +956,7 @@ paths:
         required: true
         description: A unique integer value identifying this collection.
         schema:
-          type: string
+          type: integer
       responses:
         '200':
           content:
@@ -975,7 +975,7 @@ paths:
         required: true
         description: A unique integer value identifying this collection.
         schema:
-          type: string
+          type: integer
       requestBody:
         content:
           application/json:
@@ -1006,7 +1006,7 @@ paths:
         required: true
         description: A unique integer value identifying this collection.
         schema:
-          type: string
+          type: integer
       responses:
         '200':
           content:
@@ -1025,7 +1025,7 @@ paths:
         required: true
         description: A unique integer value identifying this collection.
         schema:
-          type: string
+          type: integer
       requestBody:
         content:
           application/json:
@@ -1100,7 +1100,7 @@ paths:
         required: true
         description: A unique integer value identifying this nidm results.
         schema:
-          type: string
+          type: integer
       responses:
         '200':
           content:
@@ -1119,7 +1119,7 @@ paths:
         required: true
         description: A unique integer value identifying this nidm results.
         schema:
-          type: string
+          type: integer
       requestBody:
         content:
           application/json:
@@ -1149,7 +1149,7 @@ paths:
         required: true
         description: A unique integer value identifying this nidm results.
         schema:
-          type: string
+          type: integer
       requestBody:
         content:
           application/json:
@@ -1179,7 +1179,7 @@ paths:
         required: true
         description: A unique integer value identifying this nidm results.
         schema:
-          type: string
+          type: integer
       responses:
         '204':
           description: ''
@@ -1209,7 +1209,7 @@ components:
           type: string
           readOnly: true
         id:
-          type: string
+          type: integer
           readOnly: true
         file:
           type: string
@@ -1218,10 +1218,10 @@ components:
           type: string
           readOnly: true
         collection_id:
-          type: string
+          type: integer
           readOnly: true
         file_size:
-          type: string
+          type: integer
           readOnly: true
         name:
           type: string
@@ -1248,7 +1248,7 @@ components:
           type: string
           readOnly: true
         id:
-          type: string
+          type: integer
           readOnly: true
         file:
           type: string
@@ -1257,10 +1257,10 @@ components:
           type: string
           readOnly: true
         collection_id:
-          type: string
+          type: integer
           readOnly: true
         file_size:
-          type: string
+          type: integer
           readOnly: true
         label_description_file:
           type: string
@@ -1411,7 +1411,7 @@ components:
           type: string
           readOnly: true
         owner:
-          type: string
+          type: integer
           readOnly: true
         contributors:
           type: string
@@ -1419,7 +1419,7 @@ components:
           type: string
           readOnly: true
         number_of_images:
-          type: string
+          type: integer
           readOnly: true
         name:
           type: string
@@ -1454,9 +1454,6 @@ components:
             or "http://dx.doi.org/10.15387/fcp_indi.corr.mpg1")'
           maxLength: 200
         private:
-          enum:
-          - false
-          - true
           type: boolean
         add_date:
           type: string
@@ -1470,6 +1467,7 @@ components:
           type: string
           format: date-time
           readOnly: true
+          nullable: true
         type_of_design:
           enum:
           - blocked
@@ -1941,7 +1939,7 @@ components:
                 type: string
                 readOnly: true
               id:
-                type: string
+                type: integer
                 readOnly: true
               file:
                 type: string
@@ -1950,10 +1948,10 @@ components:
                 type: string
                 readOnly: true
               collection_id:
-                type: string
+                type: integer
                 readOnly: true
               file_size:
-                type: string
+                type: integer
                 readOnly: true
               name:
                 type: string
