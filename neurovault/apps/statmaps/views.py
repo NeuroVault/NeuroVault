@@ -1267,6 +1267,13 @@ def find_similar_json(request, pk, collection_cid=None):
     del dict["index"]
     return JSONResponse(dict)
 
+# Return search interface
+def search(request,error_message=None):
+    cogatlas_task = CognitiveAtlasTask.objects.all()
+    context = {'message': error_message,
+               'cogatlas_task': cogatlas_task}
+    return render(request, 'statmaps/search.html', context)
+
 
 class JSONResponse(HttpResponse):
     """
