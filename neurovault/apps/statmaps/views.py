@@ -14,6 +14,7 @@ import tempfile
 import traceback
 import urllib.request, urllib.parse, urllib.error
 import zipstream
+import zipfile
 from collections import OrderedDict
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -785,7 +786,6 @@ def upload_folder(request, collection_cid):
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             tmp_directory = tempfile.mkdtemp()
-            print(tmp_directory)
             try:
                 # Save archive (.zip or .tar.gz) to disk
                 if "file" in request.FILES:
@@ -897,11 +897,11 @@ def upload_folder(request, collection_cid):
                         new_file_tmp_dir = tempfile.mkdtemp()
                         new_file_tmp = os.path.join(new_file_tmp_dir, name) + '.nii.gz'
                         nib.save(nii, new_file_tmp)
-                        f = ContentFile(open(new_file_tmp).read(), name=dname)
+                        f = ContentFile(open(new_file_tmp, 'rb').read(), name=dname)
                         shutil.rmtree(new_file_tmp_dir)
                         label += " (old ext: %s)" % ext
                     else:
-                        f = ContentFile(open(fpath).read(), name=dname)
+                        f = ContentFile(open(fpath, 'rb').read(), name=dname)
 
                     collection = get_collection(collection_cid,request)
 
@@ -911,7 +911,7 @@ def upload_folder(request, collection_cid):
                                           description=raw_hdr['descrip'], collection=collection)
 
                         new_image.label_description_file = ContentFile(
-                                    open(atlases[os.path.join(path,name)]).read(),
+                                    open(atlases[os.path.join(path,name)], 'rb').read(),
                                                                     name=name + ".xml")
                     else:
                         new_image = StatisticMap(name=spaced_name, is_valid=False,
