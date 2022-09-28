@@ -34,7 +34,7 @@ class NIDMUpload:
 
     def parse_metafiles(self,extract_ttl=False):
         try:
-            self.zip = zipfile.ZipFile(self.path.file, mode='r')
+            self.zip = zipfile.ZipFile(self.path, mode='r')
         except Exception:
             raise self.ParseException("Unable to read the zip file.")
 

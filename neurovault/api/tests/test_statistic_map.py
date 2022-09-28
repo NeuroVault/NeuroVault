@@ -6,6 +6,7 @@ from neurovault.apps.statmaps.models import StatisticMap
 from neurovault.apps.statmaps.tests.utils import save_statmap_form
 
 from neurovault.api.tests.base import BaseTestCases
+from neurovault.api.tests.utils import _setup_test_cognitive_atlas
 
 
 class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
@@ -17,6 +18,7 @@ class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
         )
 
         self.item_url = '/api/images/%s/' % self.item.pk
+        _setup_test_cognitive_atlas()         
 
     def test_statistic_map_update(self):
         self.client.force_authenticate(user=self.user)

@@ -5,8 +5,9 @@ from django.urls import reverse
 from django.test import TestCase, Client
 
 from neurovault.apps.statmaps.forms import StatisticMapForm
-from neurovault.apps.statmaps.models import Collection,User, StatisticMap, CognitiveAtlasTask
+from neurovault.apps.statmaps.models import Collection,User, StatisticMap
 from neurovault.apps.statmaps.utils import detect_4D, split_4D_to_3D
+from neurovault.api.tests.utils import _setup_test_cognitive_atlas
 from .utils import clearDB
 
 
@@ -19,9 +20,7 @@ class AddStatmapsTests(TestCase):
         self.client.login(username=self.user, password="pass")
         self.coll = Collection(owner=self.user, name="Test Collection")
         self.coll.save()
-        cat = CognitiveAtlasTask.objects.update_or_create(
-            cog_atlas_id="trm_4f24126c22011",defaults={"name": "abstract/concrete task"})
-        cat[0].save()
+        _setup_test_cognitive_atlas()
 
     def tearDown(self):
         clearDB()

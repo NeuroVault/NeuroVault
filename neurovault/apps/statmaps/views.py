@@ -1,6 +1,7 @@
 import csv
 import functools
 import gzip
+import io
 import json
 import nibabel as nib
 import shutil
@@ -10,10 +11,9 @@ import re
 import shutil
 import tarfile
 import tempfile
-import zipstream
 import traceback
 import urllib.request, urllib.parse, urllib.error
-import zipfile
+import zipstream
 from collections import OrderedDict
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -21,7 +21,7 @@ from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Q
 from django.db.models.aggregates import Count
-from django.http import Http404, HttpResponse, StreamingHttpResponse
+from django.http import Http404, HttpResponse, StreamingHttpResponse, FileResponse
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.encoding import filepath_to_uri
@@ -31,7 +31,7 @@ from django.urls import reverse
 from fnmatch import fnmatch
 from guardian.shortcuts import get_objects_for_user
 # from nidmviewer.viewer import generate
-# from pybraincompare.compare.scatterplot import scatterplot_compare_vector
+from pybraincompare.compare.scatterplot import scatterplot_compare_vector
 from nidmresults.graph import Graph
 from rest_framework.renderers import JSONRenderer
 from sendfile import sendfile
@@ -1152,7 +1152,6 @@ def atlas_query_voxel(request):
 
 # Compare Two Images
 def compare_images(request,pk1,pk2):
-    ''' disable calls to brain compare functions for upgrade
     import numpy as np
     image1 = get_image(pk1,None,request)
     image2 = get_image(pk2,None,request)
@@ -1220,8 +1219,6 @@ def compare_images(request,pk1,pk2):
         context["warnings"] = warnings
 
     return render(request, 'statmaps/compare_images.html', context)
-    '''
-    raise Http404('disabled for upgrade')
 
 
 # Return search interface for one image vs rest
@@ -1569,7 +1566,6 @@ def download_collection(request, cid):
     zip_filename = '%s.zip' % collection.name
 
     zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
-
     for fpath in filenames:
         # Calculate path for file in zip
         fdir, fname = os.path.split(fpath)
@@ -1580,6 +1576,7 @@ def download_collection(request, cid):
 
     response = StreamingHttpResponse(zf, content_type='application/zip')
     response['Content-Disposition'] = 'attachment; filename=%s' % urllib.parse.quote_plus(zip_filename.encode('utf-8'))
+
     return response
 
 def serve_surface_archive(request, pk, collection_cid=None):

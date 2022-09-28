@@ -1,5 +1,6 @@
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
 from neurovault.apps.statmaps.tests.utils import (clearDB, save_statmap_form)
+from neurovault.api.tests.utils import _setup_test_cognitive_atlas
 from neurovault.apps.statmaps.models import (Collection)
 from django.contrib.auth.models import User
 from django.test import TestCase, Client
@@ -19,6 +20,8 @@ class TestGeneDecoding(TestCase):
         cls.client.login(username=cls.user)
         cls.Collection1 = Collection(name='Collection1', owner=cls.user)
         cls.Collection1.save()
+
+        _setup_test_cognitive_atlas()     
 
         nii_path = os.path.join(
             cls.test_path, cls._map)

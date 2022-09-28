@@ -1,11 +1,12 @@
 from django.contrib.auth.models import User
 
-from neurovault.apps.statmaps.models import Collection, CognitiveAtlasTask
+from neurovault.apps.statmaps.models import Collection
 from neurovault.apps.statmaps.tests.utils import (
     save_atlas_form, save_nidm_form, save_statmap_form, clearDB
 )
 from neurovault.api.tests.base import APITestCase
 from neurovault.api.pagination import StandardResultPagination
+from neurovault.api.tests.utils import _setup_test_cognitive_atlas
 
 
 class TestImage(APITestCase):
@@ -14,9 +15,7 @@ class TestImage(APITestCase):
         self.user.save()
         self.collection = Collection(owner=self.user, name="Test Collection")
         self.collection.save()
-        cat = CognitiveAtlasTask.objects.update_or_create(
-            cog_atlas_id="trm_4f24126c22011",defaults={"name": "abstract/concrete task"})
-        cat[0].save()
+        _setup_test_cognitive_atlas()
 
         self.unorderedAtlas = save_atlas_form(
             nii_path=self.abs_data_path(

@@ -11,9 +11,10 @@ from django.urls import reverse
 from django.test import TestCase, Client, override_settings, RequestFactory
 from uuid import uuid4
 
-from neurovault.apps.statmaps.models import Collection, User, Image, Atlas, CognitiveAtlasTask
+from neurovault.apps.statmaps.models import Collection, User, Image, Atlas
 from neurovault.apps.statmaps.utils import detect_4D, split_4D_to_3D
 from neurovault.apps.statmaps.views import delete_collection, download_collection
+from neurovault.api.tests.utils import _setup_test_cognitive_atlas
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 from .utils import clearDB, save_statmap_form
 
@@ -171,13 +172,7 @@ class CollectionMetaDataTest(TestCase):
         self.coll = Collection(owner=self.user,
                                name="Test %s" % self.uniqid())
         self.coll.save()
-        cat = CognitiveAtlasTask.objects.update_or_create(
-            cog_atlas_id="trm_4f24126c22011",defaults={"name": "Early Social and Communication Scales"})
-        cat[0].save()
-
-        cat = CognitiveAtlasTask.objects.update_or_create(
-        cog_atlas_id="trm_4f24126122233",defaults={"name": "Cambridge Gambling Task"})
-        cat[0].save()
+        _setup_test_cognitive_atlas()
 
         def test_data_path(filename):
             return os.path.join(test_path, 'test_data/statmaps/%s' % filename)
@@ -361,7 +356,6 @@ class DownloadCollectionsTest(TestCase):
         self.assertEqual(response.status_code, 200)
 
         zf = zipfile.ZipFile(response, 'w')
-        # zf = zipfile.ZipFile(io.BytesIO(b''.join(response.streaming_content)))
 
         self.assertEqual(len(zf.filelist), 1)  # 1 Atlas
         self.assertIsNone(zf.testzip())
