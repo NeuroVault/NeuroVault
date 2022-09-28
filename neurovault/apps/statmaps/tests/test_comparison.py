@@ -112,25 +112,25 @@ class ComparisonTestCase(TestCase):
         # Should not exist
         print("Success for this test means there are no comparisons returned.")
         image1, image1_copy = get_images_by_ordered_id(self.pk1, self.pk1)
-        comparison = Comparison.objects.filter(image1=image1,image2=image1_copy,similarity_metric=self.pearson_metric)
+        comparison = Comparison.objects.filter(image1=image1,image2=image1_copy,similarity_metric__in=self.pearson_metric)
         self.assertEqual(len(comparison), 0)
 
         # Should be 1        
         print("Success for this test means a score of 1.0")
         image1, image2 = get_images_by_ordered_id(self.pk1, self.pk1_copy)
-        comparison = Comparison.objects.filter(image1=image1,image2=image2,similarity_metric=self.pearson_metric)
+        comparison = Comparison.objects.filter(image1=image1,image2=image2,similarity_metric__in=self.pearson_metric)
         self.assertEqual(len(comparison), 1)
         self.assertAlmostEqual(comparison[0].similarity_score, 1.0)
 
         print("Success for the remaining tests means a specific comparison score.")
         image1, image2 = get_images_by_ordered_id(self.pk1, self.pk2)
-        comparison = Comparison.objects.filter(image1=image1,image2=image2,similarity_metric=self.pearson_metric)
+        comparison = Comparison.objects.filter(image1=image1,image2=image2,similarity_metric__in=self.pearson_metric)
         self.assertEqual(len(comparison), 1)
         print(comparison[0].similarity_score)
         assert_almost_equal(comparison[0].similarity_score, 0.214495998015581,decimal=5)
 
         image2, image3 = get_images_by_ordered_id(self.pk3, self.pk2)
-        comparison = Comparison.objects.filter(image1=image2,image2=image3,similarity_metric=self.pearson_metric)
+        comparison = Comparison.objects.filter(image1=image2,image2=image3,similarity_metric__in=self.pearson_metric)
         self.assertEqual(len(comparison), 1)
         print(comparison[0].similarity_score)
         assert_almost_equal(comparison[0].similarity_score, 0.312548260435768,decimal=5)
