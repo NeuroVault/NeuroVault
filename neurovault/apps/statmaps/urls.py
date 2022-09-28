@@ -16,8 +16,8 @@ from .views import edit_collection, view_image, delete_image, edit_image, \
                 papaya_js_embed, view_images_by_tag, add_image_for_neuropower, \
                 view_image_with_pycortex, stats_view, serve_nidm, serve_nidm_image, \
                 view_nidm_results, find_similar, find_similar_json, compare_images, edit_metadata, \
-                export_images_filenames, delete_nidm_results, view_task, search, gene_expression_json, \
-                gene_expression, serve_surface_archive, edit_metaanalysis, view_metaanalysis, \
+                export_images_filenames, delete_nidm_results, view_task, search, \
+                serve_surface_archive, edit_metaanalysis, view_metaanalysis, \
                 activate_metaanalysis, finalize_metaanalysis
 
 app_name = 'statmaps'
@@ -220,12 +220,6 @@ urlpatterns = [
         find_similar_json,
         name='find_similar_json'),
 
-    re_path(r'^images/(?P<pk>\d+)/gene_expression$',
-        gene_expression,
-        name='gene_expression'),
-    re_path(r'^images/(?P<pk>\d+)/gene_expression/json$',
-        gene_expression_json,
-        name='gene_expression_json'),
     re_path(r'^search$',
         search,
         name='search'),

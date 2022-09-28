@@ -47,7 +47,6 @@ from neurovault.apps.statmaps.models import get_possible_templates, DEFAULT_TEMP
 
 import neurovault
 from neurovault import settings
-from neurovault.apps.statmaps.ahba import calculate_gene_expression_similarity
 from neurovault.apps.statmaps.forms import CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,NeuropowerStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm, MetaanalysisForm
@@ -1267,48 +1266,6 @@ def find_similar_json(request, pk, collection_cid=None):
     dict = similar_images.to_dict("split")
     del dict["index"]
     return JSONResponse(dict)
-
-def gene_expression(request, pk, collection_cid=None):
-    '''view_image returns main view to see an image and associated meta data. If the image is in a collection with a DOI and has a generated thumbnail, it is a contender for image comparison, and a find similar button is exposed.
-    :param pk: statmaps.models.Image.pk the primary key of the image
-    :param collection_cid: statmaps.models.Collection.pk the primary key of the collection. Default None
-    '''
-    image = get_image(pk, collection_cid, request)
-    if image.is_thresholded:
-        raise Http404
-    api_cid = pk
-    if image.collection.private:
-        api_cid = '%s-%s' % (image.collection.private_token,pk)
-    context = {
-        'image': image,
-        'api_cid': api_cid,
-        'mask': request.GET.get('mask', 'full')
-    }
-    template = 'statmaps/gene_expression.html'
-    return render(request, template, context)
-
-def gene_expression_json(request, pk, collection_cid=None):
-    image = get_image(pk, collection_cid, request)
-    if image.is_thresholded:
-        raise Http404
-
-    if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
-        image = save_resampled_transformation_single(image.id)
-
-    map_data = np.load(image.reduced_representation.file)
-
-    mask = request.GET.get('mask', None)
-    expression_results = calculate_gene_expression_similarity(map_data, mask)
-    dict = expression_results.to_dict("split")
-    del dict["index"]
-    return JSONResponse(dict)
-
-# Return search interface
-def search(request,error_message=None):
-    cogatlas_task = CognitiveAtlasTask.objects.all()
-    context = {'message': error_message,
-               'cogatlas_task': cogatlas_task}
-    return render(request, 'statmaps/search.html', context)
 
 
 class JSONResponse(HttpResponse):
