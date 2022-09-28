@@ -22,7 +22,7 @@ class QueryTestCase(TestCase):
         print("\n#### TESTING THRESHOLDED IMAGES IN COMPARISON\n")
         self.tmpdir = tempfile.mkdtemp()
         self.app_path = os.path.abspath(os.path.dirname(__file__))
-        self.u1 = User.objects.create(username='neurovault')
+        self.u1 = User.objects.create(username='neurovault1')
         self.comparisonCollection1 = Collection(name='comparisonCollection1', owner=self.u1,
                                                 DOI='10.3389/fninf.2015.00008')
         self.comparisonCollection1.save()
