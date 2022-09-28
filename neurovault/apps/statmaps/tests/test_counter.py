@@ -5,7 +5,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, Client
 
 from neurovault.apps.statmaps.forms import NIDMResultsForm
-from neurovault.apps.statmaps.models import Collection, StatisticMap, Comparison
+from neurovault.apps.statmaps.models import Collection, StatisticMap, Similarity
 from neurovault.apps.statmaps.utils import count_processing_comparisons,count_existing_comparisons
 from .utils import clearDB
 
@@ -27,7 +27,11 @@ class Test_Counter(TestCase):
                                       DOI='10.3389/fninf.2015.00011')
         self.Collection3.save()
 
-
+        Similarity.objects.update_or_create(similarity_metric="pearson product-moment correlation coefficient",
+                                         transformation="voxelwise",
+                                         metric_ontology_iri="http://webprotege.stanford.edu/RCS8W76v1MfdvskPLiOdPaA",
+                                         transformation_ontology_iri="http://webprotege.stanford.edu/R87C6eFjEftkceScn1GblDL")   
+        
     def tearDown(self):
         clearDB()
 
