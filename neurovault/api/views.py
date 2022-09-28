@@ -62,7 +62,8 @@ class APIHelper:
 
         Returns:
             A dict with an aaData field containing all of the
-            values (and no keys) in tabular format. '''
+            values (and no keys) in tabular format.
+        '''
         data = dict([(k, v) for k, v in list(data.items())
                      if v and k not in fields_to_strip])
         return Response(

@@ -36,3 +36,5 @@ services:
       - ${NV_IMAGE_DATA}:/image_data
     depends_on:
       - redis
+    env_file:
+      - ./.env

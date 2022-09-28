@@ -45,6 +45,8 @@
 {% endblock %}
 {% block head %}
 <title>{% block title %}NeuroVault: {{image.name}}{% endblock %}</title>
+<link rel="stylesheet" type="text/css" href="{% static 'css/papaya.css' %}" />
+<script type="text/javascript" src="{% static 'scripts/papaya.js' %}" />
 <script>
 $(document).ready(function(){
   $('[data-toggle="tooltip"]').tooltip();
@@ -105,9 +107,10 @@ $(document).ready(function(){
              params["images"] = ["{% static "images/"%}{{ image.target_template_image }}.nii.gz", "{{ image.file.url|urlencode }}"];
              params[filename] = {"parametric": true,  "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric": true, "minPercent": 0.0, "maxPercent": 1.0};
          {% else %}
-             params["images"] = ["{% static "images/"%}{{ image.target_template_image }}.nii.gz", "{{ image.file.url|urlencode }}"];
+             params["images"] = ["/static/images/GenericMNI.nii", "{{ image.file.url|urlencode }}"];
              params[filename] = {"parametric": true,  "lut":"OrRd", "negative_lut":"PuBu", "alpha":"0.75", "symmetric": true};
         {% endif %}
+        console.log(params["images"])
         papaya.Container.startPapaya();
         papaya.Container.resetViewer(0, params);
         }
@@ -273,10 +276,4 @@ $(document).ready(function(){
         </div>
     </div>
 </div>
-<script type="application/javascript">
-if($('#for_papaya').is(':visible')) {
-    document.write('<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/rii-mango/Papaya@build-1449/release/current/minimal/papaya.js"><\/script>');
-    document.write('<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/rii-mango/Papaya@build-1449/release/current/minimal/papaya.css"\/>');
-}
-</script>
 {% endblock %}
