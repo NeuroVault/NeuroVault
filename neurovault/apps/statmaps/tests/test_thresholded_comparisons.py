@@ -70,6 +70,11 @@ class QueryTestCase(TestCase):
                                          transformation_ontology_iri="http://webprotege.stanford.edu/R87C6eFjEftkceScn1GblDL")   
         
     def tearDown(self):
+        Image.objects.get(pk=self.pk1).delete()
+        Image.objects.get(pk=self.pk2).delete()
+        Image.objects.get(pk=self.pk3).delete()
+        Image.objects.get(pk=self.pk4).delete()
+
         shutil.rmtree(self.tmpdir)
         clearDB()
 
