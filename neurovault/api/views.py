@@ -165,7 +165,7 @@ class AtlasViewSet(ImageViewSet):
             indices = [int(line.get('index')) + 1 for line in lines]
         else:
             indices = [int(line.find('index').text) for line in lines]
-        if line.text:
+        if lines[0].text:
             regions = [line.text.split(
                 '(')[0].replace("'", '').rstrip(' ').lower() for line in lines]
         else:

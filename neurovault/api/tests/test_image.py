@@ -6,6 +6,7 @@ from neurovault.apps.statmaps.tests.utils import (
 )
 from neurovault.api.tests.base import APITestCase
 from neurovault.api.pagination import StandardResultPagination
+from neurovault.api.tests.utils import _setup_test_cognitive_atlas
 
 
 class TestImage(APITestCase):
@@ -14,6 +15,7 @@ class TestImage(APITestCase):
         self.user.save()
         self.collection = Collection(owner=self.user, name="Test Collection")
         self.collection.save()
+        _setup_test_cognitive_atlas()
 
         self.unorderedAtlas = save_atlas_form(
             nii_path=self.abs_data_path(

@@ -6,6 +6,7 @@ from neurovault.apps.statmaps.models import StatisticMap
 from neurovault.apps.statmaps.tests.utils import save_statmap_form
 
 from neurovault.api.tests.base import BaseTestCases
+from neurovault.api.tests.utils import _setup_test_cognitive_atlas
 
 
 class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
@@ -17,6 +18,7 @@ class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
         )
 
         self.item_url = '/api/images/%s/' % self.item.pk
+        _setup_test_cognitive_atlas()         
 
     def test_statistic_map_update(self):
         self.client.force_authenticate(user=self.user)
@@ -28,7 +30,7 @@ class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
             'modality': 'fMRI-BOLD',
             'map_type': 'T',
             'file': file,
-            'cognitive_paradigm_cogatlas': 'tsk_4a57abb949846',
+            'cognitive_paradigm_cogatlas': 'trm_4f24126c22011',
             'cognitive_contrast_cogatlas': 'cnt_4e08fefbf0382',
             'custom_metadata_numeric_field': 42
         }
@@ -47,6 +49,9 @@ class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
 
     def test_statistic_map_metadata_partial_update(self):
         self.client.force_authenticate(user=self.user)
+
+        if not self.item.data:
+            self.item.data = {}
 
         self.item.data['custom_metadata_field_a'] = 'a text'
         self.item.data['custom_metadata_field_b'] = 'b text'

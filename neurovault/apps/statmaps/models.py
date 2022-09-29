@@ -511,7 +511,7 @@ class Image(BaseCollectionItem):
             self.subject_species = nvutils.infer_subject_species(self.target_template_image)
 
         if collection_changed:
-            for field_name in self._meta.get_all_field_names():
+            for field_name in [f.name for f in self._meta.get_fields()]:
                 field_instance = getattr(self, field_name)
                 if field_instance and isinstance(field_instance, FieldFile):
                     old_path = field_instance.path

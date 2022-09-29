@@ -7,8 +7,9 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import test as rest_framework_test
 from rest_framework import status
 
-from neurovault.apps.statmaps.models import Collection, CognitiveAtlasTask
+from neurovault.apps.statmaps.models import Collection, CognitiveAtlasTask, CognitiveAtlasContrast
 from neurovault.apps.statmaps.tests.utils import clearDB
+from neurovault.api.tests.utils import _setup_test_cognitive_atlas
 
 STATMAPS_TESTS_PATH = '../../apps/statmaps/tests/'
 
@@ -39,9 +40,7 @@ class BaseTestCases:
             self.coll = Collection(owner=self.user, name="Test Collection")
             self.coll.save()
 
-            cat = CognitiveAtlasTask.objects.update_or_create(
-                cog_atlas_id="trm_4f24126c22011",defaults={"name": "abstract/concrete task"})
-            cat[0].save()
+            _setup_test_cognitive_atlas()            
 
         def tearDown(self):
             clearDB()

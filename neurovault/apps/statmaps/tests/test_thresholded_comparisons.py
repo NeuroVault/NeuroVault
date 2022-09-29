@@ -9,6 +9,7 @@ from neurovault.apps.statmaps.models import Image, Comparison, Similarity, User,
 from neurovault.apps.statmaps.tests.utils import clearDB
 from neurovault.apps.statmaps.tests.utils import save_statmap_form, save_atlas_form
 from neurovault.apps.statmaps.utils import count_existing_comparisons, get_existing_comparisons
+from neurovault.api.tests.utils import _setup_test_cognitive_atlas
 
 
 class QueryTestCase(TestCase):
@@ -22,7 +23,7 @@ class QueryTestCase(TestCase):
         print("\n#### TESTING THRESHOLDED IMAGES IN COMPARISON\n")
         self.tmpdir = tempfile.mkdtemp()
         self.app_path = os.path.abspath(os.path.dirname(__file__))
-        self.u1 = User.objects.create(username='neurovault')
+        self.u1 = User.objects.create(username='neurovault1')
         self.comparisonCollection1 = Collection(name='comparisonCollection1', owner=self.u1,
                                                 DOI='10.3389/fninf.2015.00008')
         self.comparisonCollection1.save()
@@ -35,6 +36,8 @@ class QueryTestCase(TestCase):
         self.comparisonCollection4 = Collection(name='comparisonCollection4', owner=self.u1,
                                                 DOI='10.3389/fninf.2015.00011')
         self.comparisonCollection4.save()
+
+        _setup_test_cognitive_atlas()
         
         # Image 1 is an atlas
         print("Adding atlas image...")
@@ -64,9 +67,14 @@ class QueryTestCase(TestCase):
         self.pearson_metric = Similarity.objects.filter(similarity_metric="pearson product-moment correlation coefficient",
                                          transformation="voxelwise",
                                          metric_ontology_iri="http://webprotege.stanford.edu/RCS8W76v1MfdvskPLiOdPaA",
-                                         transformation_ontology_iri="http://webprotege.stanford.edu/R87C6eFjEftkceScn1GblDL")        
+                                         transformation_ontology_iri="http://webprotege.stanford.edu/R87C6eFjEftkceScn1GblDL")   
         
     def tearDown(self):
+        Image.objects.get(pk=self.pk1).delete()
+        Image.objects.get(pk=self.pk2).delete()
+        Image.objects.get(pk=self.pk3).delete()
+        Image.objects.get(pk=self.pk4).delete()
+
         shutil.rmtree(self.tmpdir)
         clearDB()
 

@@ -27,7 +27,7 @@ class FeatDirectoryTest(TestCase):
                 'export_dir':'ds105.feat/cope1.feat/nidm',
                 'ttl_fsize': 30000,
                 'map_types': ['T','Z'],
-                'names':['Statistic Map: group mean', 'Z-Statistic Map: group mean'],
+                'names':['T-Statistic Map: group mean', 'Z-Statistic Map: group mean'],
 
             },
 
@@ -37,7 +37,7 @@ class FeatDirectoryTest(TestCase):
                 'export_dir': 'ds017A/group/model001/task001/cope001.gfeat/cope1.feat/nidm',
                 'ttl_fsize': 68026,
                 'map_types': ['T','Z'],
-                'names':['Statistic Map: group mean', 'Z-Statistic Map: group mean'],
+                'names':['T-Statistic Map: group mean', 'Z-Statistic Map: group mean'],
             },
         }
 
@@ -106,7 +106,7 @@ class FeatDirectoryTest(TestCase):
             }
             
 
-            file_dict = {'zip_file': SimpleUploadedFile(zname, open(info['nidm_file'],'r').read())}
+            file_dict = {'zip_file': SimpleUploadedFile(zname, open(info['nidm_file'],'rb').read())}
             form = NIDMResultsForm(post_dict, file_dict)
 
             # validate NIDM Results

@@ -6,11 +6,13 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
 
 from neurovault.apps.statmaps.models import (
-    Collection, StatisticMap, NIDMResults
+    Collection, StatisticMap, NIDMResults, CognitiveAtlasTask, CognitiveAtlasContrast
 )
+
 from neurovault.apps.statmaps.tests.utils import clearDB
 from neurovault.apps.statmaps.tests.test_nidm import NIDM_TEST_FILES
 from neurovault.api.tests.base import APITestCase
+from neurovault.api.tests.utils import _setup_test_cognitive_atlas
 
 
 class TestCollectionItemUpload(APITestCase):
@@ -19,7 +21,8 @@ class TestCollectionItemUpload(APITestCase):
         self.user.save()
         self.coll = Collection(owner=self.user, name="Test Collection")
         self.coll.save()
-
+        _setup_test_cognitive_atlas()
+        
     def tearDown(self):
         clearDB()
 
@@ -33,7 +36,7 @@ class TestCollectionItemUpload(APITestCase):
             'name': 'test map',
             'modality': 'fMRI-BOLD',
             'map_type': 'T',
-            'cognitive_paradigm_cogatlas': 'tsk_4a57abb949846',
+            'cognitive_paradigm_cogatlas': 'trm_4f24126c22011',
             'cognitive_contrast_cogatlas': 'cnt_4e08fefbf0382',
             'file': SimpleUploadedFile(fname, open(fname, 'rb').read())
         }
@@ -135,9 +138,9 @@ class TestCollectionItemUpload(APITestCase):
 
         post_dict = {
             'name': 'test atlas',
-            'file': SimpleUploadedFile(nii_path, open(nii_path).read()),
+            'file': SimpleUploadedFile(nii_path, open(nii_path, 'rb').read()),
             'label_description_file': SimpleUploadedFile(xml_path,
-                                                         open(xml_path).read())
+                                                         open(xml_path, 'rb').read())
         }
 
         response = self.client.post(url, post_dict, format='multipart')
@@ -178,10 +181,10 @@ class TestCollectionItemUpload(APITestCase):
                           data['num_statmaps'])
 
         map_type = data['output_row']['type'][0]
-        map_img = nidm.nidmresultstatisticmap_set.filter(
-            map_type=map_type).first()
+        map_imgs = nidm.nidmresultstatisticmap_set.filter(
+            map_type=map_type).all()
 
-        self.assertEqual(map_img.name, data['output_row']['name'])
+        self.assertTrue(data['output_row']['name'] in [m.name for m in map_imgs])
 
     def test_missing_required_fields(self):
         self.client.force_authenticate(user=self.user)

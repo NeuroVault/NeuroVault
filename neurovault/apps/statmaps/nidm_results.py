@@ -34,7 +34,7 @@ class NIDMUpload:
 
     def parse_metafiles(self,extract_ttl=False):
         try:
-            self.zip = zipfile.ZipFile(self.path.file, mode='r')
+            self.zip = zipfile.ZipFile(self.path, mode='r')
         except Exception:
             raise self.ParseException("Unable to read the zip file.")
 
@@ -54,7 +54,6 @@ class NIDMUpload:
 
         self.ttl = metafiles['.ttl'][0]
         # fix incorrect property format in earlier versions of SPM12 output
-        import pdb; pdb.set_trace()
         self.raw_ttl = self.fix_spm12_ttl(self.zip.read(metafiles['.ttl'][0]).decode('utf-8'))
         self.ttl_relpath = self.parse_ttl_relative_path(metafiles['.ttl'][0].filename)
 
@@ -88,7 +87,6 @@ class NIDMUpload:
             raise self.ParseException("RDFLib was unable to parse the .ttl file.")
 
         c_results = nidm_g.query(query)
-        import pdb; pdb.set_trace()
         for row in c_results.bindings:
             c_row = {}
             for key, val in sorted(row.items()):

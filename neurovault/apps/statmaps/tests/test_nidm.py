@@ -12,6 +12,7 @@ from neurovault.apps.statmaps.models import Collection, User
 from neurovault.apps.statmaps.nidm_results import NIDMUpload
 from neurovault.apps.statmaps.views import download_collection
 from neurovault.apps.statmaps.tests.utils import clearDB, save_statmap_form
+from neurovault.api.tests.utils import _setup_test_cognitive_atlas
 
 TEST_PATH = os.path.abspath(os.path.dirname(__file__))
 NIDM_TEST_FILES = OrderedDict({
@@ -105,6 +106,8 @@ class NIDMResultsTest(TestCase):
                                private_token="XBOLFOFU")
         self.coll.save()
 
+        _setup_test_cognitive_atlas()
+
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
         clearDB()
@@ -133,12 +136,10 @@ class NIDMResultsTest(TestCase):
         assert output matches expected output
         """
         for name, info in list(self.files.items()):
-            first_map = sorted(statmaps[name])[0]
-            print(first_map)
             print(info)
             print(name)
             for field in 'name', 'type':
-                self.assertEqual(first_map[field], info['output_row'][field])
+                self.assertTrue(info['output_row'][field] in [a[field] for a in statmaps[name]])
             self.assertEqual(len(statmaps[name]), info['num_statmaps'])
 
     def testUploadNIDMZip(self):
@@ -164,10 +165,10 @@ class NIDMResultsTest(TestCase):
                               info['num_statmaps'])
 
             map_type = info['output_row']['type'][0]
-            map_img = nidm.nidmresultstatisticmap_set.filter(
-                map_type=map_type).first()
+            map_imgs = nidm.nidmresultstatisticmap_set.filter(
+                map_type=map_type).all()
 
-            self.assertEqual(map_img.name, info['output_row']['name'])
+            self.assertTrue(info['output_row']['name'] in [m.name for m in map_imgs])
 
 
     def testDownloadCollection_NIDM_results(self):
@@ -199,11 +200,10 @@ class NIDMResultsTest(TestCase):
         request.user = self.user
         response = download_collection(request, str(collection.pk))
 
-        self.assertTrue(response.streaming_content)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get('Content-Disposition'), "attachment; filename=" + collection.name + ".zip")
 
-        zf = zipfile.ZipFile(io.BytesIO(''.join(response.streaming_content)))
+        zf = zipfile.ZipFile(io.BytesIO(b''.join(response.streaming_content)))
 
         self.assertEqual(len(zf.filelist),2)  # 1 NIDMResult, 1 Statmap
         self.assertIsNone(zf.testzip())
