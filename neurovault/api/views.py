@@ -6,11 +6,13 @@ from django.http import HttpResponse
 
 from guardian.shortcuts import get_objects_for_user
 
+from oauth2_provider.contrib.rest_framework import IsAuthenticatedOrTokenHasScope
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.generics import GenericAPIView
 from taggit.models import Tag
 
 from neurovault.apps.statmaps.models import (Atlas, Collection, Image,
@@ -71,9 +73,10 @@ class APIHelper:
         )
 
 
-class AuthUserView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-
+class AuthUserView(GenericAPIView):
+    permission_classes = (IsAuthenticatedOrTokenHasScope,)
+    serializer_class = UserSerializer
+    required_scopes = ['read write']
     def get(self, request):
         serializer = UserSerializer(request.user, context={'request': request})
         return Response(serializer.data)
@@ -351,8 +354,8 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
 
 class MyCollectionsViewSet(CollectionViewSet):
-    permission_classes = (permissions.IsAuthenticated,)
-
+    permission_classes = (IsAuthenticatedOrTokenHasScope,)
+    required_scopes = ['read write']
     def get_queryset(self):
         return get_objects_for_user(self.request.user,
                                     'statmaps.change_collection')
