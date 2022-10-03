@@ -95,7 +95,7 @@ def set_object_attribute(obj, key, value):
     field_type = None
 
     try:
-        field_type, _, _, _ = obj._meta.get_field(key)
+        field_type = obj._meta.get_field(key)
     except FieldDoesNotExist:
         raise FieldDoesNotExist("Error in fixed field name in "
                                 "get_fixed_fields. Field %s "
@@ -106,7 +106,7 @@ def set_object_attribute(obj, key, value):
         value = None
 
     if isinstance(field_type, ForeignKey) and value:
-        model = field_type.related_field.model
+        model = field_type.related_model
         try:
             value = model.objects.get(name=value)
         except model.DoesNotExist:

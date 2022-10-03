@@ -52,7 +52,7 @@ lxml==4.9.1
 matplotlib==3.4.3
 mpmath==1.2.1
 networkx==2.8.4
-nibabel==4.0.1
+nibabel==3.2.2
 nidmfsl==2.2.0
 nidmresults==2.1.0
 nilearn==0.9.1
@@ -103,3 +103,4 @@ wcwidth==0.2.5
 webencodings==0.5.1
 wget==3.2
 wrapt==1.14.1
+zipstream==1.1.4

@@ -24,5 +24,5 @@ for image in Image.objects.all():
     if len(nii.shape) > 3:
         print(image.file.path, nii.shape)
         data = np.squeeze(nii.get_data())
-        new_nii = nb.Nifti1Image(data, nii.get_affine())
+        new_nii = nb.Nifti1Image(data, nii.affine)
         nb.save(new_nii, image.file.path)

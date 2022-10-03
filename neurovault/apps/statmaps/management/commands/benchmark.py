@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand, CommandError
 from neurovault.apps.statmaps.tests.utils import clearDB, save_statmap_form
 from neurovault.apps.statmaps.models import User, Collection
 from neurovault.apps.statmaps.utils import get_similar_images
+from neurovault.api.tests.utils import _setup_test_cognitive_atlas
 
 import os
 import gc
@@ -58,6 +59,8 @@ class Command(BaseCommand):
         num_files = len(os.listdir(os.path.join(app_path, 'images/')))
         index_table = np.zeros(num_files)
         query_table = np.zeros(num_files)
+
+        _setup_test_cognitive_atlas()     
 
         for i, file in enumerate(os.listdir(os.path.join(app_path, 'images/'))):
             #print 'Adding subject ' + file

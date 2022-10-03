@@ -4,12 +4,10 @@ import nilearn
 from django.core.files.base import ContentFile
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-'''
 from pybraincompare.compare.maths import calculate_correlation, calculate_pairwise_correlation
 from pybraincompare.compare.mrutils import resample_images_ref, make_binary_deletion_mask, make_binary_deletion_vector
 from pybraincompare.mr.datasets import get_data_directory
 from pybraincompare.mr.transformation import make_resampled_transformation_vector
-'''
 
 nilearn.EXPAND_PATH_WILDCARDS = False
 from nilearn.plotting import plot_glass_brain
@@ -245,7 +243,6 @@ def generate_surface_image(image_pk):
 # Save 4mm, brain masked image vector in pkl file in image folder
 @shared_task
 def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
-    ''' Disabled for upgrade - pybraincompare dependency
     from neurovault.apps.statmaps.models import Image
     from six import BytesIO
     import numpy as np
@@ -261,8 +258,6 @@ def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
     img.reduced_representation.save("transform_%smm_%s.npy" %(resample_dim[0],img.pk), content_file)
 
     return img
-    '''
-    return
 
 
 # SIMILARITY CALCULATION ##############################################################################
@@ -295,7 +290,6 @@ def save_voxelwise_pearson_similarity(pk1,pk2,resample_dim=[4,4,4],reduced_repre
 def save_voxelwise_pearson_similarity_reduced_representation(pk1, pk2):
     from neurovault.apps.statmaps.models import Similarity, Comparison
     import numpy as np
-    ''' Disable for upgrade
     # We will always calculate Comparison 1 vs 2, never 2 vs 1
     if pk1 != pk2:
         try:
@@ -337,12 +331,10 @@ def save_voxelwise_pearson_similarity_reduced_representation(pk1, pk2):
             print("Comparison returned NaN.")
     else:
         raise Exception("You are trying to compare an image with itself!")
-    '''
 
 
 def save_voxelwise_pearson_similarity_resample(pk1, pk2,resample_dim=[4,4,4]):
     from neurovault.apps.statmaps.models import Similarity, Comparison
-    ''' disable for upgrade
     # We will always calculate Comparison 1 vs 2, never 2 vs 1
     if pk1 != pk2:
         try:
@@ -375,7 +367,7 @@ def save_voxelwise_pearson_similarity_resample(pk1, pk2,resample_dim=[4,4,4]):
         image1_res = images_resamp[0]
         image2_res = images_resamp[1]
         binary_mask = make_binary_deletion_mask(images_resamp)
-        binary_mask = nib.Nifti1Image(binary_mask,header=image1_res.get_header(),affine=image1_res.get_affine())
+        binary_mask = nib.Nifti1Image(binary_mask,header=image1_res.header,affine=image1_res.affine)
 
         # Will return nan if comparison is not possible
         pearson_score = calculate_correlation([image1_res,image2_res],mask=binary_mask,corr_type="pearson")
@@ -389,7 +381,6 @@ def save_voxelwise_pearson_similarity_resample(pk1, pk2,resample_dim=[4,4,4]):
             return image1.pk,image2.pk,pearson_score
         else:
             raise Exception("You are trying to compare an image with itself!")
-    '''
 
 
 # COGNITIVE ATLAS

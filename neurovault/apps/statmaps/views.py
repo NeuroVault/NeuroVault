@@ -1,6 +1,7 @@
 import csv
 import functools
 import gzip
+import io
 import json
 import nibabel as nib
 import shutil
@@ -12,6 +13,7 @@ import tarfile
 import tempfile
 import traceback
 import urllib.request, urllib.parse, urllib.error
+import zipstream
 import zipfile
 from collections import OrderedDict
 from django.contrib import messages
@@ -20,7 +22,7 @@ from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Q
 from django.db.models.aggregates import Count
-from django.http import Http404, HttpResponse, StreamingHttpResponse
+from django.http import Http404, HttpResponse, StreamingHttpResponse, FileResponse
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.encoding import filepath_to_uri
@@ -30,7 +32,7 @@ from django.urls import reverse
 from fnmatch import fnmatch
 from guardian.shortcuts import get_objects_for_user
 # from nidmviewer.viewer import generate
-# from pybraincompare.compare.scatterplot import scatterplot_compare_vector
+from pybraincompare.compare.scatterplot import scatterplot_compare_vector
 from nidmresults.graph import Graph
 from rest_framework.renderers import JSONRenderer
 from sendfile import sendfile
@@ -46,7 +48,6 @@ from neurovault.apps.statmaps.models import get_possible_templates, DEFAULT_TEMP
 
 import neurovault
 from neurovault import settings
-from neurovault.apps.statmaps.ahba import calculate_gene_expression_similarity
 from neurovault.apps.statmaps.forms import CollectionForm, UploadFileForm, SimplifiedStatisticMapForm,NeuropowerStatisticMapForm,\
     StatisticMapForm, EditStatisticMapForm, OwnerCollectionForm, EditAtlasForm, AtlasForm, \
     EditNIDMResultStatisticMapForm, NIDMResultsForm, NIDMViewForm, AddStatisticMapForm, MetaanalysisForm
@@ -228,19 +229,19 @@ def finalize_metaanalysis(request, metaanalysis_id):
         z_path = os.path.join(tmp_dir, 'z_fwe_corr.nii.gz')
         result.images['z'].to_filename(z_path)
         z_map.file = SimpleUploadedFile('z_fwe_corr.nii.gz',
-                                        open(z_path).read())
+                                        open(z_path, 'rb').read())
         z_map.save()
 
         p_path = os.path.join(tmp_dir, 'p_fwe_corr.nii.gz')
         result.images['p'].to_filename(p_path)
         p_map.file = SimpleUploadedFile('p_fwe_corr.nii.gz',
-                                        open(p_path).read())
+                                        open(p_path, 'rb').read())
         p_map.save()
         if do_weighted:
             ffx_path = os.path.join(tmp_dir, 'ffx_stat.nii.gz')
             result.images['ffx_stat'].to_filename(ffx_path)
             ffx_map.file = SimpleUploadedFile('ffx_stat.nii.gz',
-                                            open(ffx_path).read())
+                                            open(ffx_path, 'rb').read())
             ffx_map.save()
     finally:
         shutil.rmtree(tmp_dir)
@@ -785,7 +786,6 @@ def upload_folder(request, collection_cid):
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             tmp_directory = tempfile.mkdtemp()
-            print(tmp_directory)
             try:
                 # Save archive (.zip or .tar.gz) to disk
                 if "file" in request.FILES:
@@ -861,10 +861,10 @@ def upload_folder(request, collection_cid):
                 for label,fpath in niftiFiles:
                     # Read nifti file information
                     nii = nib.load(fpath)
-                    if len(nii.get_shape()) > 3 and nii.get_shape()[3] > 1:
+                    if len(nii.shape) > 3 and nii.shape[3] > 1:
                         messages.warning(request, "Skipping %s - not a 3D file."%label)
                         continue
-                    hdr = nii.get_header()
+                    hdr = nii.header
                     raw_hdr = hdr.structarr
 
                     # SPM only !!!
@@ -891,17 +891,17 @@ def upload_folder(request, collection_cid):
 
                         if squeezable_dimensions < len(nii.shape):
                             new_data = np.squeeze(nii.get_data())
-                            nii = nib.Nifti1Image(new_data, nii.get_affine(),
-                                                  nii.get_header())
+                            nii = nib.Nifti1Image(new_data, nii.affine,
+                                                  nii.header)
 
                         new_file_tmp_dir = tempfile.mkdtemp()
                         new_file_tmp = os.path.join(new_file_tmp_dir, name) + '.nii.gz'
                         nib.save(nii, new_file_tmp)
-                        f = ContentFile(open(new_file_tmp).read(), name=dname)
+                        f = ContentFile(open(new_file_tmp, 'rb').read(), name=dname)
                         shutil.rmtree(new_file_tmp_dir)
                         label += " (old ext: %s)" % ext
                     else:
-                        f = ContentFile(open(fpath).read(), name=dname)
+                        f = ContentFile(open(fpath, 'rb').read(), name=dname)
 
                     collection = get_collection(collection_cid,request)
 
@@ -911,7 +911,7 @@ def upload_folder(request, collection_cid):
                                           description=raw_hdr['descrip'], collection=collection)
 
                         new_image.label_description_file = ContentFile(
-                                    open(atlases[os.path.join(path,name)]).read(),
+                                    open(atlases[os.path.join(path,name)], 'rb').read(),
                                                                     name=name + ".xml")
                     else:
                         new_image = StatisticMap(name=spaced_name, is_valid=False,
@@ -1151,7 +1151,6 @@ def atlas_query_voxel(request):
 
 # Compare Two Images
 def compare_images(request,pk1,pk2):
-    ''' disable calls to brain compare functions for upgrade
     import numpy as np
     image1 = get_image(pk1,None,request)
     image2 = get_image(pk2,None,request)
@@ -1219,8 +1218,6 @@ def compare_images(request,pk1,pk2):
         context["warnings"] = warnings
 
     return render(request, 'statmaps/compare_images.html', context)
-    '''
-    raise Http404('disabled for upgrade')
 
 
 # Return search interface for one image vs rest
@@ -1267,41 +1264,6 @@ def find_similar_json(request, pk, collection_cid=None):
         similar_images = get_similar_images(pk, max_results)
 
     dict = similar_images.to_dict("split")
-    del dict["index"]
-    return JSONResponse(dict)
-
-def gene_expression(request, pk, collection_cid=None):
-    '''view_image returns main view to see an image and associated meta data. If the image is in a collection with a DOI and has a generated thumbnail, it is a contender for image comparison, and a find similar button is exposed.
-    :param pk: statmaps.models.Image.pk the primary key of the image
-    :param collection_cid: statmaps.models.Collection.pk the primary key of the collection. Default None
-    '''
-    image = get_image(pk, collection_cid, request)
-    if image.is_thresholded:
-        raise Http404
-    api_cid = pk
-    if image.collection.private:
-        api_cid = '%s-%s' % (image.collection.private_token,pk)
-    context = {
-        'image': image,
-        'api_cid': api_cid,
-        'mask': request.GET.get('mask', 'full')
-    }
-    template = 'statmaps/gene_expression.html'
-    return render(request, template, context)
-
-def gene_expression_json(request, pk, collection_cid=None):
-    image = get_image(pk, collection_cid, request)
-    if image.is_thresholded:
-        raise Http404
-
-    if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
-        image = save_resampled_transformation_single(image.id)
-
-    map_data = np.load(image.reduced_representation.file)
-
-    mask = request.GET.get('mask', None)
-    expression_results = calculate_gene_expression_similarity(map_data, mask)
-    dict = expression_results.to_dict("split")
     del dict["index"]
     return JSONResponse(dict)
 
@@ -1568,7 +1530,6 @@ def download_collection(request, cid):
     zip_filename = '%s.zip' % collection.name
 
     zf = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
-
     for fpath in filenames:
         # Calculate path for file in zip
         fdir, fname = os.path.split(fpath)
@@ -1579,6 +1540,7 @@ def download_collection(request, cid):
 
     response = StreamingHttpResponse(zf, content_type='application/zip')
     response['Content-Disposition'] = 'attachment; filename=%s' % urllib.parse.quote_plus(zip_filename.encode('utf-8'))
+
     return response
 
 def serve_surface_archive(request, pk, collection_cid=None):
