@@ -32,7 +32,7 @@ django-polymorphic==3.1.0
 django-sendfile==0.3.11
 django-taggit==3.0.0
 djangorestframework==3.13.1
-drf-spectacular==0.24.2
+drf-spectacular==0.24.2  # for generating openapi schema
 duecredit==0.9.1
 fonttools==4.34.4
 frozendict==2.3.2
