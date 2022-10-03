@@ -176,6 +176,7 @@ INSTALLED_APPS = [
     # 'fixture_media',
     # 'raven.contrib.django.raven_compat',
     'django_celery_results',
+    'drf_spectacular',
 ]
 
 # A sample logging configuration. The only tangible logging
@@ -258,7 +259,7 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'UNICODE_JSON': True,
-    'DEFAULT_SCHEMA_CLASS': 'neurovault.api.schemas.OpenAPISchema',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 OAUTH2_PROVIDER = {
@@ -380,3 +381,13 @@ GUARDIAN_GET_CONTENT_TYPE = 'polymorphic.contrib.guardian.get_polymorphic_base_c
 FIXTURE_DIRS = (
     'apps/statmaps/fixtures/',
 )
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Neurovault API',
+    'DESCRIPTION': 'All ur images r belong to us',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'CAMELIZE_NAMES': True,
+    'SERVERS': [{'url': 'https://neurovault.org/api/', 'description': 'Production'}],
+    # OTHER SETTINGS
+}
