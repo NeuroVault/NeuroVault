@@ -88,10 +88,10 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
 class ImageSerializer(serializers.HyperlinkedModelSerializer,
                       ImageValidationMixin):
 
-    id = serializers.ReadOnlyField()
+    id = serializers.IntegerField(read_only=True)
     file = HyperlinkedFileField()
     collection = HyperlinkedRelatedURL(read_only=True)
-    collection_id = serializers.ReadOnlyField()
+    collection_id = serializers.IntegerField(read_only=True)
     url = HyperlinkedImageURL(source='get_absolute_url',
                               read_only=True)
     file_size = serializers.SerializerMethodField()
@@ -108,7 +108,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer,
                 self.initial_data, self._writable_fields
             )
 
-    def get_file_size(self, obj):
+    def get_file_size(self, obj) -> int:
         try:
             return obj.file.size
         except OSError as e:
@@ -196,10 +196,10 @@ class StatisticMapSerializer(ImageSerializer):
     map_type = serializers.SerializerMethodField()
     analysis_level = serializers.SerializerMethodField()
 
-    def get_map_type(self, obj):
+    def get_map_type(self, obj) -> str:
         return obj.get_map_type_display()
 
-    def get_analysis_level(self, obj):
+    def get_analysis_level(self, obj) -> str:
         return obj.get_analysis_level_display()
 
     class Meta:
@@ -234,13 +234,13 @@ class NIDMResultStatisticMapSerializer(ImageSerializer):
     map_type = serializers.SerializerMethodField()
     analysis_level = serializers.SerializerMethodField()
 
-    def get_map_type(self, obj):
+    def get_map_type(self, obj) -> str:
         return obj.get_map_type_display()
 
-    def get_analysis_level(self, obj):
+    def get_analysis_level(self, obj) -> str:
         return obj.get_analysis_level_display()
 
-    def get_nidm_results_ttl(self, obj):
+    def get_nidm_results_ttl(self, obj) -> str:
         return self.context['request'].build_absolute_uri(
             obj.nidm_results.ttl_file.url
         )
@@ -279,6 +279,7 @@ class NIDMResultsSerializer(serializers.ModelSerializer,
     ttl_file = HyperlinkedFileField(required=False)
     statmaps = ImageSerializer(many=True, required=False, source='nidmresultstatisticmap_set')
     url = HyperlinkedImageURL(source='get_absolute_url', read_only=True)
+    collection = serializers.PrimaryKeyRelatedField(read_only=True, pk_field=serializers.IntegerField())
 
     def validate(self, data):
         data['collection'] = self.instance.collection
@@ -297,8 +298,8 @@ class NIDMResultsSerializer(serializers.ModelSerializer,
 
     class Meta:
         model = NIDMResults
-        exclude = ['is_valid']
-        read_only_fields = ('collection',)
+        exclude = ['is_valid', 'polymorphic_ctype']
+        # read_only_fields = ('collection',)
 
 
 class EditableNIDMResultsSerializer(serializers.ModelSerializer,
@@ -326,16 +327,16 @@ class EditableNIDMResultsSerializer(serializers.ModelSerializer,
 class CollectionSerializer(serializers.ModelSerializer):
     url = HyperlinkedImageURL(source='get_absolute_url', read_only=True)
     download_url = HyperlinkedDownloadURL(source='get_absolute_url', read_only=True)
-    owner = serializers.ReadOnlyField(source='owner.id')
+    owner = serializers.IntegerField(source='owner.id', read_only=True)
     # images = ImageSerializer(many=True, source='basecollectionitem_set')
     contributors = SerializedContributors(required=False)
     owner_name = serializers.SerializerMethodField()
     number_of_images = serializers.SerializerMethodField('num_im')
 
-    def num_im(self, obj):
+    def num_im(self, obj) -> int:
         return obj.basecollectionitem_set.count()
 
-    def get_owner_name(self, obj):
+    def get_owner_name(self, obj) -> str:
         return obj.owner.username
 
     def validate(self, data):
@@ -364,4 +365,7 @@ class CollectionSerializer(serializers.ModelSerializer):
         model = Collection
         exclude = ['private_token']
         # Override `required` to allow name fetching by DOI
-        extra_kwargs = {'name': {'required': False}}
+        extra_kwargs = {
+            'name': {'required': False},
+            'doi_add_date': {'allow_null': True},
+        }
