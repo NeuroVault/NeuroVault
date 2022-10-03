@@ -1,174 +1,12 @@
-openapi: 3.0.2
+openapi: 3.0.3
 info:
-  title: NeuroVault
-  version: ''
-  description: All ur images R belong to us
+  title: Neurovault API
+  version: 1.0.0
+  description: All ur images r belong to us
 paths:
-  /api/images/:
-    get:
-      operationId: retrieveListImage
-      description: ''
-      parameters:
-      - name: limit
-        required: false
-        in: query
-        description: Number of results to return per page.
-        schema:
-          type: integer
-      - name: offset
-        required: false
-        in: query
-        description: The initial index from which to return the results.
-        schema:
-          type: integer
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  count:
-                    type: integer
-                    example: 123
-                  next:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?offset=400&limit=100
-                  previous:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?offset=200&limit=100
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Image'
-          description: ''
-      tags:
-      - neurovault
-  /api/images/{id}/:
-    get:
-      operationId: retrieveImage
-      description: ''
-      parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this image.
-        schema:
-          type: integer
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Image'
-          description: ''
-      tags:
-      - neurovault
-    put:
-      operationId: updateImage
-      description: ''
-      parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this image.
-        schema:
-          type: integer
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Image'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Image'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Image'
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Image'
-          description: ''
-      tags:
-      - neurovault
-    patch:
-      operationId: partialUpdateImage
-      description: ''
-      parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this image.
-        schema:
-          type: integer
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Image'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Image'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Image'
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Image'
-          description: ''
-      tags:
-      - neurovault
-    delete:
-      operationId: destroyImage
-      description: ''
-      parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this image.
-        schema:
-          type: integer
-      responses:
-        '204':
-          description: ''
-      tags:
-      - neurovault
-  /api/images/{id}/datatable/:
-    get:
-      operationId: retrieveDatatableImage
-      description: 'A wrapper around standard retrieve() request that formats the
-
-        object for the Datatables plugin.'
-      parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this image.
-        schema:
-          type: integer
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Image'
-          description: ''
-      tags:
-      - neurovault
   /api/atlases/:
     get:
-      operationId: retrieveListAtlas
-      description: ''
+      operationId: atlasesList
       parameters:
       - name: limit
         required: false
@@ -182,76 +20,27 @@ paths:
         description: The initial index from which to return the results.
         schema:
           type: integer
+      tags:
+      - atlases
       responses:
         '200':
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  count:
-                    type: integer
-                    example: 123
-                  next:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?offset=400&limit=100
-                  previous:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?offset=200&limit=100
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Atlas'
+                $ref: '#/components/schemas/PaginatedAtlasList'
           description: ''
-      tags:
-      - neurovault
-  /api/atlases/atlas_query_region/:
-    get:
-      operationId: retrieveAtlasQueryRegionAtlas
-      description: 'Returns a dictionary containing a list of voxels that match
-
-        the searched term (or related searches) in the specified atlas.'
-      parameters: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Atlas'
-          description: ''
-      tags:
-      - neurovault
-  /api/atlases/atlas_query_voxel/:
-    get:
-      operationId: retrieveAtlasQueryVoxelAtlas
-      description: 'Returns the region name that matches specified coordinates
-
-        in the specified atlas.'
-      parameters: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Atlas'
-          description: ''
-      tags:
-      - neurovault
   /api/atlases/{id}/:
     get:
-      operationId: retrieveAtlas
-      description: ''
+      operationId: atlasesRetrieve
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this atlas.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this atlas.
+        required: true
+      tags:
+      - atlases
       responses:
         '200':
           content:
@@ -259,18 +48,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/Atlas'
           description: ''
-      tags:
-      - neurovault
     put:
-      operationId: updateAtlas
-      description: ''
+      operationId: atlasesUpdate
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this atlas.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this atlas.
+        required: true
+      tags:
+      - atlases
       requestBody:
         content:
           application/json:
@@ -282,6 +70,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/Atlas'
+        required: true
+      security:
+      - bearerAuth: []
       responses:
         '200':
           content:
@@ -289,29 +80,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/Atlas'
           description: ''
-      tags:
-      - neurovault
     patch:
-      operationId: partialUpdateAtlas
-      description: ''
+      operationId: atlasesPartialUpdate
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this atlas.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this atlas.
+        required: true
+      tags:
+      - atlases
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Atlas'
+              $ref: '#/components/schemas/PatchedAtlas'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Atlas'
+              $ref: '#/components/schemas/PatchedAtlas'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Atlas'
+              $ref: '#/components/schemas/PatchedAtlas'
+      security:
+      - bearerAuth: []
       responses:
         '200':
           content:
@@ -319,36 +111,37 @@ paths:
               schema:
                 $ref: '#/components/schemas/Atlas'
           description: ''
-      tags:
-      - neurovault
     delete:
-      operationId: destroyAtlas
-      description: ''
+      operationId: atlasesDestroy
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this atlas.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this atlas.
+        required: true
+      tags:
+      - atlases
+      security:
+      - bearerAuth: []
       responses:
         '204':
-          description: ''
-      tags:
-      - neurovault
+          description: No response body
   /api/atlases/{id}/datatable/:
     get:
-      operationId: retrieveDatatableAtlas
-      description: 'A wrapper around standard retrieve() request that formats
-
-        the object for the Datatables plugin.'
+      operationId: atlasesDatatableRetrieve
+      description: |-
+        A wrapper around standard retrieve() request that formats
+        the object for the Datatables plugin.
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this atlas.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this atlas.
+        required: true
+      tags:
+      - atlases
       responses:
         '200':
           content:
@@ -356,21 +149,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/Atlas'
           description: ''
-      tags:
-      - neurovault
   /api/atlases/{id}/regions_table/:
     get:
-      operationId: retrieveRegionsTableAtlas
-      description: 'A wrapper around standard retrieve() request that formats
-
-        the object for the regions_table plugin.'
+      operationId: atlasesRegionsTableRetrieve
+      description: |-
+        A wrapper around standard retrieve() request that formats
+        the object for the regions_table plugin.
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this atlas.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this atlas.
+        required: true
+      tags:
+      - atlases
       responses:
         '200':
           content:
@@ -378,12 +171,47 @@ paths:
               schema:
                 $ref: '#/components/schemas/Atlas'
           description: ''
+  /api/atlases/atlas_query_region/:
+    get:
+      operationId: atlasesAtlasQueryRegionRetrieve
+      description: |-
+        Returns a dictionary containing a list of voxels that match
+        the searched term (or related searches) in the specified atlas.
+
+        Parameters: region, collection, atlas
+
+        Example: '/api/atlases/atlas_query_region/?region=middle frontal gyrus&collection=Harvard-Oxford cortical and subcortical structural atlases&atlas=HarvardOxford cort maxprob thr25 1mm'
       tags:
-      - neurovault
+      - atlases
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Atlas'
+          description: ''
+  /api/atlases/atlas_query_voxel/:
+    get:
+      operationId: atlasesAtlasQueryVoxelRetrieve
+      description: |-
+        Returns the region name that matches specified coordinates
+        in the specified atlas.
+
+        Parameters: x, y, z, collection, atlas
+
+        Example: '/api/atlases/atlas_query_voxel/?x=30&y=30&z=30&collection=Harvard-Oxford cortical and subcortical structural atlases&atlas=HarvardOxford cort maxprob thr25 1mm'
+      tags:
+      - atlases
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Atlas'
+          description: ''
   /api/collections/:
     get:
-      operationId: retrieveListCollection
-      description: ''
+      operationId: collectionsList
       parameters:
       - name: limit
         required: false
@@ -397,37 +225,19 @@ paths:
         description: The initial index from which to return the results.
         schema:
           type: integer
+      tags:
+      - collections
       responses:
         '200':
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  count:
-                    type: integer
-                    example: 123
-                  next:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?offset=400&limit=100
-                  previous:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?offset=200&limit=100
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/PaginatedCollectionList'
           description: ''
-      tags:
-      - neurovault
     post:
-      operationId: createCollection
-      description: ''
-      parameters: []
+      operationId: collectionsCreate
+      tags:
+      - collections
       requestBody:
         content:
           application/json:
@@ -439,6 +249,8 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/Collection'
+      security:
+      - bearerAuth: []
       responses:
         '201':
           content:
@@ -446,19 +258,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: ''
-      tags:
-      - neurovault
   /api/collections/{id}/:
     get:
-      operationId: retrieveCollection
-      description: ''
+      operationId: collectionsRetrieve
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this collection.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - collections
       responses:
         '200':
           content:
@@ -466,18 +277,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: ''
-      tags:
-      - neurovault
     put:
-      operationId: updateCollection
-      description: ''
+      operationId: collectionsUpdate
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this collection.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - collections
       requestBody:
         content:
           application/json:
@@ -489,6 +299,8 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/Collection'
+      security:
+      - bearerAuth: []
       responses:
         '200':
           content:
@@ -496,29 +308,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: ''
-      tags:
-      - neurovault
     patch:
-      operationId: partialUpdateCollection
-      description: ''
+      operationId: collectionsPartialUpdate
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this collection.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - collections
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Collection'
+              $ref: '#/components/schemas/PatchedCollection'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Collection'
+              $ref: '#/components/schemas/PatchedCollection'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Collection'
+              $ref: '#/components/schemas/PatchedCollection'
+      security:
+      - bearerAuth: []
       responses:
         '200':
           content:
@@ -526,34 +339,34 @@ paths:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: ''
-      tags:
-      - neurovault
     delete:
-      operationId: destroyCollection
-      description: ''
+      operationId: collectionsDestroy
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this collection.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - collections
+      security:
+      - bearerAuth: []
       responses:
         '204':
-          description: ''
-      tags:
-      - neurovault
+          description: No response body
   /api/collections/{id}/atlases/:
     get:
-      operationId: retrieveAtlasesCollection
-      description: ''
+      operationId: collectionsAtlasesRetrieve
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this collection.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - collections
       responses:
         '200':
           content:
@@ -561,18 +374,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: ''
-      tags:
-      - neurovault
     post:
-      operationId: createAtlasesCollection
-      description: ''
+      operationId: collectionsAtlasesCreate
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this collection.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - collections
       requestBody:
         content:
           application/json:
@@ -584,26 +396,27 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/Collection'
+      security:
+      - bearerAuth: []
       responses:
-        '201':
+        '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: ''
-      tags:
-      - neurovault
   /api/collections/{id}/datatable/:
     get:
-      operationId: retrieveDatatableCollection
-      description: ''
+      operationId: collectionsDatatableRetrieve
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this collection.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - collections
       responses:
         '200':
           content:
@@ -611,19 +424,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: ''
-      tags:
-      - neurovault
   /api/collections/{id}/images/:
     get:
-      operationId: retrieveImagesCollection
-      description: ''
+      operationId: collectionsImagesRetrieve
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this collection.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - collections
       responses:
         '200':
           content:
@@ -631,18 +443,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: ''
-      tags:
-      - neurovault
     post:
-      operationId: createImagesCollection
-      description: ''
+      operationId: collectionsImagesCreate
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this collection.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - collections
       requestBody:
         content:
           application/json:
@@ -654,26 +465,27 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/Collection'
+      security:
+      - bearerAuth: []
       responses:
-        '201':
+        '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: ''
-      tags:
-      - neurovault
   /api/collections/{id}/nidm_results/:
     get:
-      operationId: retrieveNidmResultsCollection
-      description: ''
+      operationId: collectionsNidmResultsRetrieve
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this collection.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - collections
       responses:
         '200':
           content:
@@ -681,18 +493,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: ''
-      tags:
-      - neurovault
     post:
-      operationId: createNidmResultsCollection
-      description: ''
+      operationId: collectionsNidmResultsCreate
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this collection.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - collections
       requestBody:
         content:
           application/json:
@@ -704,19 +515,163 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/Collection'
+      security:
+      - bearerAuth: []
       responses:
-        '201':
+        '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: ''
+  /api/images/:
+    get:
+      operationId: imagesList
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
       tags:
-      - neurovault
+      - images
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedImageList'
+          description: ''
+  /api/images/{id}/:
+    get:
+      operationId: imagesRetrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this image.
+        required: true
+      tags:
+      - images
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+          description: ''
+    put:
+      operationId: imagesUpdate
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this image.
+        required: true
+      tags:
+      - images
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Image'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Image'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Image'
+        required: true
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+          description: ''
+    patch:
+      operationId: imagesPartialUpdate
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this image.
+        required: true
+      tags:
+      - images
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedImage'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedImage'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedImage'
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+          description: ''
+    delete:
+      operationId: imagesDestroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this image.
+        required: true
+      tags:
+      - images
+      security:
+      - bearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/images/{id}/datatable/:
+    get:
+      operationId: imagesDatatableRetrieve
+      description: |-
+        A wrapper around standard retrieve() request that formats the
+        object for the Datatables plugin.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this image.
+        required: true
+      tags:
+      - images
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+          description: ''
   /api/my_collections/:
     get:
-      operationId: retrieveListMyCollection
-      description: ''
+      operationId: myCollectionsList
       parameters:
       - name: limit
         required: false
@@ -730,37 +685,21 @@ paths:
         description: The initial index from which to return the results.
         schema:
           type: integer
+      tags:
+      - my_collections
+      security:
+      - bearerAuth: []
       responses:
         '200':
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  count:
-                    type: integer
-                    example: 123
-                  next:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?offset=400&limit=100
-                  previous:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?offset=200&limit=100
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Collection'
+                $ref: '#/components/schemas/PaginatedCollectionList'
           description: ''
-      tags:
-      - neurovault
     post:
-      operationId: createMyCollection
-      description: ''
-      parameters: []
+      operationId: myCollectionsCreate
+      tags:
+      - my_collections
       requestBody:
         content:
           application/json:
@@ -772,6 +711,8 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/Collection'
+      security:
+      - bearerAuth: []
       responses:
         '201':
           content:
@@ -779,19 +720,20 @@ paths:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: ''
-      tags:
-      - neurovault
   /api/my_collections/{id}/:
     get:
-      operationId: retrieveMyCollection
-      description: ''
+      operationId: myCollectionsRetrieve
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this collection.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - my_collections
+      security:
+      - bearerAuth: []
       responses:
         '200':
           content:
@@ -799,18 +741,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: ''
-      tags:
-      - neurovault
     put:
-      operationId: updateMyCollection
-      description: ''
+      operationId: myCollectionsUpdate
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this collection.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - my_collections
       requestBody:
         content:
           application/json:
@@ -822,6 +763,8 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/Collection'
+      security:
+      - bearerAuth: []
       responses:
         '200':
           content:
@@ -829,29 +772,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: ''
-      tags:
-      - neurovault
     patch:
-      operationId: partialUpdateMyCollection
-      description: ''
+      operationId: myCollectionsPartialUpdate
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this collection.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - my_collections
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Collection'
+              $ref: '#/components/schemas/PatchedCollection'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Collection'
+              $ref: '#/components/schemas/PatchedCollection'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Collection'
+              $ref: '#/components/schemas/PatchedCollection'
+      security:
+      - bearerAuth: []
       responses:
         '200':
           content:
@@ -859,34 +803,36 @@ paths:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: ''
-      tags:
-      - neurovault
     delete:
-      operationId: destroyMyCollection
-      description: ''
+      operationId: myCollectionsDestroy
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this collection.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - my_collections
+      security:
+      - bearerAuth: []
       responses:
         '204':
-          description: ''
-      tags:
-      - neurovault
+          description: No response body
   /api/my_collections/{id}/atlases/:
     get:
-      operationId: retrieveAtlasesMyCollection
-      description: ''
+      operationId: myCollectionsAtlasesRetrieve
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this collection.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - my_collections
+      security:
+      - bearerAuth: []
       responses:
         '200':
           content:
@@ -894,18 +840,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: ''
-      tags:
-      - neurovault
     post:
-      operationId: createAtlasesMyCollection
-      description: ''
+      operationId: myCollectionsAtlasesCreate
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this collection.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - my_collections
       requestBody:
         content:
           application/json:
@@ -917,26 +862,29 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/Collection'
+      security:
+      - bearerAuth: []
       responses:
-        '201':
+        '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: ''
-      tags:
-      - neurovault
   /api/my_collections/{id}/datatable/:
     get:
-      operationId: retrieveDatatableMyCollection
-      description: ''
+      operationId: myCollectionsDatatableRetrieve
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this collection.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - my_collections
+      security:
+      - bearerAuth: []
       responses:
         '200':
           content:
@@ -944,19 +892,20 @@ paths:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: ''
-      tags:
-      - neurovault
   /api/my_collections/{id}/images/:
     get:
-      operationId: retrieveImagesMyCollection
-      description: ''
+      operationId: myCollectionsImagesRetrieve
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this collection.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - my_collections
+      security:
+      - bearerAuth: []
       responses:
         '200':
           content:
@@ -964,18 +913,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: ''
-      tags:
-      - neurovault
     post:
-      operationId: createImagesMyCollection
-      description: ''
+      operationId: myCollectionsImagesCreate
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this collection.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - my_collections
       requestBody:
         content:
           application/json:
@@ -987,26 +935,29 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/Collection'
+      security:
+      - bearerAuth: []
       responses:
-        '201':
+        '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: ''
-      tags:
-      - neurovault
   /api/my_collections/{id}/nidm_results/:
     get:
-      operationId: retrieveNidmResultsMyCollection
-      description: ''
+      operationId: myCollectionsNidmResultsRetrieve
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this collection.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - my_collections
+      security:
+      - bearerAuth: []
       responses:
         '200':
           content:
@@ -1014,18 +965,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: ''
-      tags:
-      - neurovault
     post:
-      operationId: createNidmResultsMyCollection
-      description: ''
+      operationId: myCollectionsNidmResultsCreate
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this collection.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this collection.
+        required: true
+      tags:
+      - my_collections
       requestBody:
         content:
           application/json:
@@ -1037,19 +987,18 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/Collection'
+      security:
+      - bearerAuth: []
       responses:
-        '201':
+        '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: ''
-      tags:
-      - neurovault
   /api/nidm_results/:
     get:
-      operationId: retrieveListNIDMResults
-      description: ''
+      operationId: nidmResultsList
       parameters:
       - name: limit
         required: false
@@ -1063,44 +1012,27 @@ paths:
         description: The initial index from which to return the results.
         schema:
           type: integer
+      tags:
+      - nidm_results
       responses:
         '200':
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  count:
-                    type: integer
-                    example: 123
-                  next:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?offset=400&limit=100
-                  previous:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?offset=200&limit=100
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/NIDMResults'
+                $ref: '#/components/schemas/PaginatedNIDMResultsList'
           description: ''
-      tags:
-      - neurovault
   /api/nidm_results/{id}/:
     get:
-      operationId: retrieveNIDMResults
-      description: ''
+      operationId: nidmResultsRetrieve
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this nidm results.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this nidm results.
+        required: true
+      tags:
+      - nidm_results
       responses:
         '200':
           content:
@@ -1108,18 +1040,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/NIDMResults'
           description: ''
-      tags:
-      - neurovault
     put:
-      operationId: updateNIDMResults
-      description: ''
+      operationId: nidmResultsUpdate
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this nidm results.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this nidm results.
+        required: true
+      tags:
+      - nidm_results
       requestBody:
         content:
           application/json:
@@ -1131,6 +1062,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/NIDMResults'
+        required: true
+      security:
+      - bearerAuth: []
       responses:
         '200':
           content:
@@ -1138,29 +1072,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/NIDMResults'
           description: ''
-      tags:
-      - neurovault
     patch:
-      operationId: partialUpdateNIDMResults
-      description: ''
+      operationId: nidmResultsPartialUpdate
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this nidm results.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this nidm results.
+        required: true
+      tags:
+      - nidm_results
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NIDMResults'
+              $ref: '#/components/schemas/PatchedNIDMResults'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/NIDMResults'
+              $ref: '#/components/schemas/PatchedNIDMResults'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/NIDMResults'
+              $ref: '#/components/schemas/PatchedNIDMResults'
+      security:
+      - bearerAuth: []
       responses:
         '200':
           content:
@@ -1168,79 +1103,38 @@ paths:
               schema:
                 $ref: '#/components/schemas/NIDMResults'
           description: ''
-      tags:
-      - neurovault
     delete:
-      operationId: destroyNIDMResults
-      description: ''
+      operationId: nidmResultsDestroy
       parameters:
-      - name: id
-        in: path
-        required: true
-        description: A unique integer value identifying this nidm results.
+      - in: path
+        name: id
         schema:
           type: integer
+        description: A unique integer value identifying this nidm results.
+        required: true
+      tags:
+      - nidm_results
+      security:
+      - bearerAuth: []
       responses:
         '204':
-          description: ''
-      tags:
-      - neurovault
+          description: No response body
   /api/user/:
     get:
-      operationId: retrieveListAuthUser
-      description: ''
-      parameters: []
+      operationId: userRetrieve
+      tags:
+      - user
+      security:
+      - bearerAuth: []
       responses:
         '200':
           content:
             application/json:
               schema:
-                type: array
-                items: {}
+                $ref: '#/components/schemas/User'
           description: ''
-      tags:
-      - neurovault
 components:
   schemas:
-    Image:
-      type: object
-      properties:
-        url:
-          type: string
-          readOnly: true
-        id:
-          type: integer
-          readOnly: true
-        file:
-          type: string
-          format: binary
-        collection:
-          type: string
-          readOnly: true
-        collection_id:
-          type: integer
-          readOnly: true
-        file_size:
-          type: integer
-          readOnly: true
-        name:
-          type: string
-          maxLength: 200
-        description:
-          type: string
-        add_date:
-          type: string
-          format: date-time
-          readOnly: true
-        modify_date:
-          type: string
-          format: date-time
-          readOnly: true
-        is_valid:
-          type: boolean
-      required:
-      - file
-      - name
     Atlas:
       type: object
       properties:
@@ -1252,7 +1146,7 @@ components:
           readOnly: true
         file:
           type: string
-          format: binary
+          format: uri
         collection:
           type: string
           readOnly: true
@@ -1264,7 +1158,7 @@ components:
           readOnly: true
         label_description_file:
           type: string
-          format: binary
+          format: uri
         name:
           type: string
           maxLength: 200
@@ -1274,34 +1168,36 @@ components:
           type: string
           format: date-time
           readOnly: true
+          title: Date published
         modify_date:
           type: string
           format: date-time
           readOnly: true
+          title: Date modified
         is_valid:
           type: boolean
         surface_left_file:
           type: string
-          format: binary
+          format: uri
           nullable: true
+          title: File with the unthresholded LEFT hemisphere fsaverage surface map
+            (.mgh, .curv, .gii)
         surface_right_file:
           type: string
-          format: binary
+          format: uri
           nullable: true
+          title: File with the unthresholded RIGHT hemisphere fsaverage surface map
+            (.mgh, .curv, .gii)
         data_origin:
-          enum:
-          - volume
-          - surface
-          type: string
           nullable: true
           description: Was this map originaly derived from volume or surface?
+          oneOf:
+          - $ref: '#/components/schemas/DataOriginEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         target_template_image:
-          enum:
-          - GenericMNI
-          - Dorr2008
-          - NMT
-          - MNI152NLin2009cAsym
-          type: string
+          allOf:
+          - $ref: '#/components/schemas/TargetTemplateImageEnum'
           description: Name of target template image
         subject_species:
           type: string
@@ -1310,94 +1206,128 @@ components:
         figure:
           type: string
           nullable: true
+          title: Corresponding figure
           description: Which figure in the corresponding paper was this map displayed
             in?
           maxLength: 200
         handedness:
-          enum:
-          - L
-          - R
-          type: string
           nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/AtlasHandednessEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         age:
           type: number
+          format: double
           nullable: true
+          title: Age (years)
         gender:
-          enum:
-          - M
-          - F
-          - O
-          type: string
           nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         race:
-          enum:
-          - W
-          - B
-          - I
-          - A
-          - H
-          type: string
           nullable: true
+          title: Race (US Census definition)
+          oneOf:
+          - $ref: '#/components/schemas/RaceEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         ethnicity:
-          enum:
-          - H
-          - NH
-          type: string
           nullable: true
+          title: Ethnicity (US Census definition)
+          oneOf:
+          - $ref: '#/components/schemas/EthnicityEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         BMI:
           type: number
+          format: double
           nullable: true
+          title: Body Mass Index (kg/m2)
         fat_percentage:
           type: number
+          format: double
           nullable: true
+          title: '% body fat'
         waist_hip_ratio:
           type: number
+          format: double
           nullable: true
         mean_PDS_score:
           type: number
+          format: double
           nullable: true
+          title: Mean Puberty Development Scale score
         tanner_stage:
-          enum:
-          - I
-          - II
-          - III
-          - IV
-          - V
-          type: string
           nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/TannerStageEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         days_since_menstruation:
           type: number
+          format: double
           nullable: true
+          title: Number of days since menstruation
         hours_since_last_meal:
           type: number
+          format: double
           nullable: true
+          title: Time since last meal (hours)
         bis_bas_score:
           type: number
+          format: double
           nullable: true
+          title: Behavioral inhibition, behavioral activation (BIS/BAS) score
         spsrq_score:
           type: number
+          format: double
           nullable: true
+          title: Sensitivity to Punishment and Sensitivity to Reward Questionnaire
+            (SPSRQ) score
         bis11_score:
           type: number
+          format: double
           nullable: true
+          title: Barratt Impulsiveness Scale (BIS-11) score
         thumbnail:
           type: string
-          format: binary
+          format: uri
           nullable: true
+          title: Image orthogonal view thumbnail 2D bitmap
           description: The orthogonal view thumbnail path of the nifti image
         reduced_representation:
           type: string
-          format: binary
+          format: uri
           nullable: true
+          title: Reduced representation of the image
           description: Binary file with the vector of in brain values resampled to
             lower resolution
         data:
           type: object
+          additionalProperties: {}
           nullable: true
       required:
+      - add_date
+      - collection
+      - collection_id
       - file
+      - file_size
+      - id
       - label_description_file
+      - modify_date
       - name
+      - url
+    AtlasHandednessEnum:
+      enum:
+      - L
+      - R
+      type: string
+    BlankEnum:
+      enum:
+      - ''
     Collection:
       type: object
       properties:
@@ -1423,10 +1353,12 @@ components:
           readOnly: true
         name:
           type: string
+          title: Name of collection
           maxLength: 200
         DOI:
           type: string
           nullable: true
+          title: DOI of the corresponding paper
           description: Required if you want your maps to be archived in Stanford Digital
             Repository
           maxLength: 200
@@ -1454,48 +1386,55 @@ components:
             or "http://dx.doi.org/10.15387/fcp_indi.corr.mpg1")'
           maxLength: 200
         private:
-          type: boolean
+          allOf:
+          - $ref: '#/components/schemas/PrivateEnum'
+          title: Accessibility
         add_date:
           type: string
           format: date-time
           readOnly: true
+          title: Date published
         modify_date:
           type: string
           format: date-time
           readOnly: true
+          title: Date modified
         doi_add_date:
           type: string
           format: date-time
           readOnly: true
           nullable: true
+          title: Date the DOI was added
         type_of_design:
-          enum:
-          - blocked
-          - eventrelated
-          - hybridblockevent
-          - other
-          type: string
           nullable: true
           description: Blocked, event-related, hybrid, or other
+          oneOf:
+          - $ref: '#/components/schemas/TypeOfDesignEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         number_of_imaging_runs:
           type: integer
           maximum: 2147483647
           minimum: -2147483648
           nullable: true
+          title: No. of imaging runs
           description: Number of imaging runs acquired
         number_of_experimental_units:
           type: integer
           maximum: 2147483647
           minimum: -2147483648
           nullable: true
+          title: No. of experimental units
           description: Number of blocks, trials or experimental units per imaging
             run
         length_of_runs:
           type: number
+          format: double
           nullable: true
           description: Length of each imaging run in seconds
         length_of_blocks:
           type: number
+          format: double
           nullable: true
           description: For blocked designs, length of blocks in seconds
         length_of_trials:
@@ -1507,6 +1446,7 @@ components:
         optimization:
           type: boolean
           nullable: true
+          title: Optimization?
           description: Was the design optimized for efficiency
         optimization_method:
           type: string
@@ -1515,33 +1455,38 @@ components:
           maxLength: 200
         subject_age_mean:
           type: number
+          format: double
           nullable: true
           description: Mean age of subjects
         subject_age_min:
           type: number
+          format: double
           nullable: true
           description: Minimum age of subjects
         subject_age_max:
           type: number
+          format: double
           nullable: true
           description: Maximum age of subjects
         handedness:
-          enum:
-          - right
-          - left
-          - both
-          type: string
           nullable: true
           description: Handedness of subjects
+          oneOf:
+          - $ref: '#/components/schemas/CollectionHandednessEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         proportion_male_subjects:
           type: number
+          format: double
           maximum: 1.0
-          nullable: true
-          description: The proportion (not percentage) of subjects who were male
           minimum: 0.0
+          nullable: true
+          title: Prop. male subjects
+          description: The proportion (not percentage) of subjects who were male
         inclusion_exclusion_criteria:
           type: string
           nullable: true
+          title: Inclusion / exclusion criteria
           description: Additional inclusion/exclusion criteria, if any (including
             specific sampling strategies that limit inclusion to a specific group,
             such as laboratory members)
@@ -1551,10 +1496,12 @@ components:
           maximum: 2147483647
           minimum: -2147483648
           nullable: true
+          title: No. of rejected subjects
           description: Number of subjects scanned but rejected from analysis
         group_comparison:
           type: boolean
           nullable: true
+          title: Group comparison?
           description: Was this study a comparison between subject groups?
         group_description:
           type: string
@@ -1573,6 +1520,7 @@ components:
           maxLength: 200
         field_strength:
           type: number
+          format: double
           nullable: true
           description: Field strength of MRI scanner (in Tesla)
         pulse_sequence:
@@ -1587,6 +1535,7 @@ components:
           maxLength: 200
         field_of_view:
           type: number
+          format: double
           nullable: true
           description: Imaging field of view in millimeters
         matrix_size:
@@ -1597,11 +1546,13 @@ components:
           description: Matrix size for MRI acquisition
         slice_thickness:
           type: number
+          format: double
           nullable: true
           description: Distance between slices (includes skip or distance factor)
             in millimeters
         skip_distance:
           type: number
+          format: double
           nullable: true
           description: The size of the skipped area between slices in millimeters
         acquisition_orientation:
@@ -1610,23 +1561,25 @@ components:
           description: The orientation of slices
           maxLength: 200
         order_of_acquisition:
-          enum:
-          - ascending
-          - descending
-          - interleaved
-          type: string
           nullable: true
           description: Order of acquisition of slices (ascending, descending, or interleaved)
+          oneOf:
+          - $ref: '#/components/schemas/OrderOfAcquisitionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         repetition_time:
           type: number
+          format: double
           nullable: true
           description: Repetition time (TR) in milliseconds
         echo_time:
           type: number
+          format: double
           nullable: true
           description: Echo time (TE) in milliseconds
         flip_angle:
           type: number
+          format: double
           nullable: true
           description: Flip angle in degrees
         software_package:
@@ -1643,6 +1596,7 @@ components:
         order_of_preprocessing_operations:
           type: string
           nullable: true
+          title: Order of preprocessing
           description: Specify order of preprocessing operations
           maxLength: 200
         quality_control:
@@ -1653,6 +1607,7 @@ components:
         used_b0_unwarping:
           type: boolean
           nullable: true
+          title: Used B0 unwarping?
           description: Was B0 distortion correction used?
         b0_unwarping_software:
           type: string
@@ -1663,6 +1618,7 @@ components:
         used_slice_timing_correction:
           type: boolean
           nullable: true
+          title: Slice timing correction?
           description: Was slice timing correction used?
         slice_timing_correction_software:
           type: string
@@ -1673,6 +1629,7 @@ components:
         used_motion_correction:
           type: boolean
           nullable: true
+          title: Motion correction?
           description: Was motion correction used?
         motion_correction_software:
           type: string
@@ -1698,24 +1655,27 @@ components:
         used_motion_susceptibiity_correction:
           type: boolean
           nullable: true
+          title: Motion susceptibility correction?
           description: Was motion-susceptibility correction used?
         used_intersubject_registration:
           type: boolean
           nullable: true
+          title: Intersubject registration?
           description: Were subjects registered to a common stereotactic space?
         intersubject_registration_software:
           type: string
           nullable: true
+          title: Registration software
           description: Specify software used for intersubject registration if different
             from main package
           maxLength: 200
         intersubject_transformation_type:
-          enum:
-          - linear
-          - nonlinear
-          type: string
           nullable: true
           description: Was linear or nonlinear registration used?
+          oneOf:
+          - $ref: '#/components/schemas/IntersubjectTransformationTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         nonlinear_transform_type:
           type: string
           nullable: true
@@ -1740,22 +1700,22 @@ components:
         functional_coregistered_to_structural:
           type: boolean
           nullable: true
+          title: Coregistered to structural?
           description: Were the functional images coregistered to the subject's structural
             image?
         functional_coregistration_method:
           type: string
           nullable: true
+          title: Coregistration method
           description: Method used to coregister functional to structural images
           maxLength: 200
         coordinate_space:
-          enum:
-          - mni
-          - talairach
-          - mni2tal
-          - other
-          type: string
           nullable: true
           description: Name of coordinate space for registration target
+          oneOf:
+          - $ref: '#/components/schemas/CoordinateSpaceEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         target_template_image:
           type: string
           nullable: true
@@ -1763,39 +1723,47 @@ components:
           maxLength: 200
         target_resolution:
           type: number
+          format: double
           nullable: true
           description: Voxel size of target template in millimeters
         used_smoothing:
           type: boolean
           nullable: true
+          title: Used smoothing?
           description: Was spatial smoothing applied?
         smoothing_type:
           type: string
           nullable: true
+          title: Type of smoothing
           description: Describe the type of smoothing applied
           maxLength: 200
         smoothing_fwhm:
           type: number
+          format: double
           nullable: true
           description: The full-width at half-maximum of the smoothing kernel in millimeters
         resampled_voxel_size:
           type: number
+          format: double
           nullable: true
           description: Voxel size in mm of the resampled, atlas-space images
         intrasubject_model_type:
           type: string
           nullable: true
+          title: Model type
           description: Type of model used (e.g., regression)
           maxLength: 200
         intrasubject_estimation_type:
           type: string
           nullable: true
+          title: Estimation type
           description: Estimation method used for model (e.g., OLS, generalized least
             squares)
           maxLength: 200
         intrasubject_modeling_software:
           type: string
           nullable: true
+          title: Modeling software
           description: Software used for intrasubject modeling if different from overall
             package
           maxLength: 200
@@ -1807,22 +1775,27 @@ components:
         used_temporal_derivatives:
           type: boolean
           nullable: true
+          title: Temporal derivatives?
           description: Were temporal derivatives included?
         used_dispersion_derivatives:
           type: boolean
           nullable: true
+          title: Dispersion derivatives?
           description: Were dispersion derivatives included?
         used_motion_regressors:
           type: boolean
           nullable: true
+          title: Motion regressors?
           description: Were motion regressors included?
         used_reaction_time_regressor:
           type: boolean
           nullable: true
+          title: Reaction time regressor?
           description: Was a reaction time regressor included?
         used_orthogonalization:
           type: boolean
           nullable: true
+          title: Orthogonalization?
           description: Were any regressors specifically orthogonalized with respect
             to others?
         orthogonalization_description:
@@ -1833,15 +1806,18 @@ components:
         used_high_pass_filter:
           type: boolean
           nullable: true
+          title: High-pass filter?
           description: Was high pass filtering applied?
         high_pass_filter_method:
           type: string
           nullable: true
+          title: High-pass filtering method
           description: Describe method used for high pass filtering
           maxLength: 200
         autocorrelation_model:
           type: string
           nullable: true
+          title: Autocorrelation method
           description: What autocorrelation model was used (or 'none' of none was
             used)
           maxLength: 200
@@ -1863,61 +1839,162 @@ components:
             package
           maxLength: 200
         group_inference_type:
-          enum:
-          - randommixedeffects
-          - fixedeffects
-          type: string
           nullable: true
           description: Type of inference for group model
+          oneOf:
+          - $ref: '#/components/schemas/GroupInferenceTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         group_model_multilevel:
           type: string
           nullable: true
+          title: Multilevel modeling
           description: If more than 2-levels, describe the levels and assumptions
             of the model (e.g. are variances assumed equal between groups)
           maxLength: 200
         group_repeated_measures:
           type: boolean
           nullable: true
+          title: Repeated measures
           description: Was this a repeated measures design at the group level?
         group_repeated_measures_method:
           type: string
           nullable: true
+          title: Repeated measures method
           description: If multiple measurements per subject, list method to account
             for within subject correlation, exact assumptions made about correlation/variance
           maxLength: 200
         nutbrain_hunger_state:
-          enum:
-          - I
-          - II
-          - III
-          - IV
-          - V
-          - VI
-          type: string
           nullable: true
+          title: Hunger state
+          oneOf:
+          - $ref: '#/components/schemas/NutbrainHungerStateEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         nutbrain_food_viewing_conditions:
           type: string
           nullable: true
+          title: Food viewing conditions
           description: Image categories
           maxLength: 200
         nutbrain_food_choice_type:
           type: string
           nullable: true
+          title: Food choice type
           description: Choice conditions/image types
           maxLength: 200
         nutbrain_taste_conditions:
           type: string
           nullable: true
+          title: Taste conditions
           maxLength: 200
         nutbrain_odor_conditions:
           type: string
           nullable: true
+          title: Odor conditions
           maxLength: 200
         communities:
           type: array
           items:
             type: integer
           description: Is this collection part of any special Community?
+      required:
+      - add_date
+      - doi_add_date
+      - download_url
+      - id
+      - modify_date
+      - number_of_images
+      - owner
+      - owner_name
+      - url
+    CollectionHandednessEnum:
+      enum:
+      - right
+      - left
+      - both
+      type: string
+    CoordinateSpaceEnum:
+      enum:
+      - mni
+      - talairach
+      - mni2tal
+      - other
+      type: string
+    DataOriginEnum:
+      enum:
+      - volume
+      - surface
+      type: string
+    EthnicityEnum:
+      enum:
+      - H
+      - NH
+      type: string
+    GenderEnum:
+      enum:
+      - M
+      - F
+      - O
+      type: string
+    GroupInferenceTypeEnum:
+      enum:
+      - randommixedeffects
+      - fixedeffects
+      type: string
+    Image:
+      type: object
+      properties:
+        url:
+          type: string
+          readOnly: true
+        id:
+          type: integer
+          readOnly: true
+        file:
+          type: string
+          format: uri
+        collection:
+          type: string
+          readOnly: true
+        collection_id:
+          type: integer
+          readOnly: true
+        file_size:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        add_date:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Date published
+        modify_date:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Date modified
+        is_valid:
+          type: boolean
+      required:
+      - add_date
+      - collection
+      - collection_id
+      - file
+      - file_size
+      - id
+      - modify_date
+      - name
+      - url
+    IntersubjectTransformationTypeEnum:
+      enum:
+      - linear
+      - nonlinear
+      type: string
     NIDMResults:
       type: object
       properties:
@@ -1926,51 +2003,14 @@ components:
           readOnly: true
         zip_file:
           type: string
-          format: binary
+          format: uri
         ttl_file:
           type: string
-          format: binary
+          format: uri
         statmaps:
           type: array
           items:
-            type: object
-            properties:
-              url:
-                type: string
-                readOnly: true
-              id:
-                type: integer
-                readOnly: true
-              file:
-                type: string
-                format: binary
-              collection:
-                type: string
-                readOnly: true
-              collection_id:
-                type: integer
-                readOnly: true
-              file_size:
-                type: integer
-                readOnly: true
-              name:
-                type: string
-                maxLength: 200
-              description:
-                type: string
-              add_date:
-                type: string
-                format: date-time
-                readOnly: true
-              modify_date:
-                type: string
-                format: date-time
-                readOnly: true
-              is_valid:
-                type: boolean
-            required:
-            - file
-            - name
+            $ref: '#/components/schemas/Image'
         url:
           type: string
           readOnly: true
@@ -1986,11 +2026,1003 @@ components:
           type: string
           format: date-time
           readOnly: true
+          title: Date published
         modify_date:
           type: string
           format: date-time
           readOnly: true
+          title: Date modified
       required:
-      - zip_file
-      - statmaps
+      - add_date
+      - collection
+      - id
+      - modify_date
       - name
+      - statmaps
+      - url
+      - zip_file
+    NullEnum:
+      enum:
+      - null
+    NutbrainHungerStateEnum:
+      enum:
+      - I
+      - II
+      - III
+      - IV
+      - V
+      - VI
+      type: string
+    OrderOfAcquisitionEnum:
+      enum:
+      - ascending
+      - descending
+      - interleaved
+      type: string
+    PaginatedAtlasList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Atlas'
+    PaginatedCollectionList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Collection'
+    PaginatedImageList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
+    PaginatedNIDMResultsList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/NIDMResults'
+    PatchedAtlas:
+      type: object
+      properties:
+        url:
+          type: string
+          readOnly: true
+        id:
+          type: integer
+          readOnly: true
+        file:
+          type: string
+          format: uri
+        collection:
+          type: string
+          readOnly: true
+        collection_id:
+          type: integer
+          readOnly: true
+        file_size:
+          type: integer
+          readOnly: true
+        label_description_file:
+          type: string
+          format: uri
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        add_date:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Date published
+        modify_date:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Date modified
+        is_valid:
+          type: boolean
+        surface_left_file:
+          type: string
+          format: uri
+          nullable: true
+          title: File with the unthresholded LEFT hemisphere fsaverage surface map
+            (.mgh, .curv, .gii)
+        surface_right_file:
+          type: string
+          format: uri
+          nullable: true
+          title: File with the unthresholded RIGHT hemisphere fsaverage surface map
+            (.mgh, .curv, .gii)
+        data_origin:
+          nullable: true
+          description: Was this map originaly derived from volume or surface?
+          oneOf:
+          - $ref: '#/components/schemas/DataOriginEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        target_template_image:
+          allOf:
+          - $ref: '#/components/schemas/TargetTemplateImageEnum'
+          description: Name of target template image
+        subject_species:
+          type: string
+          nullable: true
+          maxLength: 200
+        figure:
+          type: string
+          nullable: true
+          title: Corresponding figure
+          description: Which figure in the corresponding paper was this map displayed
+            in?
+          maxLength: 200
+        handedness:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/AtlasHandednessEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        age:
+          type: number
+          format: double
+          nullable: true
+          title: Age (years)
+        gender:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        race:
+          nullable: true
+          title: Race (US Census definition)
+          oneOf:
+          - $ref: '#/components/schemas/RaceEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        ethnicity:
+          nullable: true
+          title: Ethnicity (US Census definition)
+          oneOf:
+          - $ref: '#/components/schemas/EthnicityEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        BMI:
+          type: number
+          format: double
+          nullable: true
+          title: Body Mass Index (kg/m2)
+        fat_percentage:
+          type: number
+          format: double
+          nullable: true
+          title: '% body fat'
+        waist_hip_ratio:
+          type: number
+          format: double
+          nullable: true
+        mean_PDS_score:
+          type: number
+          format: double
+          nullable: true
+          title: Mean Puberty Development Scale score
+        tanner_stage:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/TannerStageEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        days_since_menstruation:
+          type: number
+          format: double
+          nullable: true
+          title: Number of days since menstruation
+        hours_since_last_meal:
+          type: number
+          format: double
+          nullable: true
+          title: Time since last meal (hours)
+        bis_bas_score:
+          type: number
+          format: double
+          nullable: true
+          title: Behavioral inhibition, behavioral activation (BIS/BAS) score
+        spsrq_score:
+          type: number
+          format: double
+          nullable: true
+          title: Sensitivity to Punishment and Sensitivity to Reward Questionnaire
+            (SPSRQ) score
+        bis11_score:
+          type: number
+          format: double
+          nullable: true
+          title: Barratt Impulsiveness Scale (BIS-11) score
+        thumbnail:
+          type: string
+          format: uri
+          nullable: true
+          title: Image orthogonal view thumbnail 2D bitmap
+          description: The orthogonal view thumbnail path of the nifti image
+        reduced_representation:
+          type: string
+          format: uri
+          nullable: true
+          title: Reduced representation of the image
+          description: Binary file with the vector of in brain values resampled to
+            lower resolution
+        data:
+          type: object
+          additionalProperties: {}
+          nullable: true
+    PatchedCollection:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        url:
+          type: string
+          readOnly: true
+        download_url:
+          type: string
+          readOnly: true
+        owner:
+          type: integer
+          readOnly: true
+        contributors:
+          type: string
+        owner_name:
+          type: string
+          readOnly: true
+        number_of_images:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          title: Name of collection
+          maxLength: 200
+        DOI:
+          type: string
+          nullable: true
+          title: DOI of the corresponding paper
+          description: Required if you want your maps to be archived in Stanford Digital
+            Repository
+          maxLength: 200
+        authors:
+          type: string
+          nullable: true
+          maxLength: 5000
+        paper_url:
+          type: string
+          nullable: true
+          maxLength: 200
+        journal_name:
+          type: string
+          nullable: true
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+        full_dataset_url:
+          type: string
+          format: uri
+          nullable: true
+          description: 'Link to an external dataset the maps in this collection have
+            been generated from (for example: "https://openfmri.org/dataset/ds000001"
+            or "http://dx.doi.org/10.15387/fcp_indi.corr.mpg1")'
+          maxLength: 200
+        private:
+          allOf:
+          - $ref: '#/components/schemas/PrivateEnum'
+          title: Accessibility
+        add_date:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Date published
+        modify_date:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Date modified
+        doi_add_date:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Date the DOI was added
+        type_of_design:
+          nullable: true
+          description: Blocked, event-related, hybrid, or other
+          oneOf:
+          - $ref: '#/components/schemas/TypeOfDesignEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        number_of_imaging_runs:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          title: No. of imaging runs
+          description: Number of imaging runs acquired
+        number_of_experimental_units:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          title: No. of experimental units
+          description: Number of blocks, trials or experimental units per imaging
+            run
+        length_of_runs:
+          type: number
+          format: double
+          nullable: true
+          description: Length of each imaging run in seconds
+        length_of_blocks:
+          type: number
+          format: double
+          nullable: true
+          description: For blocked designs, length of blocks in seconds
+        length_of_trials:
+          type: string
+          nullable: true
+          description: 'Length of individual trials in seconds. If length varies across
+            trials, enter ''variable''. '
+          maxLength: 200
+        optimization:
+          type: boolean
+          nullable: true
+          title: Optimization?
+          description: Was the design optimized for efficiency
+        optimization_method:
+          type: string
+          nullable: true
+          description: What method was used for optimization?
+          maxLength: 200
+        subject_age_mean:
+          type: number
+          format: double
+          nullable: true
+          description: Mean age of subjects
+        subject_age_min:
+          type: number
+          format: double
+          nullable: true
+          description: Minimum age of subjects
+        subject_age_max:
+          type: number
+          format: double
+          nullable: true
+          description: Maximum age of subjects
+        handedness:
+          nullable: true
+          description: Handedness of subjects
+          oneOf:
+          - $ref: '#/components/schemas/CollectionHandednessEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        proportion_male_subjects:
+          type: number
+          format: double
+          maximum: 1.0
+          minimum: 0.0
+          nullable: true
+          title: Prop. male subjects
+          description: The proportion (not percentage) of subjects who were male
+        inclusion_exclusion_criteria:
+          type: string
+          nullable: true
+          title: Inclusion / exclusion criteria
+          description: Additional inclusion/exclusion criteria, if any (including
+            specific sampling strategies that limit inclusion to a specific group,
+            such as laboratory members)
+          maxLength: 200
+        number_of_rejected_subjects:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          title: No. of rejected subjects
+          description: Number of subjects scanned but rejected from analysis
+        group_comparison:
+          type: boolean
+          nullable: true
+          title: Group comparison?
+          description: Was this study a comparison between subject groups?
+        group_description:
+          type: string
+          nullable: true
+          description: A description of the groups being compared
+          maxLength: 200
+        scanner_make:
+          type: string
+          nullable: true
+          description: Manufacturer of MRI scanner
+          maxLength: 200
+        scanner_model:
+          type: string
+          nullable: true
+          description: Model of MRI scanner
+          maxLength: 200
+        field_strength:
+          type: number
+          format: double
+          nullable: true
+          description: Field strength of MRI scanner (in Tesla)
+        pulse_sequence:
+          type: string
+          nullable: true
+          description: Description of pulse sequence used for fMRI
+          maxLength: 200
+        parallel_imaging:
+          type: string
+          nullable: true
+          description: Description of parallel imaging method and parameters
+          maxLength: 200
+        field_of_view:
+          type: number
+          format: double
+          nullable: true
+          description: Imaging field of view in millimeters
+        matrix_size:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          description: Matrix size for MRI acquisition
+        slice_thickness:
+          type: number
+          format: double
+          nullable: true
+          description: Distance between slices (includes skip or distance factor)
+            in millimeters
+        skip_distance:
+          type: number
+          format: double
+          nullable: true
+          description: The size of the skipped area between slices in millimeters
+        acquisition_orientation:
+          type: string
+          nullable: true
+          description: The orientation of slices
+          maxLength: 200
+        order_of_acquisition:
+          nullable: true
+          description: Order of acquisition of slices (ascending, descending, or interleaved)
+          oneOf:
+          - $ref: '#/components/schemas/OrderOfAcquisitionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        repetition_time:
+          type: number
+          format: double
+          nullable: true
+          description: Repetition time (TR) in milliseconds
+        echo_time:
+          type: number
+          format: double
+          nullable: true
+          description: Echo time (TE) in milliseconds
+        flip_angle:
+          type: number
+          format: double
+          nullable: true
+          description: Flip angle in degrees
+        software_package:
+          type: string
+          nullable: true
+          description: If a single software package was used for all analyses, specify
+            that here
+          maxLength: 200
+        software_version:
+          type: string
+          nullable: true
+          description: Version of software package used
+          maxLength: 200
+        order_of_preprocessing_operations:
+          type: string
+          nullable: true
+          title: Order of preprocessing
+          description: Specify order of preprocessing operations
+          maxLength: 200
+        quality_control:
+          type: string
+          nullable: true
+          description: Describe quality control measures
+          maxLength: 200
+        used_b0_unwarping:
+          type: boolean
+          nullable: true
+          title: Used B0 unwarping?
+          description: Was B0 distortion correction used?
+        b0_unwarping_software:
+          type: string
+          nullable: true
+          description: Specify software used for distortion correction if different
+            from the main package
+          maxLength: 200
+        used_slice_timing_correction:
+          type: boolean
+          nullable: true
+          title: Slice timing correction?
+          description: Was slice timing correction used?
+        slice_timing_correction_software:
+          type: string
+          nullable: true
+          description: Specify software used for slice timing correction if different
+            from the main package
+          maxLength: 200
+        used_motion_correction:
+          type: boolean
+          nullable: true
+          title: Motion correction?
+          description: Was motion correction used?
+        motion_correction_software:
+          type: string
+          nullable: true
+          description: Specify software used for motion correction if different from
+            the main package
+          maxLength: 200
+        motion_correction_reference:
+          type: string
+          nullable: true
+          description: Reference scan used for motion correction
+          maxLength: 200
+        motion_correction_metric:
+          type: string
+          nullable: true
+          description: Similarity metric used for motion correction
+          maxLength: 200
+        motion_correction_interpolation:
+          type: string
+          nullable: true
+          description: Interpolation method used for motion correction
+          maxLength: 200
+        used_motion_susceptibiity_correction:
+          type: boolean
+          nullable: true
+          title: Motion susceptibility correction?
+          description: Was motion-susceptibility correction used?
+        used_intersubject_registration:
+          type: boolean
+          nullable: true
+          title: Intersubject registration?
+          description: Were subjects registered to a common stereotactic space?
+        intersubject_registration_software:
+          type: string
+          nullable: true
+          title: Registration software
+          description: Specify software used for intersubject registration if different
+            from main package
+          maxLength: 200
+        intersubject_transformation_type:
+          nullable: true
+          description: Was linear or nonlinear registration used?
+          oneOf:
+          - $ref: '#/components/schemas/IntersubjectTransformationTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        nonlinear_transform_type:
+          type: string
+          nullable: true
+          description: If nonlinear registration was used, describe transform method
+          maxLength: 200
+        transform_similarity_metric:
+          type: string
+          nullable: true
+          description: Similarity metric used for intersubject registration
+          maxLength: 200
+        interpolation_method:
+          type: string
+          nullable: true
+          description: Interpolation method used for intersubject registration
+          maxLength: 200
+        object_image_type:
+          type: string
+          nullable: true
+          description: What type of image was used to determine the transformation
+            to the atlas? (e.g. T1, T2, EPI)
+          maxLength: 200
+        functional_coregistered_to_structural:
+          type: boolean
+          nullable: true
+          title: Coregistered to structural?
+          description: Were the functional images coregistered to the subject's structural
+            image?
+        functional_coregistration_method:
+          type: string
+          nullable: true
+          title: Coregistration method
+          description: Method used to coregister functional to structural images
+          maxLength: 200
+        coordinate_space:
+          nullable: true
+          description: Name of coordinate space for registration target
+          oneOf:
+          - $ref: '#/components/schemas/CoordinateSpaceEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        target_template_image:
+          type: string
+          nullable: true
+          description: Name of target template image
+          maxLength: 200
+        target_resolution:
+          type: number
+          format: double
+          nullable: true
+          description: Voxel size of target template in millimeters
+        used_smoothing:
+          type: boolean
+          nullable: true
+          title: Used smoothing?
+          description: Was spatial smoothing applied?
+        smoothing_type:
+          type: string
+          nullable: true
+          title: Type of smoothing
+          description: Describe the type of smoothing applied
+          maxLength: 200
+        smoothing_fwhm:
+          type: number
+          format: double
+          nullable: true
+          description: The full-width at half-maximum of the smoothing kernel in millimeters
+        resampled_voxel_size:
+          type: number
+          format: double
+          nullable: true
+          description: Voxel size in mm of the resampled, atlas-space images
+        intrasubject_model_type:
+          type: string
+          nullable: true
+          title: Model type
+          description: Type of model used (e.g., regression)
+          maxLength: 200
+        intrasubject_estimation_type:
+          type: string
+          nullable: true
+          title: Estimation type
+          description: Estimation method used for model (e.g., OLS, generalized least
+            squares)
+          maxLength: 200
+        intrasubject_modeling_software:
+          type: string
+          nullable: true
+          title: Modeling software
+          description: Software used for intrasubject modeling if different from overall
+            package
+          maxLength: 200
+        hemodynamic_response_function:
+          type: string
+          nullable: true
+          description: Nature of HRF model
+          maxLength: 200
+        used_temporal_derivatives:
+          type: boolean
+          nullable: true
+          title: Temporal derivatives?
+          description: Were temporal derivatives included?
+        used_dispersion_derivatives:
+          type: boolean
+          nullable: true
+          title: Dispersion derivatives?
+          description: Were dispersion derivatives included?
+        used_motion_regressors:
+          type: boolean
+          nullable: true
+          title: Motion regressors?
+          description: Were motion regressors included?
+        used_reaction_time_regressor:
+          type: boolean
+          nullable: true
+          title: Reaction time regressor?
+          description: Was a reaction time regressor included?
+        used_orthogonalization:
+          type: boolean
+          nullable: true
+          title: Orthogonalization?
+          description: Were any regressors specifically orthogonalized with respect
+            to others?
+        orthogonalization_description:
+          type: string
+          nullable: true
+          description: If orthogonalization was used, describe here
+          maxLength: 200
+        used_high_pass_filter:
+          type: boolean
+          nullable: true
+          title: High-pass filter?
+          description: Was high pass filtering applied?
+        high_pass_filter_method:
+          type: string
+          nullable: true
+          title: High-pass filtering method
+          description: Describe method used for high pass filtering
+          maxLength: 200
+        autocorrelation_model:
+          type: string
+          nullable: true
+          title: Autocorrelation method
+          description: What autocorrelation model was used (or 'none' of none was
+            used)
+          maxLength: 200
+        group_model_type:
+          type: string
+          nullable: true
+          description: Type of group model used (e.g., regression)
+          maxLength: 200
+        group_estimation_type:
+          type: string
+          nullable: true
+          description: Estimation method used for group model (e.g., OLS, generalized
+            least squares)
+          maxLength: 200
+        group_modeling_software:
+          type: string
+          nullable: true
+          description: Software used for group modeling if different from overall
+            package
+          maxLength: 200
+        group_inference_type:
+          nullable: true
+          description: Type of inference for group model
+          oneOf:
+          - $ref: '#/components/schemas/GroupInferenceTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        group_model_multilevel:
+          type: string
+          nullable: true
+          title: Multilevel modeling
+          description: If more than 2-levels, describe the levels and assumptions
+            of the model (e.g. are variances assumed equal between groups)
+          maxLength: 200
+        group_repeated_measures:
+          type: boolean
+          nullable: true
+          title: Repeated measures
+          description: Was this a repeated measures design at the group level?
+        group_repeated_measures_method:
+          type: string
+          nullable: true
+          title: Repeated measures method
+          description: If multiple measurements per subject, list method to account
+            for within subject correlation, exact assumptions made about correlation/variance
+          maxLength: 200
+        nutbrain_hunger_state:
+          nullable: true
+          title: Hunger state
+          oneOf:
+          - $ref: '#/components/schemas/NutbrainHungerStateEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        nutbrain_food_viewing_conditions:
+          type: string
+          nullable: true
+          title: Food viewing conditions
+          description: Image categories
+          maxLength: 200
+        nutbrain_food_choice_type:
+          type: string
+          nullable: true
+          title: Food choice type
+          description: Choice conditions/image types
+          maxLength: 200
+        nutbrain_taste_conditions:
+          type: string
+          nullable: true
+          title: Taste conditions
+          maxLength: 200
+        nutbrain_odor_conditions:
+          type: string
+          nullable: true
+          title: Odor conditions
+          maxLength: 200
+        communities:
+          type: array
+          items:
+            type: integer
+          description: Is this collection part of any special Community?
+    PatchedImage:
+      type: object
+      properties:
+        url:
+          type: string
+          readOnly: true
+        id:
+          type: integer
+          readOnly: true
+        file:
+          type: string
+          format: uri
+        collection:
+          type: string
+          readOnly: true
+        collection_id:
+          type: integer
+          readOnly: true
+        file_size:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        add_date:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Date published
+        modify_date:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Date modified
+        is_valid:
+          type: boolean
+    PatchedNIDMResults:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        zip_file:
+          type: string
+          format: uri
+        ttl_file:
+          type: string
+          format: uri
+        statmaps:
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
+        url:
+          type: string
+          readOnly: true
+        collection:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        add_date:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Date published
+        modify_date:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Date modified
+    PrivateEnum:
+      enum:
+      - false
+      - true
+      type: boolean
+    RaceEnum:
+      enum:
+      - W
+      - B
+      - I
+      - A
+      - H
+      type: string
+    TannerStageEnum:
+      enum:
+      - I
+      - II
+      - III
+      - IV
+      - V
+      type: string
+    TargetTemplateImageEnum:
+      enum:
+      - GenericMNI
+      - Dorr2008
+      - NMT
+      - MNI152NLin2009cAsym
+      type: string
+    TypeOfDesignEnum:
+      enum:
+      - blocked
+      - eventrelated
+      - hybridblockevent
+      - other
+      type: string
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+      required:
+      - id
+      - username
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+servers:
+- url: https://neurovault.org/api/
+  description: Production
