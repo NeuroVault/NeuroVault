@@ -74,8 +74,8 @@ jobs:
       - 
         name: Migrate Database
         run: |
-          docker-compose exec uwsgi python manage.py migrate
+          docker-compose exec -T uwsgi python manage.py migrate
       -
         name: Backend Tests
         run: |
-          docker-compose run --rm uwsgi python manage.py test
+          docker-compose exec -T uwsgi python manage.py test
