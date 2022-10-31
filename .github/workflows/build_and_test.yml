@@ -22,6 +22,11 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: set lower case owner name
+        run: |
+          echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
+        env:
+          OWNER: '${{ github.repository_owner }}'
       -
         name: Build and push
         uses: docker/bake-action@master
@@ -30,8 +35,8 @@ jobs:
           push: true
           load: false
           set: |
-              uwsgi.tags=ghcr.io/${{ github.repository_owner }}/neurovault:${{ hashFiles('**/neurovault/**') }}
-              uwsgi.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurovault:${{ hashFiles('**/neurovault/**') }}
+              uwsgi.tags=ghcr.io/${{ OWNER_LC }}/neurovault:${{ hashFiles('**/neurovault/**') }}
+              uwsgi.cache-from=type=registry,ref=ghcr.io/${{ OWNER_LC }}/neurovault:${{ hashFiles('**/neurovault/**') }}
               uwsgi.cache-from=type=gha,scope=cached-neurovault
               uwsgi.cache-to=type=gha,scope=cached-neurovault,mode=max
 
