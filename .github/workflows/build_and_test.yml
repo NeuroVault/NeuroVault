@@ -1,0 +1,78 @@
+name: Building and Testing Workflow
+on: [workflow_dispatch,push]
+
+jobs:
+  build_neurovault:
+   runs-on: ubuntu-latest
+   steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Configuration
+        run: |
+          cp neurovault/.env.example neurovault/.env
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Build and push
+        uses: docker/bake-action@master
+        with:
+          files: docker-compose.yml
+          push: true
+          load: false
+          set: |
+              neurovault.tags=ghcr.io/${{ github.repository_owner }}/neurovault:${{ hashFiles('**/neurovault/**') }}
+              neurovault.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurovault:${{ hashFiles('**/neurovault/**') }}
+              neurovault.cache-from=type=gha,scope=cached-neurovault
+              neurovault.cache-to=type=gha,scope=cached-neurovault,mode=max
+
+  neurovault_backend_tests:
+    runs-on: ubuntu-latest
+    needs: build_neurovault
+    steps:
+      - 
+        name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Configuration
+        run: |
+          cp .env.example .env
+      -
+        name: load images
+        uses: docker/bake-action@master
+        with:
+          files: docker-compose.yml,docker-compose.dev.yml
+          push: false
+          load: true
+          workdir: store
+          set: |
+              neurovault.cache-from=type=gha,scope=cached-neurovault
+      - 
+        name: spin up backend
+        run: |
+          docker-compose pull
+          docker-compose \
+            -f docker-compose.yml \
+            up -d --no-build
+      - 
+        name: Migrate Database
+        run: |
+          docker-compose exec uwsgi python manage.py migrate
+      -
+        name: Backend Tests
+        run: |
+          docker-compose run --rm uwsgi python manage.py test
