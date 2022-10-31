@@ -36,8 +36,8 @@ jobs:
           push: true
           load: false
           set: |
-              uwsgi.tags=ghcr.io/${{ github.OWNER_LC }}/neurovault:${{ hashFiles('**/neurovault/**') }}
-              uwsgi.cache-from=type=registry,ref=ghcr.io/${{ github.OWNER_LC }}/neurovault:${{ hashFiles('**/neurovault/**') }}
+              uwsgi.tags=ghcr.io/${{ env.OWNER_LC }}/neurovault:${{ hashFiles('**/neurovault/**') }}
+              uwsgi.cache-from=type=registry,ref=ghcr.io/${{ env.OWNER_LC }}/neurovault:${{ hashFiles('**/neurovault/**') }}
               uwsgi.cache-from=type=gha,scope=cached-neurovault
               uwsgi.cache-to=type=gha,scope=cached-neurovault,mode=max
 
