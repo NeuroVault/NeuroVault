@@ -78,15 +78,7 @@ jobs:
           postgres pg_isready -U postgres; do sleep 1; done
 
           docker compose exec -T uwsgi python manage.py migrate
-      - name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
-        timeout-minutes: 60
       -
         name: Backend Tests
         run: |
           docker compose exec -T uwsgi python manage.py test
-      - name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
-        timeout-minutes: 60
