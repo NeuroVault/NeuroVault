@@ -67,10 +67,10 @@ jobs:
       - 
         name: spin up backend
         run: |
-          docker compose pull
+          docker compose pull postgres redis
           docker compose \
             -f docker-compose.yml \
-            up -d
+            up -d --no-build
       - 
         name: Migrate Database
         run: |
