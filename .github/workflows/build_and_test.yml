@@ -67,6 +67,7 @@ jobs:
       - 
         name: spin up backend
         run: |
+          # pull specific images since an old version of neurovault is on dockerhub
           docker compose pull postgres redis
           docker compose \
             -f docker-compose.yml \
