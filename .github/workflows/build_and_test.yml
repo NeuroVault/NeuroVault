@@ -67,18 +67,17 @@ jobs:
       - 
         name: spin up backend
         run: |
-          docker-compose pull
-          docker-compose build
-          docker-compose \
+          docker compose pull
+          docker compose \
             -f docker-compose.yml \
             up -d
       - 
         name: Migrate Database
         run: |
-          until docker-compose exec -T \
+          until docker compose exec -T \
           postgres pg_isready -U postgres; do sleep 1; done
 
-          docker-compose exec -T uwsgi python manage.py migrate
+          docker compose exec -T uwsgi python manage.py migrate
       - name: Setup tmate session
         if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3
@@ -86,7 +85,7 @@ jobs:
       -
         name: Backend Tests
         run: |
-          docker-compose exec -T uwsgi python manage.py test
+          docker compose exec -T uwsgi python manage.py test
       - name: Setup tmate session
         if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3
