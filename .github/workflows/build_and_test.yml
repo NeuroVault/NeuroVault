@@ -74,6 +74,9 @@ jobs:
       - 
         name: Migrate Database
         run: |
+          until docker-compose exec -T \
+          postgres pg_isready -U postgres; do sleep 1; done
+
           docker-compose exec -T uwsgi python manage.py migrate
       -
         name: Backend Tests
