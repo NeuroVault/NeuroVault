@@ -68,9 +68,10 @@ jobs:
         name: spin up backend
         run: |
           docker-compose pull
+          docker-compose build
           docker-compose \
             -f docker-compose.yml \
-            up -d --no-build
+            up -d
       - 
         name: Migrate Database
         run: |
