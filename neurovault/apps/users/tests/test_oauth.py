@@ -17,7 +17,7 @@ class MockView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request):
-        return HttpResponse({'a': 1, 'b': 2, 'c': 3})
+        return HttpResponse({"a": 1, "b": 2, "c": 3})
 
 
 class OAuth2View(MockView):
@@ -25,21 +25,19 @@ class OAuth2View(MockView):
 
 
 urlpatterns = [
-    re_path(r'^oauth2/', include('oauth2_provider.urls')),
-    re_path(r'^oauth2-test/$', OAuth2View.as_view()),
-    re_path(r'^accounts/', include('neurovault.apps.users.urls')),
-
+    re_path(r"^oauth2/", include("oauth2_provider.urls")),
+    re_path(r"^oauth2-test/$", OAuth2View.as_view()),
+    re_path(r"^accounts/", include("neurovault.apps.users.urls")),
 ]
 
 
 @override_settings(ROOT_URLCONF=__name__)
 class TestPersonalAccessTokens(TestCase):
-
     def setUp(self):
         self.user_password = "l0n6 l1v3 7h3 k1n6!"
-        self.user = UserModel.objects.create_user("bernardo",
-                                                  "bernardo@example.com",
-                                                  self.user_password)
+        self.user = UserModel.objects.create_user(
+            "bernardo", "bernardo@example.com", self.user_password
+        )
         self.client = Client()
 
     def tearDown(self):
@@ -59,7 +57,7 @@ class TestPersonalAccessTokens(TestCase):
 
     def test_authentication_allow(self):
         self.client.login(username=self.user, password=self.user_password)
-        response = self.client.post(reverse('users:token_create'))
+        response = self.client.post(reverse("users:token_create"))
         self.assertEqual(response.status_code, 302)
 
         access_token = AccessToken.objects.get(user_id=self.user)

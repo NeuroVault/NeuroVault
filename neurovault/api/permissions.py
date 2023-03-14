@@ -1,20 +1,17 @@
-from rest_framework.permissions import (DjangoObjectPermissions,
-                                        SAFE_METHODS, Http404)
+from rest_framework.permissions import DjangoObjectPermissions, SAFE_METHODS, Http404
 from guardian.ctypes import get_content_type
 
 
 class ObjectOnlyPermissions(DjangoObjectPermissions):
-
     def has_permission(self, request, view):
         return (
-            request.method in SAFE_METHODS or
-            request.user and
-            request.user.is_authenticated
+            request.method in SAFE_METHODS
+            or request.user
+            and request.user.is_authenticated
         )
 
 
 class ObjectOnlyPolymorphicPermissions(ObjectOnlyPermissions):
-
     def has_object_permission(self, request, view, obj):
         ctype = get_content_type(obj)
 
@@ -27,7 +24,7 @@ class ObjectOnlyPolymorphicPermissions(ObjectOnlyPermissions):
             if request.method in SAFE_METHODS:
                 raise Http404
 
-            read_perms = self.get_required_object_permissions('GET', model_cls)
+            read_perms = self.get_required_object_permissions("GET", model_cls)
             if not user.has_perms(read_perms, obj):
                 raise Http404
 

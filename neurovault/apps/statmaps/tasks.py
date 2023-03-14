@@ -1,5 +1,3 @@
-
-
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -7,14 +5,15 @@ from django.db import IntegrityError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 
-'''
+"""
 from pybraincompare.compare.maths import calculate_correlation, calculate_pairwise_correlation
 from pybraincompare.compare.mrutils import resample_images_ref, make_binary_deletion_mask, make_binary_deletion_vector
 from pybraincompare.mr.datasets import get_data_directory
 from pybraincompare.mr.transformation import make_resampled_transformation_vector
-'''
+"""
 
 import nilearn
+
 nilearn.EXPAND_PATH_WILDCARDS = False
 from celery import shared_task, Celery
 from io import StringIO
@@ -29,12 +28,12 @@ import urllib.request, urllib.parse, urllib.error, json, tarfile, requests, os
 import xml.etree.cElementTree as e
 
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'neurovault.settings')
-app = Celery('neurovault')
-app.config_from_object('django.conf:settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.settings")
+app = Celery("neurovault")
+app.config_from_object("django.conf:settings")
 app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
-'''
+"""
 @app.task(name='crawl_anima')
 def crawl_anima():
     import neurovault.apps.statmaps.models as models
@@ -149,7 +148,7 @@ def crawl_anima():
                 form = StatisticMapForm(post_dict, file_dict)
                 form.is_valid()
                 form.save()
-'''
+"""
 
 
 @shared_task
@@ -157,17 +156,20 @@ def process_map(image_pk):
     generate_glassbrain_image(image_pk)
     generate_surface_image(image_pk)
 
+
 # THUMBNAIL IMAGE GENERATION ###########################################################################
+
 
 @shared_task
 def generate_glassbrain_image(image_pk):
     from neurovault.apps.statmaps.models import Image
     import matplotlib as mpl
-    mpl.rcParams['savefig.format'] = 'jpg'
+
+    mpl.rcParams["savefig.format"] = "jpg"
     my_dpi = 50
-    fig = plt.figure(figsize=(330.0/my_dpi, 130.0/my_dpi), dpi=my_dpi)
-    
-    img = Image.objects.get(pk=image_pk)    
+    fig = plt.figure(figsize=(330.0 / my_dpi, 130.0 / my_dpi), dpi=my_dpi)
+
+    img = Image.objects.get(pk=image_pk)
     f = BytesIO()
     try:
         glass_brain = plot_glass_brain(img.file.path, figure=fig)
@@ -175,17 +177,22 @@ def generate_glassbrain_image(image_pk):
     except:
         # Glass brains that do not produce will be given dummy image
         this_path = os.path.abspath(os.path.dirname(__file__))
-        f = open(os.path.abspath(os.path.join(this_path,
-                                              "static","images","glass_brain_empty.jpg"))) 
+        f = open(
+            os.path.abspath(
+                os.path.join(this_path, "static", "images", "glass_brain_empty.jpg")
+            )
+        )
         raise
     finally:
-        plt.close('all')
+        plt.close("all")
         f.seek(0)
         content_file = ContentFile(f.read())
         img.thumbnail.save("glass_brain_%s.jpg" % img.pk, content_file)
         img.save()
 
+
 # SURFACE IMAGE GENERATION ###########################################################################
+
 
 @shared_task
 def generate_surface_image(image_pk):
@@ -194,57 +201,92 @@ def generate_surface_image(image_pk):
     from scipy.interpolate import interpn
 
     img = Image.objects.get(pk=image_pk)
-    if img.target_template_image in ['GenericMNI', 'MNI152NLin2009cAsym'] and \
-            img.data_origin == 'volume':
+    if (
+        img.target_template_image in ["GenericMNI", "MNI152NLin2009cAsym"]
+        and img.data_origin == "volume"
+    ):
         img_vol = nib.load(img.file.path)
         data_vol = img_vol.get_data()
         if data_vol.ndim > 3:
-            data_vol = data_vol[:, :, :, 0]  #number of time points
+            data_vol = data_vol[:, :, :, 0]  # number of time points
         this_path = os.path.abspath(os.path.dirname(__file__))
 
-        for hemi in ['lh', 'rh']:
-            ras_coor = loadmat(os.path.abspath(os.path.join(this_path, "static", "anatomical",
-                                                                "%s.avgMapping_allSub_RF_ANTs_MNI2fs.mat" % hemi)))['ras']
+        for hemi in ["lh", "rh"]:
+            ras_coor = loadmat(
+                os.path.abspath(
+                    os.path.join(
+                        this_path,
+                        "static",
+                        "anatomical",
+                        "%s.avgMapping_allSub_RF_ANTs_MNI2fs.mat" % hemi,
+                    )
+                )
+            )["ras"]
 
-            vox_coor = nib.affines.apply_affine(numpy.linalg.inv(img_vol.affine), ras_coor.T).T
+            vox_coor = nib.affines.apply_affine(
+                numpy.linalg.inv(img_vol.affine), ras_coor.T
+            ).T
             img_surf = nib.gifti.GiftiImage()
 
-            if img.polymorphic_ctype.model == 'atlas' or (hasattr(img, 'map_type') and img.map_type in ['Pa', 'R']):
-                method = 'nearest'
+            if img.polymorphic_ctype.model == "atlas" or (
+                hasattr(img, "map_type") and img.map_type in ["Pa", "R"]
+            ):
+                method = "nearest"
             else:
-                method = 'linear'
+                method = "linear"
 
-            data_surf = interpn(points=[list(range(data_vol.shape[0])), list(range(data_vol.shape[1])), list(range(data_vol.shape[2]))],
-                                values=data_vol,
-                                xi=vox_coor.T,
-                                method=method,
-                                bounds_error=False,
-                                fill_value=0)
+            data_surf = interpn(
+                points=[
+                    list(range(data_vol.shape[0])),
+                    list(range(data_vol.shape[1])),
+                    list(range(data_vol.shape[2])),
+                ],
+                values=data_vol,
+                xi=vox_coor.T,
+                method=method,
+                bounds_error=False,
+                fill_value=0,
+            )
             # without turning nan's to zeros Connectome Workbench behaves weird
             data_surf[numpy.isnan(data_surf)] = 0
 
             # ASCII is the only encoding that produces outputs compatible with Connectome Workbench
-            data_surf_gifti = nib.gifti.GiftiDataArray(data_surf, 'NIFTI_INTENT_NONE',
-                                                       'NIFTI_TYPE_FLOAT32', 'ASCII')
+            data_surf_gifti = nib.gifti.GiftiDataArray(
+                data_surf, "NIFTI_INTENT_NONE", "NIFTI_TYPE_FLOAT32", "ASCII"
+            )
             img_surf.add_gifti_data_array(data_surf_gifti)
-            img_surf.meta.data.insert(0, nib.gifti.GiftiNVPairs('AnatomicalStructurePrimary',
-                                                                {'lh': 'CortexLeft',
-                                                                 'rh': 'CortexRight'}[hemi]))
+            img_surf.meta.data.insert(
+                0,
+                nib.gifti.GiftiNVPairs(
+                    "AnatomicalStructurePrimary",
+                    {"lh": "CortexLeft", "rh": "CortexRight"}[hemi],
+                ),
+            )
 
             f = BytesIO()
-            fmap = {'image': nib.FileHolder(fileobj=f), 'header': nib.FileHolder(fileobj=f)}
+            fmap = {
+                "image": nib.FileHolder(fileobj=f),
+                "header": nib.FileHolder(fileobj=f),
+            }
             img_surf.to_file_map(fmap)
             f.seek(0)
             content_file = ContentFile(f.read())
-            if hemi == 'lh':
-                img.surface_left_file.save("%s.%s.func.gii" % (img.pk, {'lh': 'L', 'rh': 'R'}[hemi]), content_file)
+            if hemi == "lh":
+                img.surface_left_file.save(
+                    "%s.%s.func.gii" % (img.pk, {"lh": "L", "rh": "R"}[hemi]),
+                    content_file,
+                )
             else:
-                img.surface_right_file.save("%s.%s.func.gii" % (img.pk, {'lh': 'L', 'rh': 'R'}[hemi]), content_file)
+                img.surface_right_file.save(
+                    "%s.%s.func.gii" % (img.pk, {"lh": "L", "rh": "R"}[hemi]),
+                    content_file,
+                )
         img.save()
         print("Surface image generation done.")
 
 
 # IMAGE TRANSFORMATION ################################################################################
+
 
 # Save 4mm, brain masked image vector in pkl file in image folder
 @shared_task
@@ -254,21 +296,23 @@ def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
     import numpy as np
 
     img = get_object_or_404(Image, pk=pk1)
-    nii_obj = nib.load(img.file.path)   # standard_mask=True is default
-    image_vector = make_resampled_transformation_vector(nii_obj,resample_dim)
+    nii_obj = nib.load(img.file.path)  # standard_mask=True is default
+    image_vector = make_resampled_transformation_vector(nii_obj, resample_dim)
 
     f = BytesIO()
     np.save(f, image_vector)
     f.seek(0)
     content_file = ContentFile(f.read())
-    img.reduced_representation.save("transform_%smm_%s.npy" %(resample_dim[0],img.pk), content_file)
+    img.reduced_representation.save(
+        "transform_%smm_%s.npy" % (resample_dim[0], img.pk), content_file
+    )
 
     return img
 
 
 # SIMILARITY CALCULATION ##############################################################################
 
-'''
+"""
 @shared_task
 def run_voxelwise_pearson_similarity(pk1):
     from neurovault.apps.statmaps.models import Image
@@ -388,48 +432,56 @@ def save_voxelwise_pearson_similarity_resample(pk1, pk2,resample_dim=[4,4,4]):
             return image1.pk,image2.pk,pearson_score
         else:
             raise Exception("You are trying to compare an image with itself!")
-'''
+"""
 
 
 # COGNITIVE ATLAS
 ###########################################################################
-def repopulate_cognitive_atlas(CognitiveAtlasTask=None,CognitiveAtlasContrast=None):
-    if CognitiveAtlasTask==None:
+def repopulate_cognitive_atlas(CognitiveAtlasTask=None, CognitiveAtlasContrast=None):
+    if CognitiveAtlasTask == None:
         from neurovault.apps.statmaps.models import CognitiveAtlasTask
-    if CognitiveAtlasContrast==None:
+    if CognitiveAtlasContrast == None:
         from neurovault.apps.statmaps.models import CognitiveAtlasContrast
 
     from cognitiveatlas.api import get_task
+
     tasks = get_task()
 
     # Update tasks
-    for t in range(0,len(tasks.json)):
+    for t in range(0, len(tasks.json)):
         task = tasks.json[t]
-        print("%s of %s" %(t,len(tasks.json))) 
+        print("%s of %s" % (t, len(tasks.json)))
         if tasks.json[t]["name"]:
-            task, _ = CognitiveAtlasTask.objects.update_or_create(cog_atlas_id=task["id"],defaults={"name":task["name"]})
+            task, _ = CognitiveAtlasTask.objects.update_or_create(
+                cog_atlas_id=task["id"], defaults={"name": task["name"]}
+            )
             task.save()
             if tasks.json[t]["id"]:
                 task_details = get_task(id=tasks.json[t]["id"])
                 if task_details.json["contrasts"]:
-                    print("Found %s contrasts!" %(len(task_details.json["contrasts"])))
+                    print("Found %s contrasts!" % (len(task_details.json["contrasts"])))
                     for contrast in task_details.json["contrasts"]:
-                        contrast, _ = CognitiveAtlasContrast.objects.update_or_create(cog_atlas_id=contrast["id"], 
-                                                                                      defaults={"name":contrast["name"],
-                                                                                      "task":task})
-                        contrast.save() 
+                        contrast, _ = CognitiveAtlasContrast.objects.update_or_create(
+                            cog_atlas_id=contrast["id"],
+                            defaults={"name": contrast["name"], "task": task},
+                        )
+                        contrast.save()
 
     # Add an "Other" contrast
     task = CognitiveAtlasTask.objects.filter(name="None / Other")[0]
-    contrast, _ = CognitiveAtlasContrast.objects.update_or_create(cog_atlas_id="Other", 
-                                                                  defaults={"name":"Other",
-                                                                  "task":task})
-                       
+    contrast, _ = CognitiveAtlasContrast.objects.update_or_create(
+        cog_atlas_id="Other", defaults={"name": "Other", "task": task}
+    )
+
+
 # HELPER FUNCTIONS ####################################################################################
 
-'''Return list of Images sorted by the primary key'''
+"""Return list of Images sorted by the primary key"""
+
+
 def get_images_by_ordered_id(pk1, pk2):
     from neurovault.apps.statmaps.models import Image
+
     image1 = get_object_or_404(Image, pk=pk1)
     image2 = get_object_or_404(Image, pk=pk2)
-    return sorted([image1,image2], key=lambda x: x.pk)
+    return sorted([image1, image2], key=lambda x: x.pk)

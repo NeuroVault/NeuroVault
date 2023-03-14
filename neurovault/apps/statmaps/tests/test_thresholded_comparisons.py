@@ -5,13 +5,22 @@ import tempfile
 from django.test import TestCase
 from numpy.testing import assert_equal
 
-from neurovault.apps.statmaps.models import Image, Comparison, Similarity, User, Collection
+from neurovault.apps.statmaps.models import (
+    Image,
+    Comparison,
+    Similarity,
+    User,
+    Collection,
+)
 from neurovault.apps.statmaps.tests.utils import clearDB
 from neurovault.apps.statmaps.tests.utils import save_statmap_form, save_atlas_form
-from neurovault.apps.statmaps.utils import count_existing_comparisons, get_existing_comparisons
+from neurovault.apps.statmaps.utils import (
+    count_existing_comparisons,
+    get_existing_comparisons,
+)
 from neurovault.api.tests.utils import _setup_test_cognitive_atlas
 
-''' Disabling comparisons
+""" Disabling comparisons
 class QueryTestCase(TestCase):
     pk1 = None
     pk2 = None
@@ -119,4 +128,4 @@ class QueryTestCase(TestCase):
             im2 = Image.objects.get(pk=pk2)
             assert_equal(im1.is_thresholded,False)
             assert_equal(im2.is_thresholded,False)
-'''
+"""
