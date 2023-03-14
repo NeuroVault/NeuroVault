@@ -320,12 +320,14 @@ CELERY_QUEUES = (
 )
 CELERY_IMPORTS = ('neurovault.apps.statmaps.tasks', )
 
+''' Disabled for upgrade, do we still need this?
 CELERYBEAT_SCHEDULE = {
     'anima_crawl_every day': {
         'task': 'crawl_anima',
         'schedule': timedelta(days=1)
     },
 }
+'''
 
 CELERY_TIMEZONE = 'Europe/Berlin'
 

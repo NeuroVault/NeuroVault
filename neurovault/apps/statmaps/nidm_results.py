@@ -193,7 +193,7 @@ class NIDMUpload:
         if fnmatch(path,'__MACOSX*'):
             return False
         # ignore hidden, allow relative paths
-        if path[0] is '.' and path[1] is not ('/' or '.'):
+        if path[0] == '.' and path[1] is not ('/' or '.'):
             return False
         return True
 

@@ -3,20 +3,22 @@ from django.conf import settings
 
 from django.http.response import (HttpResponseRedirect, HttpResponseForbidden,
                                   Http404)
-from django.utils.crypto import get_random_string
-from django.shortcuts import render, get_object_or_404
-from django.contrib.auth.models import User
 from django.contrib import messages
-from django.urls import reverse, reverse_lazy
 from django.contrib.auth import authenticate, login
-from .forms import UserEditForm, UserCreateForm, ApplicationEditForm
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.shortcuts import render, get_object_or_404
 from django.template.context import RequestContext
-from oauth2_provider.views.application import ApplicationOwnerIsUserMixin
-from oauth2_provider.models import RefreshToken, AccessToken, Application
+from django.urls import reverse, reverse_lazy
+from django.utils.crypto import get_random_string
 from django.views.generic import (View, CreateView, UpdateView, DeleteView,
                                   ListView)
+
 from braces.views import LoginRequiredMixin
+from oauth2_provider.views.application import ApplicationOwnerIsUserMixin
+from oauth2_provider.models import RefreshToken, AccessToken, Application
+
+from .forms import UserEditForm, UserCreateForm, ApplicationEditForm
 
 
 def view_profile(request, username=None):

@@ -11,7 +11,7 @@ from neurovault.apps.statmaps.tests.utils import save_statmap_form, save_atlas_f
 from neurovault.apps.statmaps.utils import count_existing_comparisons, get_existing_comparisons
 from neurovault.api.tests.utils import _setup_test_cognitive_atlas
 
-
+''' Disabling comparisons
 class QueryTestCase(TestCase):
     pk1 = None
     pk2 = None
@@ -119,3 +119,4 @@ class QueryTestCase(TestCase):
             im2 = Image.objects.get(pk=pk2)
             assert_equal(im1.is_thresholded,False)
             assert_equal(im2.is_thresholded,False)
+'''

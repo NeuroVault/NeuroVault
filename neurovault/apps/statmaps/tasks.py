@@ -1,28 +1,32 @@
 
 
-import nilearn
+from django.conf import settings
 from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import IntegrityError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+
+'''
 from pybraincompare.compare.maths import calculate_correlation, calculate_pairwise_correlation
 from pybraincompare.compare.mrutils import resample_images_ref, make_binary_deletion_mask, make_binary_deletion_vector
 from pybraincompare.mr.datasets import get_data_directory
 from pybraincompare.mr.transformation import make_resampled_transformation_vector
+'''
 
+import nilearn
 nilearn.EXPAND_PATH_WILDCARDS = False
-from nilearn.plotting import plot_glass_brain
 from celery import shared_task, Celery
-from six import BytesIO
-import nibabel as nib
-import pylab as plt
-import numpy
-import urllib.request, urllib.parse, urllib.error, json, tarfile, requests, os
 from io import StringIO
-import xml.etree.cElementTree as e
-from django.db import IntegrityError
-from django.core.files.uploadedfile import SimpleUploadedFile
+from nilearn.plotting import plot_glass_brain
+from six import BytesIO
+
+import nibabel as nib
+import numpy
+import pylab as plt
 import re
-from django.conf import settings
+import urllib.request, urllib.parse, urllib.error, json, tarfile, requests, os
+import xml.etree.cElementTree as e
 
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'neurovault.settings')
@@ -30,6 +34,7 @@ app = Celery('neurovault')
 app.config_from_object('django.conf:settings')
 app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
+'''
 @app.task(name='crawl_anima')
 def crawl_anima():
     import neurovault.apps.statmaps.models as models
@@ -144,6 +149,7 @@ def crawl_anima():
                 form = StatisticMapForm(post_dict, file_dict)
                 form.is_valid()
                 form.save()
+'''
 
 
 @shared_task
@@ -262,6 +268,7 @@ def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
 
 # SIMILARITY CALCULATION ##############################################################################
 
+'''
 @shared_task
 def run_voxelwise_pearson_similarity(pk1):
     from neurovault.apps.statmaps.models import Image
@@ -381,6 +388,7 @@ def save_voxelwise_pearson_similarity_resample(pk1, pk2,resample_dim=[4,4,4]):
             return image1.pk,image2.pk,pearson_score
         else:
             raise Exception("You are trying to compare an image with itself!")
+'''
 
 
 # COGNITIVE ATLAS

@@ -33,7 +33,7 @@ class TestApplicationRegistrationView(BaseTest):
             'authorization_grant_type': Application.GRANT_AUTHORIZATION_CODE
         }
 
-        response = self.client.post(reverse('developerapps_register'),
+        response = self.client.post(reverse('users:developerapps_register'),
                                     form_data)
         self.assertEqual(response.status_code, 302)
 
@@ -63,7 +63,7 @@ class TestApplicationViews(BaseTest):
         self.client.login(username=self.user.username,
                           password=self.user_password)
 
-        response = self.client.get(reverse('developerapps_list'))
+        response = self.client.get(reverse('users:developerapps_list'))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['object_list']), 1)
 
@@ -71,7 +71,7 @@ class TestApplicationViews(BaseTest):
         self.client.login(username=self.user.username,
                           password=self.user_password)
 
-        response = self.client.get(reverse('developerapps_update',
+        response = self.client.get(reverse('users:developerapps_update',
                                    args=(self.app.pk,)))
         self.assertEqual(response.status_code, 200)
 
@@ -88,7 +88,7 @@ class TestApplicationViews(BaseTest):
             'authorization_grant_type': Application.GRANT_AUTHORIZATION_CODE
         }
 
-        response = self.client.post(reverse('developerapps_update',
+        response = self.client.post(reverse('users:developerapps_update',
                                     args=(self.app.pk,)),
                                     form_data)
         self.assertEqual(response.status_code, 302)

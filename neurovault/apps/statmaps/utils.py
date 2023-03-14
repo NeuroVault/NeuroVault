@@ -351,7 +351,7 @@ def populate_feat_directory(request,collection,existing_dir=None):
         if not rootpaths:
             raise exc("No contents found in the FEAT directory.")
         subdir = os.path.join(tmp_dir,rootpaths[0])
-        feat_dir = subdir if len(rootpaths) is 1 and os.path.isdir(subdir) else tmp_dir
+        feat_dir = subdir if len(rootpaths) == 1 and os.path.isdir(subdir) else tmp_dir
     except:
         raise exc("Unable to unzip the FEAT directory: \n{0}.".format(get_traceback()))
     try:

@@ -32,7 +32,7 @@ from django.urls import reverse
 from fnmatch import fnmatch
 from guardian.shortcuts import get_objects_for_user
 # from nidmviewer.viewer import generate
-from pybraincompare.compare.scatterplot import scatterplot_compare_vector
+# from pybraincompare.compare.scatterplot import scatterplot_compare_vector
 from nidmresults.graph import Graph
 from rest_framework.renderers import JSONRenderer
 from sendfile import sendfile
@@ -1021,7 +1021,7 @@ def serve_pycortex(request, collection_cid, path, pycortex_dir='pycortex_all'):
 def serve_nidm(request, collection_cid, nidmdir, sep, path):
     collection = get_collection(collection_cid, request, mode='file')
     basepath = os.path.join(settings.PRIVATE_MEDIA_ROOT, 'images')
-    fpath = path if sep is '/' else ''.join([nidmdir, sep, path])
+    fpath = path if sep == '/' else ''.join([nidmdir, sep, path])
     try:
         nidmr = collection.basecollectionitem_set.instance_of(NIDMResults).get(name=nidmdir)
     except ObjectDoesNotExist:
