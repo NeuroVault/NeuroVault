@@ -13,7 +13,7 @@ matplotlib.use("Agg")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 APPS_DIR = Path(BASE_DIR) / "neurovault" / "apps"
 
-DEBUG = True
+DEBUG = os.getenv("DEBUG", False)
 
 DOMAIN_NAME = "https://neurovault.org"
 
@@ -152,59 +152,18 @@ INSTALLED_APPS = [
     "neurovault.apps.statmaps",
     "neurovault.apps.users",
     "django.contrib.sitemaps",
-    # Uncomment the next line to enable the admin:
     "django.contrib.admin",
-    # Uncomment the next line to enable admin documentation:
-    #'django.contrib.admindocs',
-    #'social.apps.django_app.default',
     "social_django",
     "rest_framework",
     "taggit",
     "crispy_forms",
-    #'south',
-    # 'dbbackup',
     "polymorphic",
-    # 'djcelery',
     "django_cleanup",
     "file_resubmit",
-    # 'django_mailgun',
-    # 'django_hstore',
     "guardian",
     "oauth2_provider",
-    # 'fixture_media',
-    # 'raven.contrib.django.raven_compat',
     "django_celery_results",
 ]
-
-# A sample logging configuration. The only tangible logging
-# performed by this configuration is to send an email to
-# the site admins on every HTTP 500 error when DEBUG=False.
-# See http://docs.djangoproject.com/en/dev/topics/logging for
-# more details on how to customize your logging configuration.
-# LOGGING = {
-
-#     'version': 1,
-#     'disable_existing_loggers': False,
-#     'filters': {
-#         'require_debug_false': {
-#             '()': 'django.utils.log.RequireDebugFalse'
-#         }
-#     },
-#     'handlers': {
-#         'mail_admins': {
-#             'level': 'ERROR',
-#             'filters': ['require_debug_false'],
-#             'class': 'django.utils.log.AdminEmailHandler'
-#         }
-#     },
-#     'loggers': {
-#         'django.request': {
-#             'handlers': ['mail_admins'],
-#             'level': 'ERROR',
-#             'propagate': True,
-#         },
-#     }
-# }
 
 AUTHENTICATION_BACKENDS = (
     "social_core.backends.facebook.FacebookOAuth2",
@@ -219,7 +178,7 @@ SOCIAL_AUTH_PIPELINE = (
     "social.pipeline.social_auth.auth_allowed",
     "social.pipeline.social_auth.social_user",
     "social.pipeline.user.get_username",
-    "social.pipeline.social_auth.associate_by_email",  # <--- enable this one
+    "social.pipeline.social_auth.associate_by_email",
     "social.pipeline.user.create_user",
     "social.pipeline.social_auth.associate_user",
     "social.pipeline.social_auth.load_extra_data",
@@ -227,6 +186,12 @@ SOCIAL_AUTH_PIPELINE = (
 )
 
 SOCIAL_AUTH_FACEBOOK_SCOPE = ["email"]
+FACEBOOK_APP_ID = os.getenv("FACEBOOK_APP_ID")
+FACEBOOK_API_SECRET = os.getenv("FACEBOOK_API_SECRET")
+SOCIAL_AUTH_GOOGLE_PLUS_KEY = os.getenv("SOCIAL_AUTH_GOOGLE_PLUS_KEY")
+SOCIAL_AUTH_GOOGLE_PLUS_SECRET = os.getenv("SOCIAL_AUTH_GOOGLE_PLUS_SECRET")
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.getenv("SOCIAL_AUTH_GOOGLE_OAUTH2_KEY")
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv("SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET")
 
 SESSION_SERIALIZER = "django.contrib.sessions.serializers.PickleSerializer"
 
@@ -261,10 +226,6 @@ LOGIN_REDIRECT_URL = "/my_collections/"
 
 CRISPY_TEMPLATE_PACK = "bootstrap4"
 
-DBBACKUP_STORAGE = "dbbackup.storage.dropbox_storage"
-DBBACKUP_TOKENS_FILEPATH = "/home/filo/dbtokens"
-DBBACKUP_POSTGRES_BACKUP_COMMAND = "export PGPASSWORD=neurovault\n pg_dump --username={adminuser} --host={host} --port={port} {databasename} >"
-
 # For Apache, use 'sendfile.backends.xsendfile'
 # For Nginx, use 'sendfile.backends.nginx'
 # For Devserver, use 'sendfile.backends.development'
@@ -284,11 +245,6 @@ CACHES = {
     },
 }
 
-# Mandrill config
-
-EMAIL_BACKEND = "django_mailgun.MailgunBackend"
-MAILGUN_ACCESS_KEY = ""  # replace with a real key in production
-MAILGUN_SERVER_NAME = "neurovault.org"  # replace with 'neurovault.org' in production
 DEFAULT_FROM_EMAIL = "noreply@neurovault.org"
 
 if os.path.exists("/usr/local/share/pycortex/db/fsaverage"):
@@ -373,3 +329,15 @@ GUARDIAN_GET_CONTENT_TYPE = (
 )
 
 FIXTURE_DIRS = ("apps/statmaps/fixtures/",)
+
+
+if os.getenv("EMAIL_HOST") is not None:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    MAIL_USE_TLS = True
+    EMAIL_HOST = os.getenv("EMAIL_HOST")
+    EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+    EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+
+if os.getenv("EMAIL_HOST") is not None:
+    EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+    EMAIL_FILE_PATH = '/tmp/email-fallback' 

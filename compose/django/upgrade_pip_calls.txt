@@ -15,4 +15,4 @@ pip install NiMARE
 pip install django-braces
 pip install corsheaders
 pip install django-cors-headers
-
+pip install gunicorn

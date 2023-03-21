@@ -101,3 +101,4 @@ webencodings==0.5.1
 wget==3.2
 wrapt==1.14.1
 zipstream==1.1.4
+gunicorn==20.1.0
