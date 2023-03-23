@@ -96,6 +96,9 @@ class Community(models.Model):
         max_length=200, null=False, verbose_name="Short description of the community"
     )
 
+    def __str__(self):
+        return self.short_desc
+
     def __unicode__(self):
         return self.short_desc
 
@@ -770,6 +773,9 @@ class Collection(models.Model):
     def __unicode__(self):
         return self.name
 
+    def __str__(self):
+        return self.name
+
     def save(self, *args, **kwargs):
         if self.DOI is not None and self.DOI.strip() == "":
             self.DOI = None
@@ -931,6 +937,9 @@ class BaseCollectionItem(PolymorphicModel, models.Model):
     modify_date = models.DateTimeField("date modified", auto_now=True)
     tags = TaggableManager(through=ValueTaggedItem, blank=True)
     is_valid = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
 
     def __unicode__(self):
         return self.name
@@ -1594,6 +1603,12 @@ class Similarity(models.Model):
         verbose_name_plural = "similarity metrics"
         unique_together = ("similarity_metric", "transformation")
 
+    def __str__(self):
+        return "<metric:%s><transformation:%s>" % (
+            self.similarity_metric,
+            self.transformation,
+        )
+
     def __unicode__(self):
         return "<metric:%s><transformation:%s>" % (
             self.similarity_metric,
@@ -1613,6 +1628,9 @@ class Comparison(models.Model):
         help_text="the comparison score between two or more statistical maps",
         verbose_name="the comparison score between two or more statistical maps",
     )
+
+    def __str__(self):
+        return "<%s><%s><score:%s>" % (self.image1, self.image2, self.similarity_score)
 
     def __unicode__(self):
         return "<%s><%s><score:%s>" % (self.image1, self.image2, self.similarity_score)
