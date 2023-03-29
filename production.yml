@@ -5,10 +5,10 @@ volumes:
 services:
   django:
     restart: always
-    image: neurovault/neurovault
+    image: neurovault/neurovault_fs
     build:
       context: .
-      dockerfile: ./compose/django/Dockerfile
+      dockerfile: ./compose/django/Dockerfile_fs
     command: ./compose/django/prod_start
     ports: 
       - "5000:5000"

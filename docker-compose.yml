@@ -4,8 +4,8 @@ services:
     restart: always
     build:
       context: .
-      dockerfile: ./compose/django/Dockerfile
-    image: neurovault/neurovault
+      dockerfile: ./compose/django/Dockerfile_fs
+    image: neurovault/neurovault_fs
     command: python manage.py runserver 0.0.0.0:8000
     ports: 
       - "8000:8000"

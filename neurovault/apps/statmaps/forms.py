@@ -472,7 +472,7 @@ class ImageValidationMixin(object):
                 inputs_dict = {"lh": "surface_left_file", "rh": "surface_right_file"}
                 intent_dict = {"lh": "CortexLeft", "rh": "CortexRight"}
 
-                for hemi in cognitive_paradigm_cogatlas["lh", "rh"]:
+                for hemi in ["lh", "rh"]:
                     print(hemi)
                     surface_file = cleaned_data.get(inputs_dict[hemi])
                     _, ext = splitext_nii_gz(surface_file.name)
@@ -489,8 +489,8 @@ class ImageValidationMixin(object):
                     print("write " + hemi)
                     print(surface_file.file)
                     surface_file.open()
-                    surface_file = StringIO(surface_file.read())
-                    with open(infile, "w") as fd:
+                    surface_file = BytesIO(surface_file.read())
+                    with open(infile, "wb") as fd:
                         surface_file.seek(0)
                         shutil.copyfileobj(surface_file, fd)
 
@@ -1023,6 +1023,10 @@ class EditStatisticMapForm(StatisticMapForm):
 
 
 class AddStatisticMapForm(StatisticMapForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["file"].required = False
+
     class Meta(StatisticMapForm.Meta):
         fields = (
             "name",
