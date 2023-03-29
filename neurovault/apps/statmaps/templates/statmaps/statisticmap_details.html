@@ -132,7 +132,7 @@ $(document).ready(function(){
         {% if image.collection.communities.all %}
             <p>Communities:
                 {% for community in image.collection.communities.all %}
-                   <a href="{%  url 'view_community' community_label=community.label %}">{{ community.label }}</a>
+                   <a href="{%  url 'main:view_community' community_label=community.label %}">{{ community.label }}</a>
                 {% endfor %}
             </p>
         {% endif %}

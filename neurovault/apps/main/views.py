@@ -52,7 +52,7 @@ def community_view(request, community_label):
         % community.short_desc,
         "name_subscript": community.label,
         "name_subscript_url": reverse(
-            "view_community", kwargs={"community_label": community_label}
+            "main:view_community", kwargs={"community_label": community_label}
         ),
     }
     return render(request, "index.html", context)

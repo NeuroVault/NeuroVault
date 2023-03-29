@@ -507,7 +507,7 @@ def add_communities_context(communities, context):
         main_community = communities[0]
         context["name_subscript"] = main_community.label
         context["name_subscript_url"] = reverse(
-            "statmaps:view_community", kwargs={"community_label": main_community.label}
+            "main:view_community", kwargs={"community_label": main_community.label}
         )
 
 
@@ -949,8 +949,6 @@ def upload_folder(request, collection_cid):
     allowed_extensions = [".nii", ".img", ".nii.gz"]
     niftiFiles = []
     if request.method == "POST":
-        print(request.POST)
-        print(request.FILES)
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             tmp_directory = tempfile.mkdtemp()

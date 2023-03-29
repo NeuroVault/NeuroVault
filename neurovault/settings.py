@@ -28,7 +28,7 @@ SITE_ID = 1
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DB"),
+        "NAME": os.getenv("POSTGRES_NAME"),
         "USER": os.getenv("POSTGRES_USER"),
         "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
         "HOST": os.getenv("POSTGRES_HOST"),
@@ -68,14 +68,14 @@ USE_TZ = True
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/var/www/example.com/media/"
-if os.path.isabs(os.environ["NV_IMAGE_DATA"]):
-    MEDIA_BASE = os.environ["NV_IMAGE_DATA"]
-else:
-    MEDIA_BASE = os.path.join(BASE_DIR, os.environ["NV_IMAGE_DATA"])
-MEDIA_ROOT = os.path.join(MEDIA_BASE, "pub")
+# if os.path.isabs(os.environ["NV_IMAGE_DATA"]):
+#    MEDIA_BASE = os.environ["NV_IMAGE_DATA"]
+# else:
+#    MEDIA_BASE = os.path.join(BASE_DIR, os.environ["NV_IMAGE_DATA"])
+MEDIA_ROOT = os.path.join(BASE_DIR,'media')
 MEDIA_URL = "/public/media/"
 
-PRIVATE_MEDIA_ROOT = MEDIA_BASE
+PRIVATE_MEDIA_ROOT = "/var/www/image_data"
 PRIVATE_MEDIA_URL = "/media/images"
 
 
@@ -173,16 +173,16 @@ AUTHENTICATION_BACKENDS = (
 )
 
 SOCIAL_AUTH_PIPELINE = (
-    "social.pipeline.social_auth.social_details",
-    "social.pipeline.social_auth.social_uid",
-    "social.pipeline.social_auth.auth_allowed",
-    "social.pipeline.social_auth.social_user",
-    "social.pipeline.user.get_username",
-    "social.pipeline.social_auth.associate_by_email",
-    "social.pipeline.user.create_user",
-    "social.pipeline.social_auth.associate_user",
-    "social.pipeline.social_auth.load_extra_data",
-    "social.pipeline.user.user_details",
+    "social_core.pipeline.social_auth.social_details",
+    "social_core.pipeline.social_auth.social_uid",
+    "social_core.pipeline.social_auth.auth_allowed",
+    "social_core.pipeline.social_auth.social_user",
+    "social_core.pipeline.user.get_username",
+    "social_core.pipeline.social_auth.associate_by_email",
+    "social_core.pipeline.user.create_user",
+    "social_core.pipeline.social_auth.associate_user",
+    "social_core.pipeline.social_auth.load_extra_data",
+    "social_core.pipeline.user.user_details",
 )
 
 SOCIAL_AUTH_FACEBOOK_SCOPE = ["email"]
@@ -192,6 +192,7 @@ SOCIAL_AUTH_GOOGLE_PLUS_KEY = os.getenv("SOCIAL_AUTH_GOOGLE_PLUS_KEY")
 SOCIAL_AUTH_GOOGLE_PLUS_SECRET = os.getenv("SOCIAL_AUTH_GOOGLE_PLUS_SECRET")
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.getenv("SOCIAL_AUTH_GOOGLE_OAUTH2_KEY")
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv("SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET")
+SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
 
 SESSION_SERIALIZER = "django.contrib.sessions.serializers.PickleSerializer"
 
@@ -341,3 +342,5 @@ if os.getenv("EMAIL_HOST") is not None:
 if os.getenv("EMAIL_HOST") is not None:
     EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
     EMAIL_FILE_PATH = '/tmp/email-fallback' 
+
+CSRF_TRUSTED_ORIGINS = ['https://54.202.202.179', 'https://neurovault.org']

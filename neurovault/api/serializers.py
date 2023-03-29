@@ -204,7 +204,6 @@ class StatisticMapSerializer(ImageSerializer):
 
     def to_representation(self, obj):
         ret = super(ImageSerializer, self).to_representation(obj)
-        print(dir(obj))
         try:
             for field_name, value in list(obj.data.items()):
                 if field_name not in ret:

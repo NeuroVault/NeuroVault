@@ -35,7 +35,7 @@ services:
     command: celery -A neurovault.celery worker -Q default -n default@%h
     volumes:
       - .:/code
-      - ${NV_IMAGE_DATA}:/image_data
+      - ${NV_IMAGE_DATA}:/var/www/image_data
     depends_on:
       - redis
     env_file:

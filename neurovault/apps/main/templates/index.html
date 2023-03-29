@@ -77,7 +77,7 @@
                     {% for collection in recent_collections %}
                         <tr>
                             <th scope="column">
-                                <a href="{% url 'collection_details' collection.id %}">{{ collection.name }}</a>
+                                <a href="{% url 'statmaps:collection_details' collection.id %}">{{ collection.name }}</a>
                             </th>
                             <td>
                                 {{ collection.basecollectionitem_set.all.count }}

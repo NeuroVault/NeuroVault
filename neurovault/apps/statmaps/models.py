@@ -1154,7 +1154,6 @@ class Image(BaseCollectionItem):
 
         # If a .img file was loaded then load the correspoding .hdr file as well
         _, ext = os.path.splitext(my_file_name)
-        print(ext)
         if ext in [".img"]:
             f = open(my_file[:-3] + "hdr")
             hdrFile = File(f)
