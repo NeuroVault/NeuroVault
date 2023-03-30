@@ -9,11 +9,11 @@
 
         <h3>Revoke the app authorization?</h3>
         <p><strong>{{ object.name }}</strong> will no longer be able to access your account on your behalf.</p>
-        <form method="post" action="{% url 'connection_revoke' object.pk %}">
+        <form method="post" action="{% url 'users:connection_revoke' object.pk %}">
             {% csrf_token %}
             <div class="form-controls">
                 <input type="submit" class="btn btn-danger" name="allow" value="Revoke access"/>
-                <a class="btn btn-link" href="{% url "connection_list" %}">Cancel</a>
+                <a class="btn btn-link" href="{% url 'users:connection_list' %}">Cancel</a>
             </div>
         </form>
         </div>

@@ -18,16 +18,16 @@ def mkdir_p(path):
 
 for image in Image.objects.all():
     if not image.file.name.endswith(".nii.gz") and image.file.name.endswith(".gz"):
-        print image.file.name
+        print(image.file.name)
         if image.file.name.endswith("nii.gz"):
             offset = 6
         else:
             offset = 3
         new_name = image.file.name[:-offset] + ".nii.gz"
-        print new_name
-        print image.file.path
+        print(new_name)
+        print(image.file.path)
         new_path = image.file.path[:-offset] + ".nii.gz"
-        print new_path
+        print(new_path)
         
         os.rename(image.file.path, new_path)
         image.file.name = new_name

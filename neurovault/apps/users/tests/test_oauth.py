@@ -1,12 +1,14 @@
 from django.test import TestCase, Client
+from django.test.utils import override_settings
 from django.http import HttpResponse
-from django.core.urlresolvers import reverse
-from django.conf.urls import patterns, url, include
+from django.urls import reverse, re_path, include
+
 from django.contrib.auth import get_user_model
 
 from rest_framework import permissions
 from rest_framework.views import APIView
-from oauth2_provider.ext.rest_framework import OAuth2Authentication
+from oauth2_provider.contrib.rest_framework import OAuth2Authentication
+from oauth2_provider.models import AccessToken
 
 UserModel = get_user_model()
 
@@ -15,30 +17,27 @@ class MockView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request):
-        return HttpResponse({'a': 1, 'b': 2, 'c': 3})
+        return HttpResponse({"a": 1, "b": 2, "c": 3})
 
 
 class OAuth2View(MockView):
     authentication_classes = [OAuth2Authentication]
 
 
-urlpatterns = patterns(
-    '',
-    url(r'^oauth2/', include('oauth2_provider.urls')),
-    url(r'^oauth2-test/$', OAuth2View.as_view()),
-    url(r'^accounts/', include('neurovault.apps.users.urls')),
-
-)
+urlpatterns = [
+    re_path(r"^oauth2/", include("oauth2_provider.urls")),
+    re_path(r"^oauth2-test/$", OAuth2View.as_view()),
+    re_path(r"^accounts/", include("neurovault.apps.users.urls")),
+]
 
 
+@override_settings(ROOT_URLCONF=__name__)
 class TestPersonalAccessTokens(TestCase):
-    urls = 'neurovault.apps.users.tests.test_oauth'
-
     def setUp(self):
         self.user_password = "l0n6 l1v3 7h3 k1n6!"
-        self.user = UserModel.objects.create_user("bernardo",
-                                                  "bernardo@example.com",
-                                                  self.user_password)
+        self.user = UserModel.objects.create_user(
+            "bernardo", "bernardo@example.com", self.user_password
+        )
         self.client = Client()
 
     def tearDown(self):
@@ -58,10 +57,10 @@ class TestPersonalAccessTokens(TestCase):
 
     def test_authentication_allow(self):
         self.client.login(username=self.user, password=self.user_password)
-        response = self.client.post(reverse('token_create'))
+        response = self.client.post(reverse("users:token_create"))
         self.assertEqual(response.status_code, 302)
 
-        access_token = self.user.accesstoken_set.first()
+        access_token = AccessToken.objects.get(user_id=self.user)
 
         auth = self._create_authorization_header(access_token)
         response = self.client.get("/oauth2-test/", HTTP_AUTHORIZATION=auth)

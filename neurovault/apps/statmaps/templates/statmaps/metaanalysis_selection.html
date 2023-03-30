@@ -15,7 +15,7 @@
                 "processing": true,
                 "serverSide": true,
                 "order": [[ 0, "asc" ]],
-                "ajax": "{% url 'metaanalysis_selection_json' %}",
+                "ajax": "{% url 'statmaps:metaanalysis_selection_json' %}",
                 "oSearch":{"sSearch":result},
                 "fnDrawCallback": function (oSettings) {
                     var curSearch = oSettings.oPreviousSearch.sSearch;

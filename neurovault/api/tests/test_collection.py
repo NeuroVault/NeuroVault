@@ -11,27 +11,27 @@ from neurovault.apps.statmaps.utils import generate_url_token
 
 class TestCollection(APITestCase):
     def setUp(self):
-        self.user_password = 'apitest'
-        self.user = User.objects.create_user('NeuroGuy')
+        self.user_password = "apitest"
+        self.user = User.objects.create_user("NeuroGuy")
         self.user.save()
         self.coll = Collection(owner=self.user, name="Test Collection")
         self.coll.save()
 
-        self.item_url = '/api/collections/%s/' % self.coll.id
+        self.item_url = "/api/collections/%s/" % self.coll.id
 
     def test_fetch_collection_list(self):
-        response = self.client.get('/api/collections/', follow=True)
-        self.assertEqual(response.data['results'][0]['echo_time'], None)
-        self.assertEqual(response.data['results'][0]['id'], self.coll.id)
-        self.assertEqual(response.data['results'][0]['name'], self.coll.name)
-        self.assertEqual(response.data['results'][0]['private'], False)
+        response = self.client.get("/api/collections/", follow=True)
+        self.assertEqual(response.data["results"][0]["echo_time"], None)
+        self.assertEqual(response.data["results"][0]["id"], self.coll.id)
+        self.assertEqual(response.data["results"][0]["name"], self.coll.name)
+        self.assertEqual(response.data["results"][0]["private"], False)
 
     def test_fetch_collection(self):
-        response = self.client.get('/api/collections/%s/' % self.coll.id)
+        response = self.client.get("/api/collections/%s/" % self.coll.id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['id'], self.coll.id)
-        self.assertEqual(response.data['name'], self.coll.name)
-        self.assertEqual(response.data['private'], False)
+        self.assertEqual(response.data["id"], self.coll.id)
+        self.assertEqual(response.data["name"], self.coll.name)
+        self.assertEqual(response.data["private"], False)
 
     def test_fetch_my_collections(self):
         self.client.force_authenticate(user=self.user)
@@ -39,179 +39,150 @@ class TestCollection(APITestCase):
         # Create a private collection
         private_collection = Collection(
             owner=self.user,
-            name='Private Collection',
+            name="Private Collection",
             private=True,
-            private_token=generate_url_token()
+            private_token=generate_url_token(),
         )
         private_collection.save()
 
-        response = self.client.get('/api/my_collections/', follow=True)
-        self.assertEqual(len(response.data['results']), 2)
+        response = self.client.get("/api/my_collections/", follow=True)
+        self.assertEqual(len(response.data["results"]), 2)
 
-        collection_map = dict((x['id'], x) for x in response.data['results'])
+        collection_map = dict((x["id"], x) for x in response.data["results"])
 
-        self.assertEqual(collection_map[self.coll.id]['id'], self.coll.id)
-        self.assertEqual(collection_map[self.coll.id]['private'], False)
-        self.assertEqual(
-            collection_map[private_collection.id]['private'], True
-        )
+        self.assertEqual(collection_map[self.coll.id]["id"], self.coll.id)
+        self.assertEqual(collection_map[self.coll.id]["private"], False)
+        self.assertEqual(collection_map[private_collection.id]["private"], True)
 
         # Create and share a new collection with our user
-        sharer_user = User.objects.create_user('Sharer')
+        sharer_user = User.objects.create_user("Sharer")
         sharer_user.save()
 
-        shared_collection = Collection(
-            owner=sharer_user,
-            name='Shared Test Collection'
-        )
+        shared_collection = Collection(owner=sharer_user, name="Shared Test Collection")
 
         shared_collection.save()
         shared_collection.contributors.add(self.user)
 
         # Re-fetch the data
-        response = self.client.get('/api/my_collections/', follow=True)
+        response = self.client.get("/api/my_collections/", follow=True)
 
-        user_collections_ids = sorted([
-            self.coll.id,
-            shared_collection.id,
-            private_collection.id
-        ])
-        result_collection_ids = sorted(
-            x['id'] for x in response.data['results']
+        user_collections_ids = sorted(
+            [self.coll.id, shared_collection.id, private_collection.id]
         )
+        result_collection_ids = sorted(x["id"] for x in response.data["results"])
 
-        self.assertEqual(
-            len(response.data['results']), len(user_collections_ids)
-        )
+        self.assertEqual(len(response.data["results"]), len(user_collections_ids))
         self.assertListEqual(user_collections_ids, result_collection_ids)
 
     def test_create_collection(self):
         self.client.force_authenticate(user=self.user)
 
         post_dict = {
-            'name': 'Test Create Collection',
+            "name": "Test Create Collection",
         }
 
-        response = self.client.post('/api/collections/', post_dict)
+        response = self.client.post("/api/collections/", post_dict)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['name'], post_dict['name'])
+        self.assertEqual(response.data["name"], post_dict["name"])
 
     def test_create_collection_with_doi(self):
         self.client.force_authenticate(user=self.user)
 
         post_dict = {
-            'DOI': '10.3389/fninf.2015.00008',
+            "DOI": "10.3389/fninf.2015.00008",
         }
 
-        response = self.client.post('/api/collections/', post_dict)
+        response = self.client.post("/api/collections/", post_dict)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        self.assertEqual(response.data['DOI'], post_dict['DOI'])
+        self.assertEqual(response.data["DOI"], post_dict["DOI"])
 
         doi_properties = {
-            'name': 'NeuroVault.org: a web-based repository for collecting '
-                    'and sharing unthresholded statistical maps '
-                    'of the human brain',
-            'authors': 'Krzysztof J. Gorgolewski, Gael Varoquaux, '
-                       'Gabriel Rivera, Yannick Schwarz, Satrajit S. Ghosh, '
-                       'Camille Maumet, Vanessa V. Sochat, '
-                       'Thomas E. Nichols, Russell A. Poldrack, '
-                       'Jean-Baptiste Poline, Tal Yarkoni '
-                       'and Daniel S. Margulies',
-            'paper_url': 'http://journal.frontiersin.org/article'
-                         '/10.3389/fninf.2015.00008/abstract',
-            'journal_name': 'Frontiers in Neuroinformatics',
-            'DOI': post_dict['DOI']
+            "name": "NeuroVault.org: a web-based repository for collecting "
+            "and sharing unthresholded statistical maps "
+            "of the human brain",
+            "authors": "Krzysztof J. Gorgolewski, Gael Varoquaux, "
+            "Gabriel Rivera, Yannick Schwarz, Satrajit S. Ghosh, "
+            "Camille Maumet, Vanessa V. Sochat, "
+            "Thomas E. Nichols, Russell A. Poldrack, "
+            "Jean-Baptiste Poline, Tal Yarkoni "
+            "and Daniel S. Margulies",
+            "paper_url": "http://journal.frontiersin.org/article"
+            "/10.3389/fninf.2015.00008/abstract",
+            "journal_name": "Frontiers in Neuroinformatics",
+            "DOI": post_dict["DOI"],
         }
 
-        collection = Collection.objects.get(pk=response.data['id'])
+        collection = Collection.objects.get(pk=response.data["id"])
 
-        for key in doi_properties.keys():
+        for key in list(doi_properties.keys()):
             self.assertEqual(response.data[key], doi_properties[key])
             self.assertEqual(getattr(collection, key), doi_properties[key])
 
     def test_create_collection_with_incorrect_doi(self):
         self.client.force_authenticate(user=self.user)
 
-        post_dict = {
-            'DOI': '-*-INCORRECT*-'
-        }
+        post_dict = {"DOI": "-*-INCORRECT*-"}
 
-        response = self.client.post('/api/collections/', post_dict)
+        response = self.client.post("/api/collections/", post_dict)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(
-            response.data, {'non_field_errors': ['Could not resolve DOI']}
-        )
+        self.assertEqual(response.data, {"non_field_errors": ["Could not resolve DOI"]})
 
     def test_create_collection_with_both_name_and_doi(self):
         self.client.force_authenticate(user=self.user)
 
-        post_dict = {
-            'DOI': '10.3389/fninf.2015.00008',
-            'name': 'NeuroVault'
-        }
+        post_dict = {"DOI": "10.3389/fninf.2015.00008", "name": "NeuroVault"}
 
-        response = self.client.post('/api/collections/', post_dict)
+        response = self.client.post("/api/collections/", post_dict)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(
-            response.data,
-            {
-                'non_field_errors': ['Specify either "name" or "DOI"']
-            }
+            response.data, {"non_field_errors": ['Specify either "name" or "DOI"']}
         )
 
     def test_missing_required_authentication(self):
-        url = '/api/collections/%s/' % self.coll.id
+        url = "/api/collections/%s/" % self.coll.id
 
-        response = self.client.post(url, {'name': 'failed test'})
+        response = self.client.post(url, {"name": "failed test"})
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertEqual(response.data, {
-            'detail': 'Authentication credentials were not provided.'
-        })
+        self.assertEqual(
+            response.data, {"detail": "Authentication credentials were not provided."}
+        )
 
     def test_partial_update_collection(self):
         self.client.force_authenticate(user=self.user)
 
         patch_dict = {
-            'description': "renamed %s" % uuid.uuid4(),
+            "description": "renamed %s" % uuid.uuid4(),
         }
 
         response = self.client.patch(self.item_url, patch_dict)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['description'],
-                         patch_dict['description'])
+        self.assertEqual(response.data["description"], patch_dict["description"])
 
     def test_partial_update_whitespace_name(self):
         self.client.force_authenticate(user=self.user)
 
-        whitespace = ' '
+        whitespace = " "
 
-        patch_dict = {
-            'name': whitespace,
-            'description': "renamed %s" % uuid.uuid4()
-        }
+        patch_dict = {"name": whitespace, "description": "renamed %s" % uuid.uuid4()}
         response = self.client.patch(self.item_url, patch_dict)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, {
-            'name': [u'This field may not be blank.']
-        })
+        self.assertEqual(response.data, {"name": ["This field may not be blank."]})
 
     def test_update_collection(self):
         self.client.force_authenticate(user=self.user)
 
         put_dict = {
-            'name': "renamed %s" % uuid.uuid4(),
-            'description': "renamed %s" % uuid.uuid4(),
+            "name": "renamed %s" % uuid.uuid4(),
+            "description": "renamed %s" % uuid.uuid4(),
         }
 
         response = self.client.put(self.item_url, put_dict)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['description'],
-                         put_dict['description'])
-        self.assertEqual(response.data['name'],
-                         put_dict['name'])
+        self.assertEqual(response.data["description"], put_dict["description"])
+        self.assertEqual(response.data["name"], put_dict["name"])
 
     def test_destroy_collection(self):
         self.client.force_authenticate(user=self.user)
@@ -225,33 +196,31 @@ class TestCollection(APITestCase):
     def test_missing_required_permissions(self):
         self.client.force_authenticate(user=self.user)
 
-        other_user = User.objects.create_user('OtherGuy')
+        other_user = User.objects.create_user("OtherGuy")
         other_user.save()
 
-        other_collection = Collection(owner=other_user,
-                                      name="Another Test Collection")
+        other_collection = Collection(owner=other_user, name="Another Test Collection")
         other_collection.save()
 
-        url = '/api/collections/%s/' % other_collection.pk
+        url = "/api/collections/%s/" % other_collection.pk
 
-        put_dict = {
-            'name': "renamed %s" % uuid.uuid4()
-        }
+        put_dict = {"name": "renamed %s" % uuid.uuid4()}
 
         response = self.client.put(url, put_dict)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response.data, {
-            'detail': 'You do not have permission to perform this action.'
-        })
+        self.assertEqual(
+            response.data,
+            {"detail": "You do not have permission to perform this action."},
+        )
 
     def test_collections_datatable(self):
-        url = '/api/collections/%d/datatable/' % self.coll.pk
+        url = "/api/collections/%d/datatable/" % self.coll.pk
         response = self.client.get(url, follow=True)
 
-        aa_data = response.data['aaData']
+        aa_data = response.data["aaData"]
 
         self.assertIsInstance(aa_data, list)
         key_map = dict(aa_data)
 
-        self.assertEqual(key_map['name'], self.coll.name)
-        self.assertEqual(key_map['id'], self.coll.pk)
+        self.assertEqual(key_map["name"], self.coll.name)
+        self.assertEqual(key_map["id"], self.coll.pk)

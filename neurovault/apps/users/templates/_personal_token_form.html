@@ -1,4 +1,4 @@
-<form method="post" action="{% url 'token_create' %}">
+<form method="post" action="{% url 'users:token_create' %}">
   {% csrf_token %}
   <input type="submit" class="btn btn-primary" name="generate" value="Generate new token"/>
 </form>

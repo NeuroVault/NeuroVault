@@ -27,7 +27,7 @@
                 <td>
                   {{ rt.application.user.username }}
                 </td>
-                <td><a class="btn btn-danger btn-sm" href="{% url "connection_revoke" rt.application.id %}">Revoke access</a>
+                <td><a class="btn btn-danger btn-sm" href="{% url 'users:connection_revoke' rt.application.id %}">Revoke access</a>
                 </td>
               </tr>
           {% endfor %}
@@ -36,7 +36,7 @@
     {% else %}
     <div class="text-center settings-no-content">
       <h3>No connected applications</h3>
-      <p>You have no applications authorized to access your account on your behalf via <a href="{% url 'api-docs' %}">NeuroVault API</a>.</p>
+      <p>You have no applications authorized to access your account on your behalf via <a href="{% url 'main:api-docs' %}">NeuroVault API</a>.</p>
     </div>
     {% endif %}
     </div>

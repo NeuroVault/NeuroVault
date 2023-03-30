@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 from future import standard_library
 standard_library.install_aliases()
 from builtins import str
@@ -15,8 +15,8 @@ def mkdir_p(path):
         else: raise
 
 collections = []
-next_url_url = "http://neurovault.org/api/collections/?format=json"
-target_folder = "D:/scratch/neurovault_backup"
+next_url_url = "https://neurovault.org/api/collections/?format=json"
+target_folder = "/media/rwblair/backup_1/neurovault_backup"
 
 while next_url_url:
     print("fetching %s"%next_url_url)

@@ -35,5 +35,5 @@ all_images = StatisticMap.objects.filter(collection__private=False).exclude(is_t
 for image1 in all_images:
   for image2 in all_images:
     if image1.pk < image2.pk:
-      print "Calculating pearson similarity for images %s and %s" %(image1,image2)
+      print("Calculating pearson similarity for images %s and %s" %(image1,image2))
       save_voxelwise_pearson_similarity.apply_async([image1.pk,image2.pk])

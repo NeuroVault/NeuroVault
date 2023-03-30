@@ -1,0 +1,60 @@
+version: '3'
+volumes:
+  static:
+
+services:
+  django:
+    restart: always
+    image: neurovault/neurovault_fs
+    build:
+      context: .
+      dockerfile: ./compose/django/Dockerfile_fs
+    command: ./compose/django/prod_start
+    ports: 
+      - "5000:5000"
+    volumes:
+      - .:/code
+      - ${NV_IMAGE_DATA}:/image_data
+      - static:/var/www/static
+    depends_on:
+      - redis
+      - postgres
+    env_file:
+      - ./.env
+
+  postgres:
+    image: postgres:14
+    volumes:
+      - ${DB_DATA}:/var/lib/postgresql/data
+    env_file:
+      - ./.env
+
+  redis:
+    restart: always
+    image: redis:6
+    command: redis-server --appendonly yes
+
+  worker:
+    image: neurovault/neurovault
+    command: celery -A neurovault.celery worker -Q default -n default@%h
+    volumes:
+      - .:/code
+      - ${NV_IMAGE_DATA}:/image_data
+    depends_on:
+      - redis
+    env_file:
+      - ./.env
+
+  nginx:
+    image: nginx:latest
+    restart: unless-stopped
+    volumes:
+      - ./compose/nginx/nginx.nossl.conf:/etc/nginx/conf.d/default.conf
+      - ./compose/nginx/certs:/etc/letsencrypt
+      - ./compose/nginx/certs-data:/data/letsencrypt
+      - static:/var/www/static
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - django

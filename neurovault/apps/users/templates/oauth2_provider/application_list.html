@@ -21,7 +21,7 @@
           <tbody>
           {% for application in applications %}
               <tr>
-                <td><a href="{% url "developerapps_update" application.id %}">{{ application.name }}</a>
+                <td><a href="{% url 'users:developerapps_update' application.id %}">{{ application.name }}</a>
                 </td>
                 <td>
                   {{ application.client_id }}
@@ -31,12 +31,12 @@
           </tbody>
       </table>
 
-      <a class="btn btn-primary" href="{% url 'developerapps_register' %}">Register new application</a>
+      <a class="btn btn-primary" href="{% url 'users:developerapps_register' %}">Register new application</a>
     {% else %}
     <div class="text-center settings-no-content">
       <h3>No developer applications</h3>
-      <p>Developer applications are used for enhanced access to the <a href="{% url 'api-docs' %}">NeuroVault API</a>.</p>
-      <p><a href="{% url 'developerapps_register' %}">Register an application</a> to get started.</p>
+      <p>Developer applications are used for enhanced access to the <a href="{% url 'main:api-docs' %}">NeuroVault API</a>.</p>
+      <p><a href="{% url 'users:developerapps_register' %}">Register an application</a> to get started.</p>
     </div>
     {% endif %}
     </div>

@@ -8,7 +8,7 @@ template = """<p>Dear {username},<br \>
 <br \>
 Twice a year data from NeuroVault are deposited in Stanford Digital
 Repository (SDR). The mission of SDR is to preserve important scientific dataset for decades. They increase chances of
-long-term data accessibility by mirroring datasets at multiple data centers distributed across the globe. In two weeks
+long-term data accessibility by mirroring datasets at multiple data centers distributed across the globe. In a week
 we will be depositing a snapshot of NeuroVault data in SDR. Only public collections with a DOI of a corresponding paper
 will be included in the deposition. It seems that you currently have {collection_noun} that {collection_verb} either
 private or {collection_pronoun} not have a DOI of a corresponding paper:</p>
@@ -48,4 +48,4 @@ for user in User.objects.all():
         send_mail("Time to update your NeuroVault maps", email, "team@neurovault.org",
                   [user.email], html_message=email, fail_silently=True)
         counter += 1
-print "Sent %d emails" % counter
+print("Sent %d emails" % counter)

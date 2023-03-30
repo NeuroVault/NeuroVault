@@ -7,6 +7,7 @@ neurovault/reload.py
 neurovault/local_settings.py
 neurovault/secrets.py
 neurovault/static/
+neurovault/pycortex_data/
 
 # test data
 neurovault/apps/statmaps/tests/test_data/feat/*
@@ -69,3 +70,9 @@ docs/_build/
 
 # PyBuilder
 target/
+
+local_data/
+.env
+.envs/
+
+*.swp

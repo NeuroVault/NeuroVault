@@ -7,37 +7,40 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import test as rest_framework_test
 from rest_framework import status
 
-from neurovault.apps.statmaps.models import Collection
+from neurovault.apps.statmaps.models import (
+    Collection,
+    CognitiveAtlasTask,
+    CognitiveAtlasContrast,
+)
 from neurovault.apps.statmaps.tests.utils import clearDB
+from neurovault.api.tests.utils import _setup_test_cognitive_atlas
 
-STATMAPS_TESTS_PATH = '../../apps/statmaps/tests/'
+STATMAPS_TESTS_PATH = "../../apps/statmaps/tests/"
 
 
 class APITestCase(rest_framework_test.APITestCase):
     def abs_file_path(self, rel_path):
-        return os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                            rel_path)
+        return os.path.join(os.path.abspath(os.path.dirname(__file__)), rel_path)
 
     def abs_data_path(self, relative_filename_path):
-        return self.abs_file_path(os.path.join(
-            STATMAPS_TESTS_PATH,
-            'test_data',
-            relative_filename_path
-        ))
+        return self.abs_file_path(
+            os.path.join(STATMAPS_TESTS_PATH, "test_data", relative_filename_path)
+        )
 
 
 class BaseTestCases:
     class TestCollectionItemChange(APITestCase):
-
         def simple_uploaded_file(self, rel_path):
             fname = self.abs_data_path(rel_path)
-            return SimpleUploadedFile(rel_path, open(fname).read())
+            return SimpleUploadedFile(rel_path, open(fname, "rb").read())
 
         def setUp(self):
-            self.user = User.objects.create_user('NeuroGuy')
+            self.user = User.objects.create_user("NeuroGuy")
             self.user.save()
             self.coll = Collection(owner=self.user, name="Test Collection")
             self.coll.save()
+
+            _setup_test_cognitive_atlas()
 
         def tearDown(self):
             clearDB()
@@ -46,21 +49,20 @@ class BaseTestCases:
             self.client.force_authenticate(user=self.user)
 
             patch_dict = {
-                'description': "renamed %s" % uuid.uuid4(),
+                "description": "renamed %s" % uuid.uuid4(),
             }
 
             response = self.client.patch(self.item_url, patch_dict)
 
             self.assertEqual(response.status_code, status.HTTP_200_OK)
-            self.assertEqual(response.data['description'],
-                             patch_dict['description'])
+            self.assertEqual(response.data["description"], patch_dict["description"])
 
         def test_missing_required_permissions(self):
-            other_user = User.objects.create_user('OtherGuy')
+            other_user = User.objects.create_user("OtherGuy")
             self.client.force_authenticate(user=other_user)
 
             patch_dict = {
-                'description': "renamed %s" % uuid.uuid4(),
+                "description": "renamed %s" % uuid.uuid4(),
             }
 
             response = self.client.patch(self.item_url, patch_dict)
