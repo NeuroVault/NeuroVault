@@ -208,6 +208,9 @@ $(document).ready(function(){
                     <a class="dropdown-item" href="{% url 'statmaps:find_similar' image.id %}" data-toggle="tooltip" title="Find maps with similar patters.">
                         Similar maps search
                     </a>
+                    <a class="dropdown-item" href="{% url 'statmaps:gene_expression' image.id %}" data-toggle="tooltip" title="Find genes with similar expression patters.">
+                        Gene expression decoding
+                    </a>
                 {% else %}
                     <a class="dropdown-item disabled" tabindex="-1" role="button" aria-disabled="true" href="#" data-toggle="tooltip" title="Find maps with similar patters. This function is only enabled for public group level unthresholded statistical maps.">
                         Similar maps search
