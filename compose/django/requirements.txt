@@ -67,7 +67,6 @@ prompt-toolkit==3.0.30
 prov==2.0.0
 psycopg==3.0.15
 psycopg2==2.9.3
-pybraincompare==0.1.19
 pycortex==1.2.5
 pycparser==2.21
 PyJWT==2.4.0
