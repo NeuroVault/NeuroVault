@@ -39,6 +39,7 @@ jobs:
           files: docker-compose.yml
           push: true
           load: false
+          pull: false
           set: |
               worker.tags=ghcr.io/${{ env.OWNER_LC }}/neurovault:${{ hashFiles('**/neurovault/**') }}
               worker.cache-from=type=registry,ref=ghcr.io/${{ env.OWNER_LC }}/neurovault:${{ hashFiles('**/neurovault/**') }}
