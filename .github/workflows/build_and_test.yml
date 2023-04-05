@@ -1,6 +1,10 @@
 name: Building and Testing Workflow
 on: [workflow_dispatch,push]
 
+concurrency:
+  group: ${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   build_neurovault:
    runs-on: ubuntu-latest
