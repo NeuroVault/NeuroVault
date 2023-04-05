@@ -41,6 +41,8 @@ jobs:
           load: false
           set: |
               django.tags=ghcr.io/${{ env.OWNER_LC }}/neurovault:${{ hashFiles('**/neurovault/**') }}
+              django.cache-from=type=registry,ref=ghcr.io/${{ env.OWNER_LC }}/neurovault:${{ hashFiles('**/neurovault/**') }}
+              django.cache-from=type=gha,scope=cached-django
               django.cache-to=type=gha,scope=cached-django,mode=max
 
   neurovault_backend_tests:

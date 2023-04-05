@@ -1,5 +1,7 @@
 FROM neurovault/neurovault
 
+RUN apt-get clean
+
 RUN apt-get -y update \
     && apt-get install -y wget subversion && \
     wget -qO- ftp://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/6.0.0/freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.0.tar.gz | tar zxv -C /opt \
@@ -17,6 +19,7 @@ RUN apt-get -y update \
     --exclude='freesurfer/lib/cuda' \
     --exclude='freesurfer/lib/qt' && \
     apt-get install -y tcsh bc tar libgomp1 perl-modules curl  && \
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Set up the environment
