@@ -1,4 +1,4 @@
-FROM ghcr.io/neurovault/neurovault
+FROM neurovault/neurovault
 
 RUN apt-get -y update \
     && apt-get install -y wget subversion && \
