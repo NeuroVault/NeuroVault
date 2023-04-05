@@ -15,6 +15,7 @@ services:
     depends_on:
       - redis
       - postgres
+      - worker
     env_file:
       - ./.env
 
@@ -31,6 +32,9 @@ services:
     command: redis-server --appendonly yes
 
   worker:
+    build:
+      context: .
+      dockerfile: ./compose/django/Dockerfile
     image: neurovault/neurovault
     command: celery -A neurovault.celery worker -Q default -n default@%h
     volumes:
