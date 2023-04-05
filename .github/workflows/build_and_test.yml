@@ -40,10 +40,14 @@ jobs:
           push: true
           load: false
           set: |
-              django.tags=ghcr.io/${{ env.OWNER_LC }}/neurovault:${{ hashFiles('**/neurovault/**') }}
-              django.cache-from=type=registry,ref=ghcr.io/${{ env.OWNER_LC }}/neurovault:${{ hashFiles('**/neurovault/**') }}
-              django.cache-from=type=gha,scope=cached-django
-              django.cache-to=type=gha,scope=cached-django,mode=max
+              neurovault.tags=ghcr.io/${{ env.OWNER_LC }}/neurovault:${{ hashFiles('**/neurovault/**') }}
+              neurovault.cache-from=type=registry,ref=ghcr.io/${{ env.OWNER_LC }}/neurovault:${{ hashFiles('**/neurovault/**') }}
+              neurovault.cache-from=type=gha,scope=cached-neurovault
+              neurovault.cache-to=type=gha,scope=cached-neurovault,mode=max
+              neurovault_fs.tags=ghcr.io/${{ env.OWNER_LC }}/neurovault_fs:${{ hashFiles('**/neurovault/**') }}
+              neurovault_fs.cache-from=type=registry,ref=ghcr.io/${{ env.OWNER_LC }}/neurovault_fs:${{ hashFiles('**/neurovault/**') }}
+              neurovault_fs.cache-from=type=gha,scope=cached-neurovault_fs
+              neurovault_fs.cache-to=type=gha,scope=cached-neurovault_fs,mode=max
 
   neurovault_backend_tests:
     runs-on: ubuntu-latest
@@ -67,7 +71,8 @@ jobs:
           push: false
           load: true
           set: |
-              django.cache-from=type=gha,scope=cached-django
+              neurovault.cache-from=type=gha,scope=cached-neurovault
+              neurovault_fs.cache-from=type=gha,scope=cached-neurovault_fs
       - 
         name: spin up backend
         run: |
