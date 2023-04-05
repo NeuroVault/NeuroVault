@@ -1,4 +1,4 @@
-FROM neurovault/neurovault
+FROM neurovault
 
 RUN apt-get -y update \
     && apt-get install -y wget subversion && \
