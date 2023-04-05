@@ -21,7 +21,7 @@ Initially, some data will be available by default with _username/password_ neuro
 
 ### Migrating the database
 ```
-docker-compose exec uwsgi python manage.py migrate
+docker-compose exec django python manage.py migrate
 ```
 The first time you run the application, you must migrate the db. You must also do this if you update any database models.
 
@@ -32,7 +32,7 @@ docker-compose stop
 ### Restarting the server
 After making changes to the code you need to restart the server (but just the uwsgi and celery components):
 ```
-docker-compose restart nginx uwsgi worker
+docker-compose restart nginx django worker
 ```
 ### Reseting the server
 If you would like to reset the server and clean the database:
@@ -43,17 +43,17 @@ docker-compose up
 ```
 ### Running Django shell
 ```
-docker-compose run --rm uwsgi python manage.py shell
+docker-compose run --rm django python manage.py shell
 ```
 ### Running tests
 ```
-docker-compose run --rm uwsgi python manage.py test
+docker-compose run --rm django python manage.py test
 ```
 ### Updating Docker image
 If you add a dependency (e.g., a new pip install) or modify the Dockerfile in any way, you will need to rebuild the docker image:
 
 ```
-docker-compose build uwsgi
+docker-compose build django
 ```
 
 ### Using pycortex

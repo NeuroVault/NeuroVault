@@ -22,12 +22,19 @@ class UserCreateForm(UserCreationForm):
 
 class UserEditForm(forms.ModelForm):
     username = forms.RegexField(
-        label=_("Username"), max_length=30, regex=r"^[\w.@+-]+$",
-        help_text=_("Required. 30 characters or fewer. Letters, digits and "
-                    "@/./+/-/_ only."),
+        label=_("Username"),
+        max_length=30,
+        regex=r"^[\w.@+-]+$",
+        help_text=_(
+            "Required. 30 characters or fewer. Letters, digits and " "@/./+/-/_ only."
+        ),
         error_messages={
-            'invalid': _("This value may contain only letters, numbers and "
-                         "@/./+/-/_ characters.")})
+            "invalid": _(
+                "This value may contain only letters, numbers and "
+                "@/./+/-/_ characters."
+            )
+        },
+    )
 
     email = forms.EmailField(required=True)
 
@@ -37,9 +44,9 @@ class UserEditForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(UserEditForm, self).__init__(*args, **kwargs)
-        f = self.fields.get('user_permissions', None)
+        f = self.fields.get("user_permissions", None)
         if f is not None:
-            f.queryset = f.queryset.select_related('content_type')
+            f.queryset = f.queryset.select_related("content_type")
 
     def save(self, commit=True):
         user = super(UserEditForm, self).save(commit=False)
@@ -57,5 +64,11 @@ class ApplicationEditForm(forms.ModelForm):
 
     class Meta:
         model = Application
-        fields = ('name', 'client_id', 'client_secret', 'client_type',
-                  'authorization_grant_type', 'redirect_uris')
+        fields = (
+            "name",
+            "client_id",
+            "client_secret",
+            "client_type",
+            "authorization_grant_type",
+            "redirect_uris",
+        )

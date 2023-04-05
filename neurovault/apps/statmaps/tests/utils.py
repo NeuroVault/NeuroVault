@@ -18,73 +18,82 @@ def clearDB():
             try:
                 if os.path.isfile(file_path):
                     os.unlink(file_path)
-                elif os.path.isdir(file_path): 
+                elif os.path.isdir(file_path):
                     shutil.rmtree(file_path)
             except Exception as e:
                 print(e)
 
 
-
-def save_statmap_form(image_path,collection,ignore_file_warning=False,image_name=None):
-
+def save_statmap_form(
+    image_path, collection, ignore_file_warning=False, image_name=None
+):
     if image_name == None:
-        if isinstance(image_path,list):
+        if isinstance(image_path, list):
             image_name = image_path[0]
         else:
             image_name = image_path
-    
+
     post_dict = {
-        'name': image_name,
-        'cognitive_paradigm_cogatlas': 'trm_4f24126c22011',
-        'modality': 'fMRI-BOLD',
-        'map_type': 'T',
-        'analysis_level': 'G',
-        'number_of_subjects': 10,
-        'target_template_image': 'GenericMNI',
-        'collection': collection.pk,
-        'ignore_file_warning': ignore_file_warning
+        "name": image_name,
+        "cognitive_paradigm_cogatlas": "trm_4f24126c22011",
+        "modality": "fMRI-BOLD",
+        "map_type": "T",
+        "analysis_level": "G",
+        "number_of_subjects": 10,
+        "target_template_image": "GenericMNI",
+        "collection": collection.pk,
+        "ignore_file_warning": ignore_file_warning,
     }
     # If image path is a list, we have img/hdr
-    if isinstance(image_path,list):
-        file_dict = {'file': SimpleUploadedFile(image_path[0], open(image_path[0], 'rb').read()),
-                     'hdr_file': SimpleUploadedFile(image_path[1], open(image_path[1], 'rb').read())}
+    if isinstance(image_path, list):
+        file_dict = {
+            "file": SimpleUploadedFile(image_path[0], open(image_path[0], "rb").read()),
+            "hdr_file": SimpleUploadedFile(
+                image_path[1], open(image_path[1], "rb").read()
+            ),
+        }
     else:
-        file_dict = {'file': SimpleUploadedFile(image_path, open(image_path, 'rb').read())}
+        file_dict = {
+            "file": SimpleUploadedFile(image_path, open(image_path, "rb").read())
+        }
     form = StatisticMapForm(post_dict, file_dict)
     # this is necessary to split 4D volumes
     form.is_valid()
     return form.save()
 
 
-def save_atlas_form(nii_path,xml_path,collection,ignore_file_warning=False,name=None):
-
+def save_atlas_form(
+    nii_path, xml_path, collection, ignore_file_warning=False, name=None
+):
     if name == None:
         name = nii_path
 
     post_dict = {
-        'name': name,
-        'map_type': 'Atlas',
-        'collection':collection.pk,
-        'ignore_file_warning': ignore_file_warning
+        "name": name,
+        "map_type": "Atlas",
+        "collection": collection.pk,
+        "ignore_file_warning": ignore_file_warning,
     }
 
-    file_dict = {'file': SimpleUploadedFile(nii_path, open(nii_path, 'rb').read()),
-                     'label_description_file': SimpleUploadedFile(xml_path, open(xml_path, 'rb').read())}
+    file_dict = {
+        "file": SimpleUploadedFile(nii_path, open(nii_path, "rb").read()),
+        "label_description_file": SimpleUploadedFile(
+            xml_path, open(xml_path, "rb").read()
+        ),
+    }
     form = AtlasForm(post_dict, file_dict)
     return form.save()
 
 
-def save_nidm_form(zip_file,collection,name=None):
-    
+def save_nidm_form(zip_file, collection, name=None):
     if name == None:
         name = "fsl_nidm"
-    with open(zip_file, 'rb') as f:
+    with open(zip_file, "rb") as f:
         post_dict = {
-            'name': name,
-            'collection':collection.pk,
-            'ignore_file_warning': True
+            "name": name,
+            "collection": collection.pk,
+            "ignore_file_warning": True,
         }
-        file_dict = {'zip_file': SimpleUploadedFile(zip_file, f.read())}
+        file_dict = {"zip_file": SimpleUploadedFile(zip_file, f.read())}
         form = NIDMResultsForm(post_dict, file_dict)
     return form.save()
-
