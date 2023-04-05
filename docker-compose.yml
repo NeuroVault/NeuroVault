@@ -5,8 +5,7 @@ services:
     build:
       context: .
       dockerfile: ./compose/django/Dockerfile_fs
-      args:
-        - IMAGE=neurovault/neurovault_fs
+    image: neurovault/neurovault_fs
     command: python manage.py runserver 0.0.0.0:8000
     ports: 
       - "8000:8000"
@@ -36,8 +35,7 @@ services:
     build:
       context: .
       dockerfile: ./compose/django/Dockerfile
-      args:
-        - IMAGE=neurovault/neurovault
+    image: neurovault/neurovault
     command: celery -A neurovault.celery worker -Q default -n default@%h
     volumes:
       - .:/code
