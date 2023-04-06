@@ -4,8 +4,8 @@ services:
     restart: always
     build:
       context: .
-      dockerfile: ./compose/django/Dockerfile_fs
-    pull_policy: never
+      dockerfile: ./compose/django/Dockerfile_multi
+      target: neurovault_fs
     image: neurovault/neurovault_fs
     command: python manage.py runserver 0.0.0.0:8000
     ports: 
@@ -35,7 +35,8 @@ services:
   worker:
     build:
       context: .
-      dockerfile: ./compose/django/Dockerfile
+      dockerfile: ./compose/django/Dockerfile_multi
+      target: neurovault
     image: neurovault/neurovault
     command: celery -A neurovault.celery worker -Q default -n default@%h
     volumes:
