@@ -1,0 +1,95 @@
+name: Building and Testing Workflow
+on: [workflow_dispatch,push]
+
+concurrency:
+  group: ${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build_neurovault:
+   runs-on: ubuntu-latest
+   steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Configuration
+        run: |
+          cp .env.example .env
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - 
+        name: set lower case owner name
+        run: |
+          echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
+        env:
+          OWNER: '${{ github.repository_owner }}'
+      -
+        name: Build and push
+        uses: docker/bake-action@v2
+        with:
+          files: docker-compose.yml
+          push: true
+          load: false
+          pull: false
+          set: |
+              worker.tags=ghcr.io/${{ env.OWNER_LC }}/neurovault:${{ hashFiles('**/neurovault/**') }}
+              worker.cache-from=type=registry,ref=ghcr.io/${{ env.OWNER_LC }}/neurovault:${{ hashFiles('**/neurovault/**') }}
+              worker.cache-from=type=gha,scope=cached-neurovault
+              worker.cache-to=type=gha,scope=cached-neurovault,mode=max
+              django.tags=ghcr.io/${{ env.OWNER_LC }}/neurovault_fs:${{ hashFiles('**/neurovault/**') }}
+              django.cache-from=type=registry,ref=ghcr.io/${{ env.OWNER_LC }}/neurovault_fs:${{ hashFiles('**/neurovault/**') }}
+              django.cache-from=type=gha,scope=cached-neurovault_fs
+              django.cache-to=type=gha,scope=cached-neurovault_fs,mode=max
+
+  neurovault_backend_tests:
+    runs-on: ubuntu-latest
+    needs: build_neurovault
+    steps:
+      - 
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Configuration
+        run: |
+          cp .env.example .env
+      -
+        name: load images
+        uses: docker/bake-action@v2
+        with:
+          files: docker-compose.yml
+          push: false
+          load: true
+          set: |
+              worker.cache-from=type=gha,scope=cached-neurovault
+              django.cache-from=type=gha,scope=cached-neurovault_fs
+      - 
+        name: spin up backend
+        run: |
+          # pull specific images since an old version of neurovault is on dockerhub
+          docker compose pull postgres redis
+          docker compose \
+            -f docker-compose.yml \
+            up -d --no-build
+      - 
+        name: Migrate Database
+        run: |
+          until docker compose exec -T \
+          postgres pg_isready -U postgres; do sleep 1; done
+
+          docker compose exec -T django python manage.py migrate
+      -
+        name: Backend Tests
+        run: |
+          docker compose exec -T django python manage.py test
