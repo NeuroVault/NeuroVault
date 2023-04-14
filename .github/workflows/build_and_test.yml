@@ -1,5 +1,5 @@
 name: Building and Testing Workflow
-on: [workflow_dispatch,push, pull_request]
+on: [workflow_dispatch, push]
 
 concurrency:
   group: ${{ github.head_ref || github.run_id }}
