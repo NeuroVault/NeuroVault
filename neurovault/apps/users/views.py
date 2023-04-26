@@ -14,13 +14,11 @@ from django.views.generic import View, CreateView, UpdateView, DeleteView, ListV
 
 
 from braces.views import LoginRequiredMixin
-from oauth2_provider.views.application import ApplicationOwnerIsUserMixin
-from oauth2_provider.models import RefreshToken, AccessToken, Application
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 
-from .forms import UserEditForm, UserCreateForm, ApplicationEditForm
+from .forms import UserEditForm, UserCreateForm
 
 
 def view_profile(request, username=None):

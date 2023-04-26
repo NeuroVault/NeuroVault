@@ -15,12 +15,6 @@
     <li class="nav-item" {% block personalaccesstokenstab %}{% endblock %}>
       <a class="nav-link" href="{% url 'users:token_list' %}">Personal access tokens</a>
     </li>
-    <li class="nav-item" {% block connectedappstab %}{% endblock %}>
-      <a class="nav-link" href="{% url 'oauth2_provider:list' %}">Connected applications</a>
-    </li>
-    <li class="nav-item" {% block developerappstab %}{% endblock %}>
-      <a class="nav-link" href="{% url 'users:developerapps_list' %}">Developer applications</a>
-    </li>
   </ul>
   {% block setting_content %}{% endblock %}
 {% endblock %}
