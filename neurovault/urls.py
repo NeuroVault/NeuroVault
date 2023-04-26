@@ -18,17 +18,6 @@ sitemaps = {
     "CognitiveAtlasTasks": CognitiveAtlasTaskSitemap,
 }
 
-""" Do these need to live outside o/* oauth urls included below?
-oauth_urlpatterns = [
-    re_path(r'^authorize/$', oauth_view.AuthorizationView.as_view(),
-        name="authorize"),
-    re_path(r'^token/$', oauth_view.TokenView.as_view(),
-        name="token"),
-    re_path(r'^revoke_token/$', oauth_view.RevokeTokenView.as_view(),
-        name="revoke-token"),
-]
-"""
-
 urlpatterns = [
     re_path("", include("social_django.urls", namespace="social")),
     re_path(r"^", include("neurovault.apps.main.urls")),
