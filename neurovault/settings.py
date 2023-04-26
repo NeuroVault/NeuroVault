@@ -155,6 +155,7 @@ INSTALLED_APPS = [
     "django.contrib.admin",
     "social_django",
     "rest_framework",
+    "rest_framework.authtoken",
     "taggit",
     "crispy_forms",
     "polymorphic",

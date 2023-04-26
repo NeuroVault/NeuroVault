@@ -12,9 +12,13 @@ from django.urls import reverse, reverse_lazy
 from django.utils.crypto import get_random_string
 from django.views.generic import View, CreateView, UpdateView, DeleteView, ListView
 
+
 from braces.views import LoginRequiredMixin
 from oauth2_provider.views.application import ApplicationOwnerIsUserMixin
 from oauth2_provider.models import RefreshToken, AccessToken, Application
+from rest_framework.authtoken.models import Token
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 
 from .forms import UserEditForm, UserCreateForm, ApplicationEditForm
 
@@ -232,3 +236,16 @@ class ConnectionDelete(LoginRequiredMixin, DeleteView):
         messages.success(self.request, self.success_message)
 
         return HttpResponseRedirect(success_url)
+
+@login_required
+def view_token(request, regenerate=False):
+    if regenerate:
+        try:
+            old_token = Token.objects.get(user=request.user)
+            old_token.delete()
+        except Token.DoesNotExist:
+            pass
+        token = Token.objects.create(user=request.user)
+    else:
+        token, _ = Token.objects.get_or_create(user=request.user)
+    return render(request, 'show_token.html', {'token': token.key})

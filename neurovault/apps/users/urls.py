@@ -7,6 +7,7 @@ from .views import (
     create_user,
     password_change_done,
     delete_profile,
+    view_token
 )
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth import views as auth_views
@@ -69,8 +70,8 @@ urlpatterns = [
     re_path(r"^profile/edit$", edit_user, name="edit_user"),
     re_path(r"^profile/delete$", delete_profile, name="delete_profile"),
     re_path(r"^profile/.*$", view_profile, name="my_profile"),
-    re_path(r"^tokens/$", PersonalTokenList.as_view(), name="token_list"),
-    re_path(r"^tokens/new$", PersonalTokenCreate.as_view(), name="token_create"),
+    re_path(r"^token/$", view_token, {'regenerate': False}, name="token_list"),
+    re_path(r"^token/new$", view_token, {'regenerate': True}, name="token_create"),
     re_path(
         r"^tokens/(?P<pk>\d+)/delete/$",
         PersonalTokenDelete.as_view(),
