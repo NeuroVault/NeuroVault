@@ -4,7 +4,15 @@ from rest_framework.test import APIClient, APITestCase
 from django.test import TestCase
 from django.contrib.auth.models import User
 
-from .test_application_views import BaseTest
+class BaseTest(TestCase):
+    def setUp(self):
+        self.user_password = "random"
+        self.user = UserModel.objects.create_user(
+            "neurouser", "neurouser@example.com", self.user_password
+        )
+
+    def tearDown(self):
+        self.user.delete()
 
 class TokenGenerationTest(BaseTest):
     def test_token_list(self):
