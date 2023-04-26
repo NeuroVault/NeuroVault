@@ -5,12 +5,15 @@ from django.conf import settings
 
 
 def create_default_app(apps, schema_editor):
+    '''
     Application = apps.get_registered_model("oauth2_provider", "Application")
     Application.objects.get_or_create(
         name=settings.DEFAULT_OAUTH_APP_NAME,
         redirect_uris=["http://localhost"],
         pk=settings.DEFAULT_OAUTH_APPLICATION_ID,
     )
+    '''
+    pass
 
 
 class Migration(migrations.Migration):
