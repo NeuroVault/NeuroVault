@@ -8,7 +8,7 @@ services:
     image: neurovault/neurovault_fs
     build:
       context: .
-      dockerfile: ./compose/django/Dockerfile_fs
+      dockerfile: ./compose/django/Dockerfile
     command: ./compose/django/prod_start
     ports: 
       - "8000:8000"
