@@ -155,13 +155,13 @@ INSTALLED_APPS = [
     "django.contrib.admin",
     "social_django",
     "rest_framework",
+    "rest_framework.authtoken",
     "taggit",
     "crispy_forms",
     "polymorphic",
     "django_cleanup",
     "file_resubmit",
     "guardian",
-    "oauth2_provider",
     "django_celery_results",
 ]
 
@@ -208,7 +208,7 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly"
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
+        "rest_framework.authentication.TokenAuthentication",
     ),
     "DEFAULT_RENDERER_CLASSES": (
         "neurovault.api.utils.ExplicitUnicodeJSONRenderer",
@@ -218,7 +218,6 @@ REST_FRAMEWORK = {
     "UNICODE_JSON": True,
 }
 
-OAUTH2_PROVIDER = {"REQUEST_APPROVAL_PROMPT": "auto"}
 
 LOGIN_REDIRECT_URL = "/my_collections/"
 # LOGIN_URL          = '/login-form/'
@@ -249,10 +248,6 @@ DEFAULT_FROM_EMAIL = "noreply@neurovault.org"
 
 if os.path.exists("/usr/local/share/pycortex/db/fsaverage"):
     STATICFILES_DIRS = (
-        (
-            "pycortex-resources",
-            "/usr/local/lib/python2.7/site-packages/cortex/webgl/resources",
-        ),
         ("pycortex-ctmcache", "/usr/local/share/pycortex/db/fsaverage/cache"),
     )
 
@@ -280,12 +275,6 @@ CELERYBEAT_SCHEDULE = {
 CELERY_TIMEZONE = "Europe/Berlin"
 
 ANONYMOUS_USER_ID = -1
-
-DEFAULT_OAUTH_APPLICATION_ID = -1
-DEFAULT_OAUTH_APP_NAME = "DefaultOAuthApp"
-DEFAULT_OAUTH_APP_OWNER_ID = -2
-DEFAULT_OAUTH_APP_OWNER_USERNAME = "DefaultAppOwner"
-OAUTH_PERSONAL_TOKEN_LENGTH = 40
 
 # Bogus secret key.
 try:
