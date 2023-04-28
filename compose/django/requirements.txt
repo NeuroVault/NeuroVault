@@ -87,7 +87,7 @@ Shapely==1.8.2
 six==1.16.0
 social-auth-app-django==5.0.0
 social-auth-core==4.3.0
-sqlparse==0.4.2
+sqlparse==0.4.4
 statsmodels==0.13.2
 sympy==1.10.1
 threadpoolctl==3.1.0
