@@ -35,7 +35,7 @@ djangorestframework==3.13.1
 duecredit==0.9.1
 fonttools==4.34.4
 frozendict==2.3.2
-future==0.18.2
+future==0.18.3
 fuzzywuzzy==0.18.0
 h5py==3.7.0
 html5lib==1.1
