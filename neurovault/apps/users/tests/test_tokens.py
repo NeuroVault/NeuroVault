@@ -1,8 +1,10 @@
+from django.contrib.auth import get_user_model
+from django.test import TestCase
 from django.urls import reverse
+
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient, APITestCase
-from django.test import TestCase
-from django.contrib.auth import get_user_model
+from rest_framework import status
 
 UserModel = get_user_model()
 
@@ -47,3 +49,16 @@ class TokenGenerationTest(BaseTest):
         self.assertEqual(response.url, "/accounts/login/?next=/accounts/token/new")
 
         
+    def test_token_auth(self):
+        self.client.login(username=self.user.username, password=self.user_password)
+        self.client.get(reverse('users:token_list'))
+        token = Token.objects.filter(user=self.user).first()
+
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+        post_dict = {
+            "name": "Test Create Collection",
+        }
+        response = client.post("/api/collections/", post_dict)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["name"], post_dict["name"])
