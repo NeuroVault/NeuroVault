@@ -5,7 +5,7 @@ volumes:
 services:
   django:
     restart: always
-    image: neurovault/neurovault_fs
+    image: neurovault/neurovault
     build:
       context: .
       dockerfile: ./compose/django/Dockerfile

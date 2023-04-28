@@ -7,20 +7,10 @@ from .views import (
     create_user,
     password_change_done,
     delete_profile,
+    view_token
 )
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth import views as auth_views
-from oauth2_provider.views.application import ApplicationList
-from .views import (
-    ApplicationRegistration,
-    ApplicationUpdate,
-    ApplicationDelete,
-    ConnectionList,
-    ConnectionDelete,
-    PersonalTokenList,
-    PersonalTokenCreate,
-    PersonalTokenDelete,
-)
 
 admin.autodiscover()
 
@@ -69,35 +59,8 @@ urlpatterns = [
     re_path(r"^profile/edit$", edit_user, name="edit_user"),
     re_path(r"^profile/delete$", delete_profile, name="delete_profile"),
     re_path(r"^profile/.*$", view_profile, name="my_profile"),
-    re_path(r"^tokens/$", PersonalTokenList.as_view(), name="token_list"),
-    re_path(r"^tokens/new$", PersonalTokenCreate.as_view(), name="token_create"),
-    re_path(
-        r"^tokens/(?P<pk>\d+)/delete/$",
-        PersonalTokenDelete.as_view(),
-        name="token_delete",
-    ),
-    re_path(r"^connections/$", ConnectionList.as_view(), name="connection_list"),
-    re_path(
-        r"^connections/(?P<pk>\d+)/revoke/$",
-        ConnectionDelete.as_view(),
-        name="connection_revoke",
-    ),
-    re_path(r"^applications/$", ApplicationList.as_view(), name="developerapps_list"),
-    re_path(
-        r"^applications/register/$",
-        ApplicationRegistration.as_view(),
-        name="developerapps_register",
-    ),
-    re_path(
-        r"^applications/(?P<pk>\d+)/$",
-        ApplicationUpdate.as_view(),
-        name="developerapps_update",
-    ),
-    re_path(
-        r"^applications/(?P<pk>\d+)/delete/$",
-        ApplicationDelete.as_view(),
-        name="developerapps_delete",
-    ),
+    re_path(r"^token/$", view_token, {'regenerate': False}, name="token_list"),
+    re_path(r"^token/new$", view_token, {'regenerate': True}, name="token_create"),
     re_path(r"^(?P<username>[A-Za-z0-9@/./+/-/_]+)/$", view_profile, name="profile"),
 ]
 

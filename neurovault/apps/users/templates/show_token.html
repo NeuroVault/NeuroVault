@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Token</h2>
+<pre>{{ token }}</pre>
+<p>
+  <a href="{% url 'users:token_create' %}">Regenerate Token</a>
+{% endblock %}
