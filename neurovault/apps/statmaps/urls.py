@@ -130,73 +130,73 @@ urlpatterns = [
     ),
     re_path(r"^collections/stats$", stats_view, name="collections_stats"),
     re_path(
-        r"^collections/(?P<cid>\d+|[A-Z]{8})/$",
+        r"^collections/(?P<cid>\d+|[\w{}.-]{8})/$",
         view_collection,
         name="collection_details",
     ),
     re_path(
-        r"^collections/(?P<cid>\d+|[A-Z]{8})/json$",
+        r"^collections/(?P<cid>\d+|[\w{}.-]{8})/json$",
         ImagesInCollectionJson.as_view(),
         name="collection_images_json",
     ),
     re_path(
-        r"^collections/(?P<cid>\d+|[A-Z]{8})/gjson$",
+        r"^collections/(?P<cid>\d+|[\w{}.-]{8})/gjson$",
         GroupImagesInCollectionJson.as_view(),
         name="collection_gimages_json",
     ),
     re_path(
-        r"^collections/(?P<cid>\d+|[A-Z]{8})/sjson$",
+        r"^collections/(?P<cid>\d+|[\w{}.-]{8})/sjson$",
         SingleSubjectImagesInCollectionJson.as_view(),
         name="collection_simages_json",
     ),
     re_path(
-        r"^collections/(?P<cid>\d+|[A-Z]{8})/ojson$",
+        r"^collections/(?P<cid>\d+|[\w{}.-]{8})/ojson$",
         OtherImagesInCollectionJson.as_view(),
         name="collection_oimages_json",
     ),
     re_path(r"^collections/new$", edit_collection, name="new_collection"),
     re_path(
-        r"^collections/(?P<cid>\d+|[A-Z]{8})/edit$",
+        r"^collections/(?P<cid>\d+|[\w{}.-]{8})/edit$",
         edit_collection,
         name="edit_collection",
     ),
     re_path(
-        r"^collections/(?P<cid>\d+|[A-Z]{8})/delete$",
+        r"^collections/(?P<cid>\d+|[\w{}.-]{8})/delete$",
         delete_collection,
         name="delete_collection",
     ),
     re_path(
-        r"^collections/(?P<cid>\d+|[A-Z]{8})/download$",
+        r"^collections/(?P<cid>\d+|[\w{}.-]{8})/download$",
         download_collection,
         name="download_collection",
     ),
     re_path(
-        r"^collections/(?P<collection_cid>\d+|[A-Z]{8})/addimage",
+        r"^collections/(?P<collection_cid>\d+|[\w{}.-]{8})/addimage",
         add_image,
         name="add_image",
     ),
     re_path(
-        r"^collections/(?P<collection_cid>\d+|[A-Z]{8})/upload_folder$",
+        r"^collections/(?P<collection_cid>\d+|[\w{}.-]{8})/upload_folder$",
         upload_folder,
         name="upload_folder",
     ),
     re_path(
-        r"^collections/(?P<collection_cid>\d+|[A-Z]{8})/images/(?P<pk>\d+)/$",
+        r"^collections/(?P<collection_cid>\d+|[\w{}.-]{8})/images/(?P<pk>\d+)/$",
         view_image,
         name="private_image_details",
     ),
     re_path(
-        r"^collections/(?P<cid>\d+|[A-Z]{8})/pycortex$",
+        r"^collections/(?P<cid>\d+|[\w{}.-]{8})/pycortex$",
         view_collection_with_pycortex,
         name="view_collection_pycortex",
     ),
     re_path(
-        r"^collections/(?P<collection_cid>\d+|[A-Z]{8})/export/imagesfilenames$",
+        r"^collections/(?P<collection_cid>\d+|[\w{}.-]{8})/export/imagesfilenames$",
         export_images_filenames,
         name="export_images_filenames",
     ),
     re_path(
-        r"^collections/(?P<collection_cid>\d+|[A-Z]{8})/editmetadata$",
+        r"^collections/(?P<collection_cid>\d+|[\w{}.-]{8})/editmetadata$",
         edit_metadata,
         name="edit_metadata",
     ),
@@ -231,7 +231,7 @@ urlpatterns = [
         name="toggle_active_metaanalysis",
     ),
     re_path(
-        r"^collections/(?P<collection_cid>\d+|[A-Z]{8})/images/(?P<pk>\d+)/toggle_active_meta$",
+        r"^collections/(?P<collection_cid>\d+|[\w{}.-]{8})/images/(?P<pk>\d+)/toggle_active_meta$",
         toggle_active_metaanalysis,
         name="private_toggle_active_metaanalysis",
     ),
@@ -241,7 +241,7 @@ urlpatterns = [
         name="pycortex_view_image",
     ),
     re_path(
-        r"^collections/(?P<collection_cid>\d+|[A-Z]{8})/images/(?P<pk>\d+)/pycortex$",
+        r"^collections/(?P<collection_cid>\d+|[\w{}.-]{8})/images/(?P<pk>\d+)/pycortex$",
         view_image_with_pycortex,
         name="private_pycortex_view_image",
     ),
@@ -259,12 +259,12 @@ urlpatterns = [
     ),
     re_path(r"^images/(?P<pk>\d+)/js/embed$", papaya_js_embed, name="papaya_js_embed"),
     re_path(
-        r"^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidm_name>[A-Za-z0-9\.\+\-\_\s\[\]\(\)]+\.nidm\_?[0-9]*)/?$",
+        r"^collections/(?P<collection_cid>\d+|[\w{}.-]{8})/(?P<nidm_name>[A-Za-z0-9\.\+\-\_\s\[\]\(\)]+\.nidm\_?[0-9]*)/?$",
         view_nidm_results,
         name="view_nidm_results",
     ),
     re_path(
-        r"^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidm_name>[A-Za-z0-9\.\+\-\_\s\[\]\(\)]+\.nidm\_?[0-9]*)/delete$",
+        r"^collections/(?P<collection_cid>\d+|[\w{}.-]{8})/(?P<nidm_name>[A-Za-z0-9\.\+\-\_\s\[\]\(\)]+\.nidm\_?[0-9]*)/delete$",
         delete_nidm_results,
         name="delete_nidm_results",
     ),
@@ -275,7 +275,7 @@ urlpatterns = [
         name="papaya_iframe_embed",
     ),
     re_path(
-        r"^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<img_name>[0-9a-zA-Z\^\&\'\@\{\}\[\]\,\$\=\!\-\#\(\)\.\%\+\~\_ ]+)$",
+        r"^media/images/(?P<collection_cid>\d+|[\w{}.-]{8})/(?P<img_name>[0-9a-zA-Z\^\&\'\@\{\}\[\]\,\$\=\!\-\#\(\)\.\%\+\~\_ ]+)$",
         serve_image,
         name="serve_image",
     ),
@@ -285,18 +285,18 @@ urlpatterns = [
         name="serve_surface_archive",
     ),
     re_path(
-        r"^collections/(?P<collection_cid>\d+|[A-Z]{8})/images/(?P<pk>\d+)/download_surfaces$",
+        r"^collections/(?P<collection_cid>\d+|[\w{}.-]{8})/images/(?P<pk>\d+)/download_surfaces$",
         serve_surface_archive,
         name="serve_surface_archive",
     ),
     re_path(
-        r"^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[0-9a-zA-Z\^\&\'\@\{\}\[\]\,\$\=\!\-\#\(\)\.\%\+\~\_ ]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$",
+        r"^media/images/(?P<collection_cid>\d+|[\w{}.-]{8})/(?P<nidmdir>[0-9a-zA-Z\^\&\'\@\{\}\[\]\,\$\=\!\-\#\(\)\.\%\+\~\_ ]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$",
         serve_nidm_image,
         name="serve_nidm_images",
     ),
     # redirect dynamically loaded pycortex scripts
     re_path(
-        r"^media/images/(\d+|[A-Z]{8})/(.*_pycortex|pycortex_all)/resources/(?P<path>.*).js$",
+        r"^media/images/(\d+|[\w{}.-]{8})/(.*_pycortex|pycortex_all)/resources/(?P<path>.*).js$",
         RedirectView.as_view(
             url="{0}pycortex-resources/%(path)s.js".format(settings.STATIC_URL)
         ),
@@ -304,24 +304,24 @@ urlpatterns = [
     ),
     # redirect cached ctm assets
     re_path(
-        r"^media/images/(\d+|[A-Z]{8})/(.*_pycortex|pycortex_all)/(?P<ctmfile>fsaverage.*).(?P<ext>json|svg|ctm)$",
+        r"^media/images/(\d+|[\w{}.-]{8})/(.*_pycortex|pycortex_all)/(?P<ctmfile>fsaverage.*).(?P<ext>json|svg|ctm)$",
         RedirectView.as_view(
             url="{0}pycortex-ctmcache/%(ctmfile)s.%(ext)s".format(settings.STATIC_URL)
         ),
         name="redirect_pycortex_ctm",
     ),
     re_path(
-        r"^media/images/(?P<collection_cid>\d+|[A-Z]{8})/(?P<pycortex_dir>[0-9a-zA-Z\^\&\'\@\{\}\[\]\,\$\=\!\-\#\(\)\.\%\+\~\_ ]+\_pycortex/)(?P<path>.*)$",
+        r"^media/images/(?P<collection_cid>\d+|[\w{}.-]{8})/(?P<pycortex_dir>[0-9a-zA-Z\^\&\'\@\{\}\[\]\,\$\=\!\-\#\(\)\.\%\+\~\_ ]+\_pycortex/)(?P<path>.*)$",
         serve_pycortex,
         name="serve_pycortex",
     ),
     re_path(
-        r"^media/images/(?P<collection_cid>\d+|[A-Z]{8})/pycortex_all/(?P<path>.*)$",
+        r"^media/images/(?P<collection_cid>\d+|[\w{}.-]{8})/pycortex_all/(?P<path>.*)$",
         serve_pycortex,
         name="serve_pycortex_collection",
     ),
     re_path(
-        r"^collections/(?P<collection_cid>\d+|[A-Z]{8})/(?P<nidmdir>[0-9a-zA-Z\^\&\'\@\{\}\[\]\,\$\=\!\-\#\(\)\.\%\+\~\_ ]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$",
+        r"^collections/(?P<collection_cid>\d+|[\w{}.-]{8})/(?P<nidmdir>[0-9a-zA-Z\^\&\'\@\{\}\[\]\,\$\=\!\-\#\(\)\.\%\+\~\_ ]+\.nidm\_?[0-9]*)(?P<sep>\.|/)(?P<path>.*)$",
         serve_nidm,
         name="serve_nidm_files",
     ),
