@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block head %}
+<title>{% block title %}Image tags{% endblock %}</title>
+<script>
+        (function() {
+          $(document).ready(function() {
+            return $("#tags-table").dataTable({
+              sDom: "fit",
+              sPaginationType: "bootstrap",
+              iDisplayLength: 25,
+              fnRowCallback: function(nRow, aData, iDisplayIndex) {
+                var $cell, tag_name, val;
+                $cell = $('td:eq(0)', nRow);
+                tag_name = $cell.text();
+                val = '<a href="/images/tags/' + tag_name + '">' + tag_name + '</a>';
+                $cell.html(val);
+                return nRow;
+              }
+            });
+          });
+        }).call(this);
+</script>
+{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col">
+    <h2>Image tags</h2>
+    <p>Browse or search NeuroVault images by tag.</p>
+    <div class="table-responsive-md">
+            <table id="tags-table" class="table table-striped table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th scope="row">Tag name</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tag in tags %}
+                    <tr>
+                        <td>{{ tag.name }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

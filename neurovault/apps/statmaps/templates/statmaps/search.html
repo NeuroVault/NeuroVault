@@ -1,86 +1,32 @@
 {% extends "base.html" %}
-{% load static from staticfiles %}
+{% load static %}
 {% block head %}
-<script src="{% static "scripts/jquery-1.10.2.min.js"%}" type="text/javascript"></script>
-<script src="{% static "scripts/select2.min.js"%}" type="text/javascript"></script>
-<link href="{% static "css/select2.min.css"%}" rel="stylesheet"></script>
-<script src="{% static "scripts/bootstrap.min.js"%}" type="text/javascript"></script>
-<link href="//netdna.bootstrapcdn.com/font-awesome/3.1.1/css/font-awesome.css" rel="stylesheet">
 <title>{% block title %}Search{% endblock %}</title>
-
-<style>
-/* Google Style has bug so it's squished */
-.cse .gsc-search-button input.gsc-search-button-v2,
-input.gsc-search-button-v2 {
-width: 28px !important;
-height: 26px !important;
-padding: 4px !important;
-min-width: 13px !important;
-margin-top: 0 !important;
-}
-}
-.gsib_a {
-  padding: 0px !important;
-}
-.gsib_a input {
-  background: none !important;
-}
-.gsc-selected-option-container {
-  min-width: 100px !important;
-}
-</style>
 {% endblock %}
 
 {% block content %}
-<div class="fade"></div>
+    <div class="fade"></div>
 
-{% if message %}
-<div class="row">
-    <ul class="messages">
-    <div class="alert alert-dismissible alert-danger">
-    {{ message|safe }}
+    <!-- Search with two columns -->
+    <div class="row">
+        <div class="col">
+            <h2>Search</h2>
+        </div>
     </div>
-    </ul>
-</div>
-{% endif %}
-
-<!-- Search with two columns -->
-<div class="row" style="padding-bottom:30px">
-        <h2>Search</h2>
-        <div class="row">
-            <div class="col-md-3">
-            </div>
-         </div>
-
-         <div class="row">
-
-            <!-- Google Search Column-->
-            <div class="col-md-12" style="padding-top:30px;padding-bottom-20px;">
-		<script>
-		  (function() {
-		    var cx = '003344578150753836269:0z1x3cffi3u';
-		    var gcse = document.createElement('script');
-		    gcse.type = 'text/javascript';
-		    gcse.async = true;
-		    gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
-			'//cse.google.com/cse.js?cx=' + cx;
-		    var s = document.getElementsByTagName('script')[0];
-		    s.parentNode.insertBefore(gcse, s);
-		  })();
-		</script>
-		<gcse:search linkTarget="_self"></gcse:search>
-            </div>
-         </div>
-
-</div>
-<div class="row">
-</div>
-
-<script>
-//Workaround to add collections link to dropdown
-$("#collections_nav").attr("href","{% url 'collections_list' %}")
-// Remove broken dropdown
-$("#collections_nav").children().remove()
-$("#collections_nav").removeAttr("data-toggle")
-</script>
+    <div class="row">
+        <div class="col">
+            <script>
+              (function() {
+                var cx = '003344578150753836269:0z1x3cffi3u';
+                var gcse = document.createElement('script');
+                gcse.type = 'text/javascript';
+                gcse.async = true;
+                gcse.src = 'https://cse.google.com/cse.js?cx=' + cx;
+                var s = document.getElementsByTagName('script')[0];
+                s.parentNode.insertBefore(gcse, s);
+              })();
+            </script>
+            <gcse:search linkTarget="_self"></gcse:search>
+        </div>
+    </div>
 {% endblock %}

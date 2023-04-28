@@ -1,2 +1,6 @@
-User-agent: *
-Disallow: /images/*/find_similar
+sitemap: https://neurovault.org/sitemap.xml
+
+user-agent: *
+disallow: /images/*/find_similar
+disallow: /*/*/pycortex
+disallow: /search

@@ -1,46 +1,48 @@
-version: '2'
+version: '3'
 services:
-  db:
-    image: postgres:9.5.4
-    volumes:
-      - ./create_hstore_extension.sh:/docker-entrypoint-initdb.d/create_hstore_extension.sh:ro
-
-  uwsgi:
+  django:
     restart: always
-    image: neurovault/neurovault_fs
-    build: .
-    command: /code/run_uwsgi.sh
+    build:
+      context: .
+      dockerfile: ./compose/django/Dockerfile
+      target: neurovault
+    image: neurovault/neurovault
+    command: python manage.py runserver 0.0.0.0:8000
+    ports: 
+      - "8000:8000"
     volumes:
       - .:/code
-      - /var/www/static
-      - /var/www/image_data
+      - ${NV_IMAGE_DATA}:/image_data
     depends_on:
-      - db
       - redis
+      - postgres
+      - worker
+    env_file:
+      - ./.env
 
-  nginx:
-    restart: always
-    image: nginx
-    ports:
-      - "80:80"
+  postgres:
+    image: postgres:14
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./uwsgi_params.par:/etc/nginx/uwsgi_params.par:ro
-    volumes_from:
-      - uwsgi
-    depends_on:
-      - uwsgi
+      - ${DB_DATA}:/var/lib/postgresql/data
+    env_file:
+      - ./.env
 
   redis:
     restart: always
-    image: redis:3.0.7
+    image: redis:6
     command: redis-server --appendonly yes
 
   worker:
-    image: neurovault/neurovault_fs
-    command: celery worker -A neurovault.celery -Q default -n default@%h
-    volumes_from:
-      - uwsgi
+    build:
+      context: .
+      dockerfile: ./compose/django/Dockerfile
+      target: neurovault
+    image: neurovault/neurovault
+    command: celery -A neurovault.celery worker -Q default -n default@%h
+    volumes:
+      - .:/code
+      - ${NV_IMAGE_DATA}:/image_data
     depends_on:
-      - db
       - redis
+    env_file:
+      - ./.env

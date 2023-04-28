@@ -1,22 +1,25 @@
 import numpy as np
 from cognitiveatlas.api import get_task, get_concept
-from exceptions import ValueError
 
-from neurovault.apps.statmaps.models import CognitiveAtlasTask, CognitiveAtlasContrast, StatisticMap
+from neurovault.apps.statmaps.models import (
+    CognitiveAtlasTask,
+    CognitiveAtlasContrast,
+    StatisticMap,
+)
 
 
 # Function to make a node
-def make_node(nid,name,color,url=None):
-    '''make_node will return a json node for a cognitive atlas task, contrast, concept, or an image. if a url is provided, it will be included
+def make_node(nid, name, color, url=None):
+    """make_node will return a json node for a cognitive atlas task, contrast, concept, or an image. if a url is provided, it will be included
     :param nid: the node id
     :param name: the node name
     :param color: the node color
     :param url: a url for the node to link to when clicked (be careful giving this to non base nodes)
-    '''
+    """
     if url == None:
-        return {"nid":str(nid),"name":str(name),"color":color}
+        return {"nid": str(nid), "name": str(name), "color": color}
     else:
-        return {"nid":str(nid),"name":str(name),"color":color,"url":url}
+        return {"nid": str(nid), "name": str(name), "color": color, "url": url}
 
 
 def get_task_graph(task_id, images=None):
@@ -51,7 +54,10 @@ def get_task_graph(task_id, images=None):
 
                 # Image nodes
                 if len(images) > 0:
-                    stat_map_nodes = [make_node(i.pk, i.name, "#337ab7", "/images/%s" % i.pk) for i in images]
+                    stat_map_nodes = [
+                        make_node(i.pk, i.name, "#337ab7", "/images/%s" % i.pk)
+                        for i in images
+                    ]
                     concept_node["children"] = stat_map_nodes
 
                 children.append(concept_node)
@@ -61,6 +67,6 @@ def get_task_graph(task_id, images=None):
         if len(children) > 0:
             task_concepts.append(contrast_node)
 
-    task_node["children"] = task_concepts    
+    task_node["children"] = task_concepts
 
     return task_node

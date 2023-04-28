@@ -1,11 +1,10 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
-{% load static from staticfiles %}
+{% load static %}
 {% block head %}
     <title>{% block title %}Edit NIDM-Results{% endblock %}</title>
-    <link href="{% static 'css/studies.css' %}" media="screen" rel="stylesheet" type="text/css"></link>
-    <link rel="stylesheet" type="text/css" href="{% static "css/papaya.css"%}" />
-    <script src="{% static "scripts/papaya.js"%}" type="text/javascript"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/rii-mango/Papaya@build-1449/release/current/minimal/papaya.css" />
+    <script src="https://cdn.jsdelivr.net/gh/rii-mango/Papaya@build-1449/release/current/minimal/papaya.js" type="text/javascript"></script>
 {% endblock %}
 
 {% block content %}
@@ -34,8 +33,6 @@ $("#nidm_images").click(function(){
 </script>
 
 {% crispy form %}
-
-<link rel="stylesheet" href="/static/css/style.css">
 
 {% endblock %}
 

@@ -21,7 +21,7 @@ pearson_metric = Similarity(similarity_metric="pearson product-moment correlatio
 try:
   pearson_metric.save()
 except IntegrityError as exc:
-  print "A Similarity Metric has already been defined for %s" %(pearson_metric)
+  print("A Similarity Metric has already been defined for %s" %(pearson_metric))
   pass 
 
 # Now, we need to generate a "comparison" object for all files in the database
@@ -29,5 +29,5 @@ except IntegrityError as exc:
 for image1 in Image.objects.filter(collection__private=False):
   for image2 in Image.objects.filter(collection__private=False):
     if image1.pk < image2.pk:
-      print "Calculating pearson similarity for images %s and %s" %(image1,image2)
+      print("Calculating pearson similarity for images %s and %s" %(image1,image2))
       save_voxelwise_pearson_similarity(image1.pk,image2.pk)

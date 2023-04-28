@@ -3,12 +3,18 @@
 {% block content %}
   <h2>Settings</h2>
   <ul class="nav nav-tabs settings-tabs">
-    <li {% block profiletab %}{% endblock %} ><a href="{% url 'edit_user' %}">Profile</a></li>
-    <li {% block passwordtab %}{% endblock %}><a href="{% url 'password_change' %}">Password</a></li>
-    <li {% block deletetab %}{% endblock %}><a href="{% url 'delete_profile' %}">Delete Profile</a></li>
-    <li {% block personalaccesstokenstab %}{% endblock %}><a href="{% url 'token_list' %}">Personal access tokens</a></li>
-    <li {% block connectedappstab %}{% endblock %}><a href="{% url 'connection_list' %}">Connected applications</a></li>
-    <li {% block developerappstab %}{% endblock %}><a href="{% url 'developerapps_list' %}">Developer applications</a></li>
+    <li class="nav-item" {% block profiletab %}{% endblock %} >
+      <a class="nav-link" href="{% url 'users:edit_user' %}">Profile</a>
+    </li>
+    <li class="nav-item" {% block passwordtab %}{% endblock %}>
+      <a class="nav-link" href="{% url 'users:password_change' %}">Password</a>
+    </li>
+    <li class="nav-item" {% block deletetab %}{% endblock %}>
+      <a class="nav-link" href="{% url 'users:delete_profile' %}">Delete Profile</a>
+    </li>
+    <li class="nav-item" {% block personalaccesstokenstab %}{% endblock %}>
+      <a class="nav-link" href="{% url 'users:token_list' %}">Personal access tokens</a>
+    </li>
   </ul>
   {% block setting_content %}{% endblock %}
 {% endblock %}

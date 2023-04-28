@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>{% block title %}Metaanalysis{% endblock %}</title>
+<script>
+   $(document).ready(function() {
+      var captured = /q=([^&]+)/.exec(window.location.href);
+      var result = captured ? captured[1] : '';
+      var base_url = captured  != '' ? window.location.href.split("?")[0] : window.location.href;
+      $('#collections-table').dataTable({
+                "bJQueryUI": true,
+                iDisplayLength: 25,
+                aoColumns: [ { sWidth: '20%' }, { sWidth: '20%'}, { sWidth: '20%' }, {
+                sWidth: '20%'}, { sWidth: '20%' }],
+                "processing": true,
+                "serverSide": true,
+                "order": [[ 0, "asc" ]],
+                "ajax": "{% url 'statmaps:metaanalysis_images_json' metaanalysis_id=metaanalysis.id %}",
+                "oSearch":{"sSearch":result},
+                "fnDrawCallback": function (oSettings) {
+                    var curSearch = oSettings.oPreviousSearch.sSearch;
+                    history.replaceState({query:curSearch}, "title", base_url+"?q=" + curSearch);
+                }
+            });
+   });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="row mt-1 mb-1">
+	<div class="col">
+        <h2>Metaanalysis {{ metaanalysis.pk }}: {{ metaanalysis.name }}</h2>
+        <p>{{ metaanalysis.description }}</p>
+        <p>Status: {{ metaanalysis.status }}</p>
+        {% if metaanalysis.status == 'completed' %}
+            <p><a href="{{ metaanalysis.output_maps.get_absolute_url }}">Results</a></p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row mt-1 mb-1">
+	<div class="col">
+	{% if metaanalysis.status != 'completed' %}
+        <a class="btn btn-primary" href="{% url 'statmaps:edit_metaanalysis' metaanalysis_id=metaanalysis.id %}">Edit</a>
+    {% endif %}
+	{% if metaanalysis.status == 'inactive' %}
+        <a class="btn btn-primary" href="{% url 'statmaps:activate_metaanalysis' metaanalysis_id=metaanalysis.id %}">Activate</a>
+    {% endif %}
+	{% if metaanalysis.status == 'active' %}
+        <a class="btn btn-primary" href="{% url 'statmaps:metaanalysis_selection' %}">Find compatible maps</a>
+    {% endif %}
+	{% if metaanalysis.status != 'completed' and metaanalysis.maps.count > 0 %}
+        <a class="btn btn-primary" href="{% url 'statmaps:finalize_metaanalysis' metaanalysis_id=metaanalysis.id %}">Finalize</a>
+    {% endif %}
+    </div>
+</div>
+
+<div class="row mt-1 mb-1">
+	<div class="col">
+        <h5>Maps included in this metaanalysis</h5>
+        <div class="table-responsive-md">
+           <table id="collections-table" class="table table-striped table-sm">
+               <thead>
+                      <tr>
+                          <th>Collection name</th>
+                          <th>Collection description</th>
+                          <th>Map name</th>
+                          <th>Map description</th>
+                          <th>Modality</th>
+                      </tr>
+               </thead>
+           </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

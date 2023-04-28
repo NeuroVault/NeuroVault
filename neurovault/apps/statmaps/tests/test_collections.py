@@ -7,36 +7,39 @@ import io
 import zipfile
 
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.test import TestCase, Client, override_settings, RequestFactory
 from uuid import uuid4
 
-from neurovault.apps.statmaps.models import Collection, User, Image, Atlas
+from neurovault.apps.statmaps.models import (
+    Collection,
+    User,
+    Image,
+    Atlas,
+    CognitiveAtlasTask,
+)
 from neurovault.apps.statmaps.utils import detect_4D, split_4D_to_3D
 from neurovault.apps.statmaps.views import delete_collection, download_collection
+from neurovault.api.tests.utils import _setup_test_cognitive_atlas
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 from .utils import clearDB, save_statmap_form
 
 
 class CollectionSharingTest(TestCase):
-
     def setUp(self):
         self.user = {}
         self.client = {}
-        for role in ['owner','contrib','someguy']:
-            self.user[role] = User.objects.create_user('%s_%s' % (role,
-                                                       self.uniqid()), None,'pwd')
+        for role in ["owner", "contrib", "someguy"]:
+            self.user[role] = User.objects.create_user(
+                "%s_%s" % (role, self.uniqid()), None, "pwd"
+            )
             self.user[role].save()
             self.client[role] = Client()
-            self.client[role].login(username=self.user[role].username,
-                                    password='pwd')
+            self.client[role].login(username=self.user[role].username, password="pwd")
 
-        self.coll = Collection(
-            owner=self.user['owner'],
-            name="Test %s" % self.uniqid()
-        )
+        self.coll = Collection(owner=self.user["owner"], name="Test %s" % self.uniqid())
         self.coll.save()
-        self.coll.contributors.add(self.user['contrib'])
+        self.coll.contributors.add(self.user["contrib"])
         self.coll.save()
 
     def uniqid(self):
@@ -44,48 +47,91 @@ class CollectionSharingTest(TestCase):
 
     @override_settings(CRISPY_FAIL_SILENTLY=False)
     def testCollectionSharing(self):
-
-        #view_url = self.coll.get_absolute_url()
-        edit_url = reverse('edit_collection',kwargs={'cid': self.coll.pk})
+        # view_url = self.coll.get_absolute_url()
+        edit_url = reverse("statmaps:edit_collection", kwargs={"cid": self.coll.pk})
         resp = {}
 
-        for role in ['owner','contrib','someguy']:
+        for role in ["owner", "contrib", "someguy"]:
             resp[role] = self.client[role].get(edit_url, follow=True)
 
         """
         assert that owner and contributor can edit the collection,
         and that some guy cannot:
         """
-        self.assertEqual(resp['owner'].status_code,200)
-        self.assertEqual(resp['contrib'].status_code,200)
-        self.assertEqual(resp['someguy'].status_code,403)
+        self.assertEqual(resp["owner"].status_code, 200)
+        self.assertEqual(resp["contrib"].status_code, 200)
+        self.assertEqual(resp["someguy"].status_code, 403)
 
         """
         assert that only the owner can view/edit contributors:
         """
-        self.assertTrue('contributor' in resp['owner'].content.lower())
-        self.assertFalse('contributor' in resp['contrib'].content.lower())
+        self.assertTrue("contributor" in resp["owner"].content.lower().decode("utf-8"))
+        self.assertFalse(
+            "contributor" in resp["contrib"].content.lower().decode("utf-8")
+        )
 
 
 class DeleteCollectionsTest(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
         self.test_path = os.path.abspath(os.path.dirname(__file__))
-        self.user = User.objects.create(username='neurovault')
+        self.user = User.objects.create(username="neurovault")
         self.client = Client()
         self.client.login(username=self.user)
-        self.Collection1 = Collection(name='Collection1',owner=self.user)
+        self.Collection1 = Collection(name="Collection1", owner=self.user)
         self.Collection1.save()
-        self.unorderedAtlas = Atlas(name='unorderedAtlas', description='',collection=self.Collection1)
-        self.unorderedAtlas.file = SimpleUploadedFile('VentralFrontal_thr75_summaryimage_2mm.nii.gz', file(os.path.join(self.test_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz')).read())
-        self.unorderedAtlas.label_description_file = SimpleUploadedFile('test_VentralFrontal_thr75_summaryimage_2mm.xml', file(os.path.join(self.test_path,'test_data/api/unordered_VentralFrontal_thr75_summaryimage_2mm.xml')).read())
+        self.unorderedAtlas = Atlas(
+            name="unorderedAtlas", description="", collection=self.Collection1
+        )
+        self.unorderedAtlas.file = SimpleUploadedFile(
+            "VentralFrontal_thr75_summaryimage_2mm.nii.gz",
+            open(
+                os.path.join(
+                    self.test_path,
+                    "test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz",
+                ),
+                "rb",
+            ).read(),
+        )
+        self.unorderedAtlas.label_description_file = SimpleUploadedFile(
+            "test_VentralFrontal_thr75_summaryimage_2mm.xml",
+            open(
+                os.path.join(
+                    self.test_path,
+                    "test_data/api/unordered_VentralFrontal_thr75_summaryimage_2mm.xml",
+                ),
+                "rb",
+            ).read(),
+        )
         self.unorderedAtlas.save()
 
-        self.Collection2 = Collection(name='Collection2',owner=self.user)
+        self.Collection2 = Collection(name="Collection2", owner=self.user)
         self.Collection2.save()
-        self.orderedAtlas = Atlas(name='orderedAtlas', collection=self.Collection2, label_description_file='VentralFrontal_thr75_summaryimage_2mm.xml')
-        self.orderedAtlas.file = SimpleUploadedFile('VentralFrontal_thr75_summaryimage_2mm.nii.gz', file(os.path.join(self.test_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz')).read())
-        self.orderedAtlas.label_description_file = SimpleUploadedFile('test_VentralFrontal_thr75_summaryimage_2mm.xml', file(os.path.join(self.test_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.xml')).read())
+        self.orderedAtlas = Atlas(
+            name="orderedAtlas",
+            collection=self.Collection2,
+            label_description_file="VentralFrontal_thr75_summaryimage_2mm.xml",
+        )
+        self.orderedAtlas.file = SimpleUploadedFile(
+            "VentralFrontal_thr75_summaryimage_2mm.nii.gz",
+            open(
+                os.path.join(
+                    self.test_path,
+                    "test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz",
+                ),
+                "rb",
+            ).read(),
+        )
+        self.orderedAtlas.label_description_file = SimpleUploadedFile(
+            "test_VentralFrontal_thr75_summaryimage_2mm.xml",
+            open(
+                os.path.join(
+                    self.test_path,
+                    "test_data/api/VentralFrontal_thr75_summaryimage_2mm.xml",
+                ),
+                "rb",
+            ).read(),
+        )
         self.orderedAtlas.save()
 
     def tearDown(self):
@@ -95,24 +141,24 @@ class DeleteCollectionsTest(TestCase):
         self.client.login(username=self.user)
         pk1 = self.Collection1.pk
         pk2 = self.Collection2.pk
-        request = self.factory.get('/collections/%s/delete' %pk1)
+        request = self.factory.get("/collections/%s/delete" % pk1)
         request.user = self.user
         delete_collection(request, str(pk1))
-        imageDir = os.path.join(PRIVATE_MEDIA_ROOT, 'images')
+        imageDir = os.path.join(PRIVATE_MEDIA_ROOT, "images")
         dirList = os.listdir(imageDir)
-        print dirList
+        print(dirList)
         self.assertIn(str(self.Collection2.pk), dirList)
         self.assertNotIn(str(self.Collection1.pk), dirList)
 
 
-
 class Afni4DTest(TestCase):
-
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
         app_path = os.path.abspath(os.path.dirname(__file__))
-        self.afni_file = os.path.join(app_path,'test_data/TTatlas.nii.gz')
-        self.nii_file = os.path.abspath(os.path.join(app_path,'../static/anatomical/MNI152.nii.gz'))
+        self.afni_file = os.path.join(app_path, "test_data/TTatlas.nii.gz")
+        self.nii_file = os.path.abspath(
+            os.path.join(app_path, "../static/anatomical/MNI152.nii.gz")
+        )
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
@@ -135,18 +181,18 @@ class Afni4DTest(TestCase):
         test_afni = detect_4D(nibabel.load(self.afni_file))
         test_non_afni = detect_4D(nibabel.load(self.nii_file))
 
-        bricks = split_4D_to_3D(nibabel.load(self.afni_file),tmp_dir=self.tmpdir)
+        bricks = split_4D_to_3D(nibabel.load(self.afni_file), tmp_dir=self.tmpdir)
 
         # check detection of 4D is correct
         self.assertTrue(test_afni)
         self.assertFalse(test_non_afni)
 
         # check for 2 sub bricks
-        self.assertEquals(len(bricks),2)
+        self.assertEqual(len(bricks), 2)
 
         # check that brick labels match afni 3dinfo binary output
-        self.assertEquals(bricks[0][0],'uu3[0]')
-        self.assertEquals(bricks[1][0],'uu5[0]')
+        self.assertEqual(bricks[0][0], "uu3[0]")
+        self.assertEqual(bricks[1][0], "uu5[0]")
 
         # check that sliced niftis exist at output location
         self.assertTrue(os.path.exists(bricks[0][1]))
@@ -154,10 +200,9 @@ class Afni4DTest(TestCase):
 
 
 class CollectionMetaDataTest(TestCase):
-
     def setUp(self):
-        base_username = 'owner'
-        password = 'pwd'
+        base_username = "owner"
+        password = "pwd"
         test_path = os.path.abspath(os.path.dirname(__file__))
 
         self.user = User.objects.create_user(
@@ -168,20 +213,29 @@ class CollectionMetaDataTest(TestCase):
         self.client = Client()
         self.client.login(username=self.user.username, password=password)
 
-        self.coll = Collection(owner=self.user,
-                               name="Test %s" % self.uniqid())
+        self.coll = Collection(owner=self.user, name="Test %s" % self.uniqid())
         self.coll.save()
+        _setup_test_cognitive_atlas()
+
+        cat = CognitiveAtlasTask.objects.update_or_create(
+            cog_atlas_id="trm_4f24126c22011",
+            defaults={"name": "Early Social and Communication Scales"},
+        )
+        cat[0].save()
+        cat = CognitiveAtlasTask.objects.update_or_create(
+            cog_atlas_id="trm_4f24126c22012",
+            defaults={"name": "Cambridge Gambling Task"},
+        )
+        cat[0].save()
 
         def test_data_path(filename):
-            return os.path.join(test_path, 'test_data/statmaps/%s' % filename)
+            return os.path.join(test_path, "test_data/statmaps/%s" % filename)
 
         self.image1 = save_statmap_form(
-            image_path=test_data_path('motor_lips.nii.gz'),
-            collection=self.coll
+            image_path=test_data_path("motor_lips.nii.gz"), collection=self.coll
         )
         self.image2 = save_statmap_form(
-            image_path=test_data_path('beta_0001.nii.gz'),
-            collection=self.coll
+            image_path=test_data_path("beta_0001.nii.gz"), collection=self.coll
         )
 
     def tearDown(self):
@@ -191,54 +245,62 @@ class CollectionMetaDataTest(TestCase):
         return str(uuid4())[:8]
 
     def test_post_metadata(self):
-        cognitive_paradigms = ('Early Social and Communication Scales',
-                               'Cambridge Gambling Task')
+        cognitive_paradigms = (
+            "Early Social and Communication Scales",
+            "Cambridge Gambling Task",
+        )
 
         test_data = [
-            ['Filename', 'Subject ID', 'Sex', 'modality',
-                'cognitive_paradigm_cogatlas'],
-            ['motor_lips.nii.gz', '12', '1',
-                'fMRI-BOLD', cognitive_paradigms[0]],
-            ['beta_0001.nii.gz', '13', '2',
-                'fMRI-BOLD', cognitive_paradigms[1]]
+            [
+                "Filename",
+                "Subject ID",
+                "Sex",
+                "modality",
+                "cognitive_paradigm_cogatlas",
+            ],
+            ["motor_lips.nii.gz", "12", "1", "fMRI-BOLD", cognitive_paradigms[0]],
+            ["beta_0001.nii.gz", "13", "2", "fMRI-BOLD", cognitive_paradigms[1]],
         ]
 
-        url = reverse('edit_metadata',
-                      kwargs={'collection_cid': self.coll.pk})
+        url = reverse("statmaps:edit_metadata", kwargs={"collection_cid": self.coll.pk})
 
-        resp = self.client.post(url,
-                                data=json.dumps(test_data),
-                                content_type='application/json; charset=utf-8')
+        resp = self.client.post(
+            url,
+            data=json.dumps(test_data),
+            content_type="application/json; charset=utf-8",
+        )
 
         self.assertEqual(resp.status_code, 200)
 
         image1 = Image.objects.get(id=self.image1.id)
 
-        self.assertEqual(image1.data, {'Sex': '1',
-                                       'Subject ID': '12'})
+        self.assertEqual(image1.data, {"Sex": "1", "Subject ID": "12"})
 
-        self.assertEqual(image1.modality, 'fMRI-BOLD')
-        self.assertEqual(image1.cognitive_paradigm_cogatlas.name,
-                         cognitive_paradigms[0])
+        self.assertEqual(image1.modality, "fMRI-BOLD")
+        self.assertEqual(
+            image1.cognitive_paradigm_cogatlas.name, cognitive_paradigms[0]
+        )
 
         image2 = Image.objects.get(id=self.image2.id)
 
-        self.assertEqual(image2.cognitive_paradigm_cogatlas.name,
-                         cognitive_paradigms[1])
+        self.assertEqual(
+            image2.cognitive_paradigm_cogatlas.name, cognitive_paradigms[1]
+        )
 
     def test_empty_string_value_in_fixed_numeric_field(self):
         test_data = [
-            ['Filename', 'Subject ID', 'age'],
-            ['motor_lips.nii.gz', '12', ''],
-            ['beta_0001.nii.gz', '13', None]
+            ["Filename", "Subject ID", "age"],
+            ["motor_lips.nii.gz", "12", ""],
+            ["beta_0001.nii.gz", "13", None],
         ]
 
-        url = reverse('edit_metadata',
-                      kwargs={'collection_cid': self.coll.pk})
+        url = reverse("statmaps:edit_metadata", kwargs={"collection_cid": self.coll.pk})
 
-        resp = self.client.post(url,
-                                data=json.dumps(test_data),
-                                content_type='application/json; charset=utf-8')
+        resp = self.client.post(
+            url,
+            data=json.dumps(test_data),
+            content_type="application/json; charset=utf-8",
+        )
 
         self.assertEqual(resp.status_code, 200)
 
@@ -250,93 +312,139 @@ class CollectionMetaDataTest(TestCase):
 
     def test_metadata_for_files_missing_in_the_collection(self):
         test_data = [
-            ['Filename', 'Subject ID', 'Sex'],
-            ['motor_lips.nii.gz', '12', '1'],
-            ['beta_0001.nii.gz', '13', '2'],
-            ['file3.nii.gz', '14', '3']
+            ["Filename", "Subject ID", "Sex"],
+            ["motor_lips.nii.gz", "12", "1"],
+            ["beta_0001.nii.gz", "13", "2"],
+            ["file3.nii.gz", "14", "3"],
         ]
 
-        url = reverse('edit_metadata',
-                      kwargs={'collection_cid': self.coll.pk})
+        url = reverse("statmaps:edit_metadata", kwargs={"collection_cid": self.coll.pk})
 
-        resp = self.client.post(url,
-                                data=json.dumps(test_data),
-                                content_type='application/json; charset=utf-8')
+        resp = self.client.post(
+            url,
+            data=json.dumps(test_data),
+            content_type="application/json; charset=utf-8",
+        )
 
         self.assertEqual(resp.status_code, 400)
 
         resp_json = json.loads(resp.content)
 
-        self.assertEqual(resp_json['message'],
-                         'File is not found in the collection: file3.nii.gz')
+        self.assertEqual(
+            resp_json["message"], "File is not found in the collection: file3.nii.gz"
+        )
 
     def test_incorrect_value_in_fixed_basic_field(self):
         test_data = [
-            ['Filename', 'Subject ID', 'Sex', 'modality',
-                'cognitive_paradigm_cogatlas'],
-            ['motor_lips.nii.gz', '12', '1',
-                'fMRI-BOLD', 'Cambridge Gambling Task'],
-            ['beta_0001.nii.gz', '13', '2',
-                '-*NOT-EXISTING-MOD*-', 'Cambridge Gambling Task']
+            [
+                "Filename",
+                "Subject ID",
+                "Sex",
+                "modality",
+                "cognitive_paradigm_cogatlas",
+            ],
+            ["motor_lips.nii.gz", "12", "1", "fMRI-BOLD", "Cambridge Gambling Task"],
+            [
+                "beta_0001.nii.gz",
+                "13",
+                "2",
+                "-*NOT-EXISTING-MOD*-",
+                "Cambridge Gambling Task",
+            ],
         ]
 
-        url = reverse('edit_metadata',
-                      kwargs={'collection_cid': self.coll.pk})
+        url = reverse("statmaps:edit_metadata", kwargs={"collection_cid": self.coll.pk})
 
-        resp = self.client.post(url,
-                                data=json.dumps(test_data),
-                                content_type='application/json; charset=utf-8')
+        resp = self.client.post(
+            url,
+            data=json.dumps(test_data),
+            content_type="application/json; charset=utf-8",
+        )
 
         self.assertEqual(resp.status_code, 400)
 
         resp_json = json.loads(resp.content)
 
-        self.assertEqual(resp_json['messages'], {'beta_0001.nii.gz': [{
-            'Modality & acquisition type': [
-                "Value '-*NOT-EXISTING-MOD*-' is not a valid choice."
-            ]
-        }]})
+        self.assertEqual(
+            resp_json["messages"]["beta_0001.nii.gz"],
+            [
+                {
+                    "Modality & acquisition type": [
+                        "Value '-*NOT-EXISTING-MOD*-' is not a valid choice."
+                    ]
+                }
+            ],
+        )
 
     def test_incorrect_value_in_fixed_foreign_field(self):
         test_data = [
-            ["Filename", "Subject ID", "Sex", "modality",
-                "cognitive_paradigm_cogatlas"],
-            ["motor_lips.nii.gz", "12", "1", "fMRI-BOLD",
-                '-*NOT-EXISTING-PARADIGM*-'],
-            ["beta_0001.nii.gz", "13", "2",
-                "fMRI-BOLD", 'Cambridge Gambling Task']
+            [
+                "Filename",
+                "Subject ID",
+                "Sex",
+                "modality",
+                "cognitive_paradigm_cogatlas",
+            ],
+            ["motor_lips.nii.gz", "12", "1", "fMRI-BOLD", "-*NOT-EXISTING-PARADIGM*-"],
+            ["beta_0001.nii.gz", "13", "2", "fMRI-BOLD", "Cambridge Gambling Task"],
         ]
 
-        url = reverse('edit_metadata',
-                      kwargs={'collection_cid': self.coll.pk})
+        url = reverse("statmaps:edit_metadata", kwargs={"collection_cid": self.coll.pk})
 
-        resp = self.client.post(url,
-                                data=json.dumps(test_data),
-                                content_type='application/json; charset=utf-8')
+        resp = self.client.post(
+            url,
+            data=json.dumps(test_data),
+            content_type="application/json; charset=utf-8",
+        )
 
         self.assertEqual(resp.status_code, 400)
 
         resp_json = json.loads(resp.content)
 
-        self.assertEqual(resp_json['messages'], {'motor_lips.nii.gz': [{
-            'Cognitive atlas paradigm': [
-                "Value '-*NOT-EXISTING-PARADIGM*-' is not a valid choice."
-            ]
-        }]})
+        self.assertEqual(
+            resp_json["messages"]["motor_lips.nii.gz"],
+            [
+                {
+                    "Cognitive atlas paradigm": [
+                        "Value '-*NOT-EXISTING-PARADIGM*-' is not a valid choice."
+                    ]
+                }
+            ],
+        )
 
 
 class DownloadCollectionsTest(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
         self.test_path = os.path.abspath(os.path.dirname(__file__))
-        self.user = User.objects.create(username='neurovault')
+        self.user = User.objects.create(username="neurovault")
         self.client = Client()
         self.client.login(username=self.user)
-        self.Collection1 = Collection(name='Collection1',owner=self.user)
+        self.Collection1 = Collection(name="Collection1", owner=self.user)
         self.Collection1.save()
-        self.unorderedAtlas = Atlas(name='unorderedAtlas', description='',collection=self.Collection1)
-        self.unorderedAtlas.file = SimpleUploadedFile('VentralFrontal_thr75_summaryimage_2mm.nii.gz', file(os.path.join(self.test_path,'test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz')).read())
-        self.unorderedAtlas.label_description_file = SimpleUploadedFile('test_VentralFrontal_thr75_summaryimage_2mm.xml', file(os.path.join(self.test_path,'test_data/api/unordered_VentralFrontal_thr75_summaryimage_2mm.xml')).read())
+        self.unorderedAtlas = Atlas(
+            name="unorderedAtlas", description="", collection=self.Collection1
+        )
+        self.unorderedAtlas.file = SimpleUploadedFile(
+            "VentralFrontal_thr75_summaryimage_2mm.nii.gz",
+            open(
+                os.path.join(
+                    self.test_path,
+                    "test_data/api/VentralFrontal_thr75_summaryimage_2mm.nii.gz",
+                ),
+                "rb",
+            ).read(),
+        )
+        self.unorderedAtlas.label_description_file = SimpleUploadedFile(
+            "test_VentralFrontal_thr75_summaryimage_2mm.xml",
+            open(
+                os.path.join(
+                    self.test_path,
+                    "test_data/api/unordered_VentralFrontal_thr75_summaryimage_2mm.xml",
+                ),
+                "rb",
+            ).read(),
+        )
         self.unorderedAtlas.save()
 
     def tearDown(self):
@@ -346,15 +454,16 @@ class DownloadCollectionsTest(TestCase):
     def testDownloadCollection(self):
         self.client.login(username=self.user)
         pk1 = self.Collection1.pk
-        request = self.factory.get('/collections/%s/download' %pk1)
+        request = self.factory.get("/collections/%s/download" % pk1)
         request.user = self.user
         response = download_collection(request, str(pk1))
 
-        self.assertTrue(response.streaming_content)
         self.assertEqual(response.status_code, 200)
 
-        zf = zipfile.ZipFile(io.BytesIO(''.join(response.streaming_content)))
+        zf = zipfile.ZipFile(io.BytesIO(b"".join(response.streaming_content)))
 
         self.assertEqual(len(zf.filelist), 1)  # 1 Atlas
         self.assertIsNone(zf.testzip())
-        self.assertIn("Collection1/VentralFrontal_thr75_summaryimage_2mm.nii.gz", zf.namelist())
+        self.assertIn(
+            "Collection1/VentralFrontal_thr75_summaryimage_2mm.nii.gz", zf.namelist()
+        )

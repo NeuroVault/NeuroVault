@@ -24,12 +24,12 @@ def mkdir_p(path):
 
 for image in Image.objects.all():
     if len(image.file.name.split("/")) < 3:
-        print image.file.name
+        print(image.file.name)
         new_name = "/".join(["images", str(image.collection_id), image.file.path.split("/")[-1]])
-        print new_name
-        print image.file.path
+        print(new_name)
+        print(image.file.path)
         new_path = "/".join(image.file.path.split("/")[:-1] + ["images", str(image.collection_id), image.file.path.split("/")[-1],])
-        print new_path
+        print(new_path)
         
         mkdir_p("/".join(image.file.path.split("/")[:-1] + ["images", str(image.collection_id)]))
         os.rename(image.file.path, new_path)

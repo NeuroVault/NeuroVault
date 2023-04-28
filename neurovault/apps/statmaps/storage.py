@@ -21,14 +21,14 @@ class NeuroVaultStorage(FileSystemStorage):
     def url(self, name):
         collection_id = None
         spath, file_name = os.path.split(name)
-        urlsects = [v for v in spath.split('/') if v]
+        urlsects = [v for v in spath.split("/") if v]
         for i in range(len(urlsects)):
             sect = urlsects.pop(0)
             if sect.isdigit():
                 collection_id = sect
                 break
-        cont_path = '/'.join(urlsects)
-        coll_model = apps.get_model('statmaps', 'Collection')
+        cont_path = "/".join(urlsects)
+        coll_model = apps.get_model("statmaps", "Collection")
         collection = coll_model.objects.get(id=collection_id)
         if collection.private:
             cid = collection.private_token
@@ -40,7 +40,7 @@ class NeuroVaultStorage(FileSystemStorage):
 class DoubleExtensionStorage(NeuroVaultStorage):
     _extensions = ["nii.gz", "nidm.zip"]
 
-    def get_available_name(self, name):
+    def get_available_name(self, name, max_length=None):
         """
         Returns a filename that's free on the target storage system, and
         available for new content to be written to.
@@ -60,13 +60,15 @@ class DoubleExtensionStorage(NeuroVaultStorage):
         count = itertools.count(1)
         while self.exists(name):
             # file_ext includes the dot.
-            name = os.path.join(dir_name, "%s_%s%s" % (file_root, next(count), file_ext))
+            name = os.path.join(
+                dir_name, "%s_%s%s" % (file_root, next(count), file_ext)
+            )
 
         return name
 
 
 class OverwriteStorage(NeuroVaultStorage):
-    def get_available_name(self, name):
+    def get_available_name(self, name, max_length=None):
         return name
 
     def _save(self, name, content):
@@ -96,7 +98,7 @@ class OverwriteStorage(NeuroVaultStorage):
             raise IOError("%s exists and is not a directory." % directory)
 
         tmp_file = tempfile.mktemp()
-        filey = open(tmp_file, 'wb')
+        filey = open(tmp_file, "wb")
         filey.write(content.read())
         # make sure that all data is on disk
         filey.flush()
@@ -112,9 +114,9 @@ class NIDMStorage(DoubleExtensionStorage):
 
     def url(self, name):
         rpath = super(NIDMStorage, self).url(name)
-        rpath = rpath.replace(self.base_url, '/collections/').split('/')
-        for ext in ['.ttl', '.zip']:
-            if fnmatch(rpath[-1], '*{0}'.format(ext)):
+        rpath = rpath.replace(self.base_url, "/collections/").split("/")
+        for ext in [".ttl", ".zip"]:
+            if fnmatch(rpath[-1], "*{0}".format(ext)):
                 rpath.pop()
-                return '/'.join(rpath) + ext
-        return '/'.join(rpath)
+                return "/".join(rpath) + ext
+        return "/".join(rpath)

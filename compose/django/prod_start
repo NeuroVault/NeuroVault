@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+
+python /code/manage.py collectstatic --noinput
+
+/usr/local/bin/gunicorn neurovault.wsgi --bind 0.0.0.0:8000 --chdir=/code --workers=4 -t 120

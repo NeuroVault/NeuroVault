@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block head %}
+    <title>{% block title %}Edit metaanalysis{% endblock %}</title>
+{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col">
+        <h2>{{page_header}}</h2>
+        {% crispy form %}
+    </div>
+</div>
+{% endblock %}

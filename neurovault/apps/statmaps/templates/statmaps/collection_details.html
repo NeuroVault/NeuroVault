@@ -1,27 +1,12 @@
 {% extends "base.html" %}
-{% load static from staticfiles %}
-{% block head %}
-<script type="text/javascript" src="{% static "scripts/papaya.js"%}"/></script>
-<script src="{% static "scripts/jquery-1.10.2.min.js"%}" type="text/javascript"></script>
-<script src="{% static "scripts/bootstrap.min.js"%}" type="text/javascript"></script>
-<link href="//netdna.bootstrapcdn.com/font-awesome/3.1.1/css/font-awesome.css" rel="stylesheet">
+{% load static %}
 
-<!-- Meta tags for PageMap: Google Search-->
+{% block includes %}
 {% include "statmaps/_meta_collection.html" %}
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+{%  endblock %}
 
-<title>{% block title %}{{collection.name}}{% endblock %}</title>
-
-<!-- Fix for dropdown menus -->
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-<script src="{% static "scripts/jquery.cookie.js"%}" type="text/javascript"></script>
-<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-<script src="//cdn.datatables.net/1.10.7/js/jquery.dataTables.min.js" type="text/javascript"></script>
-<script src="//cdn.datatables.net/plug-ins/1.10.7/integration/bootstrap/3/dataTables.bootstrap.js" type="text/javascript"></script>
-<link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
-<link rel="stylesheet" href="{% static "css/style.css" %}" />
-<link rel="stylesheet" type="text/css" href="/static/css/papaya.css" />
-
-
+{% block functions %}
 <script type='text/javascript'>
 
  function fillCitation() {
@@ -154,239 +139,277 @@
   });
 }).call(this);
 
- window.onload = fillCitation;
+ {% if collection.DOI %}
+    window.onload = fillCitation;
+ {% endif %}
 </script>
 {% endblock %}
 
+{% block head  %}
+    <title>{% block title %}{{collection.name}}{% endblock %}</title>
+{% endblock %}
+
 {% block content %}
-<div class="fade"></div>
-
+    <div id="fade"></div>
 <!-- Meta data and header row-->
-<div class="row">
-        <h2>{{ collection.name }}</h2>
-        {% if collection.communities.all %}
-            Communities: {% for community in collection.communities.all %} <a href="{%  url 'view_community' community_label=community.label %}"
-            >{{ community.label }}</a>
-        {% endfor %}
-        {% endif %}
-
-        {% if not collection.private %}
-            <p>Contributed by {{ collection.owner }}</p>
-        {% endif %}
-        <div class="row">
-            <div class="col-md-12">
-                {% if collection.DOI %}
-                If you use data from this collection please cite:<br />
-                <a href="http://doi.org/{{ collection.DOI }}" id="citation">http://doi.org/{{ collection.DOI }}</a><br />
-                {% endif %}
-                {% if collection.full_dataset_url %}
-                <div class="lead"><a href="{{ collection.full_dataset_url }}">Source data</a>
-                </div>
-                {% endif %}
-            </div>
-         </div>
-         <div class="row"><br /></div>
+    <div class="row">
+        <div class="col">
+            <h2>{{ collection.name }}</h2>
+            {% if collection.description %}
+                <p><b>Description</b>: {{ collection.description }}</p>
+            {% endif %}
+            {% if collection.communities.all %}
+                Communities:
+                {% for community in collection.communities.all %}
+                    <a href="{%  url 'view_community' community_label=community.label %}">{{ community.label }}</a>
+                {% endfor %}
+            {% endif %}
+            {% if collection.DOI %}
+                <p>Related article:
+                    <a href="http://doi.org/{{ collection.DOI }}" id="citation">http://doi.org/{{ collection.DOI }}</a></p>
+            {% endif %}
+            {% if collection.full_dataset_url %}
+                <p><a href="{{ collection.full_dataset_url }}">Source data:</a></p>
+            {% endif %}
+            {% if collection.private %}
+                <p><em>Private Collection</em>: To share the link to this collection, please use the private url:
+                                <a href="{{ request.path }}">https://neurovault.org{{ request.path }}</a>
+                </p>
+            {% endif %}
+        </div>
+    </div>
 
      {% if messages %}
          <div class="row">
-            <ul class="messages">
+            <div class="col-12">
                 {% for message in messages %}
                 <div class="alert alert-dismissible alert-danger">
                     {{ message|safe }}
                 </div>
                 {% endfor %}
-            </ul>
+            </div>
          </div>
-            {% endif %}
-         <div class="row">
-            <div class="col-md-9">
-             <form action="upload_folder" enctype="multipart/form-data" method= "POST" name="upload_folder_form">
+     {% endif %}
+
+    <form action="upload_folder" enctype="multipart/form-data" method= "POST" name="upload_folder_form">
+    <div class="row mt-1 mb-1">
+        <div class="col-12">
+
 
             {% if not is_empty %}
-              {% if pycortex_compatible %}
-                <a class="btn btn-primary" href="pycortex">3D View</a>
-              {% endif %}
-            <a class="btn btn-primary" href="{% url 'download_collection' cid %}">Download</a>
+                {% if pycortex_compatible %}
+                    <a class="btn btn-primary" href="pycortex">3D View</a>
+                {% endif %}
+                <a class="btn btn-primary" href="{% url 'statmaps:download_collection' 1 %}">Download</a>
             {% endif %}
 
             {% if edit_permission %}
+                <a class="btn btn-primary" href="{% url 'statmaps:add_image' cid %}" >Add image</a>
 
-                <a class="btn btn-primary" href="{% url 'add_image' cid %}">Add image</a>
-
-                <div class="btn-group">
-                    <a class="btn btn-primary dropdown-toggle" href= "#" data-toggle="dropdown">Edit <span class="caret"></span></a>
-                    <ul class="dropdown-menu">
-                        <li><a href="{% url 'edit_collection' cid %}">Collection Metadata</a></li>
+                <div class="btn-group" role="group">
+                    <button id="btnGroupDropEdit" type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Edit
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="btnGroupDropEdit">
+                        <a class="dropdown-item" href="{% url 'statmaps:edit_collection' cid %}">Collection Metadata</a>
                         {% if collection.is_statisticmap_set %}
-                        <li><a href="{% url 'edit_metadata' cid %}">Images Metadata</a></li>
+                        <a class="dropdown-item" href="{% url 'statmaps:edit_metadata' cid %}">Images Metadata</a>
                         {% else %}
-                        <li class="disabled"><a href="#">Images Metadata</a></li>
+                        <a class="dropdown-item disabled" href="#">Images Metadata</a>
                         {% endif %}
-                    </ul>
-               </div>
-                <div class="btn-group">
-                    <a class="btn btn-primary dropdown-toggle" href="#" data-toggle="dropdown">Upload<span class="caret"></span></a>
-                    <ul class="dropdown-menu">
-                        <li><a class="upload_archive" href="#">Archive (.zip)</a></li>
-                        <li><a class="upload_archive" href="#">NIDM-Results (.nidm.zip)</a></li>
+                    </div>
+                </div>
+                <div class="btn-group" role="group">
+                    <button id="btnGroupDropUpload" type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Upload
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="btnGroupDropUpload">
+                        <a class="dropdown-item upload_archive" href="#">Archive (.zip)</a>
+                        <a class="dropdown-item upload_archive" href="#">NIDM-Results (.nidm.zip)</a>
                         <!--[if !IE]> -->
-                        <li><a class="upload_folder" href="#">Folder</a></li>
+                        <a class="dropdown-item upload_folder" href="#">Folder</a>
                         <!-- <![endif]-->
-                    </ul>
+                    </div>
                 </div>
 
                 {% if delete_permission %}
-                <a class="btn btn-danger" href="{% url 'delete_collection' cid %}" id="delete_collection"> Delete collection</a>
+                    <a class="btn btn-danger" href="{% url 'statmaps:delete_collection' cid %}" id="delete_collection"> Delete collection</a>
                 {% endif %}<!--close delete permission-->
 
                 <!-- Hidden file upload fields -->
                 {% csrf_token %}
                 <div style="height: 0px;width: 0px; overflow:hidden;">
                      {{ form.file }}
-                     <input type="file" name="file_input[]" id="folder_input" multiple="" directory="" mozdirectory="" webkitdirectory=""></input>
-                     <input type="hidden" name="paths" id="paths"></input>
+                     <input type="file" name="file_input[]" id="folder_input" multiple="" directory="" mozdirectory="" webkitdirectory="">
+                     <input type="hidden" name="paths" id="paths">
                 </div>
 
-                {% if collection.private %}
+            {% endif %}<!-- close edit permissions-->
+        </div>
+    </div>
+    <!-- Content-->
+    <div class="row mt-2 mb-2">
+        {% if is_empty and edit_permission %}
+            <div class="col-12 center-text mt-1 mb-1">
                 <div class="lead">
-                    <div style="font-size:16px; margin-top:20px;">
-                        <em>Private Collection</em>: To share the link to this collection, please use the private url:
-                                    <a href="{{ request.path }}">{{ request.path }}</a>
-                    </div>
+                    This collection is empty. You can:
                 </div>
-                {% endif %}
-                {% endif %}<!-- close edit permissions-->
+                <div class="btn-group-vertical w-100">
+                    <a type="button" class="btn btn-light" href="{% url 'statmaps:add_image' cid %}">Add
+                        images one by one</a>
+                    <a type="button" class="btn btn-light upload_archive"
+                       href="#">Upload an archive with images (.zip or .tar.gz)</a>
+                    <a type="button" class="btn btn-light upload_archive"
+                       href="#">Upload a NIDM-Results file (.nidm.zip)</a>
+                    <!--[if !IE]> -->
+                    <a type="button" class="btn btn-light" class="upload_folder" href="#">Upload a
+                        folder with images</a>
+                    <!-- <![endif]-->
+                </div>
+                <div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false"></div>
+            </div>
+        {% elif not is_empty %} <!-- close if not empty -->
+            <div class="col-md-6 mt-1 mb-1 d-none d-md-block" style="margin-top:20px; min-height:470px;"
+                 id="for_papaya">
+            </div>
+            <div class="col-md-6 mt-1 mb-1">
+                <!-- COLLECTION TABS -->
 
+                <ul id='collection-tabs' class="nav nav-tabs" role="tablist">
+                      {% if images_visible %}<li class="nav-item">
+                          <a data-toggle='tab' class="nav-link active" role="tab" href='#images'>Images</a></li>{% endif %}
+                      {% if gimages_visible %}<li class="nav-item">
+                          <a data-toggle='tab' class="nav-link" role="tab" href='#gimages'>Group</a></li>{% endif %}
+                      {% if simages_visible %}<li class="nav-item">
+                          <a class="nav-link" data-toggle='tab' role="tab" href='#simages'>Single subject</a></li>{% endif %}
+                      {% if oimages_visible %}<li class="nav-item">
+                          <a data-toggle='tab' class="nav-link" role="tab" href='#oimages'>{{ oimages_title }}</a></li>{% endif %}
+                      <li class="nav-item">
+                          <a data-toggle='tab' class="nav-link" role="tab" href='#details'>Metadata</a></li>
+                </ul>
+
+                <div class='tab-content mt-3'>
+                    {% if images_visible %}
+                       <div id='images' class='tab-pane active'>
+                           <div class="table-responsive-xl">
+                               <table id="collection-images-datatable" class="table table-striped table-sm">
+                                   <thead>
+                                          <tr>
+                                              <th scope="col" class="d-none d-md-table-cell">View</th>
+                                              <th>ID</th>
+                                              <th>Name</th>
+                                              <th>Type</th>
+                                          </tr>
+                                   </thead>
+                               </table>
+                           </div>
+                       </div>
+                    {% endif %}
+                    {% if gimages_visible %}
+                       <div id='gimages' class='tab-pane {%  if gimages_active %}active{%  endif %}'>
+                       <div class="table-responsive-xl">
+                           <table id="collection-gimages-datatable" class="table table-striped table-sm">
+                               <thead>
+                                      <tr>
+                                          <th scope="col" class="d-none d-md-table-cell">View</th>
+                                          <th>ID</th>
+                                          <th>Name</th>
+                                          <th>Type</th>
+                                      </tr>
+                               </thead>
+                           </table>
+                       </div>
+                       </div>
+                    {% endif %}
+                    {% if simages_visible %}
+                       <div id='simages' class='tab-pane {%  if simages_active %}active{%  endif %}'>
+                       <div class="table-responsive-xl">
+                           <table id="collection-simages-datatable" class="table table-striped table-sm">
+                               <thead>
+                                      <tr>
+                                          <th scope="col" class="d-none d-md-table-cell">View</th>
+                                          <th>ID</th>
+                                          <th>Name</th>
+                                          <th>Type</th>
+                                      </tr>
+                               </thead>
+                           </table>
+                       </div>
+                       </div>
+                    {% endif %}
+                    {% if oimages_visible %}
+                       <div id='oimages' class='tab-pane {%  if oimages_active %}active{%  endif %}'>
+                       <div class="table-responsive-xl">
+                           <table id="collection-oimages-datatable" class="table table-striped table-sm">
+                               <thead>
+                                      <tr>
+                                          <th scope="col" class="d-none d-md-table-cell">View</th>
+                                          <th>ID</th>
+                                          <th>Name</th>
+                                          <th>Type</th>
+                                      </tr>
+                               </thead>
+                           </table>
+                       </div>
+                      </div><!-- Close images tab-->
+                    {% endif %}
+                      <div id="details" class="tab-pane">
+                          <div class="table-responsive-xl">
+                          <table id="collection-details-datatable" class="table table-striped table-sm">
+                              <thead>
+                                  <tr>
+                                      <th>Field</th>
+                                      <th>Value</th>
+                                  </tr>
+                              </thead>
+                              <tbody>
+                                  <tr><td>Compact Identifier</td><td>https://identifiers.org/neurovault.collection:{{ collection.id }}</td></tr>
+                                  <tr><td>Add Date</td><td>{{ collection.add_date }}</td></tr>
+                                  {% if not collection.private  and 'NARPS' not in collection.name %}
+                                      <tr><td>Uploaded by</td><td>{{ collection.owner }}</td></tr>
+                                  {% endif %}
+                                  <tr><td>Contributors</td><td>{{ collection.contributor }}</td></tr>
+                                  <tr><td>Related article DOI</td><td>{{ collection.DOI }}</td></tr>
+                                  <tr><td>Related article authors</td><td>{{ collection.authors }}</td></tr>
+                              </tbody>
+                          </table>
+                          </div>
+                      </div><!-- close details tab-->
+                      <div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false"></div>
+                </div><!-- close tab content-->
+            </div>
+        {% endif %}
+    </div>
+    </form>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+            <div class="card-header">Citation guidelines</div>
+              <div class="card-body">
+                <p class="card-text">If you use the data from this collection
+                    please include the following persistent identifier in the text of your manuscript:</p>
+                  <pre>https://identifiers.org/neurovault.collection:{{ collection.id }}</pre>
+                  <p class="card-text">This will help to track the use of this data in the literature.
+                    {% if collection.DOI %}
+                        In addition, consider also citing <a href="http://doi.org/{{ collection.DOI }}">the paper related to this collection.</a>
+                    {% endif %}
+                </p>
+              </div>
             </div>
         </div>
-</div>
-<div class="row">
-</div>
-
-<!-- Content-->
-<div class="row">
-{% if is_empty and edit_permission %}
-<div class="center-text" style="margin-top:60px;">
-<div style="font-size:34px;" style="margin-bottom:30px">
-    This collection is empty. You can:
-</div>
-<br><br>
-<ul class="list-group">
-<li class="list-group-item"><a href="{% url 'add_image' cid %}">Add images one by one</a></li>
-<li class="list-group-item"><a class="upload_archive" href="#">Upload an archive with images (.zip or .tar.gz)</a></li>
-<li class="list-group-item"><a class="upload_archive" href="#">Upload a NIDM-Results file (.nidm.zip)</a></li>
-<!--[if !IE]> -->
-<li class="list-group-item"><a class="upload_folder" href="#">Upload a folder with images</a></li>
-<!-- <![endif]-->
-<div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false"></div>
-</div>
-{% elif not is_empty %} <!-- close if not empty -->
-<div class="col-md-6" style="margin-top:20px" id="for_papaya">
-</div>
-<div class="col-md-6">
-        <!-- COLLECTION TABS -->
-        <ul id='collection-tabs' class='nav nav-tabs'>
-              {% if images_visible %}<li><a data-toggle='tab' href='#images'>Images</a></li>{% endif %}
-              {% if gimages_visible %}<li><a data-toggle='tab' href='#gimages'>Group</a></li>{% endif %}
-              {% if simages_visible %}<li><a data-toggle='tab' href='#simages'>Single
-            subject</a></li>{% endif %}
-              {% if oimages_visible %}<li><a data-toggle='tab' href='#oimages'>
-                  {{ oimages_title }}</a></li>{% endif %}
-              <li><a data-toggle='tab' href='#details'>Details</a></li>
-        </ul>
-
-        <div class='tab-content'>
-            {% if images_visible %}
-               <div id='images' class='tab-pane active'>
-               <table id="collection-images-datatable" class="compact">
-               <thead>
-                      <tr>
-                          <th>View</th>
-                          <th>ID</th>
-                          <th>Name</th>
-                          <th>Type</th>
-                      </tr>
-               </thead>
-               </table>
-               </div>
-            {% endif %}
-            {% if gimages_visible %}
-               <div id='gimages' class='tab-pane {%  if gimages_active %}active{%  endif %}'>
-               <table id="collection-gimages-datatable" class="compact">
-               <thead>
-                      <tr>
-                          <th>View</th>
-                          <th>ID</th>
-                          <th>Name</th>
-                          <th>Type</th>
-                      </tr>
-               </thead>
-               </table>
-               </div>
-            {% endif %}
-            {% if simages_visible %}
-               <div id='simages' class='tab-pane {%  if simages_active %}active{%  endif %}'>
-               <table id="collection-simages-datatable" class="compact">
-               <thead>
-                      <tr>
-                          <th>View</th>
-                          <th>ID</th>
-                          <th>Name</th>
-                          <th>Type</th>
-                      </tr>
-               </thead>
-               </table>
-               </div>
-            {% endif %}
-            {% if oimages_visible %}
-               <div id='oimages' class='tab-pane {%  if oimages_active %}active{%  endif %}'>
-               <table id="collection-oimages-datatable" class="compact">
-               <thead>
-                      <tr>
-                          <th>View</th>
-                          <th>ID</th>
-                          <th>Name</th>
-                          <th>Type</th>
-                      </tr>
-               </thead>
-               </table>
-
-              </form>
-
-              </div><!-- Close images tab-->
-            {% endif %}
-              <div id="details" class="tab-pane">
-                  <table id="collection-details-datatable" class="compact">
-                  <thead>
-                      <tr>
-                          <th>Field</th>
-                          <th>Value</th>
-                      </tr>
-                  </thead>
-                  <tbody>
-                      <tr><td>Authors</td><td>{{ collection.authors }}</td></tr>
-                      <tr><td>Description</td><td>{{ collection.description }}</td></tr>
-                      <tr><td>Journal</td><td>{{ collection.journal_name }}</td></tr>
-                      <tr><td>Contributors</td><td>{{ collection.contributor }}</td></tr>
-                      <tr><td>DOI</td><td>{{ collection.DOI }}</td></tr>
-                      <tr><td>Field Strength</td><td>{{ collection.field_strength }}</td></tr>
-                      <tr><td>id</td><td>{{ collection.id }}</td></tr>
-                      <tr><td>Add Date</td><td>{{ collection.add_date }}</td></tr>
-                  </tbody>
-                  </table>
-              </div><!-- close details tab-->
-              <div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false"></div>
-        </div><!-- close tab content-->
     </div>
-{% endif %}
-</div>
-</div>
-
 
 <div id='spinny' class='modal neuron_loader' style='margin-top: 175px; left:45%; top:15%' data-keyboard='false'>
      <img src="{% static "images/spinner.gif"%}"/>
 </div><!-- close spinner-->
 
+<script type="application/javascript">
+if($('#for_papaya').is(':visible')) {
+    document.write('<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/rii-mango/Papaya@build-1449/release/current/minimal/papaya.js"><\/script>');
+    document.write('<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/rii-mango/Papaya@build-1449/release/current/minimal/papaya.css"\/>');
+}
+</script>
 <script>
 $(document).ready(function() {
     $('#collection-details-datatable').dataTable({
@@ -400,7 +423,7 @@ $(document).ready(function() {
 		"iDisplayLength": 7,
         "lengthMenu": [7, 10, 25, 50, 75, 100],
         "columnDefs": [
-    		{ "orderable": false, "targets": 0 }
+    		{ "orderable": false, "targets": 0, className: "d-none d-md-table-cell" }
   		],
         "order": [[ 1, "asc" ]],
         "createdRow": function( row, data, dataIndex ) {
@@ -410,14 +433,16 @@ $(document).ready(function() {
               }
         },
         {% if collection.private %}
-        "ajax": "{% url 'collection_images_json' collection.private_token %}"
+        "ajax": "{% url 'statmaps:collection_images_json' collection.private_token %}"
         {% else %}
-        "ajax": "{% url 'collection_images_json' collection.id %}"{% endif %}{% if not is_empty %},
+        "ajax": "{% url 'statmaps:collection_images_json' collection.id %}"{% endif %}{% if not is_empty %},
         "initComplete": function(settings, json) {
-            $("#for_papaya").append("<div class=\"papaya\" style=\"width:560px; float:left;\"></div>")
-            papaya.Container.startPapaya();
-            var collection_images = $(".viewimage")
-            viewimage($(collection_images[0]))
+            if($('#for_papaya').is(':visible')) {
+                $("#for_papaya").append("<div class=\"papaya\" class=\"mw-100\" style=\"float:left;\"></div>")
+                papaya.Container.startPapaya();
+                var collection_images = $(".viewimage")
+                viewimage($(collection_images[0]))
+            }
   		}
   		{% endif %}
     });
@@ -430,7 +455,7 @@ $(document).ready(function() {
 		"iDisplayLength": 7,
         "lengthMenu": [7, 10, 25, 50, 75, 100],
         "columnDefs": [
-    		{ "orderable": false, "targets": 0 }
+    		{ "orderable": false, "targets": 0, className: "d-none d-md-table-cell" }
   		],
         "order": [[ 1, "asc" ]],
         "createdRow": function( row, data, dataIndex ) {
@@ -440,15 +465,17 @@ $(document).ready(function() {
               }
         },
         {% if collection.private %}
-        "ajax": "{% url 'collection_gimages_json' collection.private_token %}"
+        "ajax": "{% url 'statmaps:collection_gimages_json' collection.private_token %}"
         {% else %}
-        "ajax": "{% url 'collection_gimages_json' collection.id %}"{% endif %}
+        "ajax": "{% url 'statmaps:collection_gimages_json' collection.id %}"{% endif %}
         {% if not is_empty and gimages_active %},
         "initComplete": function(settings, json) {
-            $("#for_papaya").append("<div class=\"papaya\" style=\"width:560px; float:left;\"></div>")
-            papaya.Container.startPapaya();
-            var collection_images = $(".viewimage")
-            viewimage($(collection_images[0]))
+            if($('#for_papaya').is(':visible')) {
+                $("#for_papaya").append("<div class=\"papaya\" class=\"mw-100\" style=\"float:left;\"></div>")
+                papaya.Container.startPapaya();
+                var collection_images = $(".viewimage")
+                viewimage($(collection_images[0]))
+            }
   		}
   		{% endif %}
     });
@@ -461,7 +488,7 @@ $(document).ready(function() {
 		"iDisplayLength": 7,
         "lengthMenu": [7, 10, 25, 50, 75, 100],
         "columnDefs": [
-    		{ "orderable": false, "targets": 0 }
+    		{ "orderable": false, "targets": 0, className: "d-none d-md-table-cell" }
   		],
         "order": [[ 1, "asc" ]],
         "createdRow": function( row, data, dataIndex ) {
@@ -471,15 +498,18 @@ $(document).ready(function() {
               }
         },
         {% if collection.private %}
-        "ajax": "{% url 'collection_simages_json' collection.private_token %}"
+        "ajax": "{% url 'statmaps:collection_simages_json' collection.private_token %}"
         {% else %}
-        "ajax": "{% url 'collection_simages_json' collection.id %}"{% endif %}
+        "ajax": "{% url 'statmaps:collection_simages_json' collection.id %}"
+        {% endif %}
         {% if not is_empty and simages_active %},
         "initComplete": function(settings, json) {
-            $("#for_papaya").append("<div class=\"papaya\" style=\"width:560px; float:left;\"></div>")
-            papaya.Container.startPapaya();
-            var collection_images = $(".viewimage")
-            viewimage($(collection_images[0]))
+            if($('#for_papaya').is(':visible')) {
+                $("#for_papaya").append("<div class=\"papaya\" class=\"mw-100\" style=\"float:left;\"></div>")
+                papaya.Container.startPapaya();
+                var collection_images = $(".viewimage")
+                viewimage($(collection_images[0]))
+            }
   		}
   		{% endif %}
     });
@@ -492,32 +522,32 @@ $(document).ready(function() {
 		"iDisplayLength": 7,
         "lengthMenu": [7, 10, 25, 50, 75, 100],
         "columnDefs": [
-    		{ "orderable": false, "targets": 0 }
+    		{ "orderable": false, "targets": 0, className: "d-none d-md-table-cell" }
   		],
         "order": [[ 1, "asc" ]],
         "createdRow": function( row, data, dataIndex ) {
               if (data[4] == false) {
                 $(row).removeClass('odd');
-                $(row).addClass('invalid');
+                $(row).addClass('table-danger');
               }
         },
         {% if collection.private %}
-        "ajax": "{% url 'collection_oimages_json' collection.private_token %}"
+        "ajax": "{% url 'statmaps:collection_oimages_json' collection.private_token %}"
         {% else %}
-        "ajax": "{% url 'collection_oimages_json' collection.id %}"{% endif %}
+        "ajax": "{% url 'statmaps:collection_oimages_json' collection.id %}"{% endif %}
         {% if not is_empty and oimages_active %},
         "initComplete": function(settings, json) {
-            $("#for_papaya").append("<div class=\"papaya\" style=\"width:560px; float:left;\"></div>")
-            papaya.Container.startPapaya();
-            var collection_images = $(".viewimage")
-            viewimage($(collection_images[0]))
+            if($('#for_papaya').is(':visible')) {
+                $("#for_papaya").append("<div class=\"papaya\" class=\"mw-100\" style=\"float:left;\"></div>")
+                papaya.Container.startPapaya();
+                var collection_images = $(".viewimage")
+                viewimage($(collection_images[0]))
+            }
   		}
   		{% endif %}
     });
     {% endif %}
 } );
-
-
 </script>
 {% comment %}
 <a href="{{collection.url}}">{{collection.name}}</a> by {{collection.authors}}
