@@ -4,6 +4,7 @@ import shutil
 import stat
 from datetime import datetime
 from gzip import GzipFile
+import uuid
 
 import nibabel as nb
 from django.contrib.auth.models import User
@@ -767,6 +768,9 @@ class Collection(models.Model):
     def get_absolute_url(self):
         return_cid = self.id
         if self.private:
+            if self.private_token is None:
+                self.private_token = str(uuid.uuid4())[:8]
+                self.save()
             return_cid = self.private_token
         return reverse("statmaps:collection_details", args=[str(return_cid)])
 
