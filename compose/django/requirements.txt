@@ -49,7 +49,7 @@ kiwisolver==1.4.3
 kombu==5.2.4
 lxml==4.9.1
 matplotlib==3.4.3
-mpmath==1.2.1
+mpmath==1.3.0
 networkx==2.8.4
 nibabel==3.2.2
 nidmfsl==2.2.0
