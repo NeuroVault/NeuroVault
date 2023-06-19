@@ -34,7 +34,7 @@ After making changes to the code you need to restart the server (but just the uw
 ```
 docker-compose restart nginx django worker
 ```
-### Reseting the server
+### Resetting the server
 If you would like to reset the server and clean the database:
 ```
 docker-compose stop

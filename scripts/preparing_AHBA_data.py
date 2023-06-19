@@ -41,7 +41,7 @@ for i, url in enumerate(urls):
     urllib.request.urlretrieve(url, os.path.join(download_dir, "donor%d.zip" % (i + 1)))
     zipfile.ZipFile(os.path.join(download_dir, "donor%d.zip" % (i + 1)))
 
-# Dowloading MNI coordinates
+# Downloading MNI coordinates
 urllib.request.urlretrieve(
     "https://raw.githubusercontent.com/chrisfilo/alleninf/master/alleninf/data/corrected_mni_coordinates.csv",
     os.path.join(download_dir, "corrected_mni_coordinates.csv"))

@@ -1000,7 +1000,7 @@ class Image(BaseCollectionItem):
         verbose_name="File with the unthresholded RIGHT hemisphere fsaverage surface map (.mgh, .curv, .gii)",
     )
     data_origin = models.CharField(
-        help_text=("Was this map originaly derived from volume or surface?"),
+        help_text=("Was this map originally derived from volume or surface?"),
         verbose_name="Data origin",
         default="volume",
         max_length=200,
@@ -1156,7 +1156,7 @@ class Image(BaseCollectionItem):
         niftiFile = File(f)
         image.file.save(my_file_name, niftiFile)
 
-        # If a .img file was loaded then load the correspoding .hdr file as well
+        # If a .img file was loaded then load the corresponding .hdr file as well
         _, ext = os.path.splitext(my_file_name)
         print(ext)
         if ext in [".img"]:

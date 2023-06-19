@@ -1597,7 +1597,7 @@ class ImagesInCollectionJson(BaseDatatableView):
     order_columns = ["", "pk", "name", "polymorphic_ctype.name", ""]
 
     def get_initial_queryset(self):
-        # return queryset used as base for futher sorting/filtering
+        # return queryset used as base for further sorting/filtering
         # these are simply objects displayed in datatable
         # You should not filter data returned here by any filter values entered by user. This is because
         # we need some base queryset to count total number of records.
@@ -1715,7 +1715,7 @@ class AtlasesAndParcellationsJson(BaseDatatableView):
     order_columns = ["", "name", "polymorphic_ctype.name"]
 
     def get_initial_queryset(self):
-        # return queryset used as base for futher sorting/filtering
+        # return queryset used as base for further sorting/filtering
         # these are simply objects displayed in datatable
         # You should not filter data returned here by any filter values entered by user. This is because
         # we need some base queryset to count total number of records.
@@ -1766,7 +1766,7 @@ class PublicCollectionsJson(BaseDatatableView):
     order_columns = ["name", "", "description", ""]
 
     def get_initial_queryset(self):
-        # return queryset used as base for futher sorting/filtering
+        # return queryset used as base for further sorting/filtering
         # these are simply objects displayed in datatable
         # You should not filter data returned here by any filter values entered by user. This is because
         # we need some base queryset to count total number of records.
