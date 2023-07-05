@@ -17,7 +17,7 @@ cycler==0.11.0
 Cython==0.29.30
 defusedxml==0.7.1
 Deprecated==1.2.13
-Django==4.0.10
+Django==4.1.10
 django-braces==1.15.0
 django-celery-results==2.4.0
 django-cleanup==6.0.0
