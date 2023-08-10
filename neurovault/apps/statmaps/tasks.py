@@ -287,10 +287,18 @@ def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
     from neurovault.apps.statmaps.models import Image
     from six import BytesIO
     import numpy as np
+    from nibabel import processing
 
     img = get_object_or_404(Image, pk=pk1)
     nii_obj = nib.load(img.file.path)  # standard_mask=True is default
-    image_vector = make_resampled_transformation_vector(nii_obj, resample_dim)
+    
+    mask_path = "/code/neurovault/apps/statmaps/static/anatomical/MNI152_T1_4mm_brain_mask.nii.gz"
+    mask = nib.load(mask_path)
+    image_resampled = processing.resample_from_to(nii_obj, mask)
+    image_vector = numpy.asanyarray(image_resampled.dataobj).flatten()
+
+    
+    print(image_vector)
 
     f = BytesIO()
     np.save(f, image_vector)

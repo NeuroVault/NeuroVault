@@ -53,6 +53,8 @@ from .views import (
     view_metaanalysis,
     activate_metaanalysis,
     finalize_metaanalysis,
+    gene_expression,
+    gene_expression_json,
 )
 
 app_name = "statmaps"
@@ -346,10 +348,10 @@ urlpatterns = [
     ),
     re_path(r"^tasks/(?P<cog_atlas_id>[A-Za-z0-9].*)$", view_task, name="view_task"),
     re_path(r"^tasks$", view_task, name="view_task"),
-        url(r'^images/(?P<pk>\d+)/gene_expression$',
+    re_path(r'^images/(?P<pk>\d+)/gene_expression$',
         gene_expression,
         name='gene_expression'),
-    url(r'^images/(?P<pk>\d+)/gene_expression/json$',
+    re_path(r'^images/(?P<pk>\d+)/gene_expression/json$',
         gene_expression_json,
         name='gene_expression_json'),
 ]
