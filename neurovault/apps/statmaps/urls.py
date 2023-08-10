@@ -346,4 +346,10 @@ urlpatterns = [
     ),
     re_path(r"^tasks/(?P<cog_atlas_id>[A-Za-z0-9].*)$", view_task, name="view_task"),
     re_path(r"^tasks$", view_task, name="view_task"),
+        url(r'^images/(?P<pk>\d+)/gene_expression$',
+        gene_expression,
+        name='gene_expression'),
+    url(r'^images/(?P<pk>\d+)/gene_expression/json$',
+        gene_expression_json,
+        name='gene_expression_json'),
 ]
