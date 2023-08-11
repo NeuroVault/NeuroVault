@@ -5,7 +5,7 @@ from django.db import IntegrityError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 
-"""
+""" Old imports
 from pybraincompare.compare.maths import calculate_correlation, calculate_pairwise_correlation
 from pybraincompare.compare.mrutils import resample_images_ref, make_binary_deletion_mask, make_binary_deletion_vector
 from pybraincompare.mr.datasets import get_data_directory
@@ -13,6 +13,7 @@ from pybraincompare.mr.transformation import make_resampled_transformation_vecto
 """
 
 import nilearn
+from nilearn.image import resample_img
 
 nilearn.EXPAND_PATH_WILDCARDS = False
 from celery import shared_task, Celery
@@ -206,7 +207,7 @@ def generate_surface_image(image_pk):
         and img.data_origin == "volume"
     ):
         img_vol = nib.load(img.file.path)
-        data_vol = img_vol.get_data()
+        data_vol = numpy.asanyarray(img_vol.dataobj)
         if data_vol.ndim > 3:
             data_vol = data_vol[:, :, :, 0]  # number of time points
         this_path = os.path.abspath(os.path.dirname(__file__))
@@ -287,10 +288,21 @@ def save_resampled_transformation_single(pk1, resample_dim=[4, 4, 4]):
     from neurovault.apps.statmaps.models import Image
     from six import BytesIO
     import numpy as np
+    from nilearn.maskers import NiftiMasker
 
     img = get_object_or_404(Image, pk=pk1)
-    nii_obj = nib.load(img.file.path)  # standard_mask=True is default
-    image_vector = make_resampled_transformation_vector(nii_obj, resample_dim)
+    nii_obj = nib.load(img.file.path)
+    mask_path = f'${settings.BASE_DIR}/apps/statmaps/static/anatomical/MNI152_T1_4mm_brain_mask.nii.gz'
+    mask = nib.load(mask_path)
+    image_resampled = resample_img(
+        nii_obj,
+        target_affine=mask.affine,
+        target_shape=mask.shape
+    )
+    masker = NiftiMasker(mask_img=mask)
+    masker.fit()
+    image_masked = masker.transform(image_resampled)
+    image_vector = image_masked.flatten()
 
     f = BytesIO()
     np.save(f, image_vector)
@@ -402,10 +414,10 @@ def save_voxelwise_pearson_similarity_resample(pk1, pk2,resample_dim=[4,4,4]):
                                                resample_dim=resample_dim)
         # resample_images_ref will "squeeze" images, but we should keep error here for now
         for image_nii, image_obj in zip(images_resamp, [image1, image2]):
-            if len(numpy.squeeze(image_nii.get_data()).shape) != 3:
+            if len(numpy.squeeze(np.asanyarray(image_nii.dataobj).shape) != 3:
                 raise Exception("Image %s (id=%d) has incorrect number of dimensions %s"%(image_obj.name, 
                                                                                           image_obj.id, 
-                                                                                          str(image_nii.get_data().shape)))
+                                                                                          str(np.asanyarray(image_nii.dataobj).shape)))
 
         # Calculate correlation only on voxels that are in both maps (not zero, and not nan)
         image1_res = images_resamp[0]

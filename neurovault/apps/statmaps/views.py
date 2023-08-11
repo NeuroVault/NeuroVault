@@ -49,6 +49,7 @@ from neurovault.apps.statmaps.models import get_possible_templates, DEFAULT_TEMP
 
 import neurovault
 from neurovault import settings
+from neurovault.apps.statmaps.ahba import calculate_gene_expression_similarity
 from neurovault.apps.statmaps.forms import (
     CollectionForm,
     UploadFileForm,
@@ -107,6 +108,7 @@ from neurovault.apps.statmaps.utils import (
 )
 from neurovault.apps.statmaps.voxel_query_functions import *
 from . import image_metadata
+
 
 
 def owner_or_contrib(request, collection):
@@ -225,7 +227,7 @@ def finalize_metaanalysis(request, metaanalysis_id):
             t_map_nii = nib.load(img.file.path)
             # assuming one sided test
             z_map_nii = nib.Nifti1Image(
-                t_to_z(t_map_nii.get_data(), img.number_of_subjects - 1),
+                t_to_z(np.asanyarray(t_map_nii.dataobj), img.number_of_subjects - 1),
                 t_map_nii.affine,
             )
             z_imgs.append(resample_to_img(z_map_nii, mask_img))
@@ -1068,7 +1070,7 @@ def upload_folder(request, collection_cid):
                         nii.shape
                     ):
                         if squeezable_dimensions < len(nii.shape):
-                            new_data = np.squeeze(nii.get_data())
+                            new_data = np.squeeze(np.asanyarray(nii.dataobj))
                             nii = nib.Nifti1Image(new_data, nii.affine, nii.header)
 
                         new_file_tmp_dir = tempfile.mkdtemp()
@@ -1897,3 +1899,39 @@ def serve_surface_archive(request, pk, collection_cid=None):
     response = StreamingHttpResponse(zf, content_type="application/zip")
     response["Content-Disposition"] = "attachment; filename=%s" % zip_filename
     return response
+
+
+def gene_expression(request, pk, collection_cid=None):
+    '''view_image returns main view to see an image and associated meta data. If the image is in a collection with a DOI and has a generated thumbnail, it is a contender for image comparison, and a find similar button is exposed.
+    :param pk: statmaps.models.Image.pk the primary key of the image
+    :param collection_cid: statmaps.models.Collection.pk the primary key of the collection. Default None
+    '''
+    image = get_image(pk, collection_cid, request)
+    if image.is_thresholded:
+        raise Http404
+    api_cid = pk
+    if image.collection.private:
+        api_cid = '%s-%s' % (image.collection.private_token,pk)
+    context = {
+        'image': image,
+        'api_cid': api_cid,
+        'mask': request.GET.get('mask', 'full')
+    }
+    template = 'statmaps/gene_expression.html'
+    return render(request, template, context)
+
+def gene_expression_json(request, pk, collection_cid=None):
+    image = get_image(pk, collection_cid, request)
+    if image.is_thresholded:
+        raise Http404
+
+    if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
+        image = save_resampled_transformation_single(image.id)
+
+    map_data = np.load(image.reduced_representation.file)
+
+    mask = request.GET.get('mask', None)
+    expression_results = calculate_gene_expression_similarity(map_data, mask)
+    dict = expression_results.to_dict("split")
+    del dict["index"]
+    return JSONResponse(dict)

@@ -76,3 +76,5 @@ local_data/
 .envs/
 
 *.swp
+
+ahba_data/store_max1_reduced.h5
