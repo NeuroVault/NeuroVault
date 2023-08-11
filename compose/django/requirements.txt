@@ -128,3 +128,4 @@ wrapt==1.15.0
 django-celery-results
 zipstream
 django-filter
+crispy-bootstrap4

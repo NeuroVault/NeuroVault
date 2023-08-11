@@ -158,6 +158,7 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "taggit",
     "crispy_forms",
+    "crispy_bootstrap4",
     "polymorphic",
     "django_cleanup",
     "file_resubmit",

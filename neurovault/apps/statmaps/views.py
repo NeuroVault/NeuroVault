@@ -227,7 +227,7 @@ def finalize_metaanalysis(request, metaanalysis_id):
             t_map_nii = nib.load(img.file.path)
             # assuming one sided test
             z_map_nii = nib.Nifti1Image(
-                t_to_z(t_map_nii.get_data(), img.number_of_subjects - 1),
+                t_to_z(np.asanyarray(t_map_nii.dataobj), img.number_of_subjects - 1),
                 t_map_nii.affine,
             )
             z_imgs.append(resample_to_img(z_map_nii, mask_img))
@@ -1070,7 +1070,7 @@ def upload_folder(request, collection_cid):
                         nii.shape
                     ):
                         if squeezable_dimensions < len(nii.shape):
-                            new_data = np.squeeze(nii.get_data())
+                            new_data = np.squeeze(np.asanyarray(nii.dataobj))
                             nii = nib.Nifti1Image(new_data, nii.affine, nii.header)
 
                         new_file_tmp_dir = tempfile.mkdtemp()

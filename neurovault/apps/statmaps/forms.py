@@ -618,7 +618,7 @@ class ImageValidationMixin(object):
                 nii = nb.load(ribbon_projection_file[:-3])
                 affine = nii.affine
                 affine[0, 3] -= 1
-                nb.Nifti1Image(nii.get_data(), affine).to_filename(
+                nb.Nifti1Image(np.asanyarray(nii.dataobj), affine).to_filename(
                     ribbon_projection_file
                 )
 
@@ -706,7 +706,7 @@ class ImageValidationMixin(object):
                     ):
                         # convert pseudo 4D to 3D
                         if squeezable_dimensions < len(nii.shape):
-                            new_data = np.squeeze(nii.get_data())
+                            new_data = np.squeeze(np.asanyarray(nii.dataobj))
                             nii = nb.Nifti1Image(new_data, nii.affine, nii.header)
 
                         # Papaya does not handle float64, but by converting
