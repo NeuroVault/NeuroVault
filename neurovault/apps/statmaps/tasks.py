@@ -207,7 +207,7 @@ def generate_surface_image(image_pk):
         and img.data_origin == "volume"
     ):
         img_vol = nib.load(img.file.path)
-        data_vol = np.asanyarray(img_vol.dataobj)
+        data_vol = numpy.asanyarray(img_vol.dataobj)
         if data_vol.ndim > 3:
             data_vol = data_vol[:, :, :, 0]  # number of time points
         this_path = os.path.abspath(os.path.dirname(__file__))
