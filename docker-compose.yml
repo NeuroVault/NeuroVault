@@ -13,6 +13,7 @@ services:
     volumes:
       - .:/code
       - ${NV_IMAGE_DATA}:/image_data
+      - /efs/pycortex:/usr/local/share/pycortex:rw
     depends_on:
       - redis
       - postgres
