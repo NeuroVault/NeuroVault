@@ -327,7 +327,7 @@ def split_4D_to_3D(nii, with_labels=True, tmp_dir=None):
     out_dir = tmp_dir or base_dir
     fname = name.replace(ext, "")
 
-    slices = np.split(nii.get_data(), nii.shape[-1], len(nii.shape) - 1)
+    slices = np.split(np.asanyarray(nii.dataobj), nii.shape[-1], len(nii.shape) - 1)
     labels = get_afni_subbrick_labels(nii)
     for n, slice in enumerate(slices):
         nifti = nib.Nifti1Image(np.squeeze(slice), nii.header.get_best_affine())
@@ -487,7 +487,7 @@ def format_image_collection_names(
 
 # checks if map is thresholded
 def is_thresholded(nii_obj, thr=0.85):
-    data = nii_obj.get_data()
+    data = np.asanyarray(nii_obj.dataobj)
     zero_mask = data == 0
     nan_mask = np.isnan(data)
     missing_mask = zero_mask | nan_mask
@@ -500,7 +500,7 @@ def is_thresholded(nii_obj, thr=0.85):
 
 # checks if map is a parcellation or ROI/mask
 def infer_map_type(nii_obj):
-    data = nii_obj.get_data()
+    data = np.asanyarray(nii_obj.dataobj)
     zero_mask = data == 0
     nan_mask = np.isnan(data)
     missing_mask = zero_mask | nan_mask
@@ -540,9 +540,9 @@ def not_in_mni(nii, target_template_image=DEFAULT_TEMPLATE, plot=False):
 
     # resample to the smaller one
     if np.prod(nii.shape) > np.prod(mask_nii.shape):
-        nan_mask = np.isnan(nii.get_data())
+        nan_mask = np.isnan(np.asanyarray(nii.dataobj))
         if nan_mask.sum() > 0:
-            nii.get_data()[nan_mask] = 0
+            np.asanyarray(nii.dataobj)[nan_mask] = 0
         nii = resample_img(
             nii,
             target_affine=mask_nii.affine,
@@ -557,9 +557,9 @@ def not_in_mni(nii, target_template_image=DEFAULT_TEMPLATE, plot=False):
             interpolation="nearest",
         )
 
-    brain_mask = mask_nii.get_data() > 0
+    brain_mask = np.asanyarray(mask_nii.dataobj) > 0
     excursion_set = np.logical_not(
-        np.logical_or(nii.get_data() == 0, np.isnan(nii.get_data()))
+        np.logical_or(np.asanyarray(nii.dataobj) == 0, np.isnan(np.asanyarray(nii.dataobj)))
     )
 
     # deals with AFNI files

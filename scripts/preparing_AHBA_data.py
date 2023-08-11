@@ -33,7 +33,7 @@ urls = ["http://human.brain-map.org/api/v2/well_known_file_download/178238387",
         "http://human.brain-map.org/api/v2/well_known_file_download/178236545"]
 
 donor_ids = [""]
-download_dir = "/ahba_data"
+download_dir = "./ahba_data"
 os.makedirs(download_dir)
 
 for i, url in enumerate(urls):
@@ -54,22 +54,24 @@ reduced_coord = []
 
 for coord_mni in samples[['corrected_mni_x', 'corrected_mni_y', 'corrected_mni_z']].values:
     sample_counts = np.zeros(mni.shape, dtype=int)
-    coord_data = [int(round(i)) for i in nb.affines.apply_affine(npl.inv(mni.get_affine()), coord_mni)]
+    coord_data = [int(round(i)) for i in nb.affines.apply_affine(npl.inv(mni.affine), coord_mni)]
     sample_counts[coord_data[0],
                   coord_data[1],
                   coord_data[2]] = 1
-    out_vector = sample_counts[mni.get_data()!=0]
+    out_vector = sample_counts[np.asanyarray(mni.dataobj)!=0]
     idx = out_vector.argmax()
     if idx == (out_vector == 1.0).sum() == 0:
         idx = np.nan
     reduced_coord.append(idx)
 
 samples["reduced_coordinate"] = reduced_coord
-
 #Downloading gene selections list
-urllib.request.urlretrieve(
-    "http://science.sciencemag.org/highwire/filestream/631209/field_highwire_adjunct_files/2/Richiardi_Data_File_S2.xlsx",
-    os.path.join(download_dir, "Richiardi_Data_File_S2.xlsx"))
+# old URL now 404s:
+# http://science.sciencemag.org/highwire/filestream/631209/field_highwire_adjunct_files/2/Richiardi_Data_File_S2.xlsx
+if not os.path.exists(os.path.join(download_dir, "Richiardi_Data_File_S2.xlsx")):
+    urllib.request.urlretrieve(
+        "https://github.com/amadeuskanaan/GluIRON/raw/master/AHBA/Richiardi_Data_File_S2.xlsx",
+        os.path.join(download_dir, "Richiardi_Data_File_S2.xlsx"))
 
 donors = ["H0351.2001", "H0351.2002", "H0351.1009", "H0351.1012", "H0351.1015", "H0351.1016"]
 

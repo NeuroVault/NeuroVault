@@ -1,4 +1,4 @@
-pip install scipy celery[redis] requests lxml django-oauth-toolkit pandas nibabel matplotlib django-taggit nilearn django-datatables-view statsmodels django-cleanup django-polymorphic djangorestframework 
+pip install scipy celery[redis] requests lxml django-oauth-toolkit pandas nibabel matplotlib django-taggit nilearn django-datatables-view statsmodels django-cleanup django-polymorphic djangorestframework django-celery-results django-filter
 pip install psycopg
 pip install nidmresults nidmfsl cognitiveatlas 
 pip install social-app-django
@@ -16,3 +16,5 @@ pip install django-braces
 pip install corsheaders
 pip install django-cors-headers
 pip install gunicorn
+pip install tables
+
