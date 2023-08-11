@@ -85,9 +85,8 @@ jobs:
       - 
         name: Migrate Database
         run: |
-          until docker compose exec -T \
+          sleep 10 && until docker compose exec -T \
           postgres pg_isready -U postgres; do sleep 1; done
-
           docker compose exec -T django python manage.py migrate
       -
         name: Backend Tests
