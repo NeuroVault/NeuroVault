@@ -1,4 +1,4 @@
 [codespell]
-skip = .git,*.pdf,*.svg,*.min.js,xtk.js,*.min.map,*.css,*.pkl,papaya.js
+skip = .git,*.pdf,*.svg,*.min.js,xtk.js,*.min.map,*.css,*.pkl,papaya.js,ahba_data
 ignore-regex = \b(FWE|TE)\b
 # ignore-words-list = 
