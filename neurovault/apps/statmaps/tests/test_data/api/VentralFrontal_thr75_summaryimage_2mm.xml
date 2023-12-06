@@ -3,7 +3,7 @@
   <header>
     <name>Neubert Ventral Frontal connectivity-based parcellation</name>
     <shortname>Ventral Frontal CBP</shortname>
-    <type>Probabalistic</type>
+    <type>Probabilistic</type>
     <images>
       <imagefile>/NeubertVentralFrontalParcellation/VentralFrontal_thr25_2mm</imagefile>
       <summaryimagefile>/NeubertVentralFrontalParcellation/VentralFrontal_thr75_summaryimage_2mm</summaryimagefile>
