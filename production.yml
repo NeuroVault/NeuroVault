@@ -16,6 +16,7 @@ services:
       - .:/code
       - ${NV_IMAGE_DATA}:/var/www/image_data/images
       - static:/var/www/static
+      - /efs/pycortex:/usr/local/share/pycortex:rw
     depends_on:
       - redis
     env_file:
@@ -32,6 +33,7 @@ services:
     volumes:
       - .:/code
       - ${NV_IMAGE_DATA}:/var/www/image_data/images
+      - /efs/pycortex:/usr/local/share/pycortex:rw
     depends_on:
       - redis
     env_file:
