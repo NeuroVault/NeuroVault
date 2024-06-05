@@ -1853,7 +1853,7 @@ def download_collection(request, cid):
     zip_subdir = collection.name
     zip_filename = "%s.zip" % collection.name
 
-    zf = zipstream.ZipFile(mode="w", compression=zipstream.ZIP_DEFLATED)
+    zf = zipstream.ZipFile(mode="w", compression=zipstream.ZIP_DEFLATED, allowZip64=True)
     for fpath in filenames:
         # Calculate path for file in zip
         fdir, fname = os.path.split(fpath)
