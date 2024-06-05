@@ -90,8 +90,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KBPV64D"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
-<div class="container">
 
+<div class="container">
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <a class="navbar-brand" href="{% url 'main:index' %}">NeuroVault</a>
         <a class="navbar-brand" style="margin-left: -12px" href="{{ name_subscript_url }}"><sub>{{ name_subscript }}</sub></a>
@@ -161,6 +161,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </ul>
         </div><!-- /.navbar-collapse -->
     </nav>
+    {% if request.path == '/' %}
+    <div id="notification" style="background-color: #4ca2ff;color: white; padding: 10px">
+        <div class="container" style="display: flex">
+            <div>
+                <h6 style="font-size: 1.5rem">✨ 
+			<a style="color: orange; text-decoration: underline" href="https://tally.so/r/wLP2Oj" target="_blank">Please fill out the NeuroVault survey!</a>✨<br />Your input will determine the future of NeuroVault.<br />Also, <a style="color: orange; text-decoration: underline" href="https://neurovault.github.io/updates/2024/03/07/decade.html">Read our post</a> about the past decade of uploads to NeuroVault.</h6>
+            </div>
+            <div style="display: flex; align-items: center; font-size: 2.5rem; margin-left: auto; cursor: pointer" onclick="document.getElementById('notification').style.display='none'; sessionStorage.setItem('hideNotification', 'true')">x</div>
+        </div>
+    </div>
+    <script>
+        if(sessionStorage.getItem('hideNotification') === 'true') {
+            document.getElementById('notification').style.display = 'none';
+        }
+    </script>
+    {% endif %}
+
+
     <div class="container p-3">
         {% block content %}{% endblock %}
     </div>
