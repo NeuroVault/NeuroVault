@@ -364,7 +364,8 @@
       var file = new File([csvString], collectionId + '_images_metadata.csv', {
         type: "text/csv;charset=utf-8"
       });
-      saveAs(file);
+      var link = window.URL.createObjectURL(file);
+      window.location = link;
     })
 
     window.onbeforeunload = function () {
