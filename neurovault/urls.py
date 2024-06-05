@@ -19,6 +19,7 @@ sitemaps = {
 }
 
 urlpatterns = [
+    path("", include("django.contrib.auth.urls")),
     re_path("", include("social_django.urls", namespace="social")),
     re_path(r"^", include("neurovault.apps.main.urls", namespace="main")),
     re_path(r"^", include("neurovault.apps.statmaps.urls", namespace="statmaps")),
@@ -29,3 +30,4 @@ urlpatterns = [
     re_path(r"^sitemap\.xml$", index, {"sitemaps": sitemaps}),
     re_path(r"^sitemap-(?P<section>.+)\.xml$", sitemap, {"sitemaps": sitemaps}),
 ]
+

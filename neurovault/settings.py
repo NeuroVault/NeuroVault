@@ -324,12 +324,13 @@ FIXTURE_DIRS = ("apps/statmaps/fixtures/",)
 
 if os.getenv("EMAIL_HOST") is not None:
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    MAIL_USE_TLS = True
+    EMAIL_USE_TLS = True
     EMAIL_HOST = os.getenv("EMAIL_HOST")
     EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
     EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+    DEFAULT_FROM_EMAIL = "admin@neurovault.org"
 
-if os.getenv("EMAIL_HOST") is not None:
+if os.getenv("EMAIL_HOST") is None:
     EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
     EMAIL_FILE_PATH = '/tmp/email-fallback' 
 
