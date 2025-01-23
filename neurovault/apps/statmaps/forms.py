@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.forms.models import ModelMultipleChoiceField
 
+
 # from form_utils.forms import BetterModelForm
 
 from crispy_forms.helper import FormHelper
@@ -23,8 +24,9 @@ from crispy_forms.layout import (
     Fieldset,
     Row,
     Column,
+    HTML,
 )
-from crispy_forms.bootstrap import TabHolder, Tab
+from crispy_forms.bootstrap import TabHolder, Tab, InlineRadios
 
 from .models import (
     Collection,
@@ -701,7 +703,8 @@ class ImageForm(ModelForm, ImageValidationMixin):
 class StatisticMapForm(ImageForm):
     class Meta(ImageForm.Meta):
         model = StatisticMap
-        fields = (
+        fields = [
+            "file",
             "name",
             "collection",
             "description",
@@ -730,7 +733,6 @@ class StatisticMapForm(ImageForm):
             "days_since_menstruation",
             "mean_PDS_score",
             "tanner_stage",
-            "file",
             "ignore_file_warning",
             "hdr_file",
             "tags",
@@ -740,7 +742,7 @@ class StatisticMapForm(ImageForm):
             "perc_bad_voxels",
             "is_valid",
             "data_origin",
-        )
+        ]
         widgets = {
             "file": AdminResubmitFileWidget,
             "hdr_file": AdminResubmitFileWidget,
@@ -758,45 +760,57 @@ class StatisticMapForm(ImageForm):
         super().__init__(*args, **kwargs)
 
         # Adjust the layout for all the fields in Meta.fields
+        # Crispify the form
+        self.helper = FormHelper(self)
+        self.helper.form_method = "POST"
+        self.helper.form_class = "form-horizontal"
+        self.helper.label_class = "col-lg-2"
+        self.helper.field_class = "col-lg-10"
+
+        # 4) Add an Alert at the top
+        # TODO: Make this dynamic based on if file is new or not (e.g passses metadata checks)
+        missing_required = False
+        # Edit this to call validation function
+        if not self.instance.analysis_level:
+            missing_required = True
+
+        alert_html = ""
+        if missing_required:
+            alert_html = HTML(
+                """
+                <div class="alert alert-warning" role="alert">
+                <strong>Warning!</strong> critical image meta-data is incomplete and needs to be filled out.
+                </div>
+                """
+            )
+
+        # 3) Render analysis_level with inline radios
+        # Crispy Forms has InlineRadios in the bootstrap layout objects:
+        # from crispy_forms.bootstrap import InlineRadios
+        # or you can set the widget as RadioSelect. We'll show both ways below.
+
+        # Let’s do it via the Layout object:
+
+        # This ensures it’s a radio button set rather than a select dropdown.
+
+        # 2) Override the default widget for 'file' so it’s not a file chooser.
+        #    We can show the filename as read-only text or a disabled input.
+        self.fields["file"].widget = forms.TextInput(
+            attrs={"readonly": True, "class": "form-control"}
+        )
+        # If the model instance has a FileField, this will display the path/filename.
+        # The user will not be able to upload a new file from this form.
+
+        # 1) Build the Layout referencing the same fields as in Meta (to stay DRY).
         self.helper.layout = Layout(
+            # The alert at the top
+            alert_html,
+
+            # Then the fields (in the same order as base_fields_list).
             "name",
-            "collection",
+            InlineRadios("analysis_level"),  # inline rendering for analysis_level
+            "file",
             "description",
-            "map_type",
-            "modality",
-            "target_template_image",
-            "cognitive_paradigm_cogatlas",
-            "cognitive_contrast_cogatlas",
-            "cognitive_paradigm_description_url",
-            "analysis_level",
-            "number_of_subjects",
-            "contrast_definition",
-            "figure",
-            "age",
-            "gender",
-            "ethnicity",
-            "race",
-            "handedness",
-            "bis11_score",
-            "bis_bas_score",
-            "spsrq_score",
-            "BMI",
-            "fat_percentage",
-            "waist_hip_ratio",
-            "hours_since_last_meal",
-            "days_since_menstruation",
-            "mean_PDS_score",
-            "tanner_stage",
-            "ignore_file_warning",
-            "hdr_file",
-            "tags",
-            "statistic_parameters",
-            "smoothness_fwhm",
-            "is_thresholded",
-            "perc_bad_voxels",
-            "is_valid",
-            "data_origin",
-            # If you want a separate place for a button:
             ButtonHolder(
                 Submit("submit_save", "Save and Exit"),
                 Submit("submit_previous", "Previous Image"),
