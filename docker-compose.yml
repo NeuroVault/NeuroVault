@@ -7,7 +7,7 @@ services:
       dockerfile: ./compose/django/Dockerfile
       target: neurovault
     image: neurovault/neurovault
-    command: python manage.py runserver 0.0.0.0:8000
+    command: python manage.py runserver 0.0.0.0:8000 --insecure
     ports: 
       - "8000:8000"
     volumes:
