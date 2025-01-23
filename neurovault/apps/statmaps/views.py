@@ -1094,9 +1094,8 @@ def upload_folder(request, collection_cid):
                     request,
                     "No NIFTI files (.nii, .nii.gz, .img/.hdr) found in the upload.",
                 )
-            # Redirect to the Edit Image page for the first image
-            return JsonResponse({"redirect_url": images_added[0].get_absolute_url()})
-    else:
+            # Redirect to the Edit Image page for the first image (/edit)
+            return JsonResponse({"redirect_url": images_added[0].get_absolute_url(edit=True)})
         form = UploadFileForm()
     context["form"] = form
     return render(request, "statmaps/upload_folder.html", context)
