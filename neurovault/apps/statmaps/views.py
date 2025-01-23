@@ -923,16 +923,14 @@ inspect, modify, and/or delete your maps."""
 
 @login_required
 def upload_folder(request, collection_cid):
-    print("upload_folder")
     collection = get_collection(collection_cid, request)
     allowed_extensions = [".nii", ".img", ".nii.gz"]
     niftiFiles = []
     if request.method == "POST":
-        print(request.POST)
-        print(request.FILES)
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             tmp_directory = tempfile.mkdtemp()
+            print('LETS GO')
             try:
                 # Save archive (.zip or .tar.gz) to disk
                 if "file" in request.FILES:
@@ -970,12 +968,11 @@ def upload_folder(request, collection_cid):
                         new_path, _ = os.path.split(os.path.join(tmp_directory, path))
                         mkdir_p(new_path)
                         filename = os.path.join(new_path, f.name)
-                        tmp_file = open(filename, "w")
-                        tmp_file.write(f.read())
-                        tmp_file.close()
+                        with open(filename, "wb") as tmp_file:
+                            tmp_file.write(f.read())
                 else:
                     raise Exception("Unable to find uploaded files.")
-
+                
                 atlases = {}
                 for root, subdirs, filenames in os.walk(tmp_directory):
                     if detect_feat_directory(root):
@@ -1009,6 +1006,8 @@ def upload_folder(request, collection_cid):
                                 niftiFiles.extend(split_4D_to_3D(nii))
                             else:
                                 niftiFiles.append((fname, nii_path))
+
+                print(f"number of niftifiles: {len(niftiFiles)}")
 
                 for label, fpath in niftiFiles:
                     # Read nifti file information
