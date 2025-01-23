@@ -16,7 +16,7 @@ Easy to use web database for brain statistical maps, atlases and parcellation ma
 ```
 docker-compose up -d
 ```
-The webpage will be available at 127.0.0.1.
+The webpage will be available at http://localhost:8000/
 Initially, some data will be available by default with _username/password_ neurovault/neurovault and neurovault2/neurovault2.
 
 ### Migrating the database
