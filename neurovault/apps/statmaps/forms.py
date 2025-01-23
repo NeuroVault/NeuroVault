@@ -692,9 +692,6 @@ class ImageForm(ModelForm, ImageValidationMixin):
             # Add more fields as needed from the Image model
         )
 
-        # You can either add the submit button into the layout or separately
-        self.helper.add_input(Submit("submit", "Submit"))
-
     def clean(self, **kwargs):
         cleaned_data = super().clean()
         cleaned_data["tags"] = clean_tags(cleaned_data)
@@ -790,7 +787,6 @@ class StatisticMapForm(ImageForm):
             "days_since_menstruation",
             "mean_PDS_score",
             "tanner_stage",
-            "file",
             "ignore_file_warning",
             "hdr_file",
             "tags",
@@ -1028,6 +1024,7 @@ class PolymorphicImageForm(ImageForm):
         new_instance._errors = self._errors
         self.fields = new_instance.fields
         return new_instance.clean()
+
 
 class EditAtlasForm(AtlasForm):
     """
