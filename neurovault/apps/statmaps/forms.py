@@ -798,7 +798,9 @@ class StatisticMapForm(ImageForm):
             "data_origin",
             # If you want a separate place for a button:
             ButtonHolder(
-                Submit("submit", "Submit")
+                Submit("submit_save", "Save and Exit"),
+                Submit("submit_previous", "Previous Image"),
+                Submit("submit_next", "Next Image"),
             )
         )
 
