@@ -52,13 +52,11 @@ jobs:
           load: false
           pull: false
           set: |
-              worker.tags=ghcr.io/${{ env.OWNER_LC }}/neurovault:${{ hashFiles('**/neurovault/**') }}
-              worker.tags+=ghcr.io/${{ env.OWNER_LC }}/neurovault:${{ env.SANITIZED_BRANCH_NAME }}
+              worker.tags=["ghcr.io/${{ env.OWNER_LC }}/neurovault:${{ hashFiles('**/neurovault/**') }}", "ghcr.io/${{ env.OWNER_LC }}/neurovault:${{ env.SANITIZED_BRANCH_NAME }}"]
               worker.cache-from=type=registry,ref=ghcr.io/${{ env.OWNER_LC }}/neurovault:${{ hashFiles('**/neurovault/**') }}
               worker.cache-from=type=gha,scope=cached-neurovault
               worker.cache-to=type=gha,scope=cached-neurovault,mode=max
-              django.tags=ghcr.io/${{ env.OWNER_LC }}/neurovault_fs:${{ hashFiles('**/neurovault/**') }}
-              django.tags+=ghcr.io/${{ env.OWNER_LC }}/neurovault_fs:${{ env.SANITIZED_BRANCH_NAME }}
+              django.tags=["ghcr.io/${{ env.OWNER_LC }}/neurovault_fs:${{ hashFiles('**/neurovault/**') }}", "ghcr.io/${{ env.OWNER_LC }}/neurovault_fs:${{ env.SANITIZED_BRANCH_NAME }}"]
               django.cache-from=type=registry,ref=ghcr.io/${{ env.OWNER_LC }}/neurovault_fs:${{ hashFiles('**/neurovault/**') }}
               django.cache-from=type=gha,scope=cached-neurovault_fs
               django.cache-to=type=gha,scope=cached-neurovault_fs,mode=max
