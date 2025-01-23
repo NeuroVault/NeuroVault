@@ -204,7 +204,6 @@
             {% endif %}
 
             {% if edit_permission %}
-                <a class="btn btn-primary" href="{% url 'statmaps:add_image' cid %}" >Add image</a>
 
                 <div class="btn-group" role="group">
                     <button id="btnGroupDropEdit" type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -255,14 +254,12 @@
                     This collection is empty. You can:
                 </div>
                 <div class="btn-group-vertical w-100">
-                    <a type="button" class="btn btn-light" href="{% url 'statmaps:add_image' cid %}">Add
-                        images one by one</a>
                     <a type="button" class="btn btn-light upload_archive"
                        href="#">Upload an archive with images (.zip or .tar.gz)</a>
                     <a type="button" class="btn btn-light upload_archive"
                        href="#">Upload a NIDM-Results file (.nidm.zip)</a>
                     <!--[if !IE]> -->
-                    <a type="button" class="btn btn-light" class="upload_folder" href="#">Upload a
+                    <a type="button" class="btn btn-light upload_folder" href="#">Upload a
                         folder with images</a>
                     <!-- <![endif]-->
                 </div>

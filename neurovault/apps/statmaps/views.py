@@ -63,7 +63,6 @@ from neurovault.apps.statmaps.forms import (
     EditNIDMResultStatisticMapForm,
     NIDMResultsForm,
     NIDMViewForm,
-    AddStatisticMapForm,
     MetaanalysisForm,
 )
 from neurovault.apps.statmaps.models import (
@@ -923,30 +922,8 @@ inspect, modify, and/or delete your maps."""
 
 
 @login_required
-def add_image(request, collection_cid):
-    collection = get_collection(collection_cid, request)
-    if not owner_or_contrib(request, collection):
-        return HttpResponseForbidden()
-    image = StatisticMap(collection=collection)
-    if request.method == "POST":
-        form = AddStatisticMapForm(request.POST, request.FILES, instance=image)
-        if form.is_valid():
-            image = form.save()
-            return HttpResponseRedirect(image.get_absolute_url())
-    else:
-        form = AddStatisticMapForm(instance=image)
-
-    contrasts = get_contrast_lookup()
-    context = {
-        "form": form,
-        "contrasts": json.dumps(contrasts),
-        "page_header": "Upload a statistical map",
-    }
-    return render(request, "statmaps/edit_image.html", context)
-
-
-@login_required
 def upload_folder(request, collection_cid):
+    print("upload_folder")
     collection = get_collection(collection_cid, request)
     allowed_extensions = [".nii", ".img", ".nii.gz"]
     niftiFiles = []
