@@ -124,14 +124,26 @@
       };
 
       // We need to know when the request finishes.
-      xhr.onload = function (e) {
-      if (xhr.status === 200) {
-            hideLoader();
-            return document.location = '';
-          };
-      }
+      xhr.onload = function(e) {
+        hideLoader();
+        
+        if (xhr.status === 200) {
+            // Parse the JSON response
+            let responseData = JSON.parse(xhr.responseText);
+            if (responseData.redirect_url) {
+            // Redirect to whatever the server told us
+            window.location = responseData.redirect_url;
+            } else {
+            // Fallback if no redirect_url was provided
+            window.location.reload();
+            }
+        } else {
+            // Handle errors (4xx, 5xx) as you see fit
+            console.error('Upload failed with status:', xhr.status);
+        }
+    };
       xhr.send(data);
-      //return document.location = "";
+      return $('#upload_process').modal('hide');
     });
     if (navigator.userAgent.indexOf("Safari") > -1 && navigator.userAgent.indexOf("Chrome") === -1) {
       return $('a[href="pycortex"]').hide();

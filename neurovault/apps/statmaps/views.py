@@ -22,7 +22,7 @@ from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Q
 from django.db.models.aggregates import Count
-from django.http import Http404, HttpResponse, StreamingHttpResponse, FileResponse
+from django.http import Http404, HttpResponse, StreamingHttpResponse, JsonResponse
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.encoding import filepath_to_uri
@@ -930,7 +930,6 @@ def upload_folder(request, collection_cid):
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             tmp_directory = tempfile.mkdtemp()
-            print('LETS GO')
             try:
                 # Save archive (.zip or .tar.gz) to disk
                 if "file" in request.FILES:
@@ -1007,8 +1006,7 @@ def upload_folder(request, collection_cid):
                             else:
                                 niftiFiles.append((fname, nii_path))
 
-                print(f"number of niftifiles: {len(niftiFiles)}")
-
+                images_added = []
                 for label, fpath in niftiFiles:
                     # Read nifti file information
                     nii = nib.load(fpath)
@@ -1082,6 +1080,7 @@ def upload_folder(request, collection_cid):
 
                     new_image.file = f
                     new_image.save()
+                    images_added.append(new_image)
 
             except:
                 error = traceback.format_exc().splitlines()[-1]
@@ -1095,7 +1094,8 @@ def upload_folder(request, collection_cid):
                     request,
                     "No NIFTI files (.nii, .nii.gz, .img/.hdr) found in the upload.",
                 )
-            return HttpResponseRedirect(collection.get_absolute_url())
+            # Redirect to the Edit Image page for the first image
+            return JsonResponse({"redirect_url": images_added[0].get_absolute_url()})
     else:
         form = UploadFileForm()
     context["form"] = form
