@@ -7,6 +7,7 @@ from neurovault import settings
 from neurovault.apps.statmaps.models import KeyValueTag
 from neurovault.apps.statmaps.views import (
     ImagesInCollectionJson,
+    PublicCollections,
     PublicCollectionsJson,
     MyCollectionsJson,
     AtlasesAndParcellationsJson,
@@ -122,7 +123,7 @@ urlpatterns = [
     ),
     re_path(
         r"^collections/$",
-        TemplateView.as_view(template_name="statmaps/collections_index.html"),
+        PublicCollections.as_view(),
         name="collections_list",
     ),
     re_path(
