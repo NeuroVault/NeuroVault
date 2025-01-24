@@ -1134,7 +1134,7 @@ def delete_image(request, pk):
     if not request.user.has_perm("statmaps.delete_basecollectionitem", image):
         return HttpResponseForbidden()
     image.delete()
-    return redirect("collection_details", cid=cid)
+    return redirect(reverse("statmaps:collection_details", kwargs={"cid": cid}))
 
 
 def view_images_by_tag(request, tag):
@@ -1771,6 +1771,13 @@ class PublicCollections(TemplateView):
         context["tasks"] = list(CognitiveAtlasTask.objects.exclude( pk='None').filter(statisticmap__isnull=False).values('pk', 'name').annotate(count=Count('pk')).order_by('-count').values())
         return context
 
+class MyCollections(PublicCollections):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["own_collections"] = True
+                 own_collections
+        return context
+
 class PublicCollectionsJson(BaseDatatableView):
     columns = ["name", "n_images", "description", "has_doi", "latest_image_modify"]
     order_columns = ["name", "", "description", "DOI", "latest_image_modify"]
@@ -1781,9 +1788,9 @@ class PublicCollectionsJson(BaseDatatableView):
         # You should not filter data returned here by any filter values entered by user. This is because
         # we need some base queryset to count total number of records.
         return Collection.objects.filter(
-            ~Q(name__endswith="temporary collection"), private=False
+            ~Q(name__endswith="temporary collection"), private=False, basecollectionitem__isnull=False
         ).annotate(
-            latest_image_modify=Max('basecollectionitem__modify_date')
+            latest_image_modify=Max('basecollectionitem__modify_date'),
         )
 
     def render_column(self, row, column):

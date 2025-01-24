@@ -9,6 +9,7 @@ from neurovault.apps.statmaps.views import (
     ImagesInCollectionJson,
     PublicCollections,
     PublicCollectionsJson,
+    MyCollections,
     MyCollectionsJson,
     AtlasesAndParcellationsJson,
     ImagesByTaskJson,
@@ -111,9 +112,7 @@ urlpatterns = [
     ),
     re_path(
         r"^my_collections/$",
-        login_required(
-            TemplateView.as_view(template_name="statmaps/my_collections.html")
-        ),
+        MyCollections.as_view(),
         name="my_collections",
     ),
     re_path(
