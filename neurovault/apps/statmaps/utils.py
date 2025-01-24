@@ -11,6 +11,9 @@ import zipfile
 from ast import literal_eval
 from datetime import datetime, date
 from subprocess import CalledProcessError
+import gzip
+import tarfile
+import re
 
 import cortex
 import nibabel as nib
@@ -36,6 +39,8 @@ from neurovault.apps.statmaps.models import (
     get_possible_templates,
     DEFAULT_TEMPLATE,
 )
+
+
 
 
 # see CollectionRedirectMiddleware
@@ -758,3 +763,204 @@ def get_similar_images(pk, max_results=100):
         comparisons_pd = comparisons_pd.append(df, ignore_index=True)
 
     return comparisons_pd
+
+def extract_archive(uploaded_file, destination_dir):
+    """
+    Extracts the contents of an uploaded archive (.zip, .gz) 
+    into the given `destination_dir`.
+    Raises an exception if the archive type is unsupported.
+    """
+    archive_name = uploaded_file.name
+    _, archive_ext = os.path.splitext(archive_name)
+
+    if archive_ext == ".zip":
+        with zipfile.ZipFile(uploaded_file, 'r') as zf:
+            zf.extractall(destination_dir)
+    elif archive_ext == ".gz":
+        # `uploaded_file` is a Django UploadedFile object
+        uploaded_file.open()
+        with tarfile.TarFile(fileobj=gzip.GzipFile(fileobj=uploaded_file.file, mode="r"), mode="r") as tf:
+            tf.extractall(destination_dir)
+    else:
+        raise ValueError(f"Unsupported archive type: {archive_ext}")
+    
+
+def collect_nifti_files(root_directory, allowed_extensions):
+    """
+    Walks through the `root_directory` collecting:
+    - standard NIfTI files
+    - .gfeat or .feat directories
+    - .xml for atlas info
+    Returns a tuple of (nifti_files, atlases) or a custom object with everything you need.
+    """
+    nifti_files = []
+    atlases = {}
+
+    for root, subdirs, filenames in os.walk(root_directory):
+        
+        # detect_feat_directory, detect_4D, and split_4D_to_3D are presumably 
+        # your own existing helper functions.
+
+        if detect_feat_directory(root):
+            populate_feat_directory(...)  # or store this for later if needed
+            # Prevent descending further into this sub-directory
+            subdirs[:] = []
+            filenames = []
+            continue
+
+        # .gfeat parent dir under cope*.feat should not be added as statmaps
+        if root.endswith(".gfeat"):
+            filenames = []
+            continue
+
+        # Filter out hidden files
+        filenames = [f for f in filenames if not f.startswith(".")]
+
+        for fname in sorted(filenames):
+            name, ext = splitext_nii_gz(fname)
+            file_path = os.path.join(root, fname)
+
+            # Atlas XML detection
+            if ext == ".xml":
+                # parse XML for atlas
+                atlas = parse_atlas_xml(file_path)
+                atlases.update(atlas)
+                continue
+
+            # Normal NIfTI detection
+            if ext in allowed_extensions:
+                nii = nib.load(file_path)
+                if detect_4D(nii):
+                    nifti_files.extend(split_4D_to_3D(nii))
+                else:
+                    nifti_files.append((fname, file_path))
+
+    return nifti_files, atlases
+
+
+def parse_atlas_xml(xml_path):
+    """
+    Extracts atlas paths from an XML file. Returns a dict 
+    mapping the NIfTI path -> corresponding .xml path.
+    """
+    from xml.dom import minidom
+    dom = minidom.parse(xml_path)
+    atlas_map = {}
+    for atlas in dom.getElementsByTagName("imagefile"):
+        path_str, base = os.path.split(atlas.lastChild.nodeValue)
+        nifti_name = os.path.join(path_str, base).lstrip("/")
+        atlas_map[nifti_name] = xml_path
+    return atlas_map
+
+def create_image_from_nifti(
+    collection, 
+    file_label, 
+    file_path, 
+    atlas_xml_path=None
+):
+    """
+    Creates and returns an Image model instance (StatisticMap or Atlas) 
+    from a local NIfTI file. Handles:
+      - 3D shape checking
+      - T/F detection
+      - .nii.gz conversion
+      - SPM naming
+    """
+    # 1) Load NIfTI, check shape, handle 3D vs 4D
+    nii = nib.load(file_path)
+    shape = nii.shape
+    if len(shape) > 3 and shape[3] > 1:
+        # Skip or raise if not 3D
+        raise ValueError(f"Skipping {file_label}: 4D file detected.")
+
+    # 2) Detect map type
+    map_type = detect_stat_map_type(file_path)
+
+    # 3) Convert to .nii.gz (or squeeze dimensions)
+    name_without_ext = os.path.splitext(os.path.basename(file_path))[0]
+    new_img = squeeze_and_save_as_nii_gz(nii, name_without_ext)
+    
+    # 4) Create model instance
+    spaced_name = name_without_ext.replace("_", " ").replace("-", " ")
+    if atlas_xml_path:
+        new_image = Atlas(name=spaced_name, collection=collection)
+        with open(atlas_xml_path, "rb") as xml_file:
+            new_image.label_description_file = ContentFile(
+                xml_file.read(), 
+                name=name_without_ext + ".xml"
+            )
+    else:
+        new_image = StatisticMap(name=spaced_name, is_valid=False, collection=collection)
+        new_image.map_type = map_type
+    
+    # 5) Attach .nii.gz file
+    new_image.file.save(new_img.name, new_img)
+    new_image.save()
+    return new_image
+
+
+def detect_stat_map_type(file_path):
+    """
+    Returns T, F, or OTHER based on filename pattern 
+    (SPM naming convention).
+    """
+    Tregexp = re.compile("spmT.*", re.IGNORECASE)
+    Fregexp = re.compile("spmF.*", re.IGNORECASE)
+
+    basename = os.path.basename(file_path)
+    if Tregexp.match(basename):
+        return StatisticMap.T
+    elif Fregexp.match(basename):
+        return StatisticMap.F
+    else:
+        return StatisticMap.OTHER
+
+
+def squeeze_and_save_as_nii_gz(nii, base_name):
+    """
+    Squeezes single-dimensional axes, ensures .nii.gz extension,
+    returns a Django ContentFile ready for saving.
+    """
+    import tempfile
+    import shutil
+
+    # Squeeze dimensions
+    squeezed_data = np.squeeze(np.asanyarray(nii.dataobj))
+    squeezed_nii = nib.Nifti1Image(squeezed_data, nii.affine, nii.header)
+
+    # Save temporarily
+    temp_dir = tempfile.mkdtemp()
+    out_path = os.path.join(temp_dir, base_name + ".nii.gz")
+    nib.save(squeezed_nii, out_path)
+
+    # Wrap in a Django ContentFile
+    try:
+        with open(out_path, "rb") as f:
+            content = ContentFile(f.read(), name=base_name + ".nii.gz")
+    finally:
+        shutil.rmtree(temp_dir)
+
+    return content
+
+def extract_multiple_files(file_list, path_list, destination_dir):
+    """
+    Copies files from `file_list` into the correct relative paths 
+    under `destination_dir`.
+    
+    - file_list: an iterable of Django UploadedFile objects
+    - path_list: a parallel iterable of relative paths (from request.POST)
+    """
+    for uploaded_file, relative_path in zip(file_list, path_list):
+        # If it’s .nidm.zip, handle separately (or skip if you want)
+        if fnmatch(uploaded_file.name, "*.nidm.zip"):
+            # Return something or handle logic externally
+            continue
+
+        # Create all missing directories in the path
+        final_dir, _ = os.path.split(os.path.join(destination_dir, relative_path))
+        mkdir_p(final_dir)
+
+        filename = os.path.join(final_dir, uploaded_file.name)
+        with open(filename, "wb") as tmp_file:
+            for chunk in uploaded_file.chunks():
+                tmp_file.write(chunk)
