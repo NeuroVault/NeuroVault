@@ -51,6 +51,7 @@ from neurovault.apps.statmaps.forms import (
     SimplifiedStatisticMapForm,
     NeuropowerStatisticMapForm,
     EditStatisticMapForm,
+    FirstTimeStatisticMapForm,
     OwnerCollectionForm,
     EditAtlasForm,
     EditNIDMResultStatisticMapForm,
@@ -630,8 +631,15 @@ def get_sibling_images(current_image):
 @login_required
 def edit_image(request, pk):
     image = get_object_or_404(Image, pk=pk)
+
+    first_time_param = request.GET.get("firsttime", "false").lower()
+    firsttime = (first_time_param == "true")
+
     if isinstance(image, StatisticMap):
-        form = EditStatisticMapForm
+        if firsttime:
+            form = FirstTimeStatisticMapForm
+        else:
+            form = EditStatisticMapForm
     elif isinstance(image, Atlas):
         form = EditAtlasForm
     elif isinstance(image, NIDMResultStatisticMap):
@@ -869,7 +877,7 @@ def upload_folder(request, collection_cid):
             # If we added images, redirect to the edit page for the first one
             if images_added:
                 return JsonResponse({
-                    "redirect_url": images_added[0].get_absolute_url(edit=True)
+                    "redirect_url": f"{images_added[0].get_absolute_url(edit=True)}?firsttime=true"
                 })
 
         # If the form is not valid or no images were added
