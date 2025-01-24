@@ -25,8 +25,11 @@ from crispy_forms.layout import (
     Row,
     Column,
     HTML,
+    Button
 )
-from crispy_forms.bootstrap import TabHolder, Tab, InlineRadios
+from crispy_forms.bootstrap import (
+    TabHolder, Tab, InlineRadios, FormActions
+)
 
 from .models import (
     Collection,
@@ -768,15 +771,8 @@ class StatisticMapForm(ImageForm):
         self.helper.label_class = "col-lg-2"
         self.helper.field_class = "col-lg-10"
 
-        # 4) Add an Alert at the top
-        # TODO: Make this dynamic based on if file is new or not (e.g passses metadata checks)
-        missing_required = False
-        # Edit this to call validation function
-        if not self.instance.analysis_level:
-            missing_required = True
-
         alert_html = ""
-        if missing_required:
+        if not self.instance.is_valid:
             alert_html = HTML(
                 """
                 <div class="alert alert-warning" role="alert">
@@ -817,10 +813,10 @@ class StatisticMapForm(ImageForm):
                 choices=[c for c in self.fields["analysis_level"].choices if c[0] != ""],
             ),
             "description",
-            ButtonHolder(
-                Submit("submit_save", "Save and Exit"),
-                Submit("submit_previous", "Previous Image"),
-                Submit("submit_next", "Next Image"),
+            FormActions(
+                Submit("submit_save", "Save and Exit", css_class="btn btn-primary float-right"),
+                Submit("submit_previous", "Previous Image", css_class="btn btn-secondary"),
+                Submit("submit_next", "Next Image", css_class="btn btn-secondary"),
             )
         )
 
