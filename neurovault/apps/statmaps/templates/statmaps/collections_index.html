@@ -44,9 +44,9 @@
              var curSearch = oSettings.oPreviousSearch.sSearch;
              history.replaceState({query:curSearch}, "title", base_url+"?q=" + curSearch);
            },
-           //"dom": 'lfrtip',
+           "dom": 'frtipl',
            "initComplete": function(settings, json) {
-            // $('#custom-filters').appendTo('#collections-table_filter');
+            $("#collections-table_filter label").appendTo('#search-input-group')
            }
          });
          $('#doi-switch').click(function() {
@@ -87,19 +87,15 @@
             commonly, a collection contains all of the images from a single study.</p>
         <h6>{{ query_explanation }}</h6>
         <div class="table-responsive-md">
-        <div class="col-sm-12 col-md-6" id="custom-filters">
-          <form class="form-inline">
-            <div class="input-group mb-2 mr-sm-2">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" role="switch" id="doi-switch">
-                <label class="form-check-label" for="doi-switch">Has Doi?</label>
-              </div>
+        <div class="col-sm-12" id="custom-filters">
+          <form class="form-inline flex-row-reverse">
+            <div class="input-group mb-2 mr-sm-2" id="search-input-group">
             </div>
             <div class="input-group mb-2 mr-sm-2">
-              <select class="form-control" id="maptype">
+              <select class="form-control" id="task">
                 <option></option>
-                {% for entry in map_types %}
-                <option value="{{entry.0}}">{{entry.1}}</option>
+                {% for entry in tasks %}
+                <option value="{{entry.cog_atlas_id}}">{{entry.name}} ({{ entry.count }})</option>
                 {% endfor %}
               </select>
             </div>
@@ -112,12 +108,18 @@
               </select>
             </div>
             <div class="input-group mb-2 mr-sm-2">
-              <select class="form-control" id="task">
+              <select class="form-control" id="maptype">
                 <option></option>
-                {% for entry in tasks %}
-                <option value="{{entry.cog_atlas_id}}">{{entry.name}} ({{ entry.count }})</option>
+                {% for entry in map_types %}
+                <option value="{{entry.0}}">{{entry.1}}</option>
                 {% endfor %}
               </select>
+            </div>
+            <div class="input-group mb-2 mr-sm-2">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" role="switch" id="doi-switch">
+                <label class="form-check-label" for="doi-switch">Has Doi?</label>
+              </div>
             </div>
           </form>
         </div>

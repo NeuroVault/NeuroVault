@@ -1785,6 +1785,7 @@ class PublicCollectionsJson(BaseDatatableView):
         ).annotate(
             latest_image_modify=Max('basecollectionitem__modify_date')
         )
+
     def render_column(self, row, column):
         # We want to render user as a custom column
         if column == "has_doi":
@@ -1794,6 +1795,8 @@ class PublicCollectionsJson(BaseDatatableView):
                 return ""
         elif column == "n_images":
             return row.basecollectionitem_set.count()
+        elif column == "latest_image_modify":
+            return row.latest_image_modify.strftime("%Y-%m-%d")
         else:
             return super(PublicCollectionsJson, self).render_column(row, column)
 
