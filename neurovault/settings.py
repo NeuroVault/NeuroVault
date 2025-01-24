@@ -331,3 +331,17 @@ if os.getenv("EMAIL_HOST") is not None:
 if os.getenv("EMAIL_HOST") is not None:
     EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
     EMAIL_FILE_PATH = '/tmp/email-fallback' 
+
+if os.getenv("USE_SENTRY") is not None:
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn="https://8381dd47c23b47fb83ed76274243b311@o164699.ingest.us.sentry.io/1235478",
+        # Set traces_sample_rate to 1.0 to capture 100%
+        # of transactions for tracing.
+        traces_sample_rate=1.0,
+        # Set profiles_sample_rate to 1.0 to profile 100%
+        # of sampled transactions.
+        # We recommend adjusting this value in production.
+        profiles_sample_rate=1.0,
+    )
