@@ -10,6 +10,8 @@ import numpy as np
 from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.forms.models import ModelMultipleChoiceField
+from django.forms.widgets import RadioSelect
+
 
 
 # from form_utils.forms import BetterModelForm
@@ -704,6 +706,7 @@ class ImageForm(ModelForm, ImageValidationMixin):
 class StatisticMapForm(ImageForm):
     class Meta(ImageForm.Meta):
         model = StatisticMap
+
         fields = [
             "file",
             "name",
@@ -802,21 +805,30 @@ class StatisticMapForm(ImageForm):
 
         # If the model instance has a FileField, this will display the path/filename.
         # The user will not be able to upload a new file from this form.
-
+        self.fields['analysis_level'].choices = self.fields['analysis_level'].choices[1:]
+        self.fields['gender'].choices = self.fields['gender'].choices[1:]
+        # self.fields['']
         # 1) Build the Layout referencing the same fields as in Meta (to stay DRY).
         self.helper.layout = Layout(
             # The alert at the top
             alert_html,
 
             # Then the fields (in the same order as base_fields_list).
-            "name",
             "file",
+            "name",
             Field(
                 "analysis_level",
                 template="statmaps/fields/toggle_radio_field.html",
-                choices=[c for c in self.fields["analysis_level"].choices if c[0] != ""],
             ),
             "description",
+            "age",
+            Field(
+                "gender",
+                template="statmaps/fields/toggle_radio_field.html",
+            ),
+            "ethnicity",
+            "race",
+            "handedness",
             ButtonHolder(
                 Submit("submit_save", "Save and Exit"),
                 Submit("submit_previous", "Previous Image"),
