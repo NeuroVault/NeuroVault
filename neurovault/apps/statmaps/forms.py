@@ -66,7 +66,6 @@ from gzip import GzipFile
 from file_resubmit.admin import AdminResubmitFileWidget
 from guardian.shortcuts import get_objects_for_user
 
-from .widgets import ToggleButtonRadioSelect
 
 # Create the form class.
 collection_fieldsets = [
@@ -801,9 +800,6 @@ class StatisticMapForm(ImageForm):
             attrs={"readonly": True, "class": "form-control"}
         )
 
-        self.fields['analysis_level'].widget = ToggleButtonRadioSelect(
-            choices=[c for c in self.fields['analysis_level'].choices if c[0] != '']
-            )
         # If the model instance has a FileField, this will display the path/filename.
         # The user will not be able to upload a new file from this form.
 
@@ -815,8 +811,12 @@ class StatisticMapForm(ImageForm):
             # Then the fields (in the same order as base_fields_list).
             "name",
             "file",
+            Field(
+                "analysis_level",
+                template="statmaps/fields/toggle_radio_field.html",
+                choices=[c for c in self.fields["analysis_level"].choices if c[0] != ""],
+            ),
             "description",
-            "analysis_level",
             ButtonHolder(
                 Submit("submit_save", "Save and Exit"),
                 Submit("submit_previous", "Previous Image"),
