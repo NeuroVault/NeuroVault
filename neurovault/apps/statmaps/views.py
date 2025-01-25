@@ -629,8 +629,9 @@ def edit_image(request, pk):
     firsttime = (first_time_param == "true")
 
     if isinstance(image, StatisticMap):
-        if firsttime:
+        if firsttime and image.is_valid is False:
             form = FirstTimeStatisticMapForm
+            image.name = ''
         else:
             form = EditStatisticMapForm
     elif isinstance(image, Atlas):

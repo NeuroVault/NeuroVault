@@ -759,6 +759,7 @@ class StatisticMapForm(ImageForm):
         }
 
     def __init__(self, *args, **kwargs):
+        first = kwargs.pop("first", False)
         super().__init__(*args, **kwargs)
 
         # Adjust the layout for all the fields in Meta.fields
@@ -796,6 +797,10 @@ class StatisticMapForm(ImageForm):
 
         # If the model instance has a FileField, this will display the path/filename.
         # The user will not be able to upload a new file from this form.
+        if first:
+            self.fields["name"].initial = ""
+            self.fields["name"].required = True
+            self.fields["name"].help_text = "Enter a name for this image"
 
         # 1) Build the Layout referencing the same fields as in Meta (to stay DRY).
         self.helper.layout = Layout(
@@ -957,9 +962,7 @@ class EditStatisticMapForm(StatisticMapForm):
 
 class FirstTimeStatisticMapForm(EditStatisticMapForm):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["name"].initial = ""  # The form field’s initial
-        self.fields["name"].required = True
+        super().__init__(*args, **kwargs, first=True)
 
     def clean_name(self):
         """
