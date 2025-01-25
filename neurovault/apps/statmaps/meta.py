@@ -7,11 +7,10 @@ from nilearn.masking import apply_mask
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from .models import Collection, StatisticMap
-from .analysis import (  # your custom stouffers functions, etc.
-    Stouffers,
-    weighted_stouffers,
-    t_to_z,
-)
+from nimare.meta.ibma import Stouffers
+from nimare.transforms import t_to_z
+from nilearn.masking import apply_mask
+from nilearn.image import resample_to_img
 
 # 1. Get the default mask image
 def load_default_mask(get_possible_templates, default_template):

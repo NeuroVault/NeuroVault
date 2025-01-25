@@ -1,7 +1,6 @@
 import csv
 import functools
 import json
-import nibabel as nib
 import shutil
 import numpy as np
 import os
@@ -15,7 +14,6 @@ from collections import OrderedDict
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
-from django.core.files.base import ContentFile
 from django.db.models import Q
 from django.db.models.aggregates import Count
 from django.http import Http404, HttpResponse, StreamingHttpResponse, JsonResponse
@@ -34,11 +32,6 @@ from nidmresults.graph import Graph
 from rest_framework.renderers import JSONRenderer
 from sendfile import sendfile
 import joblib
-from django.core.files.uploadedfile import SimpleUploadedFile
-from nimare.meta.ibma import Stouffers
-from nimare.transforms import t_to_z
-from nilearn.masking import apply_mask
-from nilearn.image import resample_to_img
 
 from neurovault.apps.statmaps.models import get_possible_templates, DEFAULT_TEMPLATE
 
@@ -649,7 +642,8 @@ def edit_image(request, pk):
     if not owner_or_contrib(request, image.collection):
         return HttpResponseForbidden()
     if request.method == "POST":
-        form = form(request.POST, request.FILES, instance=image, user=request.user)
+        form = form(
+            request.POST, request.FILES, instance=image, user=request.user)
         if form.is_valid():
             form.save()
             if "submit_previous" in request.POST:
@@ -808,8 +802,7 @@ inspect, modify, and/or delete your maps."""
 def upload_folder(request, collection_cid):
     collection = get_collection(collection_cid, request)
     allowed_extensions = [".nii", ".img", ".nii.gz"]
-    images_added = []
-    
+    images_added = []    
     if request.method == "POST":
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
@@ -831,8 +824,10 @@ def upload_folder(request, collection_cid):
                         file_list = request.FILES.getlist("file_input[]")
                         path_list = request.POST.getlist("paths[]")
                         extract_multiple_files(file_list, path_list, tmp_directory)
+                        print("Com")
                     else:
                         raise ValueError("No uploaded files found.")
+
 
                     # 3. Collect NIfTI files and atlas xml info
                     nifti_files, atlases = collect_nifti_files(tmp_directory, allowed_extensions)
@@ -879,12 +874,14 @@ def upload_folder(request, collection_cid):
                 return JsonResponse({
                     "redirect_url": f"{images_added[0].get_absolute_url(edit=True)}?firsttime=true"
                 })
+            else:
+                return JsonResponse({
+                    "redirect_url": collection.get_absolute_url()
+                })
 
-        # If the form is not valid or no images were added
-        form = UploadFileForm()
-    
-    context = {"form": form}
-    return render(request, "statmaps/upload_folder.html", context)
+    else:
+        # GET request do nothing
+        return HttpResponseRedirect(collection.get_absolute_url())
 
 @login_required
 def delete_image(request, pk):

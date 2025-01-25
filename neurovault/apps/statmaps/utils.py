@@ -28,6 +28,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.db.models import Q
 from django.template.loader import render_to_string
 from lxml import etree
+from fnmatch import fnmatch
 
 from neurovault.apps.statmaps.models import (
     Collection,
@@ -38,6 +39,7 @@ from neurovault.apps.statmaps.models import (
     BaseStatisticMap,
     get_possible_templates,
     DEFAULT_TEMPLATE,
+    Atlas,
 )
 
 
@@ -764,6 +766,7 @@ def get_similar_images(pk, max_results=100):
 
     return comparisons_pd
 
+
 def extract_archive(uploaded_file, destination_dir):
     """
     Extracts the contents of an uploaded archive (.zip, .gz) 
@@ -783,7 +786,7 @@ def extract_archive(uploaded_file, destination_dir):
             tf.extractall(destination_dir)
     else:
         raise ValueError(f"Unsupported archive type: {archive_ext}")
-    
+
 
 def collect_nifti_files(root_directory, allowed_extensions):
     """
@@ -852,10 +855,11 @@ def parse_atlas_xml(xml_path):
         atlas_map[nifti_name] = xml_path
     return atlas_map
 
+
 def create_image_from_nifti(
-    collection, 
-    file_label, 
-    file_path, 
+    collection,
+    file_label,
+    file_path,
     atlas_xml_path=None
 ):
     """
@@ -890,11 +894,13 @@ def create_image_from_nifti(
                 name=name_without_ext + ".xml"
             )
     else:
-        new_image = StatisticMap(name=spaced_name, is_valid=False, collection=collection)
+        new_image = StatisticMap(
+            name=spaced_name, is_valid=False, collection=collection)
+
         new_image.map_type = map_type
-    
+
     # 5) Attach .nii.gz file
-    new_image.file.save(new_img.name, new_img)
+    new_image.file = new_img
     new_image.save()
     return new_image
 
@@ -941,6 +947,7 @@ def squeeze_and_save_as_nii_gz(nii, base_name):
         shutil.rmtree(temp_dir)
 
     return content
+
 
 def extract_multiple_files(file_list, path_list, destination_dir):
     """

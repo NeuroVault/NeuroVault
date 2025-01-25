@@ -951,14 +951,15 @@ class StatisticMapForm(ImageForm):
 class EditStatisticMapForm(StatisticMapForm):
     """ Pass through """
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user")
         super().__init__(*args, **kwargs)
+
 
 class FirstTimeStatisticMapForm(EditStatisticMapForm):
     def __init__(self, *args, **kwargs):
-        self.instance.name = ""  # The model’s value
+        super().__init__(*args, **kwargs)
         self.fields["name"].initial = ""  # The form field’s initial
         self.fields["name"].required = True
-        super().__init__(*args, **kwargs)
 
     def clean_name(self):
         """
@@ -968,6 +969,7 @@ class FirstTimeStatisticMapForm(EditStatisticMapForm):
         if not name.strip():
             raise forms.ValidationError("Please provide a new name for this image.")
         return name
+
 
 class AtlasForm(ImageForm):
     class Meta(ImageForm.Meta):
