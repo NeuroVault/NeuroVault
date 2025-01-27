@@ -1,0 +1,31 @@
+<!-- filepath: /home/jdkent/projects/NeuroVault/neurovault/templates/statmaps/_single_subject_fields.html -->
+<script type="text/javascript">
+$(document).ready(function() {
+    // Function to show/hide fields based on analysis level
+    function toggle_subject_fields() {
+        var analysis_level = $("input[name='analysis_level']:checked").val();
+        if (analysis_level === "S") {
+            $("#demographics-accordion").collapse('show');
+            $("#demographics-title").show();
+        } else {
+            $("#demographics-accordion").collapse('hide');
+            $("#demographics-title").hide();
+        }
+
+        // Show/hide number_of_subjects based on analysis_level
+        if (analysis_level === "G") {
+            $("#div_id_number_of_subjects").show();
+        } else {
+            $("#div_id_number_of_subjects").hide();
+        }
+    }
+
+    // Initial call to set the correct visibility
+    toggle_subject_fields();
+
+    // When analysis level changes, update the visibility of the fields
+    $("input[name='analysis_level']").change(function(e) {
+        toggle_subject_fields();
+    });
+});
+</script>
