@@ -789,8 +789,7 @@ class StatisticMapForm(ImageForm):
 
         # This ensures it’s a radio button set rather than a select dropdown.
 
-        # 2) Override the default widget for 'file' so it’s not a file chooser.
-        #    We can show the filename as read-only text or a disabled input.
+        # For some reason our validation fails with file as TextInput
         self.fields["file"].widget = forms.TextInput(
             attrs={"readonly": True, "class": "form-control"}
         )
@@ -815,6 +814,7 @@ class StatisticMapForm(ImageForm):
                 template="statmaps/fields/toggle_radio_field.html",
                 choices=[c for c in self.fields["analysis_level"].choices if c[0] != ""],
             ),
+            "target_template_image",
             "description",
             FormActions(
                 Submit("submit_save", "Save and Exit", css_class="btn btn-primary float-right"),
