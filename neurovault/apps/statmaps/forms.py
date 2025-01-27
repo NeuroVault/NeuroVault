@@ -381,6 +381,7 @@ class ImageValidationMixin(object):
         self.afni_tmp = None
 
     def clean_and_validate(self, cleaned_data):
+        breakpoint()
         file = cleaned_data.get("file")
         surface_left_file = cleaned_data.get("surface_left_file")
         surface_right_file = cleaned_data.get("surface_right_file")
@@ -695,15 +696,14 @@ class ImageForm(ModelForm, ImageValidationMixin):
         self.helper.layout = Layout(
             "file",
             "hdr_file",
-            "data_origin",
-            "tags",  # If you want to expose tags here (if the model has it)
-            # Add more fields as needed from the Image model
+            "data_origin"
         )
 
         # Overwrite the verbose_name for the "file" attribute
         self.fields["file"].label = "File"
 
     def clean(self, **kwargs):
+        breakpoint()
         cleaned_data = super().clean()
         cleaned_data["tags"] = clean_tags(cleaned_data)
         return self.clean_and_validate(cleaned_data)
@@ -768,6 +768,7 @@ class StatisticMapForm(ImageForm):
         }
 
     def __init__(self, *args, **kwargs):
+        first = kwargs.pop("first", False)
         super().__init__(*args, **kwargs)
 
         # Adjust the layout for all the fields in Meta.fields
@@ -778,7 +779,7 @@ class StatisticMapForm(ImageForm):
         self.helper.label_class = "col-lg-2"
         self.helper.field_class = "col-lg-10"
 
-        # alert_html = ""
+        alert_html = ""
         # if not self.instance.is_valid:
         #     alert_html = HTML(
         #         """
@@ -805,7 +806,12 @@ class StatisticMapForm(ImageForm):
             self.fields[field].choices = [('', 'N/A')] + self.fields[field].choices[1:]
 
         self.fields['analysis_level'].choices = self.fields['analysis_level'].choices[1:]
-        # 
+
+        if first:
+            self.fields["name"].initial = ""
+            self.fields["name"].required = True
+            self.fields["name"].help_text = "Enter a name for this image"
+
         # 1) Build the Layout referencing the same fields as in Meta (to stay DRY).
         self.helper.layout = Layout(
             # The alert at the top
@@ -1001,19 +1007,27 @@ class StatisticMapForm(ImageForm):
             return self.save_afni_slices(commit)
         else:
             return super().save(commit=commit)
-
+    
 
 class EditStatisticMapForm(StatisticMapForm):
+    """ Pass through """
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user")
         super().__init__(*args, **kwargs)
 
-        if user.is_superuser:
-            self.fields["collection"].queryset = Collection.objects.all()
-        else:
-            self.fields["collection"].queryset = get_objects_for_user(
-                user, "statmaps.change_collection"
-            )
+
+class FirstTimeStatisticMapForm(EditStatisticMapForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs, first=True)
+
+    def clean_name(self):
+        """
+        Enforce that name must be non-empty if _post_upload is True.
+        """
+        name = self.cleaned_data.get("name", "")
+        if not name.strip():
+            raise forms.ValidationError("Please provide a new name for this image.")
+        return name
 
 
 class AtlasForm(ImageForm):
@@ -1021,7 +1035,6 @@ class AtlasForm(ImageForm):
         model = Atlas
         fields = (
             "name",
-            "collection",
             "description",
             "figure",
             "file",
@@ -1035,15 +1048,15 @@ class AtlasForm(ImageForm):
 
         self.helper.layout = Layout(
             "name",
-            "collection",
             "description",
             "figure",
             "file",
             "hdr_file",
             "label_description_file",
-            "tags",
-            ButtonHolder(
-                Submit("submit", "Submit")
+            FormActions(
+                Submit("submit_save", "Save and Exit", css_class="btn btn-primary float-right"),
+                Submit("submit_previous", "Previous Image", css_class="btn btn-secondary"),
+                Submit("submit_next", "Next Image", css_class="btn btn-secondary"),
             )
         )
 
@@ -1075,8 +1088,10 @@ class PolymorphicImageForm(ImageForm):
         # Below is a simple approach that shows them in the order of self.fields.
         self.helper.layout = Layout(
             *list(self.fields.keys()),  # This enumerates whatever ended up in self.fields
-            ButtonHolder(
-                Submit("submit", "Submit")
+            FormActions(
+                Submit("submit_save", "Save and Exit", css_class="btn btn-primary float-right"),
+                Submit("submit_previous", "Previous Image", css_class="btn btn-secondary"),
+                Submit("submit_next", "Next Image", css_class="btn btn-secondary"),
             )
         )
 
@@ -1127,8 +1142,10 @@ class EditAtlasForm(AtlasForm):
             "hdr_file",
             "label_description_file",
             "tags",
-            ButtonHolder(
-                Submit("submit", "Submit")
+            FormActions(
+                Submit("submit_save", "Save and Exit", css_class="btn btn-primary float-right"),
+                Submit("submit_previous", "Previous Image", css_class="btn btn-secondary"),
+                Submit("submit_next", "Next Image", css_class="btn btn-secondary"),
             )
         )
 
