@@ -27,8 +27,11 @@ from crispy_forms.layout import (
     Row,
     Column,
     HTML,
+    Button
 )
-from crispy_forms.bootstrap import TabHolder, Tab, InlineRadios
+from crispy_forms.bootstrap import (
+    Accordion, AccordionGroup, TabHolder, Tab, InlineRadios, FormActions
+)
 
 from .models import (
     Collection,
@@ -697,6 +700,9 @@ class ImageForm(ModelForm, ImageValidationMixin):
             # Add more fields as needed from the Image model
         )
 
+        # Overwrite the verbose_name for the "file" attribute
+        self.fields["file"].label = "File"
+
     def clean(self, **kwargs):
         cleaned_data = super().clean()
         cleaned_data["tags"] = clean_tags(cleaned_data)
@@ -758,6 +764,7 @@ class StatisticMapForm(ImageForm):
             "perc_voxels_outside": HiddenInput,
             "is_valid": HiddenInput,
             "data_origin": HiddenInput,
+            'description': forms.Textarea(attrs={'rows': 2, 'cols': 40}),  # Adjust the size here
         }
 
     def __init__(self, *args, **kwargs):
@@ -771,31 +778,20 @@ class StatisticMapForm(ImageForm):
         self.helper.label_class = "col-lg-2"
         self.helper.field_class = "col-lg-10"
 
-        # 4) Add an Alert at the top
-        # TODO: Make this dynamic based on if file is new or not (e.g passses metadata checks)
-        missing_required = False
-        # Edit this to call validation function
-        if not self.instance.analysis_level:
-            missing_required = True
-
-        alert_html = ""
-        if missing_required:
-            alert_html = HTML(
-                """
-                <div class="alert alert-warning" role="alert">
-                <strong>Warning!</strong> critical image meta-data is incomplete and needs to be filled out.
-                </div>
-                """
-            )
+        # alert_html = ""
+        # if not self.instance.is_valid:
+        #     alert_html = HTML(
+        #         """
+        #         <div class="alert alert-warning" role="alert">
+        #         <strong>Warning!</strong> critical image meta-data is incomplete and needs to be filled out.
+        #         </div>
+        #         """
+        #     )
 
         # 3) Render analysis_level with inline radios
         # Crispy Forms has InlineRadios in the bootstrap layout objects:
         # from crispy_forms.bootstrap import InlineRadios
         # or you can set the widget as RadioSelect. We'll show both ways below.
-
-        # Let’s do it via the Layout object:
-
-        # This ensures it’s a radio button set rather than a select dropdown.
 
         # 2) Override the default widget for 'file' so it’s not a file chooser.
         #    We can show the filename as read-only text or a disabled input.
@@ -805,9 +801,11 @@ class StatisticMapForm(ImageForm):
 
         # If the model instance has a FileField, this will display the path/filename.
         # The user will not be able to upload a new file from this form.
+        for field in ['gender', 'ethnicity', 'handedness']:
+            self.fields[field].choices = [('', 'N/A')] + self.fields[field].choices[1:]
+
         self.fields['analysis_level'].choices = self.fields['analysis_level'].choices[1:]
-        self.fields['gender'].choices = self.fields['gender'].choices[1:]
-        # self.fields['']
+        # 
         # 1) Build the Layout referencing the same fields as in Meta (to stay DRY).
         self.helper.layout = Layout(
             # The alert at the top
@@ -821,18 +819,57 @@ class StatisticMapForm(ImageForm):
                 template="statmaps/fields/toggle_radio_field.html",
             ),
             "description",
-            "age",
-            Field(
-                "gender",
-                template="statmaps/fields/toggle_radio_field.html",
+            "map_type",
+            "modality",
+            "number_of_subjects",
+            "cognitive_paradigm_cogatlas",
+            "cognitive_contrast_cogatlas",
+            "contrast_definition",
+            "figure",
+            "statistic_parameters",
+            "smoothness_fwhm",
+            "tags",
+            Accordion(
+                AccordionGroup(
+                    'Demographics',
+                    'age',
+                    Field(
+                        'gender',
+                        template="statmaps/fields/toggle_radio_field.html",
+                    ),
+                    Field(
+                        'ethnicity',
+                        template="statmaps/fields/toggle_radio_field.html",
+                    ),
+                    'race',
+                    Field(
+                        'handedness',
+                        template="statmaps/fields/toggle_radio_field.html",
+                    ),
+                    css_id="demographics-accordion",
+                    css_class="show"  # Ensure the accordion is open by default
+                ),
+                AccordionGroup(
+                    'Nutrition and Health Community',
+                    "fat_percentage",
+                    "bis11_score",
+                    "bis_bas_score",
+                    "spsrq_score",
+                    "BMI",
+                    "fat_percentage",
+                    "waist_hip_ratio",
+                    "hours_since_last_meal",
+                    "days_since_menstruation",
+                    "mean_PDS_score",
+                    "tanner_stage",
+                    css_id="nutritional-accordion",
+                    css_class="hide"  # Ensure the accordion is closed by default
+                ),
             ),
-            "ethnicity",
-            "race",
-            "handedness",
-            ButtonHolder(
-                Submit("submit_save", "Save and Exit"),
-                Submit("submit_previous", "Previous Image"),
-                Submit("submit_next", "Next Image"),
+            FormActions(
+                Submit("submit_save", "Save and Exit", css_class="btn btn-primary float-right"),
+                Submit("submit_previous", "Previous Image", css_class="btn btn-secondary"),
+                Submit("submit_next", "Next Image", css_class="btn btn-secondary"),
             )
         )
 
