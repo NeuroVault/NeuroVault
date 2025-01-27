@@ -28,7 +28,7 @@ from crispy_forms.layout import (
     Button
 )
 from crispy_forms.bootstrap import (
-    TabHolder, Tab, InlineRadios, FormActions
+    TabHolder, Tab, InlineRadios, FormActions, StrictButton
 )
 
 from .models import (
@@ -803,12 +803,36 @@ class StatisticMapForm(ImageForm):
 
         # 1) Build the Layout referencing the same fields as in Meta (to stay DRY).
         self.helper.layout = Layout(
-            # The alert at the top
-            alert_html,
-
+            HTML("""
+                <div class="card shadow-sm border-info mb-4">
+                    <div class="card-body d-flex">
+                        <!-- Left Section: Editing Image Information -->
+                        <div class="flex-grow-1">
+                            <h5 class="card-title text-info">Editing Image</h5>
+                            <p class="card-text">
+                                <strong>Filename:</strong> {filename}<br>
+                                <small class="text-muted">This is the file currently being edited.</small>
+                            </p>
+                        </div>
+                        
+                        <!-- Right Section: Fill Button -->
+                        <div class="ml-3" style="flex-basis: 20%; text-align: right;">
+                            <button
+                                class="btn btn-outline-info btn-sm"
+                                data-toggle="modal"
+                                data-target="#copyImageModal"
+                                style="width: 100%;"
+                            >
+                                <i class="fas fa-copy"></i> Copy image meta-data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            """.format(
+                filename=self.instance.file.name if self.instance.file else "No file selected"
+            )),
             # Then the fields (in the same order as base_fields_list).
             "name",
-            "file",
             Field(
                 "analysis_level",
                 template="statmaps/fields/toggle_radio_field.html",

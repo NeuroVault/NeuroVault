@@ -620,13 +620,16 @@ def get_sibling_images(current_image):
     next_image = collection_images.filter(pk=next_id).first() if next_id else None
     return (prev_image, next_image)
 
-
 @login_required
 def edit_image(request, pk):
     image = get_object_or_404(Image, pk=pk)
 
     first_time_param = request.GET.get("firsttime", "false").lower()
     firsttime = (first_time_param == "true")
+
+    collection_images = image.collection.basecollectionitem_set.instance_of(
+        Image
+    )
 
     if isinstance(image, StatisticMap):
         if firsttime and image.is_valid is False:
@@ -660,8 +663,25 @@ def edit_image(request, pk):
     else:
         form = form(instance=image, user=request.user)
 
+
+    # Serialize collection images
+    serialized_images = []
+    for img in collection_images:
+        modify_date = img.modify_date.strftime('%Y-%m-%d %H:%M:%S') if img.modify_date != img.add_date else None
+        serialized_images.append({
+            "id": img.id,
+            "name": img.name,
+            "description": img.description,
+            "last_edited": modify_date,
+            "is_valid": img.is_valid,
+            "analysis_level": (img.analysis_level if isinstance(img, StatisticMap) else None) or "",
+            "modality": (img.modality if isinstance(img, StatisticMap) else None) or "",
+        })
     contrasts = get_contrast_lookup()
-    context = {"form": form, "contrasts": json.dumps(contrasts)}
+    context = {
+        "form": form, "contrasts": json.dumps(contrasts),
+        "collection_images": serialized_images,
+    }
     return render(request, "statmaps/edit_image.html", context)
 
 
@@ -872,13 +892,13 @@ def upload_folder(request, collection_cid):
 
             # If we added images, redirect to the edit page for the first one
             if images_added:
-                return JsonResponse({
-                    "redirect_url": f"{images_added[0].get_absolute_url(edit=True)}?firsttime=true"
-                })
+                return HttpResponseRedirect(
+                    f"{images_added[0].get_absolute_url(edit=True)}?firsttime=true"
+                )
             else:
-                return JsonResponse({
-                    "redirect_url": collection.get_absolute_url()
-                })
+                return HttpResponseRedirect(
+                    collection.get_absolute_url()
+                )
 
     else:
         # GET request do nothing
