@@ -382,7 +382,7 @@ class ImageValidationMixin(object):
 
     def clean_and_validate(self, cleaned_data):
         breakpoint()
-        file = cleaned_data.get("file")
+        # file = cleaned_data.get("file")
         surface_left_file = cleaned_data.get("surface_left_file")
         surface_right_file = cleaned_data.get("surface_right_file")
 
