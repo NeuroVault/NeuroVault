@@ -81,7 +81,8 @@ from neurovault.apps.statmaps.utils import (
     extract_archive,
     collect_nifti_files,
     extract_multiple_files,
-    create_image_from_nifti
+    create_image_from_nifti,
+    write_file_to_disk
 )
 from neurovault.apps.statmaps.utils import (
     is_target_template_image_pycortex_compatible,
@@ -825,6 +826,7 @@ def upload_folder(request, collection_cid):
     allowed_extensions = [".nii", ".img", ".nii.gz"]
     images_added = []    
     if request.method == "POST":
+        folder = False
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             with tempfile.TemporaryDirectory() as tmp_directory:
@@ -837,11 +839,15 @@ def upload_folder(request, collection_cid):
                             if not new_form:
                                 messages.warning(request, "Invalid NIDM-Results file.")
                             return HttpResponseRedirect(collection.get_absolute_url())
-                        # Otherwise, treat it as an archive
-                        extract_archive(uploaded_file, tmp_directory)
+                        
+                        elif fnmatch(uploaded_file.name, "*.zip") or fnmatch(uploaded_file.name, "*.tar.gz"):
+                            extract_archive(uploaded_file, tmp_directory)
+                        else:
+                            write_file_to_disk(uploaded_file, tmp_directory)
 
                     # 2. Or check if multiple files have been uploaded
                     elif "file_input[]" in request.FILES:
+                        folder = True
                         file_list = request.FILES.getlist("file_input[]")
                         path_list = request.POST.getlist("paths[]")
                         extract_multiple_files(file_list, path_list, tmp_directory)
@@ -892,9 +898,13 @@ def upload_folder(request, collection_cid):
 
             # If we added images, redirect to the edit page for the first one
             if images_added:
-                return HttpResponseRedirect(
-                    f"{images_added[0].get_absolute_url(edit=True)}?firsttime=true"
-                )
+                redirect = f"{images_added[0].get_absolute_url(edit=True)}?firsttime=true"
+                if folder:
+                    return JsonResponse(
+                        {"redirect_url": redirect}
+                    )
+                else:
+                    return HttpResponseRedirect(redirect)
             else:
                 return HttpResponseRedirect(
                     collection.get_absolute_url()

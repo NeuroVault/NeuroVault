@@ -949,6 +949,15 @@ def squeeze_and_save_as_nii_gz(nii, base_name):
     return content
 
 
+def write_file_to_disk(file, destination_dir):
+    """
+    Writes a Django UploadedFile to disk at `destination_dir`.
+    """
+    with open(os.path.join(destination_dir, file.name), "wb") as f:
+        for chunk in file.chunks():
+            f.write(chunk)
+
+
 def extract_multiple_files(file_list, path_list, destination_dir):
     """
     Copies files from `file_list` into the correct relative paths 
@@ -967,7 +976,5 @@ def extract_multiple_files(file_list, path_list, destination_dir):
         final_dir, _ = os.path.split(os.path.join(destination_dir, relative_path))
         mkdir_p(final_dir)
 
-        filename = os.path.join(final_dir, uploaded_file.name)
-        with open(filename, "wb") as tmp_file:
-            for chunk in uploaded_file.chunks():
-                tmp_file.write(chunk)
+        # Write the file to disk
+        write_file_to_disk(uploaded_file, final_dir)
