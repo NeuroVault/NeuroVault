@@ -30,7 +30,7 @@ from crispy_forms.layout import (
     Button
 )
 from crispy_forms.bootstrap import (
-    Accordion, AccordionGroup, TabHolder, Tab, InlineRadios, FormActions
+    Accordion, AccordionGroup, TabHolder, Tab, InlineRadios, FormActions, StrictButton
 )
 
 from .models import (
@@ -381,7 +381,7 @@ class ImageValidationMixin(object):
         self.afni_tmp = None
 
     def clean_and_validate(self, cleaned_data):
-        breakpoint()
+        # breakpoint()
         # file = cleaned_data.get("file")
         surface_left_file = cleaned_data.get("surface_left_file")
         surface_right_file = cleaned_data.get("surface_right_file")
@@ -553,111 +553,6 @@ class ImageValidationMixin(object):
                 )
             finally:
                 shutil.rmtree(tmp_dir)
-
-        elif file:
-            # check extension of the data file
-            _, fname, ext = split_filename(file.name)
-            if not ext.lower() in [".nii.gz", ".nii", ".img"]:
-                self._errors["file"] = self.error_class(
-                    ["Doesn't have proper extension"]
-                )
-                del cleaned_data["file"]
-                return cleaned_data
-
-            # prepare file to loading into memory
-            file.open()
-            fileobj = file.file
-            if file.name.lower().endswith(".gz"):
-                fileobj = GzipFile(filename=file.name, mode="rb", fileobj=fileobj)
-
-            file_map = {"image": nb.FileHolder(file.name, fileobj)}
-            try:
-                tmp_dir = tempfile.mkdtemp()
-                if ext.lower() == ".img":
-                    hdr_file = cleaned_data.get("hdr_file")
-                    if hdr_file:
-                        # check extension of the hdr file
-                        _, _, hdr_ext = split_filename(hdr_file.name)
-                        if not hdr_ext.lower() in [".hdr"]:
-                            self._errors["hdr_file"] = self.error_class(
-                                ["Doesn't have proper extension"]
-                            )
-                            del cleaned_data["hdr_file"]
-                            return cleaned_data
-                        else:
-                            hdr_file.open()
-                            file_map["header"] = nb.FileHolder(
-                                hdr_file.name, hdr_file.file
-                            )
-                    else:
-                        self._errors["hdr_file"] = self.error_class(
-                            [".img file requires .hdr file"]
-                        )
-                        del cleaned_data["hdr_file"]
-                        return cleaned_data
-
-                # check if it is really nifti
-                try:
-                    # print file_map
-                    if "header" in file_map:
-                        nii = nb.Nifti1Pair.from_file_map(file_map)
-                    else:
-                        nii = nb.Nifti1Image.from_file_map(file_map)
-                except Exception as e:
-                    raise
-
-                # detect AFNI 4D files and prepare 3D slices
-                if nii is not None and detect_4D(nii):
-                    self.afni_subbricks = split_4D_to_3D(nii, tmp_dir=tmp_dir)
-                else:
-                    squeezable_dimensions = len(
-                        [a for a in nii.shape if a not in [0, 1]]
-                    )
-
-                    if squeezable_dimensions != 3:
-                        self._errors["file"] = self.error_class(
-                            [
-                                "4D files are not supported.\n "
-                                "If it's multiple maps in one "
-                                "file please split them and "
-                                "upload separately"
-                            ]
-                        )
-                        del cleaned_data["file"]
-                        return cleaned_data
-
-                    # convert to nii.gz if needed
-                    if ext.lower() != ".nii.gz" or squeezable_dimensions < len(
-                        nii.shape
-                    ):
-                        # convert pseudo 4D to 3D
-                        if squeezable_dimensions < len(nii.shape):
-                            new_data = np.squeeze(np.asanyarray(nii.dataobj))
-                            nii = nb.Nifti1Image(new_data, nii.affine, nii.header)
-
-                        # Papaya does not handle float64, but by converting
-                        # files we loose precision
-                        # if nii.get_data_dtype() == np.float64:
-                        # ii.set_data_dtype(np.float32)
-                        new_name = fname + ".nii.gz"
-                        nii_tmp = os.path.join(tmp_dir, new_name)
-                        nb.save(nii, nii_tmp)
-
-                        print("updating file in cleaned_data")
-
-                        cleaned_data["file"] = memory_uploadfile(
-                            nii_tmp, new_name, cleaned_data["file"]
-                        )
-            finally:
-                try:
-                    if self.afni_subbricks:
-                        # keep temp dir for AFNI slicing
-                        self.afni_tmp = tmp_dir
-                    else:
-                        shutil.rmtree(tmp_dir)
-                except OSError as exc:
-                    if exc.errno != 2:  # code 2 - no such file or directory
-                        raise  # re-raise exception
         elif not getattr(self, "partial", False):
             # Skip validation error if this is a partial update from the API
             raise ValidationError("Couldn't read uploaded file")
@@ -796,6 +691,11 @@ class StatisticMapForm(ImageForm):
 
         # 2) Override the default widget for 'file' so it’s not a file chooser.
         #    We can show the filename as read-only text or a disabled input.
+        # Let’s do it via the Layout object:
+
+        # This ensures it’s a radio button set rather than a select dropdown.
+
+        # For some reason our validation fails with file as TextInput
         self.fields["file"].widget = forms.TextInput(
             attrs={"readonly": True, "class": "form-control"}
         )
@@ -814,16 +714,41 @@ class StatisticMapForm(ImageForm):
 
         # 1) Build the Layout referencing the same fields as in Meta (to stay DRY).
         self.helper.layout = Layout(
-            # The alert at the top
-            alert_html,
-
+            HTML("""
+                <div class="card shadow-sm border-info mb-4">
+                    <div class="card-body d-flex">
+                        <!-- Left Section: Editing Image Information -->
+                        <div class="flex-grow-1">
+                            <h5 class="card-title text-info">Editing Image</h5>
+                            <p class="card-text">
+                                <strong>Filename:</strong> {filename}<br>
+                                <small class="text-muted">This is the file currently being edited.</small>
+                            </p>
+                        </div>
+                        
+                        <!-- Right Section: Fill Button -->
+                        <div class="ml-3" style="flex-basis: 20%; text-align: right;">
+                            <button
+                                class="btn btn-outline-info btn-sm"
+                                data-toggle="modal"
+                                data-target="#copyImageModal"
+                                style="width: 100%;"
+                            >
+                                <i class="fas fa-copy"></i> Copy image meta-data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            """.format(
+                filename=self.instance.file.name if self.instance.file else "No file selected"
+            )),
             # Then the fields (in the same order as base_fields_list).
-            "file",
             "name",
             Field(
                 "analysis_level",
                 template="statmaps/fields/toggle_radio_field.html",
             ),
+            "target_template_image",
             "description",
             "map_type",
             "modality",
