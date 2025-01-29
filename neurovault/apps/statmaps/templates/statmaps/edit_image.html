@@ -68,24 +68,7 @@
     }
   </script>
   
-  
-
-<div class="row">
-    <div class="col">
-        <h2>{{page_header}}</h2>
-        {%  if preamble %}
-            <p>{{ preamble | safe }}</p>
-        {% endif %}
-        {% if form.instance.nidm_results %}
-            <div class="alert alert-info">
-                <button type="button" class="close" data-dismiss="alert">&times;</button>
-                This statistic map is embedded in <strong><a href="{{form.instance.nidm_results.get_absolute_url}}">{{form.instance.nidm_results.name}}.zip</a></strong>.  Edit the NIDM zip file to modify this image's properties.
-            </div>
-        {% endif %}
-        <form class="form-horizontal" method="post" enctype="multipart/form-data">
-            {% crispy form %}
-            <!-- Copy Metadata Modal -->
-<div class="modal fade" id="copyImageModal" tabindex="-1" role="dialog" aria-labelledby="copyImageModalLabel" aria-hidden="true">
+  <div class="modal fade" id="copyImageModal" tabindex="-1" role="dialog" aria-labelledby="copyImageModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
       <div class="modal-content shadow-lg">
         <div class="modal-header bg-info text-white">
@@ -178,6 +161,47 @@
       </div>
     </div>
   </div>
+
+<div class="row">
+    <div class="col">
+        <h2>{{page_header}}</h2>
+        {%  if preamble %}
+            <p>{{ preamble | safe }}</p>
+        {% endif %}
+        {% if form.instance.nidm_results %}
+            <div class="alert alert-info">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                This statistic map is embedded in <strong><a href="{{form.instance.nidm_results.get_absolute_url}}">{{form.instance.nidm_results.name}}.zip</a></strong>.  Edit the NIDM zip file to modify this image's properties.
+            </div>
+        {% endif %}
+        <div class="card shadow-sm border-info mb-4">
+          <div class="card-body d-flex">
+              <!-- Left Section: Editing Image Information -->
+              <div class="flex-grow-1">
+                  <h5 class="card-title text-info">Editing Image</h5>
+                  <p class="card-text">
+                      <strong>Filename:</strong> {{form.instance.file.name}}<br>
+                      <small class="text-muted">This is the file currently being edited.</small>
+                  </p>
+              </div>
+              
+              <!-- Right Section: Fill Button -->
+              <div class="ml-3" style="flex-basis: 20%; text-align: right;">
+                  <button
+                      class="btn btn-outline-info btn-sm"
+                      data-toggle="modal"
+                      data-target="#copyImageModal"
+                      style="width: 100%;"
+                  >
+                      <i class="fas fa-copy"></i> Copy image meta-data
+                  </button>
+              </div>
+          </div>
+      </div>
+        <!-- <form class="form-horizontal" method="post" enctype="multipart/form-data"> -->
+            {% crispy form %}
+            <!-- Copy Metadata Modal -->
+
   
     </div>
 </div>

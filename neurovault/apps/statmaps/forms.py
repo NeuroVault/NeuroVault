@@ -386,7 +386,7 @@ class ImageValidationMixin(object):
         surface_left_file = cleaned_data.get("surface_left_file")
         surface_right_file = cleaned_data.get("surface_right_file")
 
-        if surface_left_file and surface_right_file and not file:
+        if surface_left_file and surface_right_file:
             if "file" in list(self._errors.keys()):
                 del self._errors["file"]
             cleaned_data["data_origin"] = "surface"
@@ -553,9 +553,9 @@ class ImageValidationMixin(object):
                 )
             finally:
                 shutil.rmtree(tmp_dir)
-        elif not getattr(self, "partial", False):
-            # Skip validation error if this is a partial update from the API
-            raise ValidationError("Couldn't read uploaded file")
+        # elif not getattr(self, "partial", False):
+        #     # Skip validation error if this is a partial update from the API
+        #     raise ValidationError("Couldn't read uploaded file")
 
         return cleaned_data
 
@@ -594,11 +594,8 @@ class ImageForm(ModelForm, ImageValidationMixin):
             "data_origin"
         )
 
-        # Overwrite the verbose_name for the "file" attribute
-        self.fields["file"].label = "File"
-
     def clean(self, **kwargs):
-        breakpoint()
+        # breakpoint()
         cleaned_data = super().clean()
         cleaned_data["tags"] = clean_tags(cleaned_data)
         return self.clean_and_validate(cleaned_data)
@@ -657,6 +654,7 @@ class StatisticMapForm(ImageForm):
             "not_mni": HiddenInput,
             "brain_coverage": HiddenInput,
             "perc_voxels_outside": HiddenInput,
+            "collection": HiddenInput,
             "is_valid": HiddenInput,
             "data_origin": HiddenInput,
             'description': forms.Textarea(attrs={'rows': 2, 'cols': 40}),  # Adjust the size here
@@ -714,35 +712,7 @@ class StatisticMapForm(ImageForm):
 
         # 1) Build the Layout referencing the same fields as in Meta (to stay DRY).
         self.helper.layout = Layout(
-            HTML("""
-                <div class="card shadow-sm border-info mb-4">
-                    <div class="card-body d-flex">
-                        <!-- Left Section: Editing Image Information -->
-                        <div class="flex-grow-1">
-                            <h5 class="card-title text-info">Editing Image</h5>
-                            <p class="card-text">
-                                <strong>Filename:</strong> {filename}<br>
-                                <small class="text-muted">This is the file currently being edited.</small>
-                            </p>
-                        </div>
-                        
-                        <!-- Right Section: Fill Button -->
-                        <div class="ml-3" style="flex-basis: 20%; text-align: right;">
-                            <button
-                                class="btn btn-outline-info btn-sm"
-                                data-toggle="modal"
-                                data-target="#copyImageModal"
-                                style="width: 100%;"
-                            >
-                                <i class="fas fa-copy"></i> Copy image meta-data
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            """.format(
-                filename=self.instance.file.name if self.instance.file else "No file selected"
-            )),
-            # Then the fields (in the same order as base_fields_list).
+            "collection",
             "name",
             Field(
                 "analysis_level",
@@ -751,6 +721,7 @@ class StatisticMapForm(ImageForm):
             "target_template_image",
             "description",
             "map_type",
+            "target_template_image",
             "modality",
             "number_of_subjects",
             "cognitive_paradigm_cogatlas",

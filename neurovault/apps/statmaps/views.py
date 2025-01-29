@@ -610,12 +610,12 @@ def get_sibling_images(current_image):
     collection_images = current_image.collection.basecollectionitem_set.instance_of(
         Image
     )
-    image_ids = list(collection_images.values_list("id", flat=True))
+    image_ids = sorted(list(collection_images.values_list("id", flat=True)))
     current_index = image_ids.index(current_image.id)
-    
+
     prev_id = image_ids[current_index - 1] if current_index > 0 else None
     next_id = image_ids[current_index + 1] if current_index < len(image_ids) - 1 else None
-    
+
     prev_image = collection_images.filter(pk=prev_id).first() if prev_id else None
     next_image = collection_images.filter(pk=next_id).first() if next_id else None
     return (prev_image, next_image)
@@ -658,7 +658,7 @@ def edit_image(request, pk):
                 _, next_img = get_sibling_images(image)
                 if next_img:
                     return redirect("statmaps:edit_image", pk=next_img.pk)
-            else:
+            elif "submit_save" in request.POST:
                 return HttpResponseRedirect(image.get_absolute_url())
     else:
         form = form(instance=image, user=request.user)
