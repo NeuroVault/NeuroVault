@@ -660,9 +660,12 @@ class StatisticMapForm(ImageForm):
             'description': forms.Textarea(attrs={'rows': 2, 'cols': 40}),  # Adjust the size here
         }
 
-    def __init__(self, *args, **kwargs):
-        first = kwargs.pop("first", False)
+    def __init__(self, *args, first=False, min_image=False, max_image=False, **kwargs):
         super().__init__(*args, **kwargs)
+        curr_image = self.instance.id 
+
+        print("curr_image", curr_image)
+        print("min_image", min_image)
 
         # Adjust the layout for all the fields in Meta.fields
         # Crispify the form
@@ -673,27 +676,15 @@ class StatisticMapForm(ImageForm):
         self.helper.field_class = "col-lg-10"
 
         alert_html = ""
-        # if not self.instance.is_valid:
-        #     alert_html = HTML(
-        #         """
-        #         <div class="alert alert-warning" role="alert">
-        #         <strong>Warning!</strong> critical image meta-data is incomplete and needs to be filled out.
-        #         </div>
-        #         """
-        #     )
+        if not self.instance.is_valid and not first:
+            alert_html = HTML(
+                """
+                <div class="alert alert-warning" role="alert">
+                <strong>Warning!</strong> critical image meta-data is incomplete and needs to be filled out.
+                </div>
+                """
+            )
 
-        # 3) Render analysis_level with inline radios
-        # Crispy Forms has InlineRadios in the bootstrap layout objects:
-        # from crispy_forms.bootstrap import InlineRadios
-        # or you can set the widget as RadioSelect. We'll show both ways below.
-
-        # 2) Override the default widget for 'file' so it’s not a file chooser.
-        #    We can show the filename as read-only text or a disabled input.
-        # Let’s do it via the Layout object:
-
-        # This ensures it’s a radio button set rather than a select dropdown.
-
-        # For some reason our validation fails with file as TextInput
         self.fields["file"].widget = forms.TextInput(
             attrs={"readonly": True, "class": "form-control"}
         )
@@ -712,6 +703,7 @@ class StatisticMapForm(ImageForm):
 
         # 1) Build the Layout referencing the same fields as in Meta (to stay DRY).
         self.helper.layout = Layout(
+            alert_html,
             "collection",
             "name",
             Field(
@@ -767,13 +759,38 @@ class StatisticMapForm(ImageForm):
                     css_id="nutritional-accordion",
                     css_class="hide"  # Ensure the accordion is closed by default
                 ),
-            ),
-            FormActions(
-                Submit("submit_save", "Save and Exit", css_class="btn btn-primary float-right"),
-                Submit("submit_previous", "Previous Image", css_class="btn btn-secondary"),
-                Submit("submit_next", "Next Image", css_class="btn btn-secondary"),
             )
         )
+
+        # 2) Add the Submit button
+        # If the user is on the first image, they should not be able to go back
+        # If the user is on the last image, they should not be able to go forward
+        if curr_image == min_image:
+            self.helper.layout.append(
+                FormActions(
+                    Submit("submit_next", "Next Image", css_class="btn btn-primary"),
+                    Submit("submit_save", "Save and Exit", css_class="btn btn-secondary"),
+                )
+            )
+        elif curr_image == max_image:
+            if first:
+                save_text = "Finish"
+            else:
+                save_text = "Save and Exit"
+            self.helper.layout.append(
+                FormActions(
+                    Submit("submit_previous", "Previous Image", css_class="btn btn-primary"),
+                    Submit("submit_save", save_text, css_class="btn btn-secondary"),
+                )
+            )
+        else:
+            self.helper.layout.append(
+                FormActions(
+                    Submit("submit_previous", "Previous Image", css_class="btn btn-primary"),
+                    Submit("submit_next", "Next Image", css_class="btn btn-primary"),
+                    Submit("submit_save", "Save and Exit", css_class="btn btn-secondary"),
+                )
+            )
 
     def clean(self, **kwargs):
         cleaned_data = super().clean()
@@ -910,21 +927,6 @@ class EditStatisticMapForm(StatisticMapForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user")
         super().__init__(*args, **kwargs)
-
-
-class FirstTimeStatisticMapForm(EditStatisticMapForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs, first=True)
-
-    def clean_name(self):
-        """
-        Enforce that name must be non-empty if _post_upload is True.
-        """
-        name = self.cleaned_data.get("name", "")
-        if not name.strip():
-            raise forms.ValidationError("Please provide a new name for this image.")
-        return name
-
 
 class AtlasForm(ImageForm):
     class Meta(ImageForm.Meta):

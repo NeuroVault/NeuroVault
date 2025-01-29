@@ -44,7 +44,6 @@ from neurovault.apps.statmaps.forms import (
     SimplifiedStatisticMapForm,
     NeuropowerStatisticMapForm,
     EditStatisticMapForm,
-    FirstTimeStatisticMapForm,
     OwnerCollectionForm,
     EditAtlasForm,
     EditNIDMResultStatisticMapForm,
@@ -625,19 +624,25 @@ def get_sibling_images(current_image):
 def edit_image(request, pk):
     image = get_object_or_404(Image, pk=pk)
 
-    first_time_param = request.GET.get("firsttime", "false").lower()
-    firsttime = (first_time_param == "true")
+    first_time_param = request.GET.get("first", "false").lower()
+    first = (first_time_param == "true")
+
+    min_image_id = int(request.GET.get("min_image", 0)) or None
+    max_image_id = int(request.GET.get("max_image", 0)) or None
 
     collection_images = image.collection.basecollectionitem_set.instance_of(
         Image
     )
 
+    kwargs = {}
     if isinstance(image, StatisticMap):
-        if firsttime and image.is_valid is False:
-            form = FirstTimeStatisticMapForm
-            image.name = ''
-        else:
-            form = EditStatisticMapForm
+        form = EditStatisticMapForm
+        image.name = ''
+        kwargs = {
+            'first': first,
+            'min_image': min_image_id,
+            'max_image': max_image_id
+        }
     elif isinstance(image, Atlas):
         form = EditAtlasForm
     elif isinstance(image, NIDMResultStatisticMap):
@@ -648,7 +653,8 @@ def edit_image(request, pk):
         return HttpResponseForbidden()
     if request.method == "POST":
         form = form(
-            request.POST, request.FILES, instance=image, user=request.user)
+            request.POST, request.FILES, instance=image, user=request.user,
+            **kwargs)
         if form.is_valid():
             form.save()
             if "submit_previous" in request.POST:
@@ -662,7 +668,7 @@ def edit_image(request, pk):
             elif "submit_save" in request.POST:
                 return HttpResponseRedirect(image.get_absolute_url())
     else:
-        form = form(instance=image, user=request.user)
+        form = form(instance=image, user=request.user, **kwargs)
 
 
     # Serialize collection images
@@ -898,7 +904,7 @@ def upload_folder(request, collection_cid):
 
             # If we added images, redirect to the edit page for the first one
             if images_added:
-                redirect = f"{images_added[0].get_absolute_url(edit=True)}?firsttime=true"
+                redirect = f"{images_added[0].get_absolute_url(edit=True)}?first=true"
                 if folder:
                     return JsonResponse(
                         {"redirect_url": redirect}
