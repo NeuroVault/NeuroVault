@@ -11,7 +11,7 @@ from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.forms.models import ModelMultipleChoiceField
 from django.forms.widgets import RadioSelect
-
+from django.urls import reverse
 
 
 # from form_utils.forms import BetterModelForm
@@ -663,6 +663,10 @@ class StatisticMapForm(ImageForm):
     def __init__(self, *args, first=False, min_image=False, max_image=False, **kwargs):
         super().__init__(*args, **kwargs)
         curr_image = self.instance.id
+        print(f"curr_image: {curr_image}")
+        print(f"min_image: {min_image}")
+        print(f"max_image: {max_image}")
+        
 
         # Adjust the layout for all the fields in Meta.fields
         # Crispify the form
@@ -671,7 +675,8 @@ class StatisticMapForm(ImageForm):
         self.helper.form_class = "form-horizontal"
         self.helper.label_class = "col-lg-2"
         self.helper.field_class = "col-lg-10"
-        print(self.helper.form_actions)
+        self.helper.form_action = reverse("statmaps:edit_image", args=[self.instance.id]) + f"?first={first}&min_image={min_image}&max_image={max_image}"
+
         alert_html = ""
         if not self.instance.is_valid and not first:
             alert_html = HTML(
@@ -762,32 +767,14 @@ class StatisticMapForm(ImageForm):
         # 2) Add the Submit button
         # If the user is on the first image, they should not be able to go back
         # If the user is on the last image, they should not be able to go forward
-        if curr_image == min_image:
-            self.helper.layout.append(
-                FormActions(
-                    Submit("submit_next", "Next Image", css_class="btn btn-primary"),
-                    Submit("submit_save", "Save and Exit", css_class="btn btn-secondary float-right"),
-                )
-            )
-        elif curr_image == max_image:
-            if first:
-                save_text = "Finish"
-            else:
-                save_text = "Save and Exit"
-            self.helper.layout.append(
-                FormActions(
-                    Submit("submit_previous", "Previous Image", css_class="btn btn-primary"),
-                    Submit("submit_save", save_text, css_class="btn btn-secondary float-right"),
-                )
-            )
-        else:
-            self.helper.layout.append(
-                FormActions(
-                    Submit("submit_previous", "Previous Image", css_class="btn btn-primary"),
-                    Submit("submit_next", "Next Image", css_class="btn btn-primary"),
-                    Submit("submit_save", "Save and Exit", css_class="btn btn-secondary float-right"),
-                )
-            )
+        buttons = []
+        if curr_image != min_image:
+            buttons.append(Submit("submit_previous", "Previous Image", css_class="btn btn-primary"))
+        elif curr_image != max_image:
+            buttons.append(Submit("submit_next", "Next Image", css_class="btn btn-primary"))
+
+        buttons.append(Submit("submit_save", "Save and Exit", css_class="btn btn-primary float-right"))
+        self.helper.layout.append(FormActions(*buttons))
 
     def clean(self, **kwargs):
         cleaned_data = super().clean()

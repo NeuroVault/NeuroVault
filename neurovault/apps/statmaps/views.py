@@ -627,8 +627,19 @@ def edit_image(request, pk):
     first_time_param = request.GET.get("first", "false").lower()
     first = (first_time_param == "true")
 
-    min_image_id = int(request.GET.get("min_image", 0)) or None
-    max_image_id = int(request.GET.get("max_image", 0)) or None
+    min_image_id = request.GET.get("min_image", False)
+
+    try:
+        min_image_id = int(min_image_id)
+    except ValueError:
+        min_image_id = None
+
+    max_image_id = request.GET.get("max_image", False)
+
+    try:
+        max_image_id = int(max_image_id)
+    except ValueError:
+        max_image_id = None
 
     collection_images = image.collection.basecollectionitem_set.instance_of(
         Image
@@ -655,8 +666,10 @@ def edit_image(request, pk):
         form = form(
             request.POST, request.FILES, instance=image, user=request.user,
             **kwargs)
+        print(request.POST)
         if form.is_valid():
             form.save()
+            print("Form saved")
             if "submit_previous" in request.POST:
                 prev_img, _ = get_sibling_images(image)
                 if prev_img:
