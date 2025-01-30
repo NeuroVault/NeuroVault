@@ -644,12 +644,13 @@ def edit_image(request, pk):
     collection_images = image.collection.basecollectionitem_set.instance_of(
         Image
     )
+    collection_images = [ci for ci in collection_images if ci.id != image.id]
 
     passalong = f"?first={first_time_param}&min_image={min_image_id}&max_image={max_image_id}"
     kwargs = {}
     if isinstance(image, StatisticMap):
         form = EditStatisticMapForm
-        image.name = ''
+        # image.name = ''
         kwargs = {
             'first': first,
             'min_image': min_image_id,

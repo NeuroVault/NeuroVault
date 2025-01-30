@@ -15,11 +15,9 @@
         document.querySelectorAll(".select-image").forEach(button => {
             button.addEventListener("click", function() {
                 const dataValues = this.getAttribute("data-values");
-                console.log(dataValues); // Print the contents of data-values
 
                 // Swap single quotes with double quotes and vice versa
                 const jsonString = dataValues.replace(/'/g, '"')
-                console.log(jsonString); // Print the JSON string with swapped quotes
 
                 const imageData = JSON.parse(jsonString);
 
@@ -33,7 +31,6 @@
                     // Remove active class from all labels
                     document.querySelectorAll('.btn-group-toggle .btn').forEach(label => label.classList.remove('active'));
                     // Add active class to the corresponding label
-                    analysisLevelInput.closest('label').classList.add('active');
                 }
                 document.querySelector("#id_modality").value = imageData.modality;
                 document.querySelector("#id_map_type").value = imageData.map_type;
@@ -50,8 +47,6 @@
                     handednessInput.checked = true;
                     // Remove active class from all labels
                     document.querySelectorAll('.btn-group-toggle .btn').forEach(label => label.classList.remove('active'));
-                    // Add active class to the corresponding label
-                    handednessInput.closest('label').classList.add('active');
                 }
                 document.querySelector("#id_age").value = imageData.age;
                 // Set the correct radio button for gender
@@ -60,8 +55,6 @@
                     genderInput.checked = true;
                     // Remove active class from all labels
                     document.querySelectorAll('.btn-group-toggle .btn').forEach(label => label.classList.remove('active'));
-                    // Add active class to the corresponding label
-                    genderInput.closest('label').classList.add('active');
                 }
                 document.querySelector("#id_race").value = imageData.race;
                 // Set the correct radio button for ethnicity
@@ -70,11 +63,15 @@
                     ethnicityInput.checked = true;
                     // Remove active class from all labels
                     document.querySelectorAll('.btn-group-toggle .btn').forEach(label => label.classList.remove('active'));
-                    // Add active class to the corresponding label
-                    ethnicityInput.closest('label').classList.add('active');
                 }
                 document.querySelector("#id_statistic_parameters").value = imageData.statistic_parameters;
                 document.querySelector("#id_smoothness_fwhm").value = imageData.smoothness_fwhm;
+
+                // Add active class to the corresponding label
+                analysisLevelInput.closest('label').classList.add('active');
+                ethnicityInput.closest('label').classList.add('active');
+                genderInput.closest('label').classList.add('active');
+                handednessInput.closest('label').classList.add('active');
 
                 $("#copyImageModal").modal("hide");
             });
