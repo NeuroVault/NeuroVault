@@ -25,6 +25,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.urls import reverse
 from fnmatch import fnmatch
 from guardian.shortcuts import get_objects_for_user
+from urllib.parse import urlencode
 
 # from nidmviewer.viewer import generate
 # from pybraincompare.compare.scatterplot import scatterplot_compare_vector
@@ -606,7 +607,7 @@ def delete_collection(request, cid):
     return redirect("statmaps:my_collections")
 
 
-def get_sibling_images(current_image):
+def _get_sibling_images(current_image):
     collection_images = current_image.collection.basecollectionitem_set.instance_of(
         Image
     )
@@ -620,73 +621,8 @@ def get_sibling_images(current_image):
     next_image = collection_images.filter(pk=next_id).first() if next_id else None
     return (prev_image, next_image)
 
-@login_required
-def edit_image(request, pk):
-    image = get_object_or_404(Image, pk=pk)
 
-    first_time_param = request.GET.get("first", "false").lower()
-    first = (first_time_param == "true")
-
-    min_image_id = request.GET.get("min_image", False)
-
-    try:
-        min_image_id = int(min_image_id)
-    except ValueError:
-        min_image_id = None
-
-    max_image_id = request.GET.get("max_image", False)
-
-    try:
-        max_image_id = int(max_image_id)
-    except ValueError:
-        max_image_id = None
-
-    collection_images = image.collection.basecollectionitem_set.instance_of(
-        Image
-    )
-    collection_images = [ci for ci in collection_images if ci.id != image.id]
-
-    passalong = f"?first={first_time_param}&min_image={min_image_id}&max_image={max_image_id}"
-    kwargs = {}
-    if isinstance(image, StatisticMap):
-        form = EditStatisticMapForm
-        # image.name = ''
-        kwargs = {
-            'first': first,
-            'min_image': min_image_id,
-            'max_image': max_image_id
-        }
-    elif isinstance(image, Atlas):
-        form = EditAtlasForm
-    elif isinstance(image, NIDMResultStatisticMap):
-        form = EditNIDMResultStatisticMapForm
-    else:
-        raise Exception("unsupported image type")
-    if not owner_or_contrib(request, image.collection):
-        return HttpResponseForbidden()
-    if request.method == "POST":
-        form = form(
-            request.POST, request.FILES, instance=image, user=request.user,
-            **kwargs)
-        print(request.POST)
-        if form.is_valid():
-            form.save()
-            if "submit_previous" in request.POST:
-                prev_img, _ = get_sibling_images(image)
-                if prev_img:
-                    return HttpResponseRedirect(prev_img.get_absolute_url(edit=True) + passalong)
-            elif "submit_next" in request.POST:
-                _, next_img = get_sibling_images(image)
-                if next_img:
-                    return HttpResponseRedirect(next_img.get_absolute_url(edit=True) + passalong)
-            elif "submit_save" in request.POST:
-                return HttpResponseRedirect(image.get_absolute_url())
-            
-    else:
-        form = form(instance=image, user=request.user, **kwargs)
-
-
-    # Serialize collection images
+def _serialize_collection(collection_images):
     serialized_images = []
     for img in collection_images:
         modify_date = img.modify_date.strftime('%Y-%m-%d %H:%M:%S') if img.modify_date != img.add_date else None
@@ -716,10 +652,83 @@ def edit_image(request, pk):
         img_data['json_data'] = json.dumps(img_data)
         serialized_images.append(img_data)
 
-    contrasts = get_contrast_lookup()
+    return serialized_images
+
+def _get_form_for_image(image):
+    """
+    Return the appropriate form class (and extra kwargs if needed)
+    based on the image's model class.
+    """
+    if isinstance(image, StatisticMap):
+        return EditStatisticMapForm
+    elif isinstance(image, Atlas):
+        return EditAtlasForm
+    elif isinstance(image, NIDMResultStatisticMap):
+        return EditNIDMResultStatisticMapForm
+    else:
+        raise Exception("Unsupported image type.")
+
+def _parse_int_param(value, default=""):
+    """
+    Safely parse a string as an integer.
+    Return the default if parsing fails or value is None/empty.
+    """
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+    
+@login_required
+def edit_image(request, pk):
+    image = get_object_or_404(Image, pk=pk)
+
+    kw_params = {
+        "first": True if request.GET.get("first") == "True" else False,
+        "min_image": _parse_int_param(request.GET.get("min_image")),
+        "max_image": _parse_int_param(request.GET.get("max_image")),
+    }
+    passalong_query = f"?{urlencode(kw_params)}"
+
+    collection_images_qs = (
+        image.collection.basecollectionitem_set
+        .instance_of(Image)
+        .exclude(pk=image.pk)
+    )
+
+    if not owner_or_contrib(request, image.collection):
+        return HttpResponseForbidden()
+    
+    form_class = _get_form_for_image(image)
+
+    if request.method == "POST":
+        form = form_class(
+            data=request.POST,
+            files=request.FILES,
+            instance=image,
+            user=request.user, 
+            **kw_params
+        )
+        if form.is_valid():
+            form.save()
+
+            # Handle navigation after save
+            if "submit_previous" in request.POST:
+                prev_img, _ = _get_sibling_images(image)
+                if prev_img:
+                    return HttpResponseRedirect(prev_img.get_absolute_url(edit=True) + passalong_query)
+            elif "submit_next" in request.POST:
+                _, next_img = _get_sibling_images(image)
+                if next_img:
+                    return HttpResponseRedirect(next_img.get_absolute_url(edit=True) + passalong_query)
+            elif "submit_save" in request.POST:
+                return HttpResponseRedirect(image.get_absolute_url())
+    else:
+        form = form_class(instance=image, user=request.user, **kw_params)
+
     context = {
-        "form": form, "contrasts": json.dumps(contrasts),
-        "collection_images": serialized_images,
+        "form": form, 
+        "contrasts": json.dumps(get_contrast_lookup()),
+        "collection_images": _serialize_collection(collection_images_qs),
     }
     return render(request, "statmaps/edit_image.html", context)
 
@@ -936,9 +945,12 @@ def upload_folder(request, collection_cid):
 
             # If we added images, redirect to the edit page for the first one
             if images_added:
-                min_image = images_added[0].id
-                max_image = images_added[-1].id
-                redirect = f"{images_added[0].get_absolute_url(edit=True)}?first=true&min_image={min_image}&max_image={max_image}"
+                params = {
+                    "first": True,
+                    "min_image": images_added[0].id,
+                    "max_image": images_added[-1].id,
+                }
+                redirect = images_added[0].get_absolute_url(edit=True) + f"?{urlencode(params)}"
                 if folder:
                     return JsonResponse(
                         {"redirect_url": redirect}
