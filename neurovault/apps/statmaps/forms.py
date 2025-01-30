@@ -663,11 +663,6 @@ class StatisticMapForm(ImageForm):
     def __init__(self, *args, first=False, min_image=False, max_image=False, **kwargs):
         super().__init__(*args, **kwargs)
         curr_image = self.instance.id
-        print(f"curr_image: {curr_image}")
-        print(f"min_image: {min_image}")
-        print(f"max_image: {max_image}")
-        
-
         # Adjust the layout for all the fields in Meta.fields
         # Crispify the form
         self.helper = FormHelper(self)
@@ -768,9 +763,9 @@ class StatisticMapForm(ImageForm):
         # If the user is on the first image, they should not be able to go back
         # If the user is on the last image, they should not be able to go forward
         buttons = []
-        if curr_image != min_image:
+        if min_image and curr_image != min_image:
             buttons.append(Submit("submit_previous", "Previous Image", css_class="btn btn-primary"))
-        elif curr_image != max_image:
+        if max_image and curr_image != max_image:
             buttons.append(Submit("submit_next", "Next Image", css_class="btn btn-primary"))
 
         buttons.append(Submit("submit_save", "Save and Exit", css_class="btn btn-primary float-right"))

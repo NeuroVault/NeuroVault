@@ -645,6 +645,7 @@ def edit_image(request, pk):
         Image
     )
 
+    passalong = f"?first={first_time_param}&min_image={min_image_id}&max_image={max_image_id}"
     kwargs = {}
     if isinstance(image, StatisticMap):
         form = EditStatisticMapForm
@@ -669,17 +670,17 @@ def edit_image(request, pk):
         print(request.POST)
         if form.is_valid():
             form.save()
-            print("Form saved")
             if "submit_previous" in request.POST:
                 prev_img, _ = get_sibling_images(image)
                 if prev_img:
-                    return redirect("statmaps:edit_image", pk=prev_img.pk)
+                    return HttpResponseRedirect(prev_img.get_absolute_url(edit=True) + passalong)
             elif "submit_next" in request.POST:
                 _, next_img = get_sibling_images(image)
                 if next_img:
-                    return redirect("statmaps:edit_image", pk=next_img.pk)
+                    return HttpResponseRedirect(next_img.get_absolute_url(edit=True) + passalong)
             elif "submit_save" in request.POST:
                 return HttpResponseRedirect(image.get_absolute_url())
+            
     else:
         form = form(instance=image, user=request.user, **kwargs)
 
@@ -917,7 +918,9 @@ def upload_folder(request, collection_cid):
 
             # If we added images, redirect to the edit page for the first one
             if images_added:
-                redirect = f"{images_added[0].get_absolute_url(edit=True)}?first=true"
+                min_image = images_added[0].id
+                max_image = images_added[-1].id
+                redirect = f"{images_added[0].get_absolute_url(edit=True)}?first=true&min_image={min_image}&max_image={max_image}"
                 if folder:
                     return JsonResponse(
                         {"redirect_url": redirect}
