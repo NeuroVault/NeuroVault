@@ -17,13 +17,18 @@ Easy to use web database for brain statistical maps, atlases and parcellation ma
 docker-compose up -d
 ```
 The webpage will be available at http://localhost:8000/
-Initially, some data will be available by default with _username/password_ neurovault/neurovault and neurovault2/neurovault2.
 
 ### Migrating the database
 ```
 docker-compose exec django python manage.py migrate
 ```
 The first time you run the application, you must migrate the db. You must also do this if you update any database models.
+
+### Creating super user
+```
+docker-compose exec django python manage.py createsuperuser
+````
+This will create a super user that you can use to test the application
 
 ### Stopping the server
 ```
