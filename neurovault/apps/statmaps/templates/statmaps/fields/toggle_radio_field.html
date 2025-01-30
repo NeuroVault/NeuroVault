@@ -1,0 +1,55 @@
+{# statmaps/templates/statmaps/fields/toggle_radio_field.html #}
+<div
+  id="div_id_{{ field.name }}"
+  class="form-group row {% if field.errors %}has-error{% endif %}"
+>
+  <!-- Label Column -->
+  <label
+    for="{{ field.id_for_label }}"
+    class="col-form-label col-lg-2"
+  >
+    {% if field.label %}
+      {{ field.label|capfirst }}
+    {% endif %}
+    {% if field.field.required %}
+      <span class="text-danger">*</span>
+    {% endif %}
+  </label>
+
+  <!-- Field Column -->
+  <div class="col-lg-10">
+    <!-- The toggle group -->
+    <div class="btn-group btn-group-toggle" data-toggle="buttons">
+      {% for value, label in field.field.widget.choices %}
+        <label
+          class="btn btn-secondary {% if value == field.value %}active{% endif %}"
+        >
+          <input
+            type="radio"
+            name="{{ field.name }}"
+            value="{{ value }}"
+            autocomplete="off"
+            {% if value == field.value %}checked{% endif %}
+          >
+          {{ label }}
+        </label>
+      {% endfor %}
+    </div>
+
+    <!-- Help Text, if any -->
+    {% if field.help_text %}
+      <small class="form-text text-muted">
+        {{ field.help_text }}
+      </small>
+    {% endif %}
+
+    <!-- Error Messages -->
+    {% if field.errors %}
+      {% for error in field.errors %}
+        <div class="invalid-feedback d-block">
+          {{ error }}
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+</div>
