@@ -710,6 +710,7 @@ def edit_image(request, pk):
 
     form_class = _get_form_for_image(image)
 
+    print("EDIT")
     if request.method == "POST":
         form = form_class(
             data=request.POST,
@@ -720,7 +721,10 @@ def edit_image(request, pk):
         )
         if form.is_valid():
             form.save()
-            if "submit_previous" or "submit_next" in request.POST:
+            if any(key in request.POST for key in ["submit_next", "submit_previous"]):
+                print(
+                    request.POST
+                )
                 prev_img, next_img = _get_sibling_images(image)
                 target_img = next_img if "submit_next" in request.POST else prev_img
                 if target_img:
