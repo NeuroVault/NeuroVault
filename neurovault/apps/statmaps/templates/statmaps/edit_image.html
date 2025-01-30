@@ -16,22 +16,17 @@
             button.addEventListener("click", function() {
                 const dataValues = this.getAttribute("data-values");
 
-                // Swap single quotes with double quotes and vice versa
-                const jsonString = dataValues.replace(/'/g, '"')
+                // Replace single quotes with double quotes
+                let jsonString = dataValues.replace(/'/g, '"');
+                // Replace True with true and False with false
+                jsonString = jsonString.replace(/True/g, 'true').replace(/False/g, 'false');
 
+                // Parse the JSON string
                 const imageData = JSON.parse(jsonString);
 
+                // Update text inputs
                 document.querySelector("#id_name").value = imageData.name;
                 document.querySelector("#id_description").value = imageData.description;
-                // document.querySelector("#id_analysis_level").value = imageData.analysis_level;
-                // Set the correct radio button for analysis level
-                const analysisLevelInput = document.querySelector(`input[name="analysis_level"][value="${imageData.analysis_level}"]`);
-                if (analysisLevelInput) {
-                    analysisLevelInput.checked = true;
-                    // Remove active class from all labels
-                    document.querySelectorAll('.btn-group-toggle .btn').forEach(label => label.classList.remove('active'));
-                    // Add active class to the corresponding label
-                }
                 document.querySelector("#id_modality").value = imageData.modality;
                 document.querySelector("#id_map_type").value = imageData.map_type;
                 document.querySelector("#id_target_template_image").value = imageData.target_template_image;
@@ -41,37 +36,32 @@
                 document.querySelector("#id_number_of_subjects").value = imageData.number_of_subjects;
                 document.querySelector("#id_contrast_definition").value = imageData.contrast_definition;
                 document.querySelector("#id_figure").value = imageData.figure;
-                // Set the correct radio button for handedness
-                const handednessInput = document.querySelector(`input[name="handedness"][value="${imageData.handedness}"]`);
-                if (handednessInput) {
-                    handednessInput.checked = true;
-                    // Remove active class from all labels
-                    document.querySelectorAll('.btn-group-toggle .btn').forEach(label => label.classList.remove('active'));
-                }
                 document.querySelector("#id_age").value = imageData.age;
-                // Set the correct radio button for gender
-                const genderInput = document.querySelector(`input[name="gender"][value="${imageData.gender}"]`);
-                if (genderInput) {
-                    genderInput.checked = true;
-                    // Remove active class from all labels
-                    document.querySelectorAll('.btn-group-toggle .btn').forEach(label => label.classList.remove('active'));
-                }
-                document.querySelector("#id_race").value = imageData.race;
-                // Set the correct radio button for ethnicity
-                const ethnicityInput = document.querySelector(`input[name="ethnicity"][value="${imageData.ethnicity}"]`);
-                if (ethnicityInput) {
-                    ethnicityInput.checked = true;
-                    // Remove active class from all labels
-                    document.querySelectorAll('.btn-group-toggle .btn').forEach(label => label.classList.remove('active'));
-                }
                 document.querySelector("#id_statistic_parameters").value = imageData.statistic_parameters;
                 document.querySelector("#id_smoothness_fwhm").value = imageData.smoothness_fwhm;
 
-                // Add active class to the corresponding label
-                analysisLevelInput.closest('label').classList.add('active');
-                ethnicityInput.closest('label').classList.add('active');
-                genderInput.closest('label').classList.add('active');
-                handednessInput.closest('label').classList.add('active');
+                // Update radio buttons and add active class to the corresponding label
+                const updateRadioButton = (name, value) => {
+                    const input = document.querySelector(`input[name="${name}"][value="${value}"]`);
+                    if (input) {
+                        input.checked = true;
+                        document.querySelectorAll(`input[name="${name}"]`).forEach(radio => {
+                            radio.closest('label').classList.remove('active');
+                        });
+                        input.closest('label').classList.add('active');
+                    }
+                };
+
+                updateRadioButton("analysis_level", imageData.analysis_level);
+                updateRadioButton("gender", imageData.gender);
+                updateRadioButton("ethnicity", imageData.ethnicity);
+                updateRadioButton("handedness", imageData.handedness);
+
+                // Trigger change event for select elements to update select2
+                $('#id_cognitive_paradigm_cogatlas').trigger('change');
+                $('#id_cognitive_contrast_cogatlas').trigger('change');
+                $('#id_target_template_image').trigger('change');
+                $('#id_modality').trigger('change');
 
                 $("#copyImageModal").modal("hide");
             });

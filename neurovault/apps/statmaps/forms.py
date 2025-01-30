@@ -708,7 +708,6 @@ class StatisticMapForm(ImageForm):
                 "analysis_level",
                 template="statmaps/fields/toggle_radio_field.html",
             ),
-            "target_template_image",
             "map_type",
             "target_template_image",
             "modality",
