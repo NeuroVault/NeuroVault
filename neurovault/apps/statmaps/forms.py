@@ -662,10 +662,7 @@ class StatisticMapForm(ImageForm):
 
     def __init__(self, *args, first=False, min_image=False, max_image=False, **kwargs):
         super().__init__(*args, **kwargs)
-        curr_image = self.instance.id 
-
-        print("curr_image", curr_image)
-        print("min_image", min_image)
+        curr_image = self.instance.id
 
         # Adjust the layout for all the fields in Meta.fields
         # Crispify the form
@@ -674,7 +671,7 @@ class StatisticMapForm(ImageForm):
         self.helper.form_class = "form-horizontal"
         self.helper.label_class = "col-lg-2"
         self.helper.field_class = "col-lg-10"
-
+        print(self.helper.form_actions)
         alert_html = ""
         if not self.instance.is_valid and not first:
             alert_html = HTML(
@@ -769,7 +766,7 @@ class StatisticMapForm(ImageForm):
             self.helper.layout.append(
                 FormActions(
                     Submit("submit_next", "Next Image", css_class="btn btn-primary"),
-                    Submit("submit_save", "Save and Exit", css_class="btn btn-secondary"),
+                    Submit("submit_save", "Save and Exit", css_class="btn btn-secondary float-right"),
                 )
             )
         elif curr_image == max_image:
@@ -780,7 +777,7 @@ class StatisticMapForm(ImageForm):
             self.helper.layout.append(
                 FormActions(
                     Submit("submit_previous", "Previous Image", css_class="btn btn-primary"),
-                    Submit("submit_save", save_text, css_class="btn btn-secondary"),
+                    Submit("submit_save", save_text, css_class="btn btn-secondary float-right"),
                 )
             )
         else:
@@ -788,7 +785,7 @@ class StatisticMapForm(ImageForm):
                 FormActions(
                     Submit("submit_previous", "Previous Image", css_class="btn btn-primary"),
                     Submit("submit_next", "Next Image", css_class="btn btn-primary"),
-                    Submit("submit_save", "Save and Exit", css_class="btn btn-secondary"),
+                    Submit("submit_save", "Save and Exit", css_class="btn btn-secondary float-right"),
                 )
             )
 
