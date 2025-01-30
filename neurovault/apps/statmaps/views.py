@@ -730,10 +730,16 @@ def edit_image(request, pk):
             elif "submit_save" in request.POST:
                 return HttpResponseRedirect(image.get_absolute_url())
     else:
+        if isinstance(image, StatisticMap) and kw_params["first"] and not image.is_valid:
+            image.name = ""
+            image.map_type = None
+            print(image.map_type)
+            
+
         form = form_class(instance=image, user=request.user, **kw_params)
 
     context = {
-        "form": form, 
+        "form": form,
         "contrasts": json.dumps(get_contrast_lookup()),
         "collection_images": _serialize_collection(collection_images_qs),
     }

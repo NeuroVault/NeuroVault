@@ -702,21 +702,12 @@ class StatisticMapForm(ImageForm):
                 """
             )
 
-        self.fields["file"].widget = forms.TextInput(
-            attrs={"readonly": True, "class": "form-control"}
-        )
-
         # If the model instance has a FileField, this will display the path/filename.
         # The user will not be able to upload a new file from this form.
         for field in ['gender', 'ethnicity', 'handedness']:
             self.fields[field].choices = [('', 'N/A')] + self.fields[field].choices[1:]
 
         self.fields['analysis_level'].choices = self.fields['analysis_level'].choices[1:]
-
-        if self.first:
-            self.fields["name"].initial = ""
-            self.fields["name"].required = True
-            self.fields["name"].help_text = "Enter a name for this image"
 
         # 1) Build the Layout referencing the same fields as in Meta (to stay DRY).
         self.helper.layout = Layout(
