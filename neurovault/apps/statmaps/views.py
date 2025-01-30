@@ -733,8 +733,6 @@ def edit_image(request, pk):
         if isinstance(image, StatisticMap) and kw_params["first"] and not image.is_valid:
             image.name = ""
             image.map_type = None
-            print(image.map_type)
-            
 
         form = form_class(instance=image, user=request.user, **kw_params)
 
