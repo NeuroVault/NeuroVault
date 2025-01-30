@@ -644,12 +644,13 @@ def edit_image(request, pk):
     collection_images = image.collection.basecollectionitem_set.instance_of(
         Image
     )
+    collection_images = [ci for ci in collection_images if ci.id != image.id]
 
     passalong = f"?first={first_time_param}&min_image={min_image_id}&max_image={max_image_id}"
     kwargs = {}
     if isinstance(image, StatisticMap):
         form = EditStatisticMapForm
-        image.name = ''
+        # image.name = ''
         kwargs = {
             'first': first,
             'min_image': min_image_id,
@@ -689,7 +690,7 @@ def edit_image(request, pk):
     serialized_images = []
     for img in collection_images:
         modify_date = img.modify_date.strftime('%Y-%m-%d %H:%M:%S') if img.modify_date != img.add_date else None
-        serialized_images.append({
+        img_data = {
             "id": img.id,
             "name": img.name,
             "description": img.description,
@@ -697,7 +698,24 @@ def edit_image(request, pk):
             "is_valid": img.is_valid,
             "analysis_level": (img.analysis_level if isinstance(img, StatisticMap) else None) or "",
             "modality": (img.modality if isinstance(img, StatisticMap) else None) or "",
-        })
+            "map_type": img.map_type,
+            "target_template_image": img.target_template_image,
+            "cognitive_atlas_paradigm": (getattr(img.cognitive_paradigm_cogatlas, "cog_atlas_id", None) if isinstance(img, StatisticMap) else None) or "",
+            "cognitive_atlas_contrast": (getattr(img.cognitive_contrast_cogatlas, "cog_atlas_id", None) if isinstance(img, StatisticMap) else None) or "",
+            "number_of_subjects": (img.number_of_subjects if isinstance(img, StatisticMap) else None) or "",
+            "contrast_definition": (img.contrast_definition if isinstance(img, StatisticMap) else None) or "",
+            "figure": img.figure,
+            "handedness": img.handedness,
+            "age": img.age,
+            "gender": img.gender,
+            "race": img.race,
+            "ethnicity": img.ethnicity,
+            "statistic_parameters": (img.statistic_parameters if isinstance(img, StatisticMap) else None) or "",
+            "smoothness_fwhm": (img.smoothness_fwhm if isinstance(img, StatisticMap) else None) or "",
+        }
+        img_data['json_data'] = json.dumps(img_data)
+        serialized_images.append(img_data)
+
     contrasts = get_contrast_lookup()
     context = {
         "form": form, "contrasts": json.dumps(contrasts),
