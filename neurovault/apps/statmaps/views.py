@@ -707,7 +707,7 @@ def edit_image(request, pk):
 
     if not owner_or_contrib(request, image.collection):
         return HttpResponseForbidden()
-    
+
     form_class = _get_form_for_image(image)
 
     if request.method == "POST":
@@ -720,16 +720,13 @@ def edit_image(request, pk):
         )
         if form.is_valid():
             form.save()
-
-            # Handle navigation after save
-            if "submit_previous" in request.POST:
-                prev_img, _ = _get_sibling_images(image)
-                if prev_img:
-                    return HttpResponseRedirect(prev_img.get_absolute_url(edit=True) + passalong_query)
-            elif "submit_next" in request.POST:
-                _, next_img = _get_sibling_images(image)
-                if next_img:
-                    return HttpResponseRedirect(next_img.get_absolute_url(edit=True) + passalong_query)
+            if "submit_previous" or "submit_next" in request.POST:
+                prev_img, next_img = _get_sibling_images(image)
+                target_img = next_img if "submit_next" in request.POST else prev_img
+                if target_img:
+                    return HttpResponseRedirect(
+                        target_img.get_absolute_url(edit=True) + passalong_query
+                        )
             elif "submit_save" in request.POST:
                 return HttpResponseRedirect(image.get_absolute_url())
     else:
