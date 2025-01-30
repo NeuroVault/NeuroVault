@@ -666,6 +666,7 @@ class StatisticMapForm(ImageForm):
             "perc_bad_voxels",
             "is_valid",
             "data_origin",
+            "tags"
         ]
         widgets = {
             "file": AdminResubmitFileWidget,
@@ -729,7 +730,6 @@ class StatisticMapForm(ImageForm):
             "figure",
             "statistic_parameters",
             "smoothness_fwhm",
-            "tags",
             Accordion(
                 AccordionGroup(
                     'Demographics',
