@@ -52,7 +52,6 @@ $(document).ready(function() {
             option.attr({ 'value': "Other" }).text("Other");
             $('#id_cognitive_contrast_cogatlas').append(option);
             $("#div_id_contrast_definition").hide();
-            console.log("Hiding")
             $("#div_id_cognitive_contrast_cogatlas").show();
 
         } else {
@@ -78,6 +77,19 @@ $(document).ready(function() {
     // Filter the contrasts to the selected task
     filter_contrasts();
     
+    // When contrast changes, check if user has selected "other"
+    $("#id_cognitive_contrast_cogatlas").change(function(e) {
+        var selection = $("#id_cognitive_contrast_cogatlas").val();
+        var termName = $("#id_cognitive_paradigm_cogatlas option:selected").text()
+        if (selection == "Other"){
+            reveal_custom();        
+        } else {
+            if ( termName != 'None / Other') {
+                $("#div_id_contrast_definition").hide();
+        }
+    }
+    });
+
     // When task is changed, update field for contrasts
     $("#id_cognitive_paradigm_cogatlas").change(function(e) {
 

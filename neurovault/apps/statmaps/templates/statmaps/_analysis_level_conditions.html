@@ -30,7 +30,6 @@ $(document).ready(function() {
             $("#div_id_cognitive_paradigm_cogatlas").show();
             $("#div_id_cognitive_contrast_cogatlas").show();
             $("#div_id_contrast_definition").hide();
-            console.log("Hiding")
             filter_contrasts();
         } else {
             $("#id_cognitive_paradigm_cogatlas").removeAttr("required");
@@ -47,7 +46,6 @@ $(document).ready(function() {
             filter_contrasts();
             $("#div_id_cognitive_contrast_cogatlas").hide();
             $("#div_id_contrast_definition").hide();
-            console.log("Hiding")
         }
         
         if (cognitive_task_choice === "rest_closed") {
@@ -59,7 +57,6 @@ $(document).ready(function() {
             filter_contrasts();
             $("#div_id_cognitive_contrast_cogatlas").hide();
             $("#div_id_contrast_definition").hide();
-            console.log("Hiding")
         }
 
         if (cognitive_task_choice == 'none') {
