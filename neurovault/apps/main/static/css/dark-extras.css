@@ -1,0 +1,8 @@
+body {
+    background: #1f1f1f !important;
+}
+
+/* Lighten help-block text color in dark mode */
+.text-muted {
+    color: #bbb3b3 !important; /* or any lighter color of your choice */
+}
