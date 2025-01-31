@@ -2,21 +2,6 @@
 {% load static %}
 {% block head %}
 <title>{% block title %}NeuroVault: an open data repository for brain maps{% endblock %}</title>
-<style>
-@media (prefers-color-scheme: dark) {
-  .invert {
-    filter: invert(100%)
-  }
-
-  .binarize {
-    filter: grayscale(100%) brightness(1000%) contrast(10000000%);
-  }
-
-  .invert-binarize {
-    filter: invert(100%) grayscale(100%) brightness(1000%) contrast(10000000%);
-  }
-}
-</style>
 {% endblock %}
 {% block content %}
     <div class="row mb-4">
