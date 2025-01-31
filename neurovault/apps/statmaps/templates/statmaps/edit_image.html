@@ -10,68 +10,6 @@
 
 {% block content %}
 
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        document.querySelectorAll(".select-image").forEach(button => {
-            button.addEventListener("click", function() {
-                const dataValues = this.getAttribute("data-values");
-
-                // Replace single quotes with double quotes
-                let jsonString = dataValues.replace(/'/g, '"');
-                // Replace True with true and False with false
-                jsonString = jsonString.replace(/True/g, 'true').replace(/False/g, 'false');
-
-                // Parse the JSON string
-                const imageData = JSON.parse(jsonString);
-
-                // Update text inputs
-                document.querySelector("#id_name").value = imageData.name;
-                document.querySelector("#id_description").value = imageData.description;
-                document.querySelector("#id_modality").value = imageData.modality;
-                document.querySelector("#id_map_type").value = imageData.map_type;
-                document.querySelector("#id_target_template_image").value = imageData.target_template_image;
-                document.querySelector("#id_cognitive_paradigm_cogatlas").value = imageData.cognitive_atlas_paradigm;
-                document.querySelector("#id_cognitive_paradigm_cogatlas").title = imageData.cognitive_atlas_paradigm;
-                document.querySelector("#id_cognitive_contrast_cogatlas").value = imageData.cognitive_contrast;
-                document.querySelector("#id_number_of_subjects").value = imageData.number_of_subjects;
-                document.querySelector("#id_contrast_definition").value = imageData.contrast_definition;
-                document.querySelector("#id_figure").value = imageData.figure;
-                document.querySelector("#id_age").value = imageData.age;
-                document.querySelector("#id_statistic_parameters").value = imageData.statistic_parameters;
-                document.querySelector("#id_smoothness_fwhm").value = imageData.smoothness_fwhm;
-
-                // Update radio buttons and add active class to the corresponding label
-                const updateRadioButton = (name, value) => {
-                    const input = document.querySelector(`input[name="${name}"][value="${value}"]`);
-                    if (input) {
-                        input.checked = true;
-                        document.querySelectorAll(`input[name="${name}"]`).forEach(radio => {
-                            radio.closest('label').classList.remove('active');
-                        });
-                        input.closest('label').classList.add('active');
-                    }
-                };
-
-                updateRadioButton("analysis_level", imageData.analysis_level);
-                updateRadioButton("gender", imageData.gender);
-                updateRadioButton("ethnicity", imageData.ethnicity);
-                updateRadioButton("handedness", imageData.handedness);
-
-                // Trigger change event for select elements to update select2
-                $('#id_cognitive_paradigm_cogatlas').trigger('change');
-                $('#id_cognitive_contrast_cogatlas').trigger('change');
-                $('#id_target_template_image').trigger('change');
-                $('#id_modality').trigger('change');
-
-                $("#copyImageModal").modal("hide");
-            });
-        });
-    });
-
-    $(document).ready(function() {
-        filterImages();
-    });
-</script>
 
 <style>
     .btn-outline-info.select-image {
@@ -185,10 +123,12 @@
                     <table class="table table-striped table-hover" id="imageTable">
                         <thead class="thead-light">
                             <tr>
+                                <th>ID</th>
                                 <th>Filename</th>
                                 <th>Last Edited</th>
                                 <th>Analysis Level</th>
                                 <th>Modality</th>
+                                <th>Map Type</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -198,10 +138,12 @@
                                     data-valid="{{ image.is_valid|yesno:'true,false' }}" 
                                     data-analysis-level="{{ image.analysis_level }}" 
                                     data-modality="{{ image.modality }}">
+                                    <td>{{ image.id }}</td>
                                     <td>{{ image.name }}</td>
                                     <td>{{ image.last_edited }}</td>
                                     <td>{{ image.analysis_level }}</td>
                                     <td>{{ image.modality }}</td>
+                                    <td>{{ image.map_type }}</td>
                                     <td>
                                         <button 
                                             class="btn btn-outline-info btn-sm select-image" 
@@ -268,5 +210,6 @@
 
 {% include "statmaps/_contrast_lookup.html" %}
 {% include "statmaps/_analysis_level_conditions.html" %}
+{% include "statmaps/_copy_md.html" %}
 
 {% endblock %}

@@ -30,12 +30,12 @@ $(document).ready(function() {
             $("#div_id_cognitive_paradigm_cogatlas").show();
             $("#div_id_cognitive_contrast_cogatlas").show();
             $("#div_id_contrast_definition").hide();
+            console.log("Hiding")
             filter_contrasts();
         } else {
             $("#id_cognitive_paradigm_cogatlas").removeAttr("required");
             $("#div_id_cognitive_paradigm_cogatlas").hide();
             $("#div_id_cognitive_contrast_cogatlas").hide();
-            $("#div_id_contrast_definition").show();
         }
  
         if (cognitive_task_choice === "rest_open") {
@@ -46,7 +46,8 @@ $(document).ready(function() {
             $("#id_cognitive_paradigm_cogatlas").val(matchingOption.val());
             filter_contrasts();
             $("#div_id_cognitive_contrast_cogatlas").hide();
-
+            $("#div_id_contrast_definition").hide();
+            console.log("Hiding")
         }
         
         if (cognitive_task_choice === "rest_closed") {
@@ -57,6 +58,8 @@ $(document).ready(function() {
             $("#id_cognitive_paradigm_cogatlas").val(matchingOption.val());
             filter_contrasts();
             $("#div_id_cognitive_contrast_cogatlas").hide();
+            $("#div_id_contrast_definition").hide();
+            console.log("Hiding")
         }
 
         if (cognitive_task_choice == 'none') {
@@ -70,6 +73,9 @@ $(document).ready(function() {
             $("#div_id_cognitive_paradigm_name").show();
             $("#div_id_cognitive_paradigm_short_description").show();
             $("#div_id_cognitive_paradigm_description_url").show();
+            $("#div_id_contrast_definition").show();
+            console.log("None selected")
+
         } else {
             $("#div_id_cognitive_paradigm_name").hide();
             $("#div_id_cognitive_paradigm_short_description").hide();
@@ -93,9 +99,7 @@ $(document).ready(function() {
 
 
     function set_cog_toggle_state() {
-        var selectedLabel = $("#id_cognitive_paradigm_cogatlas option:selected").text();
-        console.log(selectedLabel);
-  
+        var selectedLabel = $("#id_cognitive_paradigm_cogatlas option:selected").text();  
         if (selectedLabel === "rest eyes open") {
             setCognitiveTaskChoice("rest_open");
         } else if (selectedLabel === "rest eyes closed") {

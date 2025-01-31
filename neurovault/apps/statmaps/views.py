@@ -635,7 +635,9 @@ def _serialize_collection(collection_images):
     ]
     statmap_fields = [
         "analysis_level", "modality", "number_of_subjects",
-        "contrast_definition", "statistic_parameters", "smoothness_fwhm"
+        "contrast_definition", "statistic_parameters", "smoothness_fwhm",
+        "cognitive_paradigm_short_description", "cognitive_paradigm_description_url",
+        "cognitive_contrast_short_description", "cognitive_paradigm_name"
     ]
 
     def serialize(img):

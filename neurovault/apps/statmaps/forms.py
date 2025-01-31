@@ -759,7 +759,6 @@ class StatisticMapForm(ImageForm):
                 "cognitive_paradigm_name",
                 "cognitive_paradigm_short_description",
                 "cognitive_paradigm_description_url",
-                "cognitive_paradigm_name"
                 "contrast_definition",
             ),
             Fieldset(

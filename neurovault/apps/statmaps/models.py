@@ -1485,17 +1485,17 @@ class StatisticMap(BaseStatisticMap):
         blank=True,
     )
     cognitive_paradigm_short_description = models.CharField(
-        help_text="Short description",
+        help_text="Describe your task",
         verbose_name="Task Description",
         null=True,
         blank=True,
     )
     cognitive_paradigm_name = models.CharField(
-        help_text="Name of your task",
+        help_text="Name of your task (if it)",
         verbose_name="Task Name",
         null=True,
         blank=True
-    )
+     )
 
     @classmethod
     def get_fixed_fields(cls):
