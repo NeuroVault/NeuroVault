@@ -593,6 +593,11 @@ class ImageForm(ModelForm, ImageValidationMixin):
         self.helper.form_tag = False
         self.helper.form_method = "post"
 
+        # Add placeholder=".form-control-lg"
+        self.fields['name'] = forms.CharField(
+            widget=forms.TextInput(attrs={'placeholder': 'Name', 'class': 'form-control-lg'})
+        )
+        
         passalong = {
             "min_image": self.min_image,
             "max_image": self.max_image,
@@ -625,6 +630,19 @@ class ImageForm(ModelForm, ImageValidationMixin):
 
 
 class StatisticMapForm(ImageForm):
+    COGNITIVE_TASK_CHOICES = [
+        ("yes_other", "Yes"),
+        ("rest_open", "Rest (Eyes Open)"),
+        ("rest_closed", "Rest (Eyes Closed)"),
+        ("none", "None")
+    ]
+    cognitive_task_choice = forms.ChoiceField(
+        choices=COGNITIVE_TASK_CHOICES,
+        widget=forms.RadioSelect,
+        required=True,
+        help_text="Was a cognitive task performed?",
+        label="Cognitive Task"
+    )
     class Meta(ImageForm.Meta):
         model = StatisticMap
 
@@ -710,26 +728,39 @@ class StatisticMapForm(ImageForm):
 
         self.fields['analysis_level'].choices = self.fields['analysis_level'].choices[1:]
 
-        # 1) Build the Layout referencing the same fields as in Meta (to stay DRY).
         self.helper.layout = Layout(
             alert_html,
             "collection",
-            "name",
-            "description",
-            Field(
-                "analysis_level",
-                template="statmaps/fields/toggle_radio_field.html",
+            Fieldset(
+                "Essentials",
+                "name",
+                "description",
+                Field(
+                    "analysis_level",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
+                "map_type",
+                "target_template_image",
+                "modality",
+                "figure",
+                "number_of_subjects",
             ),
-            "map_type",
-            "target_template_image",
-            "modality",
-            "number_of_subjects",
-            "cognitive_paradigm_cogatlas",
-            "cognitive_contrast_cogatlas",
-            "contrast_definition",
-            "figure",
-            "statistic_parameters",
-            "smoothness_fwhm",
+            Fieldset(
+                "Cognitive Paradigm",
+                Field(
+                    "cognitive_task_choice",
+                    template="statmaps/fields/toggle_radio_field.html",
+                    help_text="Was a cognitive task performed?",
+                ),
+                "cognitive_paradigm_cogatlas",
+                "cognitive_contrast_cogatlas",
+                "contrast_definition",
+            ),
+            Fieldset(
+                "Analysis Details",
+                "statistic_parameters",
+                "smoothness_fwhm"
+            ),
             Accordion(
                 AccordionGroup(
                     'Demographics',
@@ -752,7 +783,6 @@ class StatisticMapForm(ImageForm):
                 ),
                 AccordionGroup(
                     'Nutrition and Health Community',
-                    "fat_percentage",
                     "bis11_score",
                     "bis_bas_score",
                     "spsrq_score",
@@ -774,7 +804,6 @@ class StatisticMapForm(ImageForm):
     def clean(self, **kwargs):
         cleaned_data = super().clean()
         django_file = cleaned_data.get("file")
-
         cleaned_data["is_valid"] = True
         cleaned_data["tags"] = clean_tags(cleaned_data)
 

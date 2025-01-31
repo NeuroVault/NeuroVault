@@ -710,7 +710,7 @@ def edit_image(request, pk):
 
     form_class = _get_form_for_image(image)
 
-    print("EDIT")
+    print("Going for it")
     if request.method == "POST":
         form = form_class(
             data=request.POST,
@@ -720,6 +720,7 @@ def edit_image(request, pk):
             **kw_params
         )
         if form.is_valid():
+            print("Form is valid!")
             form.save()
             if any(key in request.POST for key in ["submit_next", "submit_previous"]):
                 print(
@@ -733,6 +734,8 @@ def edit_image(request, pk):
                         )
             elif "submit_save" in request.POST:
                 return HttpResponseRedirect(image.get_absolute_url())
+        else:
+            print(form.errors)
     else:
         if isinstance(image, StatisticMap) and kw_params["first"] and not image.is_valid:
             image.name = ""
