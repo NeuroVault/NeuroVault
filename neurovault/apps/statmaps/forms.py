@@ -634,7 +634,7 @@ class StatisticMapForm(ImageForm):
         ("yes_other", "Yes"),
         ("rest_open", "Rest (Eyes Open)"),
         ("rest_closed", "Rest (Eyes Closed)"),
-        ("none", "None")
+        ("none", "None / Other")
     ]
     cognitive_task_choice = forms.ChoiceField(
         choices=COGNITIVE_TASK_CHOICES,
@@ -735,6 +735,8 @@ class StatisticMapForm(ImageForm):
                 "Essentials",
                 "name",
                 "description",
+                "figure",
+                HTML("""<hr>"""),
                 Field(
                     "analysis_level",
                     template="statmaps/fields/toggle_radio_field.html",
@@ -742,7 +744,6 @@ class StatisticMapForm(ImageForm):
                 "map_type",
                 "target_template_image",
                 "modality",
-                "figure",
                 "number_of_subjects",
             ),
             Fieldset(

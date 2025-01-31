@@ -68,6 +68,7 @@ $(document).ready(function() {
             $("#id_cognitive_paradigm_cogatlas").removeAttr("required");
             $("#div_id_cognitive_contrast_cogatlas").hide();
         }
+
     }
 
     function setCognitiveTaskChoice(value) {
@@ -81,14 +82,12 @@ $(document).ready(function() {
         const $radio = $(`input[name='cognitive_task_choice'][value='${value}']`);
         $radio.prop("checked", true);
         $radio.closest("label.btn").addClass("active");
-
-        // 3) Optionally trigger the change event if needed
-        $radio.trigger("change");
         }
 
 
     function set_cog_toggle_state() {
         var selectedLabel = $("#id_cognitive_paradigm_cogatlas option:selected").text();
+        console.log(selectedLabel);
   
         if (selectedLabel === "rest eyes open") {
             setCognitiveTaskChoice("rest_open");
@@ -115,6 +114,12 @@ $(document).ready(function() {
 
     // When cognitive_task_choice changes, update the visibility of the fields
     $("input[name='cognitive_task_choice']").change(function(e) {
+        toggle_cognitive_fields();
+    });
+
+    // When cognitive_paradigm_cogatlas changes, update the cognitive_task_choice
+    $("#id_cognitive_paradigm_cogatlas").change(function(e) {
+        set_cog_toggle_state();
         toggle_cognitive_fields();
     });
 });
