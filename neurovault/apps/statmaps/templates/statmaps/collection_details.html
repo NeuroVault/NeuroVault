@@ -101,38 +101,93 @@
       return $('#upload_process').modal('show');
     });
     $("#upload_process").on("shown.bs.modal", function(e) {
-      var csrftoken, data, files, i, paths, xhr;
-      paths = "";
-      files = uldata;
-      xhr = new XMLHttpRequest();
-      data = new FormData();
-      for (i in files) {
-        if (files[i].name !== void 0 && files[i].webkitRelativePath !== void 0) {
-          if (files[i].name.indexOf(".") !== 0 && files[i].webkitRelativePath.indexOf('.files') === -1) {
-            data.append('paths[]', files[i].webkitRelativePath);
-            data.append('file_input[]', files[i]);
-          }
+        var csrftoken, data, files, i, xhr;
+        var paths = "";
+        var files = uldata;            // from your code above
+        var totalSize = 0;
+
+        for (var i = 0; i < files.length; i++) {
+        totalSize += files[i].size;
         }
-      }
+        xhr = new XMLHttpRequest();
+        data = new FormData();
 
-      csrftoken = $.cookie('csrftoken');
-      xhr.open('POST', "upload_folder", true);
-      xhr.setRequestHeader("X-CSRFToken", csrftoken);
-      xhr.onloadstart = function(e){
-                $('.modal-backdrop').removeClass("modal-backdrop");
-                showLoader();
-      };
+        // Build FormData
+        for (i in files) {
+            if (files[i].name !== undefined && files[i].webkitRelativePath !== undefined) {
+            if (files[i].name.indexOf(".") !== 0 && files[i].webkitRelativePath.indexOf('.files') === -1) {
+                data.append('paths[]', files[i].webkitRelativePath);
+                data.append('file_input[]', files[i]);
+            }
+            }
+        }
 
-      // We need to know when the request finishes.
-      xhr.onload = function (e) {
-      if (xhr.status === 200) {
-            hideLoader();
-            return document.location = '';
-          };
-      }
-      xhr.send(data);
-      //return document.location = "";
-    });
+        // Get CSRF token
+        csrftoken = $.cookie('csrftoken');
+        xhr.open('POST', "upload_folder", true);
+        xhr.setRequestHeader("X-CSRFToken", csrftoken);
+
+        // If you want to remove the old spinner, you can comment out showLoader()
+        xhr.onloadstart = function(e) {
+            // showLoader();  // Comment out if not wanted
+            // Optionally reset the bar to 0 here
+            let $progressBar = $("#upload-progress .progress-bar");
+            $progressBar.css("width", "0%").text("0%").attr("aria-valuenow", 0);
+        };
+
+        // --------------- KEY PART: Update progress bar ---------------
+        xhr.upload.addEventListener("progress", function(evt) {
+            if (evt.lengthComputable) {
+                // fraction of the total bytes that have been uploaded
+                let fractionComplete = evt.loaded / totalSize;
+
+                // approximate how many files that fraction corresponds to
+                let approximateFileCount = Math.floor(fractionComplete * files.length);
+
+                // make sure we never exceed the total number of files
+                if (approximateFileCount > files.length) {
+                approximateFileCount = files.length;
+                }
+
+                // update the text, e.g. "1/10 files uploaded"
+                let displayText = approximateFileCount + "/" + files.length + " files uploaded";
+
+                // Update modal or progress bar text
+                let $progressBar = $("#upload-progress .progress-bar");
+                $progressBar
+                .text(displayText)
+                .attr("aria-valuenow", approximateFileCount);
+
+                // If you also want a visual bar fill, you can still do that:
+                let percentComplete = parseInt(fractionComplete * 100);
+                $progressBar.css("width", percentComplete + "%");
+            }
+            }, false);
+
+
+        // When the upload finishes (success or fail)
+        xhr.onload = function(e) {
+            // hideLoader(); // Comment out if not wanted
+            if (xhr.status === 200) {
+            let responseData = JSON.parse(xhr.responseText);
+            $('#upload_process').modal('hide');
+            if (responseData.redirect_url) {
+                window.location = responseData.redirect_url;
+            } else {
+                window.location.reload();
+            }
+            } else {
+            console.error('Upload failed with status:', xhr.status);
+            // You can optionally reset or hide the bar here too, or show an error
+            }
+        };
+
+        xhr.send(data);
+
+        // Finally, hide the modal once we start uploading
+        // but you may choose to keep it open until `xhr.onload` triggers
+        });
+
     if (navigator.userAgent.indexOf("Safari") > -1 && navigator.userAgent.indexOf("Chrome") === -1) {
       return $('a[href="pycortex"]').hide();
     }
@@ -204,7 +259,6 @@
             {% endif %}
 
             {% if edit_permission %}
-                <a class="btn btn-primary" href="{% url 'statmaps:add_image' cid %}" >Add image</a>
 
                 <div class="btn-group" role="group">
                     <button id="btnGroupDropEdit" type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -224,6 +278,7 @@
                         Upload
                     </button>
                     <div class="dropdown-menu" aria-labelledby="btnGroupDropUpload">
+                        <a class="dropdown-item upload_archive" href="#">Image</a>
                         <a class="dropdown-item upload_archive" href="#">Archive (.zip)</a>
                         <a class="dropdown-item upload_archive" href="#">NIDM-Results (.nidm.zip)</a>
                         <!--[if !IE]> -->
@@ -255,18 +310,43 @@
                     This collection is empty. You can:
                 </div>
                 <div class="btn-group-vertical w-100">
-                    <a type="button" class="btn btn-light" href="{% url 'statmaps:add_image' cid %}">Add
-                        images one by one</a>
+                    <a type="button" class="btn btn-light upload_archive"
+                       href="#">Upload a single image</a>
                     <a type="button" class="btn btn-light upload_archive"
                        href="#">Upload an archive with images (.zip or .tar.gz)</a>
                     <a type="button" class="btn btn-light upload_archive"
                        href="#">Upload a NIDM-Results file (.nidm.zip)</a>
                     <!--[if !IE]> -->
-                    <a type="button" class="btn btn-light" class="upload_folder" href="#">Upload a
+                    <a type="button" class="btn btn-light upload_folder" href="#">Upload a
                         folder with images</a>
                     <!-- <![endif]-->
                 </div>
-                <div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false"></div>
+                <!-- Modal triggered by folder upload -->
+                    <div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false">
+                        <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                            <h5 class="modal-title">Uploading, please wait...</h5>
+                            <!-- If you want a close button, you can include it:
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            -->
+                            </div>
+                            <div class="modal-body">
+                            <div class="progress" id="upload-progress">
+                                <div 
+                                class="progress-bar" 
+                                role="progressbar" 
+                                style="width: 0%;" 
+                                aria-valuenow="0" 
+                                aria-valuemin="0" 
+                                aria-valuemax="100">
+                                0%
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
             </div>
         {% elif not is_empty %} <!-- close if not empty -->
             <div class="col-md-6 mt-1 mb-1 d-none d-md-block" style="margin-top:20px; min-height:470px;"

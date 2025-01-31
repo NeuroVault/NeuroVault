@@ -1127,13 +1127,15 @@ class Image(BaseCollectionItem):
     data = models.JSONField(blank=True, null=True)
     # hstore_objects = hstore.HStoreManager()
 
-    def get_absolute_url(self):
+    def get_absolute_url(self, edit=False):
         return_args = [str(self.id)]
-        url_name = "statmaps:image_details"
+        url_name  = "statmaps:image_details" if not edit else "statmaps:edit_image"
         if self.collection.private:
             return_args.insert(0, str(self.collection.private_token))
             url_name = "statmaps:private_image_details"
+
         return reverse(url_name, args=return_args)
+    
 
     def get_thumbnail_url(self):
         try:
