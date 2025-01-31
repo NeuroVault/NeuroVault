@@ -715,7 +715,7 @@ def edit_image(request, pk):
     if kw_params["first"] and kw_params["min_image"] != "":
         progress, label = _compute_progress(kw_params["min_image"], kw_params["max_image"])
     else:
-        progress, label = None
+        progress, label = None, None
 
     collection_images_qs = (
         image.collection.basecollectionitem_set
