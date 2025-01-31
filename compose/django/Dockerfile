@@ -36,7 +36,7 @@ RUN apt-get -y update \
     --exclude='freesurfer/lib/qt' \
     --exclude='freesurfer/lib/vtk' \
     && \
-    find /opt/freesurfer/bin -type f ! -name 'tkregister2' ! -name 'mris_convert' -name 'mri_convert' ! -name 'mri_surf2surf' ! -name 'mri_surf2vol' -delete && \
+    find /opt/freesurfer/bin -type f ! -name 'tkregister2' ! -name 'mris_convert' ! -name 'mri_convert' ! -name 'mri_surf2surf' ! -name 'mri_surf2vol' -delete && \
     apt-get install -y tcsh bc tar libgomp1 perl-modules curl  && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
