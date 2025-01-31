@@ -639,7 +639,7 @@ class StatisticMapForm(ImageForm):
         choices=COGNITIVE_TASK_CHOICES,
         widget=forms.RadioSelect,
         required=True,
-        help_text="Was a cognitive task performed?",
+        help_text="Was a task performed? If so, look for a matching Cognitive Atlas Paradigm. If there's no match, select 'None / Other'.",
         label="Cognitive Task"
     )
     class Meta(ImageForm.Meta):
@@ -656,6 +656,8 @@ class StatisticMapForm(ImageForm):
             "cognitive_paradigm_cogatlas",
             "cognitive_contrast_cogatlas",
             "cognitive_paradigm_description_url",
+            "cognitive_paradigm_short_description",
+            "cognitive_paradigm_name",
             "analysis_level",
             "number_of_subjects",
             "contrast_definition",
@@ -740,9 +742,9 @@ class StatisticMapForm(ImageForm):
                     "analysis_level",
                     template="statmaps/fields/toggle_radio_field.html",
                 ),
+                "modality",
                 "map_type",
                 "target_template_image",
-                "modality",
                 "number_of_subjects",
             ),
             Fieldset(
@@ -754,6 +756,10 @@ class StatisticMapForm(ImageForm):
                 ),
                 "cognitive_paradigm_cogatlas",
                 "cognitive_contrast_cogatlas",
+                "cognitive_paradigm_name",
+                "cognitive_paradigm_short_description",
+                "cognitive_paradigm_description_url",
+                "cognitive_paradigm_name"
                 "contrast_definition",
             ),
             Fieldset(

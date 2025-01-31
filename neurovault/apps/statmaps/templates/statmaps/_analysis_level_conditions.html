@@ -67,6 +67,13 @@ $(document).ready(function() {
             filter_contrasts();
             $("#id_cognitive_paradigm_cogatlas").removeAttr("required");
             $("#div_id_cognitive_contrast_cogatlas").hide();
+            $("#div_id_cognitive_paradigm_name").show();
+            $("#div_id_cognitive_paradigm_short_description").show();
+            $("#div_id_cognitive_paradigm_description_url").show();
+        } else {
+            $("#div_id_cognitive_paradigm_name").hide();
+            $("#div_id_cognitive_paradigm_short_description").hide();
+            $("#div_id_cognitive_paradigm_description_url").hide();
         }
 
     }
