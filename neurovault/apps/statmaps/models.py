@@ -1025,7 +1025,7 @@ class Image(BaseCollectionItem):
     )
     figure = models.CharField(
         help_text="Which figure in the corresponding paper was this map displayed in?",
-        verbose_name="Corresponding figure",
+        verbose_name="Manuscript figure",
         max_length=200,
         null=True,
         blank=True,
@@ -1464,7 +1464,7 @@ class StatisticMap(BaseStatisticMap):
     )
     cognitive_paradigm_cogatlas = models.ForeignKey(
         CognitiveAtlasTask,
-        help_text="Task (or lack of it) performed by the subjects in the scanner described using <a href='http://www.cognitiveatlas.org/' target='_blank'>Cognitive Atlas</a> terms",
+        help_text="Task performed by the subjects in the scanner described using <a href='http://www.cognitiveatlas.org/' target='_blank'>Cognitive Atlas</a>.",
         verbose_name="Cognitive Atlas Paradigm",
         null=True,
         blank=False,
@@ -1479,11 +1479,23 @@ class StatisticMap(BaseStatisticMap):
         on_delete=models.PROTECT,
     )
     cognitive_paradigm_description_url = models.URLField(
-        help_text="Link to a paper, poster, abstract or other form text describing in detail the task performed by the subject(s) in the scanner.",
-        verbose_name="Cognitive Paradigm Description URL",
+        help_text="Link to a paper, poster, abstract describing in detail the task performed by the subject(s) in the scanner.",
+        verbose_name="Description URL",
         null=True,
         blank=True,
     )
+    cognitive_paradigm_short_description = models.CharField(
+        help_text="Describe your task",
+        verbose_name="Task Description",
+        null=True,
+        blank=True,
+    )
+    cognitive_paradigm_name = models.CharField(
+        help_text="Name of your task (if it)",
+        verbose_name="Task Name",
+        null=True,
+        blank=True
+     )
 
     @classmethod
     def get_fixed_fields(cls):

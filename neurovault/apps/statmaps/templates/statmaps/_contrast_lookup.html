@@ -8,9 +8,12 @@ $(document).ready(function() {
    filter_contrasts = function() {
 
       var termid = $("#id_cognitive_paradigm_cogatlas").val();
+      var termName = $("#id_cognitive_paradigm_cogatlas option:selected").text()
 
       // If there is a task specified:  
-      if (termid) {
+      if (termid && termName != 'None / Other') {
+
+        console.log("Filtering contrasts for task: " + termName);
       
         var contrasts = contrast_lookup[termid];
 
@@ -76,12 +79,15 @@ $(document).ready(function() {
     
     // When contrast changes, check if user has selected "other"
     $("#id_cognitive_contrast_cogatlas").change(function(e) {
-        var selection = $("#id_cognitive_contrast_cogatlas").val()    
+        var selection = $("#id_cognitive_contrast_cogatlas").val();
+        var termName = $("#id_cognitive_paradigm_cogatlas option:selected").text()
         if (selection == "Other"){
             reveal_custom();        
         } else {
-            $("#div_id_contrast_definition").hide();
+            if ( termName != 'None / Other') {
+                $("#div_id_contrast_definition").hide();
         }
+    }
     });
 
     // When task is changed, update field for contrasts

@@ -13,7 +13,6 @@ from django.forms.models import ModelMultipleChoiceField
 from django.forms.widgets import RadioSelect
 from django.urls import reverse
 
-
 # from form_utils.forms import BetterModelForm
 
 from crispy_forms.helper import FormHelper
@@ -32,6 +31,7 @@ from crispy_forms.layout import (
 from crispy_forms.bootstrap import (
     Accordion, AccordionGroup, TabHolder, Tab, InlineRadios, FormActions, StrictButton
 )
+from urllib.parse import urlencode
 
 from .models import (
     Collection,
@@ -577,6 +577,11 @@ class ImageForm(ModelForm, ImageValidationMixin):
         }
 
     def __init__(self, *args, **kwargs):
+        self.first = kwargs.pop("first", False)
+        self.min_image = kwargs.pop("min_image", None)
+        self.max_image = kwargs.pop("max_image", None)
+        self.curr_image = kwargs.pop("curr_image", None)
+
         ImageValidationMixin.__init__(self, *args, **kwargs)
         super().__init__(*args, **kwargs)  # calls ModelForm __init__
 
@@ -587,6 +592,18 @@ class ImageForm(ModelForm, ImageValidationMixin):
         self.helper.form_tag = False
         self.helper.form_method = "post"
 
+        # Add placeholder=".form-control-lg"
+        self.fields['name'] = forms.CharField(
+            widget=forms.TextInput(attrs={'placeholder': 'Name', 'class': 'form-control-lg'})
+        )
+        
+        passalong = {
+            "min_image": self.min_image,
+            "max_image": self.max_image,
+            "curr_image": self.instance.id,
+        }
+
+        self.helper.form_action = reverse("statmaps:edit_image", args=[self.instance.id]) + f"?{urlencode(passalong)}"
         # Define the layout explicitly to show the desired fields
         self.helper.layout = Layout(
             "file",
@@ -599,9 +616,32 @@ class ImageForm(ModelForm, ImageValidationMixin):
         cleaned_data = super().clean()
         cleaned_data["tags"] = clean_tags(cleaned_data)
         return self.clean_and_validate(cleaned_data)
+    
+    def add_buttons(self):
+        buttons = []
+        if self.min_image and self.instance.id != self.min_image:
+            buttons.append(Submit("submit_previous", "Previous Image", css_class="btn btn-primary"))
+        if self.max_image and self.instance.id != self.max_image:
+            buttons.append(Submit("submit_next", "Next Image", css_class="btn btn-primary"))
+
+        buttons.append(Submit("submit_save", "Save and Exit", css_class="btn btn-primary float-right"))
+        self.helper.layout.append(FormActions(*buttons))
 
 
 class StatisticMapForm(ImageForm):
+    COGNITIVE_TASK_CHOICES = [
+        ("yes_other", "Yes"),
+        ("rest_open", "Rest (Eyes Open)"),
+        ("rest_closed", "Rest (Eyes Closed)"),
+        ("none", "None / Other")
+    ]
+    cognitive_task_choice = forms.ChoiceField(
+        choices=COGNITIVE_TASK_CHOICES,
+        widget=forms.RadioSelect,
+        required=True,
+        help_text="Was a task performed? If so, look for a matching Cognitive Atlas Paradigm. If there's no match, select 'None / Other'.",
+        label="Cognitive Task"
+    )
     class Meta(ImageForm.Meta):
         model = StatisticMap
 
@@ -616,6 +656,8 @@ class StatisticMapForm(ImageForm):
             "cognitive_paradigm_cogatlas",
             "cognitive_contrast_cogatlas",
             "cognitive_paradigm_description_url",
+            "cognitive_paradigm_short_description",
+            "cognitive_paradigm_name",
             "analysis_level",
             "number_of_subjects",
             "contrast_definition",
@@ -637,13 +679,13 @@ class StatisticMapForm(ImageForm):
             "tanner_stage",
             "ignore_file_warning",
             "hdr_file",
-            "tags",
             "statistic_parameters",
             "smoothness_fwhm",
             "is_thresholded",
             "perc_bad_voxels",
             "is_valid",
             "data_origin",
+            "tags"
         ]
         widgets = {
             "file": AdminResubmitFileWidget,
@@ -660,9 +702,8 @@ class StatisticMapForm(ImageForm):
             'description': forms.Textarea(attrs={'rows': 2, 'cols': 40}),  # Adjust the size here
         }
 
-    def __init__(self, *args, first=False, min_image=False, max_image=False, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        curr_image = self.instance.id
         # Adjust the layout for all the fields in Meta.fields
         # Crispify the form
         self.helper = FormHelper(self)
@@ -670,10 +711,9 @@ class StatisticMapForm(ImageForm):
         self.helper.form_class = "form-horizontal"
         self.helper.label_class = "col-lg-2"
         self.helper.field_class = "col-lg-10"
-        self.helper.form_action = reverse("statmaps:edit_image", args=[self.instance.id]) + f"?first={first}&min_image={min_image}&max_image={max_image}"
 
         alert_html = ""
-        if not self.instance.is_valid and not first:
+        if not self.instance.is_valid and not self.first:
             alert_html = HTML(
                 """
                 <div class="alert alert-warning" role="alert">
@@ -682,10 +722,6 @@ class StatisticMapForm(ImageForm):
                 """
             )
 
-        self.fields["file"].widget = forms.TextInput(
-            attrs={"readonly": True, "class": "form-control"}
-        )
-
         # If the model instance has a FileField, this will display the path/filename.
         # The user will not be able to upload a new file from this form.
         for field in ['gender', 'ethnicity', 'handedness']:
@@ -693,32 +729,43 @@ class StatisticMapForm(ImageForm):
 
         self.fields['analysis_level'].choices = self.fields['analysis_level'].choices[1:]
 
-        if first:
-            self.fields["name"].initial = ""
-            self.fields["name"].required = True
-            self.fields["name"].help_text = "Enter a name for this image"
-
-        # 1) Build the Layout referencing the same fields as in Meta (to stay DRY).
         self.helper.layout = Layout(
             alert_html,
             "collection",
-            "name",
-            "description",
-            Field(
-                "analysis_level",
-                template="statmaps/fields/toggle_radio_field.html",
+            Fieldset(
+                "Essentials",
+                "name",
+                "description",
+                "figure",
+                HTML("""<hr>"""),
+                Field(
+                    "analysis_level",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
+                "modality",
+                "map_type",
+                "target_template_image",
+                "number_of_subjects",
             ),
-            "map_type",
-            "target_template_image",
-            "modality",
-            "number_of_subjects",
-            "cognitive_paradigm_cogatlas",
-            "cognitive_contrast_cogatlas",
-            "contrast_definition",
-            "figure",
-            "statistic_parameters",
-            "smoothness_fwhm",
-            "tags",
+            Fieldset(
+                "Cognitive Paradigm",
+                Field(
+                    "cognitive_task_choice",
+                    template="statmaps/fields/toggle_radio_field.html",
+                    help_text="Was a cognitive task performed?",
+                ),
+                "cognitive_paradigm_cogatlas",
+                "cognitive_contrast_cogatlas",
+                "cognitive_paradigm_name",
+                "cognitive_paradigm_short_description",
+                "cognitive_paradigm_description_url",
+                "contrast_definition",
+            ),
+            Fieldset(
+                "Analysis Details",
+                "statistic_parameters",
+                "smoothness_fwhm"
+            ),
             Accordion(
                 AccordionGroup(
                     'Demographics',
@@ -741,7 +788,6 @@ class StatisticMapForm(ImageForm):
                 ),
                 AccordionGroup(
                     'Nutrition and Health Community',
-                    "fat_percentage",
                     "bis11_score",
                     "bis_bas_score",
                     "spsrq_score",
@@ -758,22 +804,11 @@ class StatisticMapForm(ImageForm):
             )
         )
 
-        # 2) Add the Submit button
-        # If the user is on the first image, they should not be able to go back
-        # If the user is on the last image, they should not be able to go forward
-        buttons = []
-        if min_image and curr_image != min_image:
-            buttons.append(Submit("submit_previous", "Previous Image", css_class="btn btn-primary"))
-        if max_image and curr_image != max_image:
-            buttons.append(Submit("submit_next", "Next Image", css_class="btn btn-primary"))
-
-        buttons.append(Submit("submit_save", "Save and Exit", css_class="btn btn-primary float-right"))
-        self.helper.layout.append(FormActions(*buttons))
+        self.add_buttons()
 
     def clean(self, **kwargs):
         cleaned_data = super().clean()
         django_file = cleaned_data.get("file")
-
         cleaned_data["is_valid"] = True
         cleaned_data["tags"] = clean_tags(cleaned_data)
 
@@ -898,13 +933,14 @@ class StatisticMapForm(ImageForm):
             return self.save_afni_slices(commit)
         else:
             return super().save(commit=commit)
-    
+
 
 class EditStatisticMapForm(StatisticMapForm):
     """ Pass through """
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user")
         super().__init__(*args, **kwargs)
+
 
 class AtlasForm(ImageForm):
     class Meta(ImageForm.Meta):
@@ -929,12 +965,9 @@ class AtlasForm(ImageForm):
             "file",
             "hdr_file",
             "label_description_file",
-            FormActions(
-                Submit("submit_save", "Save and Exit", css_class="btn btn-primary float-right"),
-                Submit("submit_previous", "Previous Image", css_class="btn btn-secondary"),
-                Submit("submit_next", "Next Image", css_class="btn btn-secondary"),
-            )
         )
+
+        self.add_buttons()
 
 
 class PolymorphicImageForm(ImageForm):
@@ -964,12 +997,9 @@ class PolymorphicImageForm(ImageForm):
         # Below is a simple approach that shows them in the order of self.fields.
         self.helper.layout = Layout(
             *list(self.fields.keys()),  # This enumerates whatever ended up in self.fields
-            FormActions(
-                Submit("submit_save", "Save and Exit", css_class="btn btn-primary float-right"),
-                Submit("submit_previous", "Previous Image", css_class="btn btn-secondary"),
-                Submit("submit_next", "Next Image", css_class="btn btn-secondary"),
-            )
         )
+
+        self.add_buttons()
 
     def clean(self, **kwargs):
         # Determine which underlying form we should delegate to
@@ -1017,13 +1047,10 @@ class EditAtlasForm(AtlasForm):
             "file",
             "hdr_file",
             "label_description_file",
-            "tags",
-            FormActions(
-                Submit("submit_save", "Save and Exit", css_class="btn btn-primary float-right"),
-                Submit("submit_previous", "Previous Image", css_class="btn btn-secondary"),
-                Submit("submit_next", "Next Image", css_class="btn btn-secondary"),
-            )
+            "tags"
         )
+
+        self.add_buttons()
 
 
 class SimplifiedStatisticMapForm(EditStatisticMapForm):

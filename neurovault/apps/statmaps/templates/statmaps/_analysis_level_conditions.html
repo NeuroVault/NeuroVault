@@ -22,12 +22,114 @@ $(document).ready(function() {
         }
     }
 
+    function toggle_cognitive_fields() {
+        var cognitive_task_choice = $("input[name='cognitive_task_choice']:checked").val(); 
+
+        if (cognitive_task_choice === "yes_other") {
+            $("#id_cognitive_paradigm_cogatlas").attr("required", "required");
+            $("#div_id_cognitive_paradigm_cogatlas").show();
+            $("#div_id_cognitive_contrast_cogatlas").show();
+            $("#div_id_contrast_definition").hide();
+            filter_contrasts();
+        } else {
+            $("#id_cognitive_paradigm_cogatlas").removeAttr("required");
+            $("#div_id_cognitive_paradigm_cogatlas").hide();
+            $("#div_id_cognitive_contrast_cogatlas").hide();
+        }
+ 
+        if (cognitive_task_choice === "rest_open") {
+            // # Select the value for the label "rest eyes open"
+            const matchingOption = $("#id_cognitive_paradigm_cogatlas option").filter(function() {
+                return $(this).text() === "rest eyes open";
+            });
+            $("#id_cognitive_paradigm_cogatlas").val(matchingOption.val());
+            filter_contrasts();
+            $("#div_id_cognitive_contrast_cogatlas").hide();
+            $("#div_id_contrast_definition").hide();
+        }
+        
+        if (cognitive_task_choice === "rest_closed") {
+            // # Select the value for the label "rest eyes open"
+            const matchingOption = $("#id_cognitive_paradigm_cogatlas option").filter(function() {
+                return $(this).text() === "rest eyes closed";
+            });
+            $("#id_cognitive_paradigm_cogatlas").val(matchingOption.val());
+            filter_contrasts();
+            $("#div_id_cognitive_contrast_cogatlas").hide();
+            $("#div_id_contrast_definition").hide();
+        }
+
+        if (cognitive_task_choice == 'none') {
+            const matchingOption = $("#id_cognitive_paradigm_cogatlas option").filter(function() {
+                return $(this).text() === "None / Other";
+            });
+            $("#id_cognitive_paradigm_cogatlas").val(matchingOption.val());
+            filter_contrasts();
+            $("#id_cognitive_paradigm_cogatlas").removeAttr("required");
+            $("#div_id_cognitive_contrast_cogatlas").hide();
+            $("#div_id_cognitive_paradigm_name").show();
+            $("#div_id_cognitive_paradigm_short_description").show();
+            $("#div_id_cognitive_paradigm_description_url").show();
+            $("#div_id_contrast_definition").show();
+            console.log("None selected")
+
+        } else {
+            $("#div_id_cognitive_paradigm_name").hide();
+            $("#div_id_cognitive_paradigm_short_description").hide();
+            $("#div_id_cognitive_paradigm_description_url").hide();
+        }
+
+    }
+
+    function setCognitiveTaskChoice(value) {
+        // 1) Uncheck all radios, remove active class
+        $("input[name='cognitive_task_choice']")
+            .prop("checked", false)
+            .closest("label.btn")
+            .removeClass("active");
+
+        // 2) Check the specified radio, add .active to its parent label
+        const $radio = $(`input[name='cognitive_task_choice'][value='${value}']`);
+        $radio.prop("checked", true);
+        $radio.closest("label.btn").addClass("active");
+        }
+
+
+    function set_cog_toggle_state() {
+        var selectedLabel = $("#id_cognitive_paradigm_cogatlas option:selected").text();  
+        if (selectedLabel === "rest eyes open") {
+            setCognitiveTaskChoice("rest_open");
+        } else if (selectedLabel === "rest eyes closed") {
+            setCognitiveTaskChoice("rest_closed");
+        } else if (selectedLabel === "None / Other") {
+            setCognitiveTaskChoice("none");
+        } else {
+            setCognitiveTaskChoice("yes_other");
+        }
+        }
+
+    // Initial call to set visibility of cognitive_paradigm_cogatlas
+    set_cog_toggle_state();
+
     // Initial call to set the correct visibility
     toggle_subject_fields();
+    toggle_cognitive_fields();
 
     // When analysis level changes, update the visibility of the fields
     $("input[name='analysis_level']").change(function(e) {
         toggle_subject_fields();
     });
+
+    // When cognitive_task_choice changes, update the visibility of the fields
+    $("input[name='cognitive_task_choice']").change(function(e) {
+        toggle_cognitive_fields();
+    });
+
+    // When cognitive_paradigm_cogatlas changes, update the cognitive_task_choice
+    $("#id_cognitive_paradigm_cogatlas").change(function(e) {
+        set_cog_toggle_state();
+        toggle_cognitive_fields();
+    });
 });
 </script>
+
