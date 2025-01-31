@@ -305,7 +305,7 @@ def edit_collection(request, cid=None):
         else:
             form = CollectionForm(instance=collection)
 
-    context = {"form": form, "page_header": page_header, "is_owner": is_owner}
+    context = {"form": form, "page_header": page_header, "is_owner": is_owner, "preamble": "Please fill in the fields below to create a new collection."}
     return render(request, "statmaps/edit_collection.html", context)
 
 
