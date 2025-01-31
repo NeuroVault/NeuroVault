@@ -43,7 +43,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootswatch/4.3.1/cyborg/bootstrap.min.css" crossorigin="anonymous" media="(prefers-color-scheme: dark)">
     <style type="text/css">
     @media (prefers-color-scheme: dark) {
-        body { background: #1f1f1f !important; } 
+        body {
+            background: #1f1f1f !important;
+        }
+
+        /* Lighten help-block text color in dark mode */
+        .text-muted {
+            color: #bbb3b3 !important; /* or any lighter color of your choice */
+        }
     }
     </style>
     <script src="https://code.jquery.com/jquery-3.4.1.min.js" crossorigin="anonymous"></script>
