@@ -13,7 +13,6 @@ from django.forms.models import ModelMultipleChoiceField
 from django.forms.widgets import RadioSelect
 from django.urls import reverse
 
-
 # from form_utils.forms import BetterModelForm
 
 from crispy_forms.helper import FormHelper
