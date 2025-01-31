@@ -106,8 +106,7 @@
 
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
             <a class="navbar-brand" href="{% url 'main:index' %}">NeuroVault</a>
-            <a class="navbar-brand" style="margin-left: -12px" href="{{ name_subscript_url }}"><sub>{{ name_subscript
-                    }}</sub></a>
+            <a class="navbar-brand" style="margin-left: -12px" href="{{ name_subscript_url }}"><sub>{{ name_subscript}}</sub></a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
                 aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -188,10 +187,8 @@
                     </form>
 
                     <li class="nav-item">
-                        <!-- <a class="btn btn-primary my-2 my-sm-0" href="#" id="theme-toggle-btn">
-                            <i class="fas fa-moon"></i> -->
-                            <button class="btn btn-primary my-2 my-sm-0" id="theme-toggle-btn">
-                                <i class="fas fa-moon"></i> Toggle Theme
+                        <a class="btn btn-primary my-2 my-sm-0" href="#" id="theme-toggle-btn">
+                            <i class="fas fa-moon"></i>
                         </a>
                     </li>
 
@@ -244,8 +241,6 @@
         // Handle button click: cycle among "system" -> "light" -> "dark"
         btn.addEventListener('click', () => {
             const currentTheme = localStorage.getItem('theme');
-            console.log("Clicked")
-            console.log(currentTheme)
             if (currentTheme === "light") {
                 applyTheme("dark");
             } else {
@@ -257,11 +252,11 @@
         // If not then check for browser preference and set that to local memory
         document.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('theme');
+            const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
             if (savedTheme === "dark" || savedTheme === "light") {
-                applyTheme(savedTheme);
-            } else {
-                const prefersDarkScheme = window.matchMedia("(prefers-color-scheme: dark)").matches;
-                saveTheme(prefersDarkScheme ? "dark" : "light");
+                if (savedTheme !== systemTheme) {
+                    applyTheme(savedTheme);
+                }
             }
         });
 
@@ -269,7 +264,6 @@
         // Save the current theme to local storage
         function saveTheme(theme) {
             localStorage.setItem('theme', theme);
-            console.log(theme)
         }
 
 
