@@ -16,6 +16,14 @@ jobs:
   build_neurovault:
     runs-on: ubuntu-latest
     steps:
+      - run: df -h
+      - name: "node-cleanup"
+        # this should increase free space from ~21gb to ~38gb
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+          sudo docker builder prune -a
+      - run: df -h
       - name: Checkout
         uses: actions/checkout@v3
       - name: Configuration
