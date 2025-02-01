@@ -727,7 +727,6 @@ def edit_image(request, pk):
         return HttpResponseForbidden()
 
     form_class = _get_form_for_image(image)
-    
 
     if request.method == "POST":
         form = form_class(

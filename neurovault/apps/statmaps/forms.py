@@ -596,7 +596,7 @@ class ImageForm(ModelForm, ImageValidationMixin):
         self.fields['name'] = forms.CharField(
             widget=forms.TextInput(attrs={'placeholder': 'Name', 'class': 'form-control-lg'})
         )
-        
+
         passalong = {
             "min_image": self.min_image,
             "max_image": self.max_image,
@@ -616,7 +616,7 @@ class ImageForm(ModelForm, ImageValidationMixin):
         cleaned_data = super().clean()
         cleaned_data["tags"] = clean_tags(cleaned_data)
         return self.clean_and_validate(cleaned_data)
-    
+
     def add_buttons(self):
         buttons = []
         if self.min_image and self.instance.id != self.min_image:

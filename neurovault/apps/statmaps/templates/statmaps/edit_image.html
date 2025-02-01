@@ -196,10 +196,11 @@
                     </button>
                 </div>
             </div>
+            {% if progress is not none %}
             <div class="card-body d-flex">
                 <!-- Left Section: Editing Image Information -->
                 <div class="flex-grow-1">
-                {% if progress is not none %}
+                
                 <div class="progress" style="height: 25px;">
                     <div class="progress-bar" 
                         role="progressbar" 
@@ -210,9 +211,11 @@
                     {{ progress_label }} images completed
                     </div>
                 </div>
-                {% endif %}
+                
                 </div>
-            </div>  
+
+            </div> 
+            {% endif %} 
             </div>
         </div>
         <!-- <form class="form-horizontal" method="post" enctype="multipart/form-data"> -->
