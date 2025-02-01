@@ -117,6 +117,14 @@ class Collection(models.Model):
         verbose_name="DOI of the corresponding paper",
         help_text="Required if you want your maps to be archived in Stanford Digital Repository",
     )
+    preprint_DOI = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        default=None,
+        verbose_name="Preprint DOI",
+        help_text="DOI of the corresponding preprint, if publication DOI is not yet available"
+    )
     authors = models.CharField(max_length=5000, blank=True, null=True)
     paper_url = models.CharField(max_length=200, blank=True, null=True)
     journal_name = models.CharField(max_length=200, blank=True, null=True, default=None)

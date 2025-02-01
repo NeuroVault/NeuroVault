@@ -174,6 +174,7 @@
             </div>
         {% endif %}
         <div class="card shadow-sm border-info mb-4">
+            <div class="row no-gutters">
             <div class="card-body d-flex">
                 <!-- Left Section: Editing Image Information -->
                 <div class="flex-grow-1">
@@ -194,6 +195,27 @@
                         <i class="fas fa-copy"></i> Copy image meta-data
                     </button>
                 </div>
+            </div>
+            {% if progress is not none %}
+            <div class="card-body d-flex">
+                <!-- Left Section: Editing Image Information -->
+                <div class="flex-grow-1">
+                
+                <div class="progress" style="height: 25px;">
+                    <div class="progress-bar" 
+                        role="progressbar" 
+                        style="width: {{ progress }}%;" 
+                        aria-valuenow="{{ progress }}" 
+                        aria-valuemin="0" 
+                        aria-valuemax="100">
+                    {{ progress_label }} images completed
+                    </div>
+                </div>
+                
+                </div>
+
+            </div> 
+            {% endif %} 
             </div>
         </div>
         <!-- <form class="form-horizontal" method="post" enctype="multipart/form-data"> -->

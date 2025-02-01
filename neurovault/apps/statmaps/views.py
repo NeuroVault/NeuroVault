@@ -305,7 +305,7 @@ def edit_collection(request, cid=None):
         else:
             form = CollectionForm(instance=collection)
 
-    context = {"form": form, "page_header": page_header, "is_owner": is_owner}
+    context = {"form": form, "page_header": page_header, "is_owner": is_owner, "preamble": "Please fill in the fields below to create a new collection."}
     return render(request, "statmaps/edit_collection.html", context)
 
 
@@ -690,6 +690,17 @@ def _parse_int_param(value, default=""):
         return default
 
 
+def _compute_progress(min_image, max_image):
+    """
+    Compute the progress of images being processed based on is_valid attribute
+    """
+    images = Image.objects.filter(pk__gte=min_image, pk__lte=max_image)
+    total_images = images.count()
+    valid_images = images.filter(is_valid=True).count()
+    progress = int((valid_images / total_images) * 100) if total_images > 0 else 0
+    label = f"{valid_images}/{total_images}"
+    return progress, label
+
 @login_required
 def edit_image(request, pk):
     image = get_object_or_404(Image, pk=pk)
@@ -700,6 +711,11 @@ def edit_image(request, pk):
         "max_image": _parse_int_param(request.GET.get("max_image")),
     }
     passalong_query = f"?{urlencode(kw_params)}"
+
+    if kw_params["first"] and kw_params["min_image"] != "":
+        progress, label = _compute_progress(kw_params["min_image"], kw_params["max_image"])
+    else:
+        progress, label = None, None
 
     collection_images_qs = (
         image.collection.basecollectionitem_set
@@ -712,7 +728,6 @@ def edit_image(request, pk):
 
     form_class = _get_form_for_image(image)
 
-    print("Going for it")
     if request.method == "POST":
         form = form_class(
             data=request.POST,
@@ -749,6 +764,8 @@ def edit_image(request, pk):
         "form": form,
         "contrasts": json.dumps(get_contrast_lookup()),
         "collection_images": _serialize_collection(collection_images_qs),
+        "progress": progress,
+        "progress_label": label,
     }
     return render(request, "statmaps/edit_image.html", context)
 
