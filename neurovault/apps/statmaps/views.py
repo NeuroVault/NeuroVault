@@ -571,6 +571,14 @@ def view_collection(request, cid):
             .count()
             > 0
         ):
+            if (
+                StatisticMap.objects.filter(collection=collection)
+                .filter(~Q(analysis_level__in=["G", "S"]))
+                .filter(is_valid=False)
+                .count()
+            ):
+                context["oimages_title"] = "Needs Metadata"
+
             context["oimages_visible"] = True
             if not (context["gimages_visible"] or context["simages_visible"]):
                 context["oimages_active"] = True
