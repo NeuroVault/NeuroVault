@@ -693,29 +693,33 @@ def _parse_int_param(value, default=""):
 def _compute_progress(min_image, max_image):
     """
     Compute the progress of images being processed based on is_valid attribute
+    Potential progress is computed by assuming the next image is valid.
     """
     images = Image.objects.filter(pk__gte=min_image, pk__lte=max_image)
     total_images = images.count()
     valid_images = images.filter(is_valid=True).count()
     progress = int((valid_images / total_images) * 100) if total_images > 0 else 0
+    potential_progress = int((valid_images + 1 / total_images) * 100) if total_images > 0 else 0
     label = f"{valid_images}/{total_images}"
-    return progress, label
+    return progress, label, potential_progress
 
 @login_required
 def edit_image(request, pk):
     image = get_object_or_404(Image, pk=pk)
 
+    show_instructions = request.GET.get("show_instructions") == "True"
+
     kw_params = {
-        "first": True if request.GET.get("first") == "True" else False,
+        "bulk": request.GET.get("bulk") == "True",
         "min_image": _parse_int_param(request.GET.get("min_image")),
         "max_image": _parse_int_param(request.GET.get("max_image")),
     }
     passalong_query = f"?{urlencode(kw_params)}"
 
-    if kw_params["first"] and kw_params["min_image"] != "":
-        progress, label = _compute_progress(kw_params["min_image"], kw_params["max_image"])
+    if kw_params["bulk"] and kw_params["min_image"] != "":
+        progress, label, potential_progress = _compute_progress(kw_params["min_image"], kw_params["max_image"])
     else:
-        progress, label = None, None
+        progress, label, potential_progress = None, None, None
 
     collection_images_qs = (
         image.collection.basecollectionitem_set
@@ -750,11 +754,14 @@ def edit_image(request, pk):
                         target_img.get_absolute_url(edit=True) + passalong_query
                         )
             elif "submit_save" in request.POST:
-                return HttpResponseRedirect(image.get_absolute_url())
+                if kw_params["bulk"]:
+                    return HttpResponseRedirect(image.collection.get_absolute_url())
+                else:
+                    return HttpResponseRedirect(image.get_absolute_url())
         else:
             print(form.errors)
     else:
-        if isinstance(image, StatisticMap) and kw_params["first"] and not image.is_valid:
+        if isinstance(image, StatisticMap) and kw_params["bulk"] and not image.is_valid:
             image.name = ""
             image.map_type = None
 
@@ -766,6 +773,8 @@ def edit_image(request, pk):
         "collection_images": _serialize_collection(collection_images_qs),
         "progress": progress,
         "progress_label": label,
+        "potential_progress": potential_progress,
+        "show_instructions": show_instructions,
     }
     return render(request, "statmaps/edit_image.html", context)
 
@@ -980,10 +989,11 @@ def upload_folder(request, collection_cid):
                     messages.warning(request, f"An error occurred with this upload: {error}")
                     return HttpResponseRedirect(collection.get_absolute_url())
 
-            # If we added images, redirect to the edit page for the first one
+            # If we added images, redirect to the edit page for bulk edit
             if images_added:
                 params = {
-                    "first": True,
+                    "bulk": True,
+                    "show_instructions": True,
                     "min_image": images_added[0].id,
                     "max_image": images_added[-1].id,
                 }

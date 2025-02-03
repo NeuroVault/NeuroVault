@@ -161,6 +161,7 @@
 </div>
 
 
+
 <div class="row">
     <div class="col">
         <h2>{{page_header}}</h2>
@@ -173,9 +174,10 @@
                 This statistic map is embedded in <strong><a href="{{form.instance.nidm_results.get_absolute_url}}">{{form.instance.nidm_results.name}}.zip</a></strong>.  Edit the NIDM zip file to modify this image's properties.
             </div>
         {% endif %}
-        <div class="card shadow-sm border-info mb-4">
+        <div class="card shadow-sm border-info mb-3">
             <div class="row no-gutters">
-            <div class="card-body d-flex">
+            {% if progress is not none %}<div class="card-body d-flex pt-3 pb-1">{% else %}<div class="card-body d-flex pt-3 pb-3">{% endif %}
+                
                 <!-- Left Section: Editing Image Information -->
                 <div class="flex-grow-1">
                     <h5 class="card-title text-info">Editing Image</h5>
@@ -197,7 +199,7 @@
                 </div>
             </div>
             {% if progress is not none %}
-            <div class="card-body d-flex">
+            <div class="card-body d-flex pt-1 pb-3">
                 <!-- Left Section: Editing Image Information -->
                 <div class="flex-grow-1">
                 
@@ -223,6 +225,75 @@
             <!-- Copy Metadata Modal -->
     </div>
 </div>
+
+
+<script>
+    $(document).ready(function() {
+        console.log("Document ready");
+        let potential_progress = {{ potential_progress }};
+
+        $("#submit-id-submit_save").on("click", function(e) {
+            if (potential_progress <= 100) {
+                let confirmed = confirm(
+                    "There are images in upload that are not yet processed. You can always edit incomplete images later. Are you sure you want to exit? ");
+                if (!confirmed) {
+                e.preventDefault();
+            }
+        }
+        });
+    });
+</script>
+
+{% if show_instructions %}
+<!-- Bootstrap Modal -->
+<div class="modal fade" id="instructionsModal" tabindex="-1" role="dialog" aria-labelledby="instructionsModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h5 class="modal-title" id="instructionsModalLabel">Upload successful</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body">
+        <!-- You can fill in whatever instructions you need here -->
+        <p>
+            For each image, please fill in the required metadata. <br><br>
+            
+            To faciliate this, you may copy metadata from other images by clicking the <strong>"Copy image meta-data"</strong> button.
+
+            <br><br>
+            Be sure to review and update the copied metadata as needed.
+            For instance, you may need to update the cognitive paradigm, contrast, or number of subjects, but the rest of the metadata may be the same.
+
+            <br><br>
+            Once all images have been annotated, click the <strong>"Save and Exit" button</strong> to return to the collection page.
+            You can also come back and edit the images individually later.
+        </p>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- jQuery to automatically show the modal -->
+<script>
+  $(document).ready(function() {
+    // Show the modal on page load
+    $('#instructionsModal').modal('show');
+  });
+</script>
+{% endif %}
+
 
 {% include "statmaps/_contrast_lookup.html" %}
 {% include "statmaps/_analysis_level_conditions.html" %}
