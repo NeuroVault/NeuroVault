@@ -1,0 +1,22 @@
+FROM python:3.10-slim AS neurovault-dev
+
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE 1
+
+RUN apt-get update && apt-get install --no-install-recommends -y \
+  # dependencies for building Python packages
+  build-essential \
+  # psycopg2 dependencies
+  libpq-dev \
+  git
+
+RUN apt-get update && apt-get -y install wget subversion
+
+COPY ./compose/django/requirements.txt requirements.txt
+RUN pip install -r requirements.txt
+
+RUN pip cache purge
+
+WORKDIR /code
+
+EXPOSE 8000
