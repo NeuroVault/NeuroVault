@@ -670,7 +670,8 @@ class StatisticMapForm(ImageForm):
         self.helper.form_class = "form-horizontal"
         self.helper.label_class = "col-lg-2"
         self.helper.field_class = "col-lg-10"
-        self.helper.form_action = reverse("statmaps:edit_image", args=[self.instance.id]) + f"?first={first}&min_image={min_image}&max_image={max_image}"
+        if curr_image:
+            self.helper.form_action = reverse("statmaps:edit_image", args=[self.instance.id]) + f"?first={first}&min_image={min_image}&max_image={max_image}"
 
         alert_html = ""
         if not self.instance.is_valid and not first:
