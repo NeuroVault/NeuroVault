@@ -708,13 +708,13 @@ def edit_image(request, pk):
     image = get_object_or_404(Image, pk=pk)
 
     kw_params = {
-        "first": True if request.GET.get("first") == "True" else False,
+        "bulk": True if request.GET.get("bulk") == "True" else False,
         "min_image": _parse_int_param(request.GET.get("min_image")),
         "max_image": _parse_int_param(request.GET.get("max_image")),
     }
     passalong_query = f"?{urlencode(kw_params)}"
 
-    if kw_params["first"] and kw_params["min_image"] != "":
+    if kw_params["bulk"] and kw_params["min_image"] != "":
         progress, label, potential_progress = _compute_progress(kw_params["min_image"], kw_params["max_image"])
     else:
         progress, label, potential_progress = None, None, None
@@ -752,14 +752,14 @@ def edit_image(request, pk):
                         target_img.get_absolute_url(edit=True) + passalong_query
                         )
             elif "submit_save" in request.POST:
-                if kw_params["first"]:
+                if kw_params["bulk"]:
                     return HttpResponseRedirect(image.collection.get_absolute_url())
                 else:
                     return HttpResponseRedirect(image.get_absolute_url())
         else:
             print(form.errors)
     else:
-        if isinstance(image, StatisticMap) and kw_params["first"] and not image.is_valid:
+        if isinstance(image, StatisticMap) and kw_params["bulk"] and not image.is_valid:
             image.name = ""
             image.map_type = None
 
@@ -986,10 +986,11 @@ def upload_folder(request, collection_cid):
                     messages.warning(request, f"An error occurred with this upload: {error}")
                     return HttpResponseRedirect(collection.get_absolute_url())
 
-            # If we added images, redirect to the edit page for the first one
+            # If we added images, redirect to the edit page for bulk edit
             if images_added:
                 params = {
-                    "first": True,
+                    "bulk": True,
+                    "show_instructions": True,
                     "min_image": images_added[0].id,
                     "max_image": images_added[-1].id,
                 }

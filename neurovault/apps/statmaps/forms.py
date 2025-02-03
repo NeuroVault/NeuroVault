@@ -577,7 +577,7 @@ class ImageForm(ModelForm, ImageValidationMixin):
         }
 
     def __init__(self, *args, **kwargs):
-        self.first = kwargs.pop("first", False)
+        self.bulk = kwargs.pop("bulk", False)
         self.min_image = kwargs.pop("min_image", None)
         self.max_image = kwargs.pop("max_image", None)
         self.curr_image = kwargs.pop("curr_image", None)
@@ -708,7 +708,7 @@ class StatisticMapForm(ImageForm):
         self.helper.field_class = "col-lg-10"
 
         alert_html = ""
-        if not self.instance.is_valid and not self.first:
+        if not self.instance.is_valid and not self.bulk:
             alert_html = HTML(
                 """
                 <div class="alert alert-warning" role="alert">
