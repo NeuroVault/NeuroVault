@@ -37,6 +37,7 @@ def save_statmap_form(
         "name": image_name,
         "map_type": "T",
         "collection": collection.pk,
+        "cognitive_task_choice": "yes_other",
         "ignore_file_warning": ignore_file_warning,
         "file": SimpleUploadedFile(image_path, open(image_path, "rb").read()),
         "modality": "fMRI-BOLD",

@@ -29,6 +29,7 @@ class AddStatmapsTests(TestCase):
     def testaddNiiGz(self):
         post_dict = {
             "name": "test map",
+            "cognitive_task_choice": "yes_other",
             "cognitive_paradigm_cogatlas": "trm_4f24126c22011",
             "modality": "fMRI-BOLD",
             "map_type": "T",
@@ -42,7 +43,7 @@ class AddStatmapsTests(TestCase):
         file_dict = {"file": SimpleUploadedFile(fname, open(fname, "rb").read())}
         post_dict.update(file_dict)
         form = StatisticMapForm(post_dict, file_dict)
-        #breakpoint()
+        breakpoint()
         self.assertTrue(form.is_valid())
 
         form.save()
