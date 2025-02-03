@@ -226,6 +226,7 @@
     </div>
 </div>
 
+
 <script>
     $(document).ready(function() {
         console.log("Document ready");
@@ -242,6 +243,56 @@
         });
     });
 </script>
+
+{% if show_instructions %}
+<!-- Bootstrap Modal -->
+<div class="modal fade" id="instructionsModal" tabindex="-1" role="dialog" aria-labelledby="instructionsModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h5 class="modal-title" id="instructionsModalLabel">Upload successful</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body">
+        <!-- You can fill in whatever instructions you need here -->
+        <p>
+            For each image, please fill in the required metadata. <br><br>
+            
+            To faciliate this, you may copy metadata from other images by clicking the <strong>"Copy image meta-data"</strong> button.
+
+            <br><br>
+            Be sure to review and update the copied metadata as needed.
+            For instance, you may need to update the cognitive paradigm, contrast, or number of subjects, but the rest of the metadata may be the same.
+
+            <br><br>
+            Once all images have been annotated, click the <strong>"Save and Exit" button</strong> to return to the collection page.
+            You can also come back and edit the images individually later.
+        </p>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- jQuery to automatically show the modal -->
+<script>
+  $(document).ready(function() {
+    // Show the modal on page load
+    $('#instructionsModal').modal('show');
+  });
+</script>
+{% endif %}
 
 
 {% include "statmaps/_contrast_lookup.html" %}

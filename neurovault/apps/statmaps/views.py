@@ -707,8 +707,10 @@ def _compute_progress(min_image, max_image):
 def edit_image(request, pk):
     image = get_object_or_404(Image, pk=pk)
 
+    show_instructions = request.GET.get("show_instructions") == "True"
+
     kw_params = {
-        "bulk": True if request.GET.get("bulk") == "True" else False,
+        "bulk": request.GET.get("bulk") == "True",
         "min_image": _parse_int_param(request.GET.get("min_image")),
         "max_image": _parse_int_param(request.GET.get("max_image")),
     }
@@ -772,6 +774,7 @@ def edit_image(request, pk):
         "progress": progress,
         "progress_label": label,
         "potential_progress": potential_progress,
+        "show_instructions": show_instructions,
     }
     return render(request, "statmaps/edit_image.html", context)
 

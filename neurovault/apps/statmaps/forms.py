@@ -591,14 +591,6 @@ class ImageForm(ModelForm, ImageValidationMixin):
         self.helper.field_class = "col-lg-10"
         self.helper.form_tag = False
         self.helper.form_method = "post"
-
-        passalong = {
-            "min_image": self.min_image,
-            "max_image": self.max_image,
-            "curr_image": self.instance.id,
-        }
-
-        self.helper.form_action = reverse("statmaps:edit_image", args=[self.instance.id]) + f"?{urlencode(passalong)}"
         # Define the layout explicitly to show the desired fields
         self.helper.layout = Layout(
             "file",
