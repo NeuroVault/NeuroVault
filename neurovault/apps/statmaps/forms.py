@@ -634,7 +634,7 @@ class StatisticMapForm(ImageForm):
         choices=COGNITIVE_TASK_CHOICES,
         widget=forms.RadioSelect,
         required=True,
-        help_text="Was a task performed? If so, look for a matching Cognitive Atlas Paradigm. If there's no match, select 'None / Other'.",
+        help_text="Was a task performed?",
         label="Cognitive Task"
     )
     class Meta(ImageForm.Meta):
@@ -732,7 +732,6 @@ class StatisticMapForm(ImageForm):
                 "name",
                 "description",
                 "figure",
-                HTML("""<hr>"""),
                 Field(
                     "analysis_level",
                     template="statmaps/fields/toggle_radio_field.html",
@@ -756,12 +755,14 @@ class StatisticMapForm(ImageForm):
                 "cognitive_paradigm_description_url",
                 "contrast_definition",
             ),
-            Fieldset(
-                "Analysis Details",
-                "statistic_parameters",
-                "smoothness_fwhm"
-            ),
             Accordion(
+                AccordionGroup(
+                    "Analysis Details",
+                    "statistic_parameters",
+                    "smoothness_fwhm",
+                    css_id="analysis-accordion",
+                    css_class="show"  # Ensure the accordion is open by default
+                ),
                 AccordionGroup(
                     'Demographics',
                     'age',
@@ -779,7 +780,7 @@ class StatisticMapForm(ImageForm):
                         template="statmaps/fields/toggle_radio_field.html",
                     ),
                     css_id="demographics-accordion",
-                    css_class="show"  # Ensure the accordion is open by default
+                    css_class="hide"  # Ensure the accordion is open by default
                 ),
                 AccordionGroup(
                     'Nutrition and Health Community',
