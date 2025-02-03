@@ -752,7 +752,10 @@ def edit_image(request, pk):
                         target_img.get_absolute_url(edit=True) + passalong_query
                         )
             elif "submit_save" in request.POST:
-                return HttpResponseRedirect(image.get_absolute_url())
+                if kw_params["first"]:
+                    return HttpResponseRedirect(image.collection.get_absolute_url())
+                else:
+                    return HttpResponseRedirect(image.get_absolute_url())
         else:
             print(form.errors)
     else:
