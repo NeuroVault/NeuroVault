@@ -80,11 +80,15 @@ collection_fieldsets = [
             "fields": [
                 "name",
                 "DOI",
+                "preprint_DOI",
                 "communities",
                 "description",
                 "full_dataset_url",
                 "contributors",
-                "private",
+                Field(
+                    "private",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
             ],
             "legend": "Essentials",
         },

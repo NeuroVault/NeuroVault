@@ -149,14 +149,15 @@ class Collection(models.Model):
         choices=(
             (
                 False,
-                "Public (The collection will be accessible by anyone and all the data in it will be distributed under CC0 license)",
+                "Public",
             ),
             (
                 True,
-                "Private (The collection will be not listed in the NeuroVault index. It will be possible to shared it with others at a private URL.)",
+                "Private",
             ),
         ),
         default=False,
+        help_text="Public collections distributed under CC0 license. Private collections are not publicly indexed, but can be shared using a private URL.",
         verbose_name="Accessibility",
     )
     private_token = models.CharField(
