@@ -592,11 +592,6 @@ class ImageForm(ModelForm, ImageValidationMixin):
         self.helper.form_tag = False
         self.helper.form_method = "post"
 
-        # Add placeholder=".form-control-lg"
-        self.fields['name'] = forms.CharField(
-            widget=forms.TextInput(attrs={'placeholder': 'Name', 'class': 'form-control-lg'})
-        )
-
         passalong = {
             "min_image": self.min_image,
             "max_image": self.max_image,
@@ -620,9 +615,9 @@ class ImageForm(ModelForm, ImageValidationMixin):
     def add_buttons(self):
         buttons = []
         if self.min_image and self.instance.id != self.min_image:
-            buttons.append(Submit("submit_previous", "Previous", css_class="btn btn-primary"))
+            buttons.append(Submit("submit_previous", "Previous Image", css_class="btn btn-primary"))
         if self.max_image and self.instance.id != self.max_image:
-            buttons.append(Submit("submit_next", "Next", css_class="btn btn-primary"))
+            buttons.append(Submit("submit_next", "Next Image", css_class="btn btn-primary"))
 
         buttons.append(Submit("submit_save", "Save and Exit", css_class="btn btn-primary float-right"))
         self.helper.layout.append(FormActions(*buttons))
