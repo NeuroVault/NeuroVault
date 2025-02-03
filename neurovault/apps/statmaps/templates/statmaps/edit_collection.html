@@ -187,6 +187,16 @@
       }
     }
 
+    function toggleDesignTypeFields() {
+      var designType = $("input[name='type_of_design']:checked").val();
+      console.log(designType);
+      if (designType === "blocked" || designType === "hybridblockevent") {
+        $("#div_id_length_of_blocks").show();
+      } else {
+        $("#div_id_length_of_blocks").hide();
+      }
+    }
+
     
     /*******************************************
      * 3. HIDE ALL DEPENDENT FIELDS INITIALLY  *
@@ -259,6 +269,7 @@
     toggleHighPassFilterFields();
     toggleGroupComparisonFields();
     toggleGroupRepeatedMeasuresFields();
+    toggleDesignTypeFields();
 
     /*******************************************
      * 4. EVENT HANDLERS (on change)           *
@@ -322,6 +333,11 @@
     // Group repeated measures
     $("input[name='group_repeated_measures']").change(function () {
       toggleGroupRepeatedMeasuresFields();
+    });
+
+    // Design type
+    $("input[name='type_of_design']").change(function () {
+      toggleDesignTypeFields();
     });
 
   });
