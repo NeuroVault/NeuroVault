@@ -106,7 +106,10 @@ collection_fieldsets = [
                 "subject_age_mean",
                 "subject_age_min",
                 "subject_age_max",
-                "handedness",
+                Field(
+                    "handedness",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),           
                 "proportion_male_subjects",
                 "inclusion_exclusion_criteria",
                 "number_of_rejected_subjects",
