@@ -28,7 +28,6 @@ def clearDB():
 def save_statmap_form(
     image_path, collection, ignore_file_warning=False, image_name=None
 ):  
-    # breakpoint()
     collection.save()
     if image_name is None:
         image_name = image_path

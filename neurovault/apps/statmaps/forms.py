@@ -381,8 +381,6 @@ class ImageValidationMixin(object):
         self.afni_tmp = None
 
     def clean_and_validate(self, cleaned_data):
-        # breakpoint()
-        # file = cleaned_data.get("file")
         surface_left_file = cleaned_data.get("surface_left_file")
         surface_right_file = cleaned_data.get("surface_right_file")
 
@@ -599,7 +597,6 @@ class ImageForm(ModelForm, ImageValidationMixin):
         )
 
     def clean(self, **kwargs):
-        # breakpoint()
         cleaned_data = super().clean()
         cleaned_data["tags"] = clean_tags(cleaned_data)
         return self.clean_and_validate(cleaned_data)

@@ -43,7 +43,6 @@ class AddStatmapsTests(TestCase):
         file_dict = {"file": SimpleUploadedFile(fname, open(fname, "rb").read())}
         post_dict.update(file_dict)
         form = StatisticMapForm(post_dict, file_dict)
-        breakpoint()
         self.assertTrue(form.is_valid())
 
         form.save()
