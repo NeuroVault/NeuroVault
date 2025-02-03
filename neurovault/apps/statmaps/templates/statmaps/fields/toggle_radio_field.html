@@ -11,8 +11,7 @@
     {% if field.label %}
       {{ field.label|capfirst }}
     {% endif %}
-    {% if field.field.required %}
-      <span class="text-danger">*</span>
+    {% if field.field.required %}*
     {% endif %}
   </label>
 

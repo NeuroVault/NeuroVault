@@ -1473,7 +1473,7 @@ class StatisticMap(BaseStatisticMap):
     )
     cognitive_paradigm_cogatlas = models.ForeignKey(
         CognitiveAtlasTask,
-        help_text="Task performed by the subjects in the scanner described using <a href='http://www.cognitiveatlas.org/' target='_blank'>Cognitive Atlas</a>.",
+        help_text="Task performed by the subjects in the scanner described using <a href='http://www.cognitiveatlas.org/' target='_blank'>Cognitive Atlas</a>. If there's no match, select 'None / Other'. ",
         verbose_name="Cognitive Atlas Paradigm",
         null=True,
         blank=False,

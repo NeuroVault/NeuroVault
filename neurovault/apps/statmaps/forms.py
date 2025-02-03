@@ -581,7 +581,7 @@ class ImageForm(ModelForm, ImageValidationMixin):
         }
 
     def __init__(self, *args, **kwargs):
-        self.first = kwargs.pop("first", False)
+        self.bulk = kwargs.pop("bulk", False)
         self.min_image = kwargs.pop("min_image", None)
         self.max_image = kwargs.pop("max_image", None)
         self.curr_image = kwargs.pop("curr_image", None)
@@ -595,19 +595,6 @@ class ImageForm(ModelForm, ImageValidationMixin):
         self.helper.field_class = "col-lg-10"
         self.helper.form_tag = False
         self.helper.form_method = "post"
-
-        # Add placeholder=".form-control-lg"
-        self.fields['name'] = forms.CharField(
-            widget=forms.TextInput(attrs={'placeholder': 'Name', 'class': 'form-control-lg'})
-        )
-
-        passalong = {
-            "min_image": self.min_image,
-            "max_image": self.max_image,
-            "curr_image": self.instance.id,
-        }
-
-        self.helper.form_action = reverse("statmaps:edit_image", args=[self.instance.id]) + f"?{urlencode(passalong)}"
         # Define the layout explicitly to show the desired fields
         self.helper.layout = Layout(
             "file",
@@ -624,9 +611,9 @@ class ImageForm(ModelForm, ImageValidationMixin):
     def add_buttons(self):
         buttons = []
         if self.min_image and self.instance.id != self.min_image:
-            buttons.append(Submit("submit_previous", "Previous", css_class="btn btn-primary"))
+            buttons.append(Submit("submit_previous", "Previous Image", css_class="btn btn-primary"))
         if self.max_image and self.instance.id != self.max_image:
-            buttons.append(Submit("submit_next", "Next", css_class="btn btn-primary"))
+            buttons.append(Submit("submit_next", "Next Image", css_class="btn btn-primary"))
 
         buttons.append(Submit("submit_save", "Save and Exit", css_class="btn btn-primary float-right"))
         self.helper.layout.append(FormActions(*buttons))
@@ -643,7 +630,7 @@ class StatisticMapForm(ImageForm):
         choices=COGNITIVE_TASK_CHOICES,
         widget=forms.RadioSelect,
         required=True,
-        help_text="Was a task performed? If so, look for a matching Cognitive Atlas Paradigm. If there's no match, select 'None / Other'.",
+        help_text="Was a task performed?",
         label="Cognitive Task"
     )
     class Meta(ImageForm.Meta):
@@ -717,7 +704,7 @@ class StatisticMapForm(ImageForm):
         self.helper.field_class = "col-lg-10"
 
         alert_html = ""
-        if not self.instance.is_valid and not self.first:
+        if not self.instance.is_valid and not self.bulk:
             alert_html = HTML(
                 """
                 <div class="alert alert-warning" role="alert">
@@ -741,7 +728,6 @@ class StatisticMapForm(ImageForm):
                 "name",
                 "description",
                 "figure",
-                HTML("""<hr>"""),
                 Field(
                     "analysis_level",
                     template="statmaps/fields/toggle_radio_field.html",
@@ -765,12 +751,14 @@ class StatisticMapForm(ImageForm):
                 "cognitive_paradigm_description_url",
                 "contrast_definition",
             ),
-            Fieldset(
-                "Analysis Details",
-                "statistic_parameters",
-                "smoothness_fwhm"
-            ),
             Accordion(
+                AccordionGroup(
+                    "Analysis Details",
+                    "statistic_parameters",
+                    "smoothness_fwhm",
+                    css_id="analysis-accordion",
+                    css_class="show"  # Ensure the accordion is open by default
+                ),
                 AccordionGroup(
                     'Demographics',
                     'age',
@@ -788,7 +776,7 @@ class StatisticMapForm(ImageForm):
                         template="statmaps/fields/toggle_radio_field.html",
                     ),
                     css_id="demographics-accordion",
-                    css_class="show"  # Ensure the accordion is open by default
+                    css_class="hide"  # Ensure the accordion is open by default
                 ),
                 AccordionGroup(
                     'Nutrition and Health Community',
