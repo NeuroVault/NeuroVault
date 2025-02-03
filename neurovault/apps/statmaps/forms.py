@@ -374,7 +374,7 @@ class CollectionForm(ModelForm):
     class Meta:
         exclude = ("owner", "private_token", "contributors", "private")
         model = Collection
-        widgets = {"communities": CheckboxSelectMultiple}
+        widgets = {"communities": CheckboxSelectMultiple, "group_comparison": forms.RadioSelect}
 
         # fieldsets = study_fieldsets
         # row_attrs = study_row_attrs
