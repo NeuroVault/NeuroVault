@@ -25,6 +25,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.urls import reverse
 from fnmatch import fnmatch
 from guardian.shortcuts import get_objects_for_user
+from urllib.parse import urlencode
 
 # from nidmviewer.viewer import generate
 # from pybraincompare.compare.scatterplot import scatterplot_compare_vector
@@ -304,7 +305,7 @@ def edit_collection(request, cid=None):
         else:
             form = CollectionForm(instance=collection)
 
-    context = {"form": form, "page_header": page_header, "is_owner": is_owner}
+    context = {"form": form, "page_header": page_header, "is_owner": is_owner, "preamble": "Please fill in the fields below to create a new collection."}
     return render(request, "statmaps/edit_collection.html", context)
 
 
@@ -606,7 +607,7 @@ def delete_collection(request, cid):
     return redirect("statmaps:my_collections")
 
 
-def get_sibling_images(current_image):
+def _get_sibling_images(current_image):
     collection_images = current_image.collection.basecollectionitem_set.instance_of(
         Image
     )
@@ -620,106 +621,160 @@ def get_sibling_images(current_image):
     next_image = collection_images.filter(pk=next_id).first() if next_id else None
     return (prev_image, next_image)
 
+
+def _serialize_collection(collection_images):
+    """
+    Return a list of dictionaries representing each image in the collection.
+    Each dictionary is also stored in JSON under the 'json_data' key.
+    """
+
+    base_fields = [
+        "id", "name", "description", "is_valid", "map_type",
+        "target_template_image", "figure", "handedness", "age",
+        "gender", "race", "ethnicity"
+    ]
+    statmap_fields = [
+        "analysis_level", "modality", "number_of_subjects",
+        "contrast_definition", "statistic_parameters", "smoothness_fwhm",
+        "cognitive_paradigm_short_description", "cognitive_paradigm_description_url",
+        "cognitive_contrast_short_description", "cognitive_paradigm_name"
+    ]
+
+    def serialize(img):
+        # Start with "base" fields for all images.
+        data = {field: getattr(img, field, "") for field in base_fields}
+        data["last_edited"] = img.modify_date.strftime('%Y-%m-%d %H:%M:%S') if img.modify_date != img.add_date else None
+
+        # If it's a StatisticMap, copy the statmap-specific fields.
+        if isinstance(img, StatisticMap):
+            for field in statmap_fields:
+                data[field] = getattr(img, field, "") or ""
+            data["cognitive_atlas_paradigm"] = getattr(img.cognitive_paradigm_cogatlas, "cog_atlas_id", None)
+            data["cognitive_atlas_contrast"] = getattr(img.cognitive_contrast_cogatlas, "cog_atlas_id", None)
+        else:
+            # Non-statmaps still need these keys defined, but empty.
+            data["cognitive_atlas_paradigm"] = ""
+            data["cognitive_atlas_contrast"] = ""
+
+        # Store the entire dict as JSON as well.
+        data["json_data"] = json.dumps(data)
+        return data
+
+    # Serialize each image using a list comprehension.
+    return [serialize(img) for img in collection_images]
+
+
+def _get_form_for_image(image):
+    """
+    Return the appropriate form class (and extra kwargs if needed)
+    based on the image's model class.
+    """
+    if isinstance(image, StatisticMap):
+        return EditStatisticMapForm
+    elif isinstance(image, Atlas):
+        return EditAtlasForm
+    elif isinstance(image, NIDMResultStatisticMap):
+        return EditNIDMResultStatisticMapForm
+    else:
+        raise Exception("Unsupported image type.")
+
+
+def _parse_int_param(value, default=""):
+    """
+    Safely parse a string as an integer.
+    Return the default if parsing fails or value is None/empty.
+    """
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+
+def _compute_progress(min_image, max_image):
+    """
+    Compute the progress of images being processed based on is_valid attribute
+    Potential progress is computed by assuming the next image is valid.
+    """
+    images = Image.objects.filter(pk__gte=min_image, pk__lte=max_image)
+    total_images = images.count()
+    valid_images = images.filter(is_valid=True).count()
+    progress = int((valid_images / total_images) * 100) if total_images > 0 else 0
+    potential_progress = int((valid_images + 1 / total_images) * 100) if total_images > 0 else 0
+    label = f"{valid_images}/{total_images}"
+    return progress, label, potential_progress
+
 @login_required
 def edit_image(request, pk):
     image = get_object_or_404(Image, pk=pk)
 
-    first_time_param = request.GET.get("first", "false").lower()
-    first = (first_time_param == "true")
+    show_instructions = request.GET.get("show_instructions") == "True"
 
-    min_image_id = request.GET.get("min_image", False)
+    kw_params = {
+        "bulk": request.GET.get("bulk") == "True",
+        "min_image": _parse_int_param(request.GET.get("min_image")),
+        "max_image": _parse_int_param(request.GET.get("max_image")),
+    }
+    passalong_query = f"?{urlencode(kw_params)}"
 
-    try:
-        min_image_id = int(min_image_id)
-    except ValueError:
-        min_image_id = None
-
-    max_image_id = request.GET.get("max_image", False)
-
-    try:
-        max_image_id = int(max_image_id)
-    except ValueError:
-        max_image_id = None
-
-    collection_images = image.collection.basecollectionitem_set.instance_of(
-        Image
-    )
-    collection_images = [ci for ci in collection_images if ci.id != image.id]
-
-    passalong = f"?first={first_time_param}&min_image={min_image_id}&max_image={max_image_id}"
-    kwargs = {}
-    if isinstance(image, StatisticMap):
-        form = EditStatisticMapForm
-        # image.name = ''
-        kwargs = {
-            'first': first,
-            'min_image': min_image_id,
-            'max_image': max_image_id
-        }
-    elif isinstance(image, Atlas):
-        form = EditAtlasForm
-    elif isinstance(image, NIDMResultStatisticMap):
-        form = EditNIDMResultStatisticMapForm
+    if kw_params["bulk"] and kw_params["min_image"] != "":
+        progress, label, potential_progress = _compute_progress(kw_params["min_image"], kw_params["max_image"])
     else:
-        raise Exception("unsupported image type")
+        progress, label, potential_progress = None, None, None
+
+    collection_images_qs = (
+        image.collection.basecollectionitem_set
+        .instance_of(Image)
+        .exclude(pk=image.pk)
+    )
+
     if not owner_or_contrib(request, image.collection):
         return HttpResponseForbidden()
+
+    form_class = _get_form_for_image(image)
+
     if request.method == "POST":
-        form = form(
-            request.POST, request.FILES, instance=image, user=request.user,
-            **kwargs)
-        print(request.POST)
+        form = form_class(
+            data=request.POST,
+            files=request.FILES,
+            instance=image,
+            user=request.user,
+            **kw_params
+        )
         if form.is_valid():
+            print("Form is valid!")
             form.save()
-            if "submit_previous" in request.POST:
-                prev_img, _ = get_sibling_images(image)
-                if prev_img:
-                    return HttpResponseRedirect(prev_img.get_absolute_url(edit=True) + passalong)
-            elif "submit_next" in request.POST:
-                _, next_img = get_sibling_images(image)
-                if next_img:
-                    return HttpResponseRedirect(next_img.get_absolute_url(edit=True) + passalong)
+            if any(key in request.POST for key in ["submit_next", "submit_previous"]):
+                print(
+                    request.POST
+                )
+                prev_img, next_img = _get_sibling_images(image)
+                target_img = next_img if "submit_next" in request.POST else prev_img
+                if target_img:
+                    return HttpResponseRedirect(
+                        target_img.get_absolute_url(edit=True) + passalong_query
+                        )
             elif "submit_save" in request.POST:
-                return HttpResponseRedirect(image.get_absolute_url())
-            
+                if kw_params["bulk"]:
+                    return HttpResponseRedirect(image.collection.get_absolute_url())
+                else:
+                    return HttpResponseRedirect(image.get_absolute_url())
+        else:
+            print(form.errors)
     else:
-        form = form(instance=image, user=request.user, **kwargs)
+        if isinstance(image, StatisticMap) and kw_params["bulk"] and not image.is_valid:
+            image.name = ""
+            image.map_type = None
 
+        form = form_class(instance=image, user=request.user, **kw_params)
 
-    # Serialize collection images
-    serialized_images = []
-    for img in collection_images:
-        modify_date = img.modify_date.strftime('%Y-%m-%d %H:%M:%S') if img.modify_date != img.add_date else None
-        img_data = {
-            "id": img.id,
-            "name": img.name,
-            "description": img.description,
-            "last_edited": modify_date,
-            "is_valid": img.is_valid,
-            "analysis_level": (img.analysis_level if isinstance(img, StatisticMap) else None) or "",
-            "modality": (img.modality if isinstance(img, StatisticMap) else None) or "",
-            "map_type": img.map_type,
-            "target_template_image": img.target_template_image,
-            "cognitive_atlas_paradigm": (getattr(img.cognitive_paradigm_cogatlas, "cog_atlas_id", None) if isinstance(img, StatisticMap) else None) or "",
-            "cognitive_atlas_contrast": (getattr(img.cognitive_contrast_cogatlas, "cog_atlas_id", None) if isinstance(img, StatisticMap) else None) or "",
-            "number_of_subjects": (img.number_of_subjects if isinstance(img, StatisticMap) else None) or "",
-            "contrast_definition": (img.contrast_definition if isinstance(img, StatisticMap) else None) or "",
-            "figure": img.figure,
-            "handedness": img.handedness,
-            "age": img.age,
-            "gender": img.gender,
-            "race": img.race,
-            "ethnicity": img.ethnicity,
-            "statistic_parameters": (img.statistic_parameters if isinstance(img, StatisticMap) else None) or "",
-            "smoothness_fwhm": (img.smoothness_fwhm if isinstance(img, StatisticMap) else None) or "",
-        }
-        img_data['json_data'] = json.dumps(img_data)
-        serialized_images.append(img_data)
-
-    contrasts = get_contrast_lookup()
     context = {
-        "form": form, "contrasts": json.dumps(contrasts),
-        "collection_images": serialized_images,
+        "form": form,
+        "contrasts": json.dumps(get_contrast_lookup()),
+        "collection_images": _serialize_collection(collection_images_qs),
+        "progress": progress,
+        "progress_label": label,
+        "potential_progress": potential_progress,
+        "show_instructions": show_instructions,
     }
     return render(request, "statmaps/edit_image.html", context)
 
@@ -934,11 +989,15 @@ def upload_folder(request, collection_cid):
                     messages.warning(request, f"An error occurred with this upload: {error}")
                     return HttpResponseRedirect(collection.get_absolute_url())
 
-            # If we added images, redirect to the edit page for the first one
+            # If we added images, redirect to the edit page for bulk edit
             if images_added:
-                min_image = images_added[0].id
-                max_image = images_added[-1].id
-                redirect = f"{images_added[0].get_absolute_url(edit=True)}?first=true&min_image={min_image}&max_image={max_image}"
+                params = {
+                    "bulk": True,
+                    "show_instructions": True,
+                    "min_image": images_added[0].id,
+                    "max_image": images_added[-1].id,
+                }
+                redirect = images_added[0].get_absolute_url(edit=True) + f"?{urlencode(params)}"
                 if folder:
                     return JsonResponse(
                         {"redirect_url": redirect}

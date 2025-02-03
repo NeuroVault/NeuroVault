@@ -117,6 +117,14 @@ class Collection(models.Model):
         verbose_name="DOI of the corresponding paper",
         help_text="Required if you want your maps to be archived in Stanford Digital Repository",
     )
+    preprint_DOI = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        default=None,
+        verbose_name="Preprint DOI",
+        help_text="DOI of the corresponding preprint, if publication DOI is not yet available"
+    )
     authors = models.CharField(max_length=5000, blank=True, null=True)
     paper_url = models.CharField(max_length=200, blank=True, null=True)
     journal_name = models.CharField(max_length=200, blank=True, null=True, default=None)
@@ -1025,7 +1033,7 @@ class Image(BaseCollectionItem):
     )
     figure = models.CharField(
         help_text="Which figure in the corresponding paper was this map displayed in?",
-        verbose_name="Corresponding figure",
+        verbose_name="Manuscript figure",
         max_length=200,
         null=True,
         blank=True,
@@ -1464,7 +1472,7 @@ class StatisticMap(BaseStatisticMap):
     )
     cognitive_paradigm_cogatlas = models.ForeignKey(
         CognitiveAtlasTask,
-        help_text="Task (or lack of it) performed by the subjects in the scanner described using <a href='http://www.cognitiveatlas.org/' target='_blank'>Cognitive Atlas</a> terms",
+        help_text="Task performed by the subjects in the scanner described using <a href='http://www.cognitiveatlas.org/' target='_blank'>Cognitive Atlas</a>. If there's no match, select 'None / Other'. ",
         verbose_name="Cognitive Atlas Paradigm",
         null=True,
         blank=False,
@@ -1479,11 +1487,23 @@ class StatisticMap(BaseStatisticMap):
         on_delete=models.PROTECT,
     )
     cognitive_paradigm_description_url = models.URLField(
-        help_text="Link to a paper, poster, abstract or other form text describing in detail the task performed by the subject(s) in the scanner.",
-        verbose_name="Cognitive Paradigm Description URL",
+        help_text="Link to a paper, poster, abstract describing in detail the task performed by the subject(s) in the scanner.",
+        verbose_name="Description URL",
         null=True,
         blank=True,
     )
+    cognitive_paradigm_short_description = models.CharField(
+        help_text="Describe your task",
+        verbose_name="Task Description",
+        null=True,
+        blank=True,
+    )
+    cognitive_paradigm_name = models.CharField(
+        help_text="Name of your task (if it)",
+        verbose_name="Task Name",
+        null=True,
+        blank=True
+     )
 
     @classmethod
     def get_fixed_fields(cls):
