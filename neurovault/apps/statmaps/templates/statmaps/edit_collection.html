@@ -7,6 +7,325 @@
 {% endblock %}
 {% block content %}
 
+<script type="text/javascript">
+    $(document).ready(function () {
+  
+      /****************************************
+       * 1. PUBLICATION STATUS DEPENDENCIES   *
+       ****************************************/
+      function toggleDOIFields() {
+        // Get selected publication status
+        var pubLevel = $("input[name='publication_status']:checked").val();
+        
+        if (pubLevel === "published") {
+          // Show "Publication DOI", hide "Preprint DOI", require Publication DOI, hide alert
+          $("#div_id_DOI").show();
+          $("#id_DOI").attr("required", true);
+          $("#div_id_preprint_DOI").hide();
+          $("#id_DOI").removeAttr("disabled");  // just in case
+          $("#not_intended_alert").hide();
+        }
+        else if (pubLevel === "submitted" || pubLevel === "in_preparation") {
+          // Show "Preprint DOI", hide "Publication DOI"
+          $("#div_id_preprint_DOI").show();
+          $("#div_id_DOI").hide();
+          $("#id_DOI").removeAttr("required");
+          $("#id_DOI").removeAttr("disabled");
+          $("#not_intended_alert").hide();
+        }
+        else if (pubLevel === "not_intended") {
+          // Hide both DOI fields, remove required from Publication DOI, show archive warning
+          $("#div_id_DOI").hide();
+          $("#div_id_preprint_DOI").hide();
+          $("#id_DOI").removeAttr("required");
+          $("#not_intended_alert").show();
+        }
+      }
+      /*************************************************
+     * 2. GENERIC BOOLEAN FIELDS: "Yes" => show else hide
+     *    We assume these are checkboxes in your form
+     *************************************************/
+
+    // Optimization => show "optimization_method"
+    function toggleOptimizationFields() {
+      var isYes = $("input[name='optimization']:checked").val() === "true";
+      console.log(isYes);
+      if (isYes) {
+        $("#div_id_optimization_method").show();
+      } else {
+        $("#div_id_optimization_method").hide();
+      }
+    }
+
+    // used_b0_unwarping => show "b0_unwarping_software"
+    function toggleB0Fields() {
+      var isYes = $("input[name='used_b0_unwarping']:checked").val() === "true";
+      if (isYes) {
+        $("#div_id_b0_unwarping_software").show();
+      } else {
+        $("#div_id_b0_unwarping_software").hide();
+      }
+    }
+
+    // used_slice_timing_correction => show slice_timing_correction_software
+    function toggleSliceTimingFields() {
+      var isYes = $("input[name='used_slice_timing_correction']:checked").val() === "true";
+      if (isYes) {
+        $("#div_id_slice_timing_correction_software").show();
+      } else {
+        $("#div_id_slice_timing_correction_software").hide();
+      }
+    }
+
+    // used_motion_correction => show motion correction fields
+    function toggleMotionCorrectionFields() {
+      var isYes = $("input[name='used_motion_correction']:checked").val() === "true";
+      if (isYes) {
+        $("#div_id_motion_correction_software").show();
+        $("#div_id_motion_correction_reference").show();
+        $("#div_id_motion_correction_metric").show();
+        $("#div_id_motion_correction_interpolation").show();
+      } else {
+        $("#div_id_motion_correction_software").hide();
+        $("#div_id_motion_correction_reference").hide();
+        $("#div_id_motion_correction_metric").hide();
+        $("#div_id_motion_correction_interpolation").hide();
+      }
+    }
+
+    // used_motion_susceptibiity_correction => (only show if "Yes")
+    function toggleMotionSusceptibilityFields() {
+      var isYes = $("input[name='used_motion_susceptibiity_correction']:checked").val() === "true";
+      if (isYes) {
+        // If you have extra fields for motion-susceptibility, show them here
+        // $("#div_id_some_motion_susceptibility_field").show();
+      } else {
+        // Hide them if not "Yes"
+        // $("#div_id_some_motion_susceptibility_field").hide();
+      }
+    }
+
+    // used_intersubject_registration => show the large block of registration fields if "Yes"
+    function toggleIntersubjectRegistrationFields() {
+      var isYes = $("input[name='used_intersubject_registration']:checked").val() === "true";
+      if (isYes) {
+        $("#div_id_intersubject_registration_software").show();
+        $("#div_id_intersubject_transformation_type").show();
+        $("#div_id_nonlinear_transform_type").show();
+        $("#div_id_transform_similarity_metric").show();
+        $("#div_id_interpolation_method").show();
+        $("#div_id_object_image_type").show();
+        $("#div_id_functional_coregistered_to_structural").show();
+        $("#div_id_functional_coregistration_method").show();
+        $("#div_id_coordinate_space").show();
+        $("#div_id_target_template_image").show();
+        $("#div_id_target_resolution").show();
+      } else {
+        $("#div_id_intersubject_registration_software").hide();
+        $("#div_id_intersubject_transformation_type").hide();
+        $("#div_id_nonlinear_transform_type").hide();
+        $("#div_id_transform_similarity_metric").hide();
+        $("#div_id_interpolation_method").hide();
+        $("#div_id_object_image_type").hide();
+        $("#div_id_functional_coregistered_to_structural").hide();
+        $("#div_id_functional_coregistration_method").hide();
+        $("#div_id_coordinate_space").hide();
+        $("#div_id_target_template_image").hide();
+        $("#div_id_target_resolution").hide();
+      }
+    }
+
+    // used_smoothing => show smoothing fields if "Yes"
+    function toggleSmoothingFields() {
+      var isYes = $("input[name='used_smoothing']:checked").val() === "true";
+      if (isYes) {
+        $("#div_id_smoothing_type").show();
+        $("#div_id_smoothing_fwhm").show();
+      } else {
+        $("#div_id_smoothing_type").hide();
+        $("#div_id_smoothing_fwhm").hide();
+      }
+    }
+
+    // used_orthogonalization => show orthogonalization_description if "Yes"
+    function toggleOrthogonalizationFields() {
+      var isYes = $("input[name='used_orthogonalization']:checked").val() === "true";
+      if (isYes) {
+        $("#div_id_orthogonalization_description").show();
+      } else {
+        $("#div_id_orthogonalization_description").hide();
+      }
+    }
+
+    // used_high_pass_filter => show high_pass_filter_method if "Yes"
+    function toggleHighPassFilterFields() {
+      var isYes = $("input[name='used_high_pass_filter']:checked").val() === "true";
+      if (isYes) {
+        $("#div_id_high_pass_filter_method").show();
+      } else {
+        $("#div_id_high_pass_filter_method").hide();
+      }
+    }
+
+    // group_comparison => show group_description if "Yes"
+    function toggleGroupComparisonFields() {
+      var isYes = $("input[name='group_comparison']:checked").val() === "true";
+      if (isYes) {
+        $("#div_id_group_description").show();
+      } else {
+        $("#div_id_group_description").hide();
+      }
+    }
+
+    // group_repeated_measures => show group_repeated_measures_method if "Yes"
+    function toggleGroupRepeatedMeasuresFields() {
+      var isYes = $("input[name='group_repeated_measures']:checked").val() === "true";
+      if (isYes) {
+        $("#div_id_group_repeated_measures_method").show();
+      } else {
+        $("#div_id_group_repeated_measures_method").hide();
+      }
+    }
+
+    
+    /*******************************************
+     * 3. HIDE ALL DEPENDENT FIELDS INITIALLY  *
+     *    THEN CALL TOGGLE FUNCTIONS           *
+     *******************************************/
+    
+    // Publication-related
+    $("#div_id_DOI").hide();
+    $("#div_id_preprint_DOI").hide();
+    $("#not_intended_alert").hide();
+
+
+    // Optimization
+    $("#div_id_optimization_method").hide();
+
+    // B0 unwarping
+    $("#div_id_b0_unwarping_software").hide();
+
+    // Slice timing
+    $("#div_id_slice_timing_correction_software").hide();
+
+    // Motion correction
+    $("#div_id_motion_correction_software").hide();
+    $("#div_id_motion_correction_reference").hide();
+    $("#div_id_motion_correction_metric").hide();
+    $("#div_id_motion_correction_interpolation").hide();
+
+    // (Optional) motion-susceptibility fields
+    // e.g. $("#div_id_some_motion_susceptibility_field").hide();
+
+    // Intersubject registration
+    $("#div_id_intersubject_registration_software").hide();
+    $("#div_id_intersubject_transformation_type").hide();
+    $("#div_id_nonlinear_transform_type").hide();
+    $("#div_id_transform_similarity_metric").hide();
+    $("#div_id_interpolation_method").hide();
+    $("#div_id_object_image_type").hide();
+    $("#div_id_functional_coregistered_to_structural").hide();
+    $("#div_id_functional_coregistration_method").hide();
+    $("#div_id_coordinate_space").hide();
+    $("#div_id_target_template_image").hide();
+    $("#div_id_target_resolution").hide();
+
+    // Smoothing
+    $("#div_id_smoothing_type").hide();
+    $("#div_id_smoothing_fwhm").hide();
+
+    // Orthogonalization
+    $("#div_id_orthogonalization_description").hide();
+
+    // High-pass filter
+    $("#div_id_high_pass_filter_method").hide();
+
+    // Group comparison
+    $("#div_id_group_description").hide();
+
+    // Group repeated measures
+    $("#div_id_group_repeated_measures_method").hide();
+
+    // Now call toggles once to set correct initial visibility
+    toggleDOIFields();
+    toggleOptimizationFields();
+    toggleB0Fields();
+    toggleSliceTimingFields();
+    toggleMotionCorrectionFields();
+    toggleMotionSusceptibilityFields();
+    toggleIntersubjectRegistrationFields();
+    toggleSmoothingFields();
+    toggleOrthogonalizationFields();
+    toggleHighPassFilterFields();
+    toggleGroupComparisonFields();
+    toggleGroupRepeatedMeasuresFields();
+
+    /*******************************************
+     * 4. EVENT HANDLERS (on change)           *
+     *******************************************/
+
+    // Publication status
+    $("input[name='publication_status']").change(function () {
+        toggleDOIFields();
+    });
+
+    // Optimization
+    $("input[name='optimization']").change(function () {
+      toggleOptimizationFields();
+    });
+
+    // B0 unwarping
+    $("input[name='used_b0_unwarping']").change(function () {
+      toggleB0Fields();
+    });
+
+    // Slice timing
+    $("input[name='used_slice_timing_correction']").change(function () {
+      toggleSliceTimingFields();
+    });
+
+    // Motion correction
+    $("input[name='used_motion_correction']").change(function () {
+      toggleMotionCorrectionFields();
+    });
+
+    // Motion susceptibility
+    $("input[name='used_motion_susceptibiity_correction']").change(function () {
+      toggleMotionSusceptibilityFields();
+    });
+
+    // Intersubject registration
+    $("input[name='used_intersubject_registration']").change(function () {
+      toggleIntersubjectRegistrationFields();
+    });
+
+    // Smoothing
+    $("input[name='used_smoothing']").change(function () {
+      toggleSmoothingFields();
+    });
+
+    // Orthogonalization
+    $("input[name='used_orthogonalization']").change(function () {
+      toggleOrthogonalizationFields();
+    });
+
+    // High-pass filter
+    $("input[name='used_high_pass_filter']").change(function () {
+      toggleHighPassFilterFields();
+    });
+
+    // Group comparison
+    $("input[name='group_comparison']").change(function () {
+      toggleGroupComparisonFields();
+    });
+
+    // Group repeated measures
+    $("input[name='group_repeated_measures']").change(function () {
+      toggleGroupRepeatedMeasuresFields();
+    });
+
+  });
+</script>
 
 <div class="row">
     <div class="col">
