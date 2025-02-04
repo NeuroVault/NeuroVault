@@ -381,8 +381,6 @@ class ImageValidationMixin(object):
         self.afni_tmp = None
 
     def clean_and_validate(self, cleaned_data):
-        # breakpoint()
-        # file = cleaned_data.get("file")
         surface_left_file = cleaned_data.get("surface_left_file")
         surface_right_file = cleaned_data.get("surface_right_file")
 
@@ -599,7 +597,6 @@ class ImageForm(ModelForm, ImageValidationMixin):
         )
 
     def clean(self, **kwargs):
-        # breakpoint()
         cleaned_data = super().clean()
         cleaned_data["tags"] = clean_tags(cleaned_data)
         return self.clean_and_validate(cleaned_data)
@@ -698,6 +695,8 @@ class StatisticMapForm(ImageForm):
         self.helper.form_class = "form-horizontal"
         self.helper.label_class = "col-lg-2"
         self.helper.field_class = "col-lg-10"
+        if self.instance.id:
+            self.helper.form_action = reverse("statmaps:edit_image", args=[self.instance.id]) + f"?first={first}&min_image={min_image}&max_image={max_image}"
 
         alert_html = ""
         if not self.instance.is_valid and not self.bulk:
