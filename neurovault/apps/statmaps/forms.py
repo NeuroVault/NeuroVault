@@ -91,6 +91,7 @@ collection_fieldsets = [
                 "full_dataset_url",
                 "contributors",
                 "communities",
+                # "private",
                 Field(
                     "private",
                     template="statmaps/fields/toggle_radio_field.html",
@@ -375,7 +376,7 @@ class MetaanalysisForm(ModelForm):
 
 class CollectionForm(ModelForm):
     class Meta:
-        exclude = ("owner", "private_token", "contributors", "private")
+        exclude = ("owner", "private_token", "contributors")
         model = Collection
         widgets = {"communities": CheckboxSelectMultiple, "group_comparison": forms.RadioSelect}
 
@@ -656,6 +657,7 @@ class ImageForm(ModelForm, ImageValidationMixin):
 
     def __init__(self, *args, **kwargs):
         self.bulk = kwargs.pop("bulk", False)
+        self.first = kwargs.pop("first", None)
         self.min_image = kwargs.pop("min_image", None)
         self.max_image = kwargs.pop("max_image", None)
         self.curr_image = kwargs.pop("curr_image", None)
@@ -776,7 +778,7 @@ class StatisticMapForm(ImageForm):
         self.helper.label_class = "col-lg-2"
         self.helper.field_class = "col-lg-10"
         if self.instance.id:
-            self.helper.form_action = reverse("statmaps:edit_image", args=[self.instance.id]) + f"?first={first}&min_image={min_image}&max_image={max_image}"
+            self.helper.form_action = reverse("statmaps:edit_image", args=[self.instance.id]) + f"?first={self.first}&min_image={self.min_image}&max_image={self.max_image}"
 
         alert_html = ""
         if not self.instance.is_valid and not self.bulk:
