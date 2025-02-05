@@ -19,13 +19,24 @@ RUN apt-get -y update \
     --exclude='freesurfer/subjects/fsaverage4' \
     --exclude='freesurfer/subjects/fsaverage5' \
     --exclude='freesurfer/subjects/fsaverage6' \
+    --exclude='freesurfer/subjects/fsaverage/xhemi' \
     --exclude='freesurfer/subjects/cvs_avg35' \
     --exclude='freesurfer/subjects/cvs_avg35_inMNI152' \
     --exclude='freesurfer/subjects/bert' \
     --exclude='freesurfer/subjects/V1_average' \
+    --exclude='freesurfer/subjects/fsaverage/label' \
     --exclude='freesurfer/average/mult-comp-cor' \
+    --exclude='freesurfer/average/aseg+spmhead+vermis+pons.ixi.gca' \
+    --exclude='freesurfer/average/RB_all_withskull_2016-05-10.vc700.gca' \
+    --exclude='freesurfer/average/RB_all_2016-05-10.vc700.gca' \
+    --exclude='freesurfer/average/711*' \
+    --exclude='freesurfer/average/SVIP*' \
+    --exclude='freesurfer/average/Yeo_Brainmap_MNI152' \
     --exclude='freesurfer/lib/cuda' \
-    --exclude='freesurfer/lib/qt' && \
+    --exclude='freesurfer/lib/qt' \
+    --exclude='freesurfer/lib/vtk' \
+    && \
+    find /opt/freesurfer/bin -type f ! -name 'tkregister2' ! -name 'mris_convert' ! -name 'mri_convert' ! -name 'mri_convert.bin' ! -name 'mri_surf2surf' ! -name 'mri_surf2vol' -delete && \
     apt-get install -y tcsh bc tar libgomp1 perl-modules curl  && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
