@@ -21,14 +21,14 @@
     <div class="btn-group btn-group-toggle" data-toggle="buttons">
       {% for value, label in field.field.widget.choices %}
         <label
-          class="btn btn-secondary {% if value == field.value %}active{% endif %}"
+          class="btn btn-secondary {% if value|stringformat:"s"|lower == field.value|stringformat:"s"|lower  %}active{% endif %}"
         >
           <input
             type="radio"
             name="{{ field.name }}"
             value="{{ value }}"
             autocomplete="off"
-            {% if value == field.value %}checked{% endif %}
+            {% if value|stringformat:"s"|lower == field.value|stringformat:"s"|lower %}checked{% endif %}
             {% if field.field.required %}required{% endif %}
           >
           {{ label }}
