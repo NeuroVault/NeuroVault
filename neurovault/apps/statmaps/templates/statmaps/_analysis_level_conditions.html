@@ -13,12 +13,12 @@ $(document).ready(function() {
         }
 
         // Show/hide number_of_subjects based on analysis_level
-        if (analysis_level === "G") {
-            $("#div_id_number_of_subjects").show();
-            $("#id_number_of_subjects").attr("required", "required");
-        } else {
+        if (analysis_level === "S") {
             $("#div_id_number_of_subjects").hide();
             $("#id_number_of_subjects").removeAttr("required");
+        } else {
+            $("#div_id_number_of_subjects").show();
+            $("#id_number_of_subjects").attr("required", "required");
         }
     }
 
