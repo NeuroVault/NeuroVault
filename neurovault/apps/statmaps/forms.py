@@ -879,7 +879,7 @@ class StatisticMapForm(ImageForm):
         cleaned_data["tags"] = clean_tags(cleaned_data)
 
         # Examples of your additional logic and data cleaning
-        if "analysis_level" in cleaned_data and cleaned_data.get("analysis_level") == "S":
+        if "analysis_level" in cleaned_data and cleaned_data.get("analysis_level") in ["S", "M", "Other"]:
             cleaned_data["number_of_subjects"] = 1
             if "number_of_subjects" in self._errors:
                 del self._errors["number_of_subjects"]
