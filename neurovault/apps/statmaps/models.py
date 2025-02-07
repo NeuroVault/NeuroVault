@@ -1154,7 +1154,7 @@ class Image(BaseCollectionItem):
             return reverse("statmaps:edit_image", args=return_args)
         else:
             url_name  = "statmaps:image_details"
-            if self.collection.private
+            if self.collection.private:
                 return_args.insert(0, str(self.collection.private_token))
                 url_name = "statmaps:private_image_details"
 
