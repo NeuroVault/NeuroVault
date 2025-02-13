@@ -85,7 +85,7 @@ collection_fieldsets = [
                 ),
                 "DOI",
                 "preprint_DOI",
-                HTML("<div class='alert alert-warning' role='alert' id='not_intended_alert'>Collections not associated with a publication or preprint are not guaranteed long-term archival.</div>"),
+                HTML("<div class='alert alert-warning' role='alert' id='not_intended_alert'>Collections not associated with a publication are not guaranteed to be retained for long-term archival.</div>"),
                 HTML("<hr>"),
                 "description",
                 "full_dataset_url",
