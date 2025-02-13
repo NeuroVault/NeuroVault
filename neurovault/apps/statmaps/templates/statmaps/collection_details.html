@@ -303,6 +303,32 @@
         </div>
     </div>
     <!-- Content-->
+    <!-- Modal triggered by folder upload -->
+    <div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false">
+        <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h5 class="modal-title">Uploading, please wait...</h5>
+            <!-- If you want a close button, you can include it:
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            -->
+            </div>
+            <div class="modal-body">
+            <div class="progress" id="upload-progress">
+                <div 
+                class="progress-bar" 
+                role="progressbar" 
+                style="width: 0%;" 
+                aria-valuenow="0" 
+                aria-valuemin="0" 
+                aria-valuemax="100">
+                0%
+                </div>
+            </div>
+            </div>
+        </div>
+        </div>
+    </div>
     <div class="row mt-2 mb-2">
         {% if is_empty and edit_permission %}
             <div class="col-12 center-text mt-1 mb-1">
@@ -321,32 +347,6 @@
                         folder with images</a>
                     <!-- <![endif]-->
                 </div>
-                <!-- Modal triggered by folder upload -->
-                    <div id="upload_process" class="modal" style="margin-top: 175px;" data-keyboard="false">
-                        <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                            <h5 class="modal-title">Uploading, please wait...</h5>
-                            <!-- If you want a close button, you can include it:
-                            <button type="button" class="close" data-dismiss="modal">&times;</button>
-                            -->
-                            </div>
-                            <div class="modal-body">
-                            <div class="progress" id="upload-progress">
-                                <div 
-                                class="progress-bar" 
-                                role="progressbar" 
-                                style="width: 0%;" 
-                                aria-valuenow="0" 
-                                aria-valuemin="0" 
-                                aria-valuemax="100">
-                                0%
-                                </div>
-                            </div>
-                            </div>
-                        </div>
-                        </div>
-                    </div>
             </div>
         {% elif not is_empty %} <!-- close if not empty -->
             <div class="col-md-6 mt-1 mb-1 d-none d-md-block" style="margin-top:20px; min-height:470px;"

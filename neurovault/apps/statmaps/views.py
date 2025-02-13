@@ -571,6 +571,14 @@ def view_collection(request, cid):
             .count()
             > 0
         ):
+            if (
+                StatisticMap.objects.filter(collection=collection)
+                .filter(~Q(analysis_level__in=["G", "S"]))
+                .filter(is_valid=False)
+                .count()
+            ):
+                context["oimages_title"] = "Needs Metadata"
+
             context["oimages_visible"] = True
             if not (context["gimages_visible"] or context["simages_visible"]):
                 context["oimages_active"] = True
@@ -744,9 +752,6 @@ def edit_image(request, pk):
             print("Form is valid!")
             form.save()
             if any(key in request.POST for key in ["submit_next", "submit_previous"]):
-                print(
-                    request.POST
-                )
                 prev_img, next_img = _get_sibling_images(image)
                 target_img = next_img if "submit_next" in request.POST else prev_img
                 if target_img:
@@ -944,7 +949,6 @@ def upload_folder(request, collection_cid):
                         file_list = request.FILES.getlist("file_input[]")
                         path_list = request.POST.getlist("paths[]")
                         extract_multiple_files(file_list, path_list, tmp_directory)
-                        print("Com")
                     else:
                         raise ValueError("No uploaded files found.")
 

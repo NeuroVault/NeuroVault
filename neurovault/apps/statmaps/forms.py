@@ -79,12 +79,23 @@ collection_fieldsets = [
         {
             "fields": [
                 "name",
+                Field(
+                    "publication_status",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
                 "DOI",
-                "communities",
+                "preprint_DOI",
+                HTML("<div class='alert alert-warning' role='alert' id='not_intended_alert'>Collections not associated with a publication are not guaranteed to be retained for long-term archival.</div>"),
+                HTML("<hr>"),
                 "description",
                 "full_dataset_url",
                 "contributors",
-                "private",
+                "communities",
+                # "private",
+                Field(
+                    "private",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
             ],
             "legend": "Essentials",
         },
@@ -96,11 +107,17 @@ collection_fieldsets = [
                 "subject_age_mean",
                 "subject_age_min",
                 "subject_age_max",
-                "handedness",
+                Field(
+                    "handedness",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),           
                 "proportion_male_subjects",
                 "inclusion_exclusion_criteria",
                 "number_of_rejected_subjects",
-                "group_comparison",
+                Field(
+                    "group_comparison",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
                 "group_description",
             ],
             "legend": "Subjects",
@@ -110,13 +127,19 @@ collection_fieldsets = [
         "ExperimentalDesign",
         {
             "fields": [
-                "type_of_design",
+                Field(
+                    "type_of_design",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
                 "number_of_imaging_runs",
                 "number_of_experimental_units",
                 "length_of_runs",
                 "length_of_blocks",
                 "length_of_trials",
-                "optimization",
+                Field(
+                    "optimization",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
                 "optimization_method",
             ],
             "legend": "Design",
@@ -136,7 +159,10 @@ collection_fieldsets = [
                 "slice_thickness",
                 "skip_distance",
                 "acquisition_orientation",
-                "order_of_acquisition",
+                Field(
+                    "order_of_acquisition",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
                 "repetition_time",
                 "echo_time",
                 "flip_angle",
@@ -148,18 +174,33 @@ collection_fieldsets = [
         "IntersubjectRegistration",
         {
             "fields": [
-                "used_intersubject_registration",
+                Field(
+                    "used_intersubject_registration",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
                 "intersubject_registration_software",
-                "intersubject_transformation_type",
+                Field(
+                    "intersubject_transformation_type",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
                 "nonlinear_transform_type",
                 "transform_similarity_metric",
                 "interpolation_method",
                 "object_image_type",
-                "functional_coregistered_to_structural",
+                Field(
+                    "functional_coregistered_to_structural",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
                 "functional_coregistration_method",
-                "coordinate_space",
+                Field(
+                    "coordinate_space",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
                 "target_resolution",
-                "used_smoothing",
+                Field(
+                    "used_smoothing",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
                 "smoothing_type",
                 "smoothing_fwhm",
                 "resampled_voxel_size",
@@ -175,16 +216,28 @@ collection_fieldsets = [
                 "software_version",
                 "order_of_preprocessing_operations",
                 "quality_control",
-                "used_b0_unwarping",
+                Field(
+                    "used_b0_unwarping",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
                 "b0_unwarping_software",
-                "used_slice_timing_correction",
+                Field(
+                    "used_slice_timing_correction",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
                 "slice_timing_correction_software",
-                "used_motion_correction",
+                Field(
+                    "used_motion_correction",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
                 "motion_correction_software",
                 "motion_correction_reference",
                 "motion_correction_metric",
                 "motion_correction_interpolation",
-                "used_motion_susceptibiity_correction",
+                Field(
+                    "used_motion_susceptibiity_correction",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
             ],
             "legend": "Preprocessing",
         },
@@ -197,13 +250,31 @@ collection_fieldsets = [
                 "intrasubject_estimation_type",
                 "intrasubject_modeling_software",
                 "hemodynamic_response_function",
-                "used_temporal_derivatives",
-                "used_dispersion_derivatives",
-                "used_motion_regressors",
-                "used_reaction_time_regressor",
-                "used_orthogonalization",
+                Field(
+                    "used_temporal_derivatives",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
+                Field(
+                    "used_dispersion_derivatives",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
+                Field(
+                    "used_motion_regressors",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
+                Field(
+                    "used_reaction_time_regressor",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
+                Field(
+                    "used_orthogonalization",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
                 "orthogonalization_description",
-                "used_high_pass_filter",
+                Field(
+                    "used_high_pass_filter",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
                 "high_pass_filter_method",
                 "autocorrelation_model",
             ],
@@ -217,9 +288,15 @@ collection_fieldsets = [
                 "group_model_type",
                 "group_estimation_type",
                 "group_modeling_software",
-                "group_inference_type",
+                Field(
+                    "group_inference_type",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
                 "group_model_multilevel",
-                "group_repeated_measures",
+                Field(
+                    "group_repeated_measures",
+                    template="statmaps/fields/toggle_radio_field.html",
+                ),
                 "group_repeated_measures_method",
             ],
             "legend": "Second Level",
@@ -299,9 +376,9 @@ class MetaanalysisForm(ModelForm):
 
 class CollectionForm(ModelForm):
     class Meta:
-        exclude = ("owner", "private_token", "contributors", "private")
+        exclude = ("owner", "private_token", "contributors")
         model = Collection
-        widgets = {"communities": CheckboxSelectMultiple}
+        widgets = {"communities": CheckboxSelectMultiple, "group_comparison": forms.RadioSelect}
 
         # fieldsets = study_fieldsets
         # row_attrs = study_row_attrs
@@ -346,6 +423,10 @@ class CollectionForm(ModelForm):
         self.helper.field_class = "col-lg-10"
         self.helper.layout = Layout()
         tab_holder = TabHolder()
+
+        self.fields["publication_status"].required = True
+        self.fields['publication_status'].choices = self.fields['publication_status'].choices[1:]
+
         for fs in collection_fieldsets:
             # manually enforce field exclusion
             fs[1]["fields"] = [v for v in fs[1]["fields"] if v not in self.Meta.exclude]
@@ -695,8 +776,6 @@ class StatisticMapForm(ImageForm):
         self.helper.form_class = "form-horizontal"
         self.helper.label_class = "col-lg-2"
         self.helper.field_class = "col-lg-10"
-        if self.instance.id:
-            self.helper.form_action = reverse("statmaps:edit_image", args=[self.instance.id]) + f"?first={first}&min_image={min_image}&max_image={max_image}"
 
         alert_html = ""
         if not self.instance.is_valid and not self.bulk:
@@ -800,8 +879,9 @@ class StatisticMapForm(ImageForm):
         cleaned_data["tags"] = clean_tags(cleaned_data)
 
         # Examples of your additional logic and data cleaning
-        if "analysis_level" in cleaned_data and cleaned_data.get("analysis_level") == "S":
-            cleaned_data["number_of_subjects"] = 1
+        if "analysis_level" in cleaned_data:
+            if cleaned_data.get("analysis_level") == "S":
+                cleaned_data["number_of_subjects"] = 1
             if "number_of_subjects" in self._errors:
                 del self._errors["number_of_subjects"]
 

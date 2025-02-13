@@ -108,14 +108,26 @@ class Collection(models.Model):
     name = models.CharField(
         max_length=200, unique=True, null=False, verbose_name="Name of collection"
     )
+    publication_status = models.CharField(
+        choices=[
+            ("published", "Yes"),
+            ("submitted", "Submitted"),
+            ("in_preparation", "In Preparation"),
+            ("not_intended", "No"),
+        ],
+        help_text="Is this collection associated with an existing, or planned publication?",
+        null=True,
+        verbose_name="Publication?",
+        blank=True,
+    )
     DOI = models.CharField(
         max_length=200,
         unique=True,
         blank=True,
         null=True,
         default=None,
-        verbose_name="DOI of the corresponding paper",
-        help_text="Required if you want your maps to be archived in Stanford Digital Repository",
+        verbose_name="Publication DOI",
+        help_text="Required for published collections.",
     )
     preprint_DOI = models.CharField(
         max_length=200,
@@ -123,7 +135,7 @@ class Collection(models.Model):
         null=True,
         default=None,
         verbose_name="Preprint DOI",
-        help_text="DOI of the corresponding preprint, if publication DOI is not yet available"
+        help_text="If there is not yet a publication, it is highly encouraged to provide a preprint DOI",
     )
     authors = models.CharField(max_length=5000, blank=True, null=True)
     paper_url = models.CharField(max_length=200, blank=True, null=True)
@@ -149,14 +161,15 @@ class Collection(models.Model):
         choices=(
             (
                 False,
-                "Public (The collection will be accessible by anyone and all the data in it will be distributed under CC0 license)",
+                "Public",
             ),
             (
                 True,
-                "Private (The collection will be not listed in the NeuroVault index. It will be possible to shared it with others at a private URL.)",
+                "Private",
             ),
         ),
         default=False,
+        help_text="Public collections distributed under CC0 license. Private collections are not publicly indexed, but can be shared using a private URL.",
         verbose_name="Accessibility",
     )
     private_token = models.CharField(
@@ -1137,12 +1150,15 @@ class Image(BaseCollectionItem):
 
     def get_absolute_url(self, edit=False):
         return_args = [str(self.id)]
-        url_name  = "statmaps:image_details" if not edit else "statmaps:edit_image"
-        if self.collection.private:
-            return_args.insert(0, str(self.collection.private_token))
-            url_name = "statmaps:private_image_details"
+        if edit:
+            return reverse("statmaps:edit_image", args=return_args)
+        else:
+            url_name  = "statmaps:image_details"
+            if self.collection.private:
+                return_args.insert(0, str(self.collection.private_token))
+                url_name = "statmaps:private_image_details"
 
-        return reverse(url_name, args=return_args)
+            return reverse(url_name, args=return_args)
     
 
     def get_thumbnail_url(self):
