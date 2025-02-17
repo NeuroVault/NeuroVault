@@ -31,7 +31,6 @@ from .views import (
     serve_image,
     serve_pycortex,
     view_collection_with_pycortex,
-    add_image,
     papaya_js_embed,
     view_images_by_tag,
     add_image_for_neuropower,
@@ -171,11 +170,6 @@ urlpatterns = [
         r"^collections/(?P<cid>\d+|[\w{}.-]{8})/download$",
         download_collection,
         name="download_collection",
-    ),
-    re_path(
-        r"^collections/(?P<collection_cid>\d+|[\w{}.-]{8})/addimage",
-        add_image,
-        name="add_image",
     ),
     re_path(
         r"^collections/(?P<collection_cid>\d+|[\w{}.-]{8})/upload_folder$",

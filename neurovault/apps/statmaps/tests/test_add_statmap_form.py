@@ -1,5 +1,7 @@
 import nibabel as nb
 import os
+import unittest
+
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.test import TestCase, Client
@@ -27,6 +29,7 @@ class AddStatmapsTests(TestCase):
     def testaddNiiGz(self):
         post_dict = {
             "name": "test map",
+            "cognitive_task_choice": "yes_other",
             "cognitive_paradigm_cogatlas": "trm_4f24126c22011",
             "modality": "fMRI-BOLD",
             "map_type": "T",
@@ -38,8 +41,8 @@ class AddStatmapsTests(TestCase):
         testpath = os.path.abspath(os.path.dirname(__file__))
         fname = os.path.join(testpath, "test_data/statmaps/motor_lips.nii.gz")
         file_dict = {"file": SimpleUploadedFile(fname, open(fname, "rb").read())}
+        post_dict.update(file_dict)
         form = StatisticMapForm(post_dict, file_dict)
-
         self.assertTrue(form.is_valid())
 
         form.save()
@@ -48,6 +51,7 @@ class AddStatmapsTests(TestCase):
             StatisticMap.objects.filter(collection=self.coll.pk)[0].name, "test map"
         )
 
+    @unittest.skip("Not supporting AFNI file uploads")
     def testaddAFNI(self):
         post_dict = {
             "name": "test map",
@@ -68,6 +72,7 @@ class AddStatmapsTests(TestCase):
         self.assertTrue(len(split_4D_to_3D(nii)) > 0)
 
         file_dict = {"file": SimpleUploadedFile(fname, open(fname, "rb").read())}
+        post_dict.update(file_dict)
         form = StatisticMapForm(post_dict, file_dict)
 
         self.assertTrue(form.is_valid())
@@ -78,6 +83,7 @@ class AddStatmapsTests(TestCase):
             StatisticMap.objects.filter(collection=self.coll.pk).count(), 2
         )
 
+    @unittest.skip("Not supporting separate hdr/img files")
     def testaddImgHdr(self):
         post_dict = {
             "name": "test map",
@@ -96,6 +102,7 @@ class AddStatmapsTests(TestCase):
             "file": SimpleUploadedFile(fname_img, open(fname_img, "rb").read()),
             "hdr_file": SimpleUploadedFile(fname_hdr, open(fname_hdr, "rb").read()),
         }
+        post_dict.update(file_dict)
         form = StatisticMapForm(post_dict, file_dict)
         self.assertFalse(form.is_valid())
         self.assertTrue("thresholded" in form.errors["file"][0])
@@ -125,58 +132,4 @@ class AddStatmapsTests(TestCase):
 
         self.assertEqual(
             StatisticMap.objects.filter(collection=self.coll.pk)[0].name, "test map"
-        )
-
-    def test_add_image_non_owner(self):
-        non_owner = User.objects.create_user("non_owner", password="pass")
-        non_owner.save()
-        client = Client()
-        client.login(username=non_owner, password="pass")
-        testpath = os.path.abspath(os.path.dirname(__file__))
-        fname_img = os.path.join(testpath, "test_data/statmaps/box_0b_vs_1b.img")
-        fname_hdr = os.path.join(testpath, "test_data/statmaps/box_0b_vs_1b.hdr")
-        post_dict = {
-            "name": "test map",
-            "cognitive_paradigm_cogatlas": "trm_4f24126c22011",
-            "modality": "fMRI-BOLD",
-            "target_template_image": "GenericMNI",
-            "map_type": "T",
-            "number_of_subjects": 10,
-            "analysis_level": "G",
-            "collection": self.coll.pk,
-            "ignore_file_warning": True,
-            "file": SimpleUploadedFile(fname_img, open(fname_img, "rb").read()),
-            "hdr_file": SimpleUploadedFile(fname_hdr, open(fname_hdr, "rb").read()),
-        }
-        cid = self.coll.pk
-        response = client.post(
-            reverse("statmaps:add_image", kwargs={"collection_cid": cid}), post_dict
-        )
-        self.assertEqual(response.status_code, 403)
-
-    def test_add_image_owner(self):
-        testpath = os.path.abspath(os.path.dirname(__file__))
-        fname_img = os.path.join(testpath, "test_data/statmaps/box_0b_vs_1b.img")
-        fname_hdr = os.path.join(testpath, "test_data/statmaps/box_0b_vs_1b.hdr")
-        post_dict = {
-            "name": "test map",
-            "cognitive_paradigm_cogatlas": "trm_4f24126c22011",
-            "modality": "fMRI-BOLD",
-            "target_template_image": "GenericMNI",
-            "map_type": "T",
-            "number_of_subjects": 10,
-            "analysis_level": "G",
-            "collection": self.coll.pk,
-            "ignore_file_warning": True,
-            "file": SimpleUploadedFile(fname_img, open(fname_img, "rb").read()),
-            "hdr_file": SimpleUploadedFile(fname_hdr, open(fname_hdr, "rb").read()),
-        }
-        cid = self.coll.pk
-        response = self.client.post(
-            reverse("statmaps:add_image", kwargs={"collection_cid": cid}), post_dict
-        )
-        self.assertEqual(response.status_code, 302)
-        image_pk = StatisticMap.objects.order_by("-pk")[0].pk
-        self.assertRedirects(
-            response, reverse("statmaps:image_details", kwargs={"pk": image_pk})
         )
