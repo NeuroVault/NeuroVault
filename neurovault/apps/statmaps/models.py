@@ -1061,12 +1061,12 @@ class Image(BaseCollectionItem):
         verbose_name="Handedness",
     )
     age = models.FloatField(null=True, blank=True, verbose_name="Age (years)")
-    gender = models.CharField(
+    sex = models.CharField(
         max_length=200,
         null=True,
         blank=True,
         choices=[("M", "Male"), ("F", "Female"), ("O", "Other")],
-        verbose_name="Gender",
+        verbose_name="Sex",
     )
     race = models.CharField(
         max_length=200,
@@ -1252,7 +1252,7 @@ class Image(BaseCollectionItem):
         return super(Image, cls).get_fixed_fields() + (
             "target_template_image",
             "age",
-            "gender",
+            "sex",
             "ethnicity",
             "race",
             "handedness",
