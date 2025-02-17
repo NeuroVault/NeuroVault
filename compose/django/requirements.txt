@@ -116,3 +116,4 @@ django-celery-results
 zipstream
 django-filter
 crispy-bootstrap4
+sentry-sdk[django]
