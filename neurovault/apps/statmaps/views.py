@@ -14,13 +14,15 @@ from collections import OrderedDict
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
-from django.db.models import Q
+from django.core.files.base import ContentFile
+from django.db.models import Max, Q
 from django.db.models.aggregates import Count
 from django.http import Http404, HttpResponse, StreamingHttpResponse, JsonResponse
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.encoding import filepath_to_uri
 from django.views.decorators.csrf import csrf_exempt
+from django.views.generic.base import TemplateView
 from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.urls import reverse
 from fnmatch import fnmatch
@@ -1024,7 +1026,7 @@ def delete_image(request, pk):
     if not request.user.has_perm("statmaps.delete_basecollectionitem", image):
         return HttpResponseForbidden()
     image.delete()
-    return redirect("collection_details", cid=cid)
+    return redirect(reverse("statmaps:collection_details", kwargs={"cid": cid}))
 
 
 def view_images_by_tag(request, tag):
@@ -1560,10 +1562,25 @@ class AtlasesAndParcellationsJson(BaseDatatableView):
             qs = qs.filter(Q(name__icontains=search) | Q(description__icontains=search))
         return qs
 
+class PublicCollections(TemplateView):
+    template_name = "statmaps/collections_index.html"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["map_types"] = BaseStatisticMap.map_type.field.choices
+        context["modalities"] = StatisticMap.modality.field.choices
+        context["tasks"] = list(CognitiveAtlasTask.objects.exclude( pk='None').filter(statisticmap__isnull=False).values('pk', 'name').annotate(count=Count('pk')).order_by('-count').values())
+        return context
+
+class MyCollections(PublicCollections):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["own_collections"] = True
+        return context
 
 class PublicCollectionsJson(BaseDatatableView):
-    columns = ["name", "n_images", "description", "has_doi"]
-    order_columns = ["name", "", "description", ""]
+    columns = ["name", "n_images", "description", "has_doi", "latest_image_modify"]
+    order_columns = ["name", "", "description", "DOI", "latest_image_modify"]
 
     def get_initial_queryset(self):
         # return queryset used as base for further sorting/filtering
@@ -1571,7 +1588,9 @@ class PublicCollectionsJson(BaseDatatableView):
         # You should not filter data returned here by any filter values entered by user. This is because
         # we need some base queryset to count total number of records.
         return Collection.objects.filter(
-            ~Q(name__endswith="temporary collection"), private=False
+            ~Q(name__endswith="temporary collection"), private=False, basecollectionitem__isnull=False
+        ).annotate(
+            latest_image_modify=Max('basecollectionitem__modify_date'),
         )
 
     def render_column(self, row, column):
@@ -1583,12 +1602,29 @@ class PublicCollectionsJson(BaseDatatableView):
                 return ""
         elif column == "n_images":
             return row.basecollectionitem_set.count()
+        elif column == "latest_image_modify":
+            return row.latest_image_modify.strftime("%Y-%m-%d")
         else:
             return super(PublicCollectionsJson, self).render_column(row, column)
 
     def filter_queryset(self, qs):
         # use parameters passed in GET request to filter queryset
+        filter_keys = ["hasDoi", "modality", "maptype", "task"]
+        filters = {k: self.request.GET.get(k, None) for k in filter_keys}
+        print(filters)
+        if filters["hasDoi"] == "true":
+            qs = qs.exclude(DOI__isnull=True).exclude(DOI='')
+        if filters["modality"] != "false":
+            modality_qs = StatisticMap.objects.filter(modality=filters["modality"]).values_list('collection', flat=True).distinct()
+            qs = qs.filter(id__in=modality_qs)
+        if filters["maptype"] != "false":
+            maptype_qs = StatisticMap.objects.filter(maptype=filters["maptype"]).values_list('collection', flat=True).distinct()
+            qs = qs.filter(id__in=maptype_qs)
+        if filters["task"] != "false":
+            task_qs = StatisticMap.objects.filter(cognitive_paradigm_cogatlas=filters["task"]).values_list('collection', flat=True).distinct()
+            qs = qs.filter(id__in=task_qs)
 
+            
         # simple example:
         search = self.request.GET.get("search[value]", None)
         if search:
