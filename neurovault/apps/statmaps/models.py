@@ -108,14 +108,34 @@ class Collection(models.Model):
     name = models.CharField(
         max_length=200, unique=True, null=False, verbose_name="Name of collection"
     )
+    publication_status = models.CharField(
+        choices=[
+            ("published", "Yes"),
+            ("submitted", "Submitted"),
+            ("in_preparation", "In Preparation"),
+            ("not_intended", "No"),
+        ],
+        help_text="Is this collection associated with an existing, or planned publication?",
+        null=True,
+        verbose_name="Publication?",
+        blank=True,
+    )
     DOI = models.CharField(
         max_length=200,
         unique=True,
         blank=True,
         null=True,
         default=None,
-        verbose_name="DOI of the corresponding paper",
-        help_text="Required if you want your maps to be archived in Stanford Digital Repository",
+        verbose_name="Publication DOI",
+        help_text="Required for published collections.",
+    )
+    preprint_DOI = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        default=None,
+        verbose_name="Preprint DOI",
+        help_text="If there is not yet a publication, it is highly encouraged to provide a preprint DOI",
     )
     authors = models.CharField(max_length=5000, blank=True, null=True)
     paper_url = models.CharField(max_length=200, blank=True, null=True)
@@ -141,14 +161,15 @@ class Collection(models.Model):
         choices=(
             (
                 False,
-                "Public (The collection will be accessible by anyone and all the data in it will be distributed under CC0 license)",
+                "Public",
             ),
             (
                 True,
-                "Private (The collection will be not listed in the NeuroVault index. It will be possible to shared it with others at a private URL.)",
+                "Private",
             ),
         ),
         default=False,
+        help_text="Public collections distributed under CC0 license. Private collections are not publicly indexed, but can be shared using a private URL.",
         verbose_name="Accessibility",
     )
     private_token = models.CharField(
@@ -1025,7 +1046,7 @@ class Image(BaseCollectionItem):
     )
     figure = models.CharField(
         help_text="Which figure in the corresponding paper was this map displayed in?",
-        verbose_name="Corresponding figure",
+        verbose_name="Manuscript figure",
         max_length=200,
         null=True,
         blank=True,
@@ -1040,12 +1061,12 @@ class Image(BaseCollectionItem):
         verbose_name="Handedness",
     )
     age = models.FloatField(null=True, blank=True, verbose_name="Age (years)")
-    gender = models.CharField(
+    sex = models.CharField(
         max_length=200,
         null=True,
         blank=True,
         choices=[("M", "Male"), ("F", "Female"), ("O", "Other")],
-        verbose_name="Gender",
+        verbose_name="Sex",
     )
     race = models.CharField(
         max_length=200,
@@ -1127,13 +1148,18 @@ class Image(BaseCollectionItem):
     data = models.JSONField(blank=True, null=True)
     # hstore_objects = hstore.HStoreManager()
 
-    def get_absolute_url(self):
+    def get_absolute_url(self, edit=False):
         return_args = [str(self.id)]
-        url_name = "statmaps:image_details"
-        if self.collection.private:
-            return_args.insert(0, str(self.collection.private_token))
-            url_name = "statmaps:private_image_details"
-        return reverse(url_name, args=return_args)
+        if edit:
+            return reverse("statmaps:edit_image", args=return_args)
+        else:
+            url_name  = "statmaps:image_details"
+            if self.collection.private:
+                return_args.insert(0, str(self.collection.private_token))
+                url_name = "statmaps:private_image_details"
+
+            return reverse(url_name, args=return_args)
+    
 
     def get_thumbnail_url(self):
         try:
@@ -1226,7 +1252,7 @@ class Image(BaseCollectionItem):
         return super(Image, cls).get_fixed_fields() + (
             "target_template_image",
             "age",
-            "gender",
+            "sex",
             "ethnicity",
             "race",
             "handedness",
@@ -1462,7 +1488,7 @@ class StatisticMap(BaseStatisticMap):
     )
     cognitive_paradigm_cogatlas = models.ForeignKey(
         CognitiveAtlasTask,
-        help_text="Task (or lack of it) performed by the subjects in the scanner described using <a href='http://www.cognitiveatlas.org/' target='_blank'>Cognitive Atlas</a> terms",
+        help_text="Task performed by the subjects in the scanner described using <a href='http://www.cognitiveatlas.org/' target='_blank'>Cognitive Atlas</a>. If there's no match, select 'None / Other'. ",
         verbose_name="Cognitive Atlas Paradigm",
         null=True,
         blank=False,
@@ -1477,11 +1503,23 @@ class StatisticMap(BaseStatisticMap):
         on_delete=models.PROTECT,
     )
     cognitive_paradigm_description_url = models.URLField(
-        help_text="Link to a paper, poster, abstract or other form text describing in detail the task performed by the subject(s) in the scanner.",
-        verbose_name="Cognitive Paradigm Description URL",
+        help_text="Link to a paper, poster, abstract describing in detail the task performed by the subject(s) in the scanner.",
+        verbose_name="Description URL",
         null=True,
         blank=True,
     )
+    cognitive_paradigm_short_description = models.CharField(
+        help_text="Describe your task",
+        verbose_name="Task Description",
+        null=True,
+        blank=True,
+    )
+    cognitive_paradigm_name = models.CharField(
+        help_text="Name of your task (if it)",
+        verbose_name="Task Name",
+        null=True,
+        blank=True
+     )
 
     @classmethod
     def get_fixed_fields(cls):

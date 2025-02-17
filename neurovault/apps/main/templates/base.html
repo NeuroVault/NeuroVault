@@ -3,22 +3,25 @@
 <html lang="en">
 
 <head>
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-339450-10"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-339450-10"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
 
-  gtag('config', 'UA-339450-10');
-</script>
-<!-- Google Tag Manager -->
-<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-KBPV64D');</script>
-<!-- End Google Tag Manager -->
+        gtag('config', 'UA-339450-10');
+    </script>
+    <!-- Google Tag Manager -->
+    <script>(function (w, d, s, l, i) {
+            w[l] = w[l] || []; w[l].push({
+                'gtm.start':
+                    new Date().getTime(), event: 'gtm.js'
+            }); var f = d.getElementsByTagName(s)[0],
+                j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
+                    'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', 'GTM-KBPV64D');</script>
+    <!-- End Google Tag Manager -->
     {% block global_includes %}
     <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
     <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
@@ -38,22 +41,30 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="msapplication-TileColor" content="#da532c">
     <meta name="msapplication-TileImage" content="/mstile-144x144.png">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" media="(prefers-color-scheme: light)" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootswatch/4.3.1/cyborg/bootstrap.min.css" crossorigin="anonymous" media="(prefers-color-scheme: dark)">
-    <style type="text/css">
-    @media (prefers-color-scheme: dark) {
-        body { background: #1f1f1f !important; } 
-    }
-    </style>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" id="light-theme-css"
+        href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+        media="(prefers-color-scheme: light)" crossorigin="anonymous">
+    <link rel="stylesheet" id="dark-theme-css"
+        href="https://stackpath.bootstrapcdn.com/bootswatch/4.3.1/cyborg/bootstrap.min.css" crossorigin="anonymous"
+        media="(prefers-color-scheme: dark)">
+    <link rel="stylesheet" id="dark-extra-css" href="{% static 'css/dark-extras.css' %}"
+        media="(prefers-color-scheme: dark)">
     <script src="https://code.jquery.com/jquery-3.4.1.min.js" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
+    <script src="//cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css" />
+    <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js" type="text/javascript"></script>
+    <script src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap4.min.js" type="text/javascript"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 
-    <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js" type="text/javascript"></script>
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap4.min.css" />
-    <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js" type="text/javascript"></script>
-    <script src="https://cdn.datatables.net/1.10.25/js/dataTables.bootstrap4.min.js" type="text/javascript"></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.min.css" />
     <script type="application/ld+json">
@@ -82,65 +93,73 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     {% endblock %}
     {% block includes %}{% endblock %}
     {% block head %}{% endblock %}
-	{% block functions %}{% endblock %}
+    {% block functions %}{% endblock %}
 </head>
 
 {% block body %}
+
 <body>
-<!-- Google Tag Manager (noscript) -->
-<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KBPV64D"
-height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-<!-- End Google Tag Manager (noscript) -->
-<div class="container">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KBPV64D" height="0" width="0"
+            style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+    <div class="container">
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <a class="navbar-brand" href="{% url 'main:index' %}">NeuroVault</a>
-        <a class="navbar-brand" style="margin-left: -12px" href="{{ name_subscript_url }}"><sub>{{ name_subscript }}</sub></a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <a class="navbar-brand" href="{% url 'main:index' %}">NeuroVault</a>
+            <a class="navbar-brand" style="margin-left: -12px" href="{{ name_subscript_url }}"><sub>{{ name_subscript}}</sub></a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-        <!-- Collect the nav links, forms, and other content for toggling -->
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav mr-auto">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Collections
-                    </a>
-                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                        <a class="dropdown-item" href="{% url 'statmaps:my_collections' %}">My collections</a>
-                        <a class="dropdown-item" href="{% url 'statmaps:new_collection' %}">Add new collection</a>
-                        <a class="dropdown-item" href="{% url 'statmaps:collections_list' %}">See all collections</a>
-                    </div>
-                </li>
-
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Metaanalyses
-                    </a>
-                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                        <a class="dropdown-item" href="{% url 'statmaps:my_metaanalyses' %}">My metaanalyses</a>
-                        <a class="dropdown-item" href="{% url 'statmaps:metaanalysis_selection' %}">Search for group
-                            level maps</a>
-                    </div>
-                </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="aboutDropdown" role="button"
-                       data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        About
-                    </a>
-                    <div class="dropdown-menu" aria-labelledby="aboutDropdown">
-                        <a class="dropdown-item" href="{% url 'main:cite' %}">How to cite</a>
-                        <a class="dropdown-item" href="{% url 'main:FAQ' %}">FAQ</a>
-                        <a class="dropdown-item" href="https://neurostars.org/tags/neurovault">Give feedback</a>
-                    </div>
-                </li>
-            </ul>
-            <ul class="navbar-nav ml-auto">
-                <!-- User Profile -->
-                {% if request.user.is_authenticated %}
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav mr-auto">
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Collections
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <a class="dropdown-item" href="{% url 'statmaps:my_collections' %}">My collections</a>
+                            <a class="dropdown-item" href="{% url 'statmaps:new_collection' %}">Add new collection</a>
+                            <a class="dropdown-item" href="{% url 'statmaps:collections_list' %}">See all
+                                collections</a>
+                        </div>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Metaanalyses
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <a class="dropdown-item" href="{% url 'statmaps:my_metaanalyses' %}">My metaanalyses</a>
+                            <a class="dropdown-item" href="{% url 'statmaps:metaanalysis_selection' %}">Search for group
+                                level maps</a>
+                        </div>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="aboutDropdown" role="button"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            About
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="aboutDropdown">
+                            <a class="dropdown-item" href="{% url 'main:cite' %}">How to cite</a>
+                            <a class="dropdown-item" href="{% url 'main:FAQ' %}">FAQ</a>
+                            <a class="dropdown-item" href="https://neurostars.org/tags/neurovault">Give feedback</a>
+                        </div>
+                    </li>
+                </ul>
+
+                <ul class="navbar-nav ml-auto">
+
+                    <!-- User Profile -->
+                    {% if request.user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             {{ request.user.username }}
                         </a>
                         <div class="dropdown-menu" aria-labelledby="navbarDropdown">
@@ -150,33 +169,108 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                             <a class="dropdown-item" href="{% url 'users:logout' %}">Logout</a>
                         </div>
                     </li>
-                {% else %}
-                    <li class="nav-item"><a class="nav-link"  href="{% url 'users:login' %}">Log in</a></li>
-                {% endif %}
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="btn btn-primary my-2 my-sm-0" href="{% url 'users:login' %}">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
+                    </li>
+                    {% endif %}
 
-                           <!-- Search Icon -->
-                <form class="form-inline" action="{% url 'statmaps:search' %}" method="GET">
-                    <input class="form-control form-control-sm mr-sm-2" type="search" name="q" placeholder="Search" aria-label="Search">
-                    <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
-                </form>
-            </ul>
-        </div><!-- /.navbar-collapse -->
-    </nav>
-    <div class="container p-3">
-        {% block content %}{% endblock %}
+
+
+
+                    <form class="form-inline" action="{% url 'statmaps:search' %}" method="GET">
+                        <input class="form-control form-control-sm mr-sm-2" type="search" name="q" placeholder="Search"
+                            aria-label="Search">
+                        <button class="btn btn-secondary my-2 my-sm-0" type="submit"><i
+                                class="fas fa-search"></i></button>
+                    </form>
+
+                    <li class="nav-item">
+                        <a class="btn btn-primary my-2 my-sm-0" href="#" id="theme-toggle-btn">
+                            <i class="fas fa-moon"></i>
+                        </a>
+                    </li>
+
+
+                </ul>
+            </div><!-- /.navbar-collapse -->
+        </nav>
+        <div class="container p-3">
+            {% block content %}{% endblock %}
+        </div>
     </div>
-</div>
 
-{% block footer %}
-<div class="footer-copyright text-center">
-    <p>
-        <a href="/api-docs">API</a>  &middot;
-        <a href="https://github.com/NeuroVault/NeuroVault">Github </a> &middot;
-        <a href="http://www.cognitiveatlas.org">Cognitive Atlas </a> &middot;
-        <a href="http://www.neurosynth.org">NeuroSynth </a>
-    </p>
-</div>
-{% endblock %}
+    {% block footer %}
+    <div class="footer-copyright text-center">
+        <p>
+            <a href="/api-docs">API</a> &middot;
+            <a href="https://github.com/NeuroVault/NeuroVault">Github </a> &middot;
+            <a href="http://www.cognitiveatlas.org">Cognitive Atlas </a> &middot;
+            <a href="http://www.neurosynth.org">NeuroSynth </a>
+        </p>
+    </div>
+    {% endblock %}
+
+    <script>
+        const btn = document.getElementById('theme-toggle-btn');
+        const lightThemeLink = document.getElementById('light-theme-css');
+        const darkThemeLink = document.getElementById('dark-theme-css');
+        const darkExtraLink = document.getElementById('dark-extra-css');
+
+        // This function forces either light or dark mode by disabling
+        // one stylesheet and removing the 'media' attribute from the other,
+        // or resets to "system" preference.
+        function applyTheme(theme) {
+            switch (theme) {
+                case "light":
+                    lightThemeLink.media = "all";             // force load
+                    darkThemeLink.media = "not all";          // disable
+                    darkExtraLink.media = "not all";          // disable
+                    saveTheme('light')
+                    break;
+                case "dark":
+                    lightThemeLink.media = "not all";         // disable
+                    darkThemeLink.media = "all";             // force load
+                    darkExtraLink.media = "all";             // force load
+                    saveTheme('dark')
+                    break;
+            }
+        }
+
+        // Handle button click: cycle among "system" -> "light" -> "dark"
+        btn.addEventListener('click', () => {
+            const currentTheme = localStorage.getItem('theme');
+            if (currentTheme === "light") {
+                applyTheme("dark");
+            } else {
+                applyTheme("light");
+            }
+        });
+
+        // Onload check local memory for pref, if so respect that
+        // If not then check for browser preference and set that to local memory
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+            if (savedTheme === "dark" || savedTheme === "light") {
+                if (savedTheme !== systemTheme) {
+                    applyTheme(savedTheme);
+                }
+            }
+        });
+
+
+        // Save the current theme to local storage
+        function saveTheme(theme) {
+            localStorage.setItem('theme', theme);
+        }
+
+
+    </script>
+
 </body>
 {% endblock %}
+
 </html>

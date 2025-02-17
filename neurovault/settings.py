@@ -194,8 +194,6 @@ SOCIAL_AUTH_GOOGLE_PLUS_SECRET = os.getenv("SOCIAL_AUTH_GOOGLE_PLUS_SECRET")
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.getenv("SOCIAL_AUTH_GOOGLE_OAUTH2_KEY")
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv("SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET")
 
-SESSION_SERIALIZER = "django.contrib.sessions.serializers.PickleSerializer"
-
 REST_FRAMEWORK = {
     # Use hyperlinked styles by default.
     # Only used if the `serializer_class` attribute is not set on a view.

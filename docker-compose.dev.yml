@@ -4,9 +4,9 @@ services:
     restart: always
     build:
       context: .
-      dockerfile: ./compose/django/Dockerfile
-      target: neurovault
-    image: neurovault/neurovault
+      dockerfile: ./compose/django/Dockerfile.dev
+      target: neurovault-dev
+    image: neurovault/neurovault-dev
     command: python manage.py runserver 0.0.0.0:8000 --insecure
     ports: 
       - "8000:8000"
@@ -35,9 +35,9 @@ services:
   worker:
     build:
       context: .
-      dockerfile: ./compose/django/Dockerfile
-      target: neurovault
-    image: neurovault/neurovault
+      dockerfile: ./compose/django/Dockerfile.dev
+      target: neurovault-dev
+    image: neurovault/neurovault-dev
     command: celery -A neurovault.celery worker -Q default -n default@%h
     volumes:
       - .:/code

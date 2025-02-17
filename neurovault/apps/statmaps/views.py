@@ -1,20 +1,15 @@
 import csv
 import functools
-import gzip
-import io
 import json
-import nibabel as nib
 import shutil
 import numpy as np
 import os
 import re
 import shutil
-import tarfile
 import tempfile
 import traceback
 import urllib.request, urllib.parse, urllib.error
 import zipstream
-import zipfile
 from collections import OrderedDict
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -22,7 +17,7 @@ from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.db.models import Max, Q
 from django.db.models.aggregates import Count
-from django.http import Http404, HttpResponse, StreamingHttpResponse, FileResponse
+from django.http import Http404, HttpResponse, StreamingHttpResponse, JsonResponse
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.encoding import filepath_to_uri
@@ -32,6 +27,7 @@ from django_datatables_view.base_datatable_view import BaseDatatableView
 from django.urls import reverse
 from fnmatch import fnmatch
 from guardian.shortcuts import get_objects_for_user
+from urllib.parse import urlencode
 
 # from nidmviewer.viewer import generate
 # from pybraincompare.compare.scatterplot import scatterplot_compare_vector
@@ -39,12 +35,6 @@ from nidmresults.graph import Graph
 from rest_framework.renderers import JSONRenderer
 from sendfile import sendfile
 import joblib
-from xml.dom import minidom
-from django.core.files.uploadedfile import SimpleUploadedFile
-from nimare.meta.ibma import Stouffers
-from nimare.transforms import t_to_z
-from nilearn.masking import apply_mask
-from nilearn.image import resample_to_img
 
 from neurovault.apps.statmaps.models import get_possible_templates, DEFAULT_TEMPLATE
 
@@ -56,15 +46,10 @@ from neurovault.apps.statmaps.forms import (
     UploadFileForm,
     SimplifiedStatisticMapForm,
     NeuropowerStatisticMapForm,
-    StatisticMapForm,
     EditStatisticMapForm,
     OwnerCollectionForm,
     EditAtlasForm,
-    AtlasForm,
     EditNIDMResultStatisticMapForm,
-    NIDMResultsForm,
-    NIDMViewForm,
-    AddStatisticMapForm,
     MetaanalysisForm,
 )
 from neurovault.apps.statmaps.models import (
@@ -78,7 +63,6 @@ from neurovault.apps.statmaps.models import (
     CognitiveAtlasContrast,
     BaseStatisticMap,
     DEFAULT_TEMPLATE,
-    BaseCollectionItem,
     Metaanalysis,
 )
 from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
@@ -90,22 +74,29 @@ from neurovault.apps.statmaps.utils import (
     HttpRedirectException,
     get_paper_properties,
     get_file_ctime,
-    detect_4D,
-    split_4D_to_3D,
-    splitext_nii_gz,
-    mkdir_p,
     send_email_notification,
     populate_nidm_results,
     get_server_url,
-    populate_feat_directory,
-    detect_feat_directory,
     format_image_collection_names,
     is_search_compatible,
     get_similar_images,
+    extract_archive,
+    collect_nifti_files,
+    extract_multiple_files,
+    create_image_from_nifti,
+    write_file_to_disk
 )
 from neurovault.apps.statmaps.utils import (
     is_target_template_image_pycortex_compatible,
     is_target_template_image_neurosynth_compatible,
+)
+from neurovault.apps.statmaps.meta import (
+    load_default_mask,
+    create_collection_for_metaanalysis,
+    gather_images_and_sizes,
+    set_collection_description,
+    run_meta_analysis,
+    create_and_save_statmaps,
 )
 from neurovault.apps.statmaps.voxel_query_functions import *
 from . import image_metadata
@@ -198,142 +189,45 @@ def edit_metaanalysis(request, metaanalysis_id=None):
     context = {"form": form, "page_header": page_header}
     return render(request, "statmaps/edit_metaanalysis.html", context)
 
-
 @login_required
 def finalize_metaanalysis(request, metaanalysis_id):
-    metaanalysis = Metaanalysis.objects.get(pk=metaanalysis_id)
+    metaanalysis = get_object_or_404(Metaanalysis, pk=metaanalysis_id)
+
+    # 1. Check permissions and status
     if request.user != metaanalysis.owner or metaanalysis.status == "completed":
         return HttpResponseForbidden()
 
-    new_collection = Collection(
-        name="Metaanalysis %d: %s" % (metaanalysis.pk, metaanalysis.name),
-        owner=metaanalysis.owner,
-        full_dataset_url=metaanalysis.get_absolute_url(),
-    )
-    new_collection.save()
+    # 2. Create a new collection
+    new_collection = create_collection_for_metaanalysis(metaanalysis)
 
-    POSSIBLE_TEMPLATES = get_possible_templates()
-    mask_path = POSSIBLE_TEMPLATES[DEFAULT_TEMPLATE]["mask"]
-    this_path = os.path.abspath(os.path.dirname(__file__))
-    mask_img = nib.load(os.path.join(this_path, "static", "anatomical", mask_path))
+    # 3. Load default mask
+    #    (Use your actual get_possible_templates function to pass to the helper)
+    mask_img = load_default_mask(get_possible_templates, DEFAULT_TEMPLATE)
 
-    z_imgs = []
-    sizes = []
-    for img in metaanalysis.maps.all():
-        valid = False
-        if img.map_type == "Z":
-            z_imgs.append(resample_to_img(nib.load(img.file.path), mask_img))
-            valid = True
-        elif img.map_type == "T" and img.number_of_subjects:
-            t_map_nii = nib.load(img.file.path)
-            # assuming one sided test
-            z_map_nii = nib.Nifti1Image(
-                t_to_z(np.asanyarray(t_map_nii.dataobj), img.number_of_subjects - 1),
-                t_map_nii.affine,
-            )
-            z_imgs.append(resample_to_img(z_map_nii, mask_img))
-            valid = True
+    # 4. Gather Z images (and T->Z conversions) + sizes
+    z_imgs, sizes = gather_images_and_sizes(metaanalysis, mask_img)
 
-        if valid and img.number_of_subjects:
-            sizes.append(img.number_of_subjects)
+    # 5. Determine if weighted is possible (if sizes match #images)
+    #    Then update new_collection description
+    do_weighted = (len(sizes) == len(z_imgs)) and len(z_imgs) > 0
+    set_collection_description(new_collection, z_imgs, do_weighted)
 
-    do_weighted = len(sizes) == len(z_imgs)
+    # 6. Run meta-analysis
+    result, actually_weighted = run_meta_analysis(z_imgs, sizes, mask_img)
 
-    if do_weighted:
-        new_collection.description = (
-            "Two sided Stouffer's fixed-effects image-based "
-            "meta-analysis on "
-            "%d "
-            "maps weighted by their corresponding sample sizes. FWE "
-            "corrected with theoretical null distribution." % len(z_imgs)
-        )
-    else:
-        new_collection.description = (
-            "Two sided Stouffer's fixed-effects image-based "
-            "meta-analysis on %d "
-            "maps. FWE "
-            "corrected with theoretical null distribution." % len(z_imgs)
-        )
-
-    new_collection.save()
-
-    z_data = apply_mask(z_imgs, mask_img)
-    if do_weighted:
-        result = weighted_stouffers(
-            z_data,
-            np.array(sizes),
-            mask_img,
-            corr="FWE",
-            two_sided=True,
-            use_sample_size=True,
-        )
-    else:
-        result = Stouffers(
-            z_data,
-            mask_img,
-            inference="ffx",
-            null="theoretical",
-            corr="FWE",
-            two_sided=True,
-        )
-
-    z_map = StatisticMap(
-        name="FWE corrected Z map",
-        description="",
-        collection=new_collection,
-        modality="Other",
-        map_type="Z",
-        analysis_level="M",
-        target_template_image="GenericMNI",
-    )
-    p_map = StatisticMap(
-        name="FWE corrected P map",
-        description="",
-        collection=new_collection,
-        modality="Other",
-        map_type="P",
-        analysis_level="M",
-        number_of_subjects=-1,
-        target_template_image="GenericMNI",
-    )
-    if do_weighted:
-        ffx_map = StatisticMap(
-            name="FFX map",
-            description="",
-            collection=new_collection,
-            modality="Other",
-            map_type="Other",
-            analysis_level="M",
-            target_template_image="GenericMNI",
-        )
-
+    # 7. Create & save StatisticMap objects (Z/P/FFX)
     tmp_dir = tempfile.mkdtemp()
     try:
-        z_path = os.path.join(tmp_dir, "z_fwe_corr.nii.gz")
-        result.images["z"].to_filename(z_path)
-        z_map.file = SimpleUploadedFile("z_fwe_corr.nii.gz", open(z_path, "rb").read())
-        z_map.save()
-
-        p_path = os.path.join(tmp_dir, "p_fwe_corr.nii.gz")
-        result.images["p"].to_filename(p_path)
-        p_map.file = SimpleUploadedFile("p_fwe_corr.nii.gz", open(p_path, "rb").read())
-        p_map.save()
-        if do_weighted:
-            ffx_path = os.path.join(tmp_dir, "ffx_stat.nii.gz")
-            result.images["ffx_stat"].to_filename(ffx_path)
-            ffx_map.file = SimpleUploadedFile(
-                "ffx_stat.nii.gz", open(ffx_path, "rb").read()
-            )
-            ffx_map.save()
+        create_and_save_statmaps(result, actually_weighted, new_collection, tmp_dir)
     finally:
         shutil.rmtree(tmp_dir)
 
+    # 8. Finalize meta-analysis status
     metaanalysis.output_maps = new_collection
     metaanalysis.status = "completed"
     metaanalysis.save()
 
     return HttpResponseRedirect(new_collection.get_absolute_url())
-
 
 @login_required
 def toggle_active_metaanalysis(request, pk, collection_cid=None):
@@ -413,7 +307,7 @@ def edit_collection(request, cid=None):
         else:
             form = CollectionForm(instance=collection)
 
-    context = {"form": form, "page_header": page_header, "is_owner": is_owner}
+    context = {"form": form, "page_header": page_header, "is_owner": is_owner, "preamble": "Please fill in the fields below to create a new collection."}
     return render(request, "statmaps/edit_collection.html", context)
 
 
@@ -645,13 +539,10 @@ def view_collection(request, cid):
         "cid": cid,
     }
 
-    context["gimages_visible"] = False
-    context["simages_visible"] = False
-    context["oimages_visible"] = False
-    context["images_visible"] = False
-    context["gimages_active"] = False
-    context["simages_active"] = False
-    context["oimages_active"] = False
+    for i in ["gimages_visible", "simages_visible", "oimages_visible", "images_visible", 
+              "gimages_active", "simages_active", "oimages_active"]:
+        context[i] = False
+
     context["oimages_title"] = "Other"
     if collection.basecollectionitem_set.not_instance_of(StatisticMap).count() > 0:
         context["images_visible"] = True
@@ -682,6 +573,14 @@ def view_collection(request, cid):
             .count()
             > 0
         ):
+            if (
+                StatisticMap.objects.filter(collection=collection)
+                .filter(~Q(analysis_level__in=["G", "S"]))
+                .filter(is_valid=False)
+                .count()
+            ):
+                context["oimages_title"] = "Needs Metadata"
+
             context["oimages_visible"] = True
             if not (context["gimages_visible"] or context["simages_visible"]):
                 context["oimages_active"] = True
@@ -718,78 +617,176 @@ def delete_collection(request, cid):
     return redirect("statmaps:my_collections")
 
 
+def _get_sibling_images(current_image):
+    collection_images = current_image.collection.basecollectionitem_set.instance_of(
+        Image
+    )
+    image_ids = sorted(list(collection_images.values_list("id", flat=True)))
+    current_index = image_ids.index(current_image.id)
+
+    prev_id = image_ids[current_index - 1] if current_index > 0 else None
+    next_id = image_ids[current_index + 1] if current_index < len(image_ids) - 1 else None
+
+    prev_image = collection_images.filter(pk=prev_id).first() if prev_id else None
+    next_image = collection_images.filter(pk=next_id).first() if next_id else None
+    return (prev_image, next_image)
+
+
+def _serialize_collection(collection_images):
+    """
+    Return a list of dictionaries representing each image in the collection.
+    Each dictionary is also stored in JSON under the 'json_data' key.
+    """
+
+    base_fields = [
+        "id", "name", "description", "is_valid", "map_type",
+        "target_template_image", "figure", "handedness", "age",
+        "gender", "race", "ethnicity"
+    ]
+    statmap_fields = [
+        "analysis_level", "modality", "number_of_subjects",
+        "contrast_definition", "statistic_parameters", "smoothness_fwhm",
+        "cognitive_paradigm_short_description", "cognitive_paradigm_description_url",
+        "cognitive_contrast_short_description", "cognitive_paradigm_name"
+    ]
+
+    def serialize(img):
+        # Start with "base" fields for all images.
+        data = {field: getattr(img, field, "") for field in base_fields}
+        data["last_edited"] = img.modify_date.strftime('%Y-%m-%d %H:%M:%S') if img.modify_date != img.add_date else None
+
+        # If it's a StatisticMap, copy the statmap-specific fields.
+        if isinstance(img, StatisticMap):
+            for field in statmap_fields:
+                data[field] = getattr(img, field, "") or ""
+            data["cognitive_atlas_paradigm"] = getattr(img.cognitive_paradigm_cogatlas, "cog_atlas_id", None)
+            data["cognitive_atlas_contrast"] = getattr(img.cognitive_contrast_cogatlas, "cog_atlas_id", None)
+        else:
+            # Non-statmaps still need these keys defined, but empty.
+            data["cognitive_atlas_paradigm"] = ""
+            data["cognitive_atlas_contrast"] = ""
+
+        # Store the entire dict as JSON as well.
+        data["json_data"] = json.dumps(data)
+        return data
+
+    # Serialize each image using a list comprehension.
+    return [serialize(img) for img in collection_images]
+
+
+def _get_form_for_image(image):
+    """
+    Return the appropriate form class (and extra kwargs if needed)
+    based on the image's model class.
+    """
+    if isinstance(image, StatisticMap):
+        return EditStatisticMapForm
+    elif isinstance(image, Atlas):
+        return EditAtlasForm
+    elif isinstance(image, NIDMResultStatisticMap):
+        return EditNIDMResultStatisticMapForm
+    else:
+        raise Exception("Unsupported image type.")
+
+
+def _parse_int_param(value, default=""):
+    """
+    Safely parse a string as an integer.
+    Return the default if parsing fails or value is None/empty.
+    """
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+
+def _compute_progress(min_image, max_image):
+    """
+    Compute the progress of images being processed based on is_valid attribute
+    Potential progress is computed by assuming the next image is valid.
+    """
+    images = Image.objects.filter(pk__gte=min_image, pk__lte=max_image)
+    total_images = images.count()
+    valid_images = images.filter(is_valid=True).count()
+    progress = int((valid_images / total_images) * 100) if total_images > 0 else 0
+    potential_progress = int((valid_images + 1 / total_images) * 100) if total_images > 0 else 0
+    label = f"{valid_images}/{total_images}"
+    return progress, label, potential_progress
+
 @login_required
 def edit_image(request, pk):
     image = get_object_or_404(Image, pk=pk)
-    if isinstance(image, StatisticMap):
-        form = EditStatisticMapForm
-    elif isinstance(image, Atlas):
-        form = EditAtlasForm
-    elif isinstance(image, NIDMResultStatisticMap):
-        form = EditNIDMResultStatisticMapForm
+
+    show_instructions = request.GET.get("show_instructions") == "True"
+
+    kw_params = {
+        "bulk": request.GET.get("bulk") == "True",
+        "min_image": _parse_int_param(request.GET.get("min_image")),
+        "max_image": _parse_int_param(request.GET.get("max_image")),
+    }
+    passalong_query = f"?{urlencode(kw_params)}"
+
+    if kw_params["bulk"] and kw_params["min_image"] != "":
+        progress, label, potential_progress = _compute_progress(kw_params["min_image"], kw_params["max_image"])
     else:
-        raise Exception("unsupported image type")
+        progress, label, potential_progress = None, None, None
+
+    collection_images_qs = (
+        image.collection.basecollectionitem_set
+        .instance_of(Image)
+        .exclude(pk=image.pk)
+    )
+
     if not owner_or_contrib(request, image.collection):
         return HttpResponseForbidden()
-    if request.method == "POST":
-        form = form(request.POST, request.FILES, instance=image, user=request.user)
-        if form.is_valid():
-            form.save()
-            return HttpResponseRedirect(image.get_absolute_url())
-    else:
-        form = form(instance=image, user=request.user)
 
-    contrasts = get_contrast_lookup()
-    context = {"form": form, "contrasts": json.dumps(contrasts)}
+    form_class = _get_form_for_image(image)
+
+    if request.method == "POST":
+        form = form_class(
+            data=request.POST,
+            files=request.FILES,
+            instance=image,
+            user=request.user,
+            **kw_params
+        )
+        if form.is_valid():
+            print("Form is valid!")
+            form.save()
+            if any(key in request.POST for key in ["submit_next", "submit_previous"]):
+                prev_img, next_img = _get_sibling_images(image)
+                target_img = next_img if "submit_next" in request.POST else prev_img
+                if target_img:
+                    return HttpResponseRedirect(
+                        target_img.get_absolute_url(edit=True) + passalong_query
+                        )
+            elif "submit_save" in request.POST:
+                if kw_params["bulk"]:
+                    return HttpResponseRedirect(image.collection.get_absolute_url())
+                else:
+                    return HttpResponseRedirect(image.get_absolute_url())
+        else:
+            print(form.errors)
+    else:
+        if isinstance(image, StatisticMap) and kw_params["bulk"] and not image.is_valid:
+            image.name = ""
+            image.map_type = None
+
+        form = form_class(instance=image, user=request.user, **kw_params)
+
+    context = {
+        "form": form,
+        "contrasts": json.dumps(get_contrast_lookup()),
+        "collection_images": _serialize_collection(collection_images_qs),
+        "progress": progress,
+        "progress_label": label,
+        "potential_progress": potential_progress,
+        "show_instructions": show_instructions,
+    }
     return render(request, "statmaps/edit_image.html", context)
 
 
 def view_nidm_results(request, collection_cid, nidm_name):
-    """
-    collection = get_collection(collection_cid,request)
-    nidmr = get_object_or_404(NIDMResults, collection=collection,name=nidm_name)
-    if request.method == "POST":
-        if not request.user.has_perm("statmaps.change_basecollectionitem", nidmr):
-            return HttpResponseForbidden()
-        form = NIDMResultsForm(request.POST, request.FILES, instance=nidmr)
-        if form.is_valid():
-            instance = form.save(commit=False)
-            instance.save()
-            form.save_nidm()
-            form.save_m2m()
-            return HttpResponseRedirect(collection.get_absolute_url())
-    else:
-        if owner_or_contrib(request,collection):
-            form = NIDMResultsForm(instance=nidmr)
-        else:
-            form = NIDMViewForm(instance=nidmr)
-
-    # Generate viewer for nidm result
-    nidm_files = [nidmr.ttl_file.path.encode("utf-8")]
-    standard_brain = "/static/images/MNI152.nii.gz"
-
-    # We will remove these scripts and a button
-    remove_resources = ["BOOTSTRAPCSS","ROBOTOFONT","NIDMSELECTBUTTON",
-                       "PAPAYAJS","PAPAYACSS"]
-
-    # We will remove these columns
-    columns_to_remove = ["statmap_location","statmap",
-                         "statmap_type","coordinate_id",
-                         "excsetmap_location"]
-
-    # Text for the "Select image" button
-    button_text = "Statistical Map"
-
-    html_snippet = generate(nidm_files,
-                            base_image=standard_brain,
-                            remove_scripts=remove_resources,
-                            columns_to_remove=columns_to_remove,
-                            template_choice="embed",
-                            button_text=button_text)
-
-    context = {"form": form,"nidm_viewer":html_snippet}
-    return render(request, "statmaps/edit_nidm_results.html", context)
-    """
     raise Http404("Disabled for upgrade")
 
 
@@ -924,208 +921,103 @@ inspect, modify, and/or delete your maps."""
 
 
 @login_required
-def add_image(request, collection_cid):
-    collection = get_collection(collection_cid, request)
-    if not owner_or_contrib(request, collection):
-        return HttpResponseForbidden()
-    image = StatisticMap(collection=collection)
-    if request.method == "POST":
-        form = AddStatisticMapForm(request.POST, request.FILES, instance=image)
-        if form.is_valid():
-            image = form.save()
-            return HttpResponseRedirect(image.get_absolute_url())
-    else:
-        form = AddStatisticMapForm(instance=image)
-
-    contrasts = get_contrast_lookup()
-    context = {
-        "form": form,
-        "contrasts": json.dumps(contrasts),
-        "page_header": "Upload a statistical map",
-    }
-    return render(request, "statmaps/edit_image.html", context)
-
-
-@login_required
 def upload_folder(request, collection_cid):
     collection = get_collection(collection_cid, request)
     allowed_extensions = [".nii", ".img", ".nii.gz"]
-    niftiFiles = []
+    images_added = []    
     if request.method == "POST":
-        print(request.POST)
-        print(request.FILES)
+        folder = False
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
-            tmp_directory = tempfile.mkdtemp()
-            try:
-                # Save archive (.zip or .tar.gz) to disk
-                if "file" in request.FILES:
-                    archive_name = request.FILES["file"].name
-                    if fnmatch(archive_name, "*.nidm.zip"):
-                        form = populate_nidm_results(request, collection)
-                        if not form:
-                            messages.warning(request, "Invalid NIDM-Results file.")
-                        return HttpResponseRedirect(collection.get_absolute_url())
-
-                    _, archive_ext = os.path.splitext(archive_name)
-                    if archive_ext == ".zip":
-                        compressed = zipfile.ZipFile(request.FILES["file"])
-                    elif archive_ext == ".gz":
-                        django_file = request.FILES["file"]
-                        django_file.open()
-                        compressed = tarfile.TarFile(
-                            fileobj=gzip.GzipFile(fileobj=django_file.file, mode="r"),
-                            mode="r",
-                        )
-                    else:
-                        raise Exception("Unsupported archive type %s." % archive_name)
-                    compressed.extractall(path=tmp_directory)
-
-                elif "file_input[]" in request.FILES:
-                    for f, path in zip(
-                        request.FILES.getlist("file_input[]"),
-                        request.POST.getlist("paths[]"),
-                    ):
-                        if fnmatch(f.name, "*.nidm.zip"):
-                            request.FILES["file"] = f
-                            populate_nidm_results(request, collection)
-                            continue
-
-                        new_path, _ = os.path.split(os.path.join(tmp_directory, path))
-                        mkdir_p(new_path)
-                        filename = os.path.join(new_path, f.name)
-                        tmp_file = open(filename, "w")
-                        tmp_file.write(f.read())
-                        tmp_file.close()
-                else:
-                    raise Exception("Unable to find uploaded files.")
-
-                atlases = {}
-                for root, subdirs, filenames in os.walk(tmp_directory):
-                    if detect_feat_directory(root):
-                        populate_feat_directory(request, collection, root)
-                        del subdirs
-                        filenames = []
-
-                    # .gfeat parent dir under cope*.feat should not be added as statmaps
-                    # this may be affected by future nidm-results_fsl parsing changes
-                    if root.endswith(".gfeat"):
-                        filenames = []
-
-                    filenames = [f for f in filenames if not f[0] == "."]
-                    for fname in sorted(filenames):
-                        name, ext = splitext_nii_gz(fname)
-                        nii_path = os.path.join(root, fname)
-
-                        if ext == ".xml":
-                            dom = minidom.parse(os.path.join(root, fname))
-                            for atlas in dom.getElementsByTagName("imagefile"):
-                                path, base = os.path.split(atlas.lastChild.nodeValue)
-                                nifti_name = os.path.join(path, base)
-                                if nifti_name.startswith("/"):
-                                    nifti_name = nifti_name[1:]
-                                atlases[
-                                    str(os.path.join(root, nifti_name))
-                                ] = os.path.join(root, fname)
-                        if ext in allowed_extensions:
-                            nii = nib.load(nii_path)
-                            if detect_4D(nii):
-                                niftiFiles.extend(split_4D_to_3D(nii))
-                            else:
-                                niftiFiles.append((fname, nii_path))
-
-                for label, fpath in niftiFiles:
-                    # Read nifti file information
-                    nii = nib.load(fpath)
-                    if len(nii.shape) > 3 and nii.shape[3] > 1:
-                        messages.warning(
-                            request, "Skipping %s - not a 3D file." % label
-                        )
-                        continue
-                    hdr = nii.header
-                    raw_hdr = hdr.structarr
-
-                    # SPM only !!!
-                    # Check if filename corresponds to a T-map
-                    Tregexp = re.compile("spmT.*")
-                    # Fregexp = re.compile('spmF.*')
-
-                    if Tregexp.search(fpath) is not None:
-                        map_type = StatisticMap.T
-                    else:
-                        # Check if filename corresponds to a F-map
-                        if Tregexp.search(fpath) is not None:
-                            map_type = StatisticMap.F
+            with tempfile.TemporaryDirectory() as tmp_directory:
+                try:
+                    # 1. Check if "file" is an archive or NIDM
+                    if "file" in request.FILES:
+                        uploaded_file = request.FILES["file"]
+                        if fnmatch(uploaded_file.name, "*.nidm.zip"):
+                            new_form = populate_nidm_results(request, collection)
+                            if not new_form:
+                                messages.warning(request, "Invalid NIDM-Results file.")
+                            return HttpResponseRedirect(collection.get_absolute_url())
+                        
+                        elif fnmatch(uploaded_file.name, "*.zip") or fnmatch(uploaded_file.name, "*.tar.gz"):
+                            extract_archive(uploaded_file, tmp_directory)
                         else:
-                            map_type = StatisticMap.OTHER
+                            write_file_to_disk(uploaded_file, tmp_directory)
 
-                    path, name, ext = split_filename(fpath)
-                    dname = name + ".nii.gz"
-                    spaced_name = name.replace("_", " ").replace("-", " ")
+                    # 2. Or check if multiple files have been uploaded
+                    elif "file_input[]" in request.FILES:
+                        folder = True
+                        file_list = request.FILES.getlist("file_input[]")
+                        path_list = request.POST.getlist("paths[]")
+                        extract_multiple_files(file_list, path_list, tmp_directory)
+                    else:
+                        raise ValueError("No uploaded files found.")
 
-                    squeezable_dimensions = len(
-                        [a for a in nii.shape if a not in [0, 1]]
+
+                    # 3. Collect NIfTI files and atlas xml info
+                    nifti_files, atlases = collect_nifti_files(tmp_directory, allowed_extensions)
+
+                    # 4. Create model objects for each NIfTI
+                    if not nifti_files:
+                        messages.warning(
+                            request,
+                            "No NIFTI files (.nii, .nii.gz, .img/.hdr) found in the upload."
+                        )
+                    else:
+                        for label, fpath in nifti_files:
+                            # If file is in an atlas map, pass the xml path
+                            # (note: we need to handle possible path differences)
+                            path, name_ext = os.path.split(fpath)
+                            name_no_ext, _ = os.path.splitext(name_ext)
+                            atlas_xml = None
+
+                            # For matching, you might need to store the 
+                            # *relative path* to match exactly. This will depend on how 
+                            # parse_atlas_xml() builds its keys.
+                            possible_key = os.path.join(path, name_no_ext)
+                            if possible_key in atlases:
+                                atlas_xml = atlases[possible_key]
+
+                            try:
+                                new_image = create_image_from_nifti(
+                                    collection,
+                                    label,
+                                    fpath,
+                                    atlas_xml_path=atlas_xml
+                                )
+                                images_added.append(new_image)
+                            except Exception as e:
+                                messages.warning(request, f"Skipping {label}: {str(e)}")
+
+                except Exception:
+                    error = traceback.format_exc().splitlines()[-1]
+                    messages.warning(request, f"An error occurred with this upload: {error}")
+                    return HttpResponseRedirect(collection.get_absolute_url())
+
+            # If we added images, redirect to the edit page for bulk edit
+            if images_added:
+                params = {
+                    "bulk": True,
+                    "show_instructions": True,
+                    "min_image": images_added[0].id,
+                    "max_image": images_added[-1].id,
+                }
+                redirect = images_added[0].get_absolute_url(edit=True) + f"?{urlencode(params)}"
+                if folder:
+                    return JsonResponse(
+                        {"redirect_url": redirect}
                     )
-
-                    if ext.lower() != ".nii.gz" or squeezable_dimensions < len(
-                        nii.shape
-                    ):
-                        if squeezable_dimensions < len(nii.shape):
-                            new_data = np.squeeze(np.asanyarray(nii.dataobj))
-                            nii = nib.Nifti1Image(new_data, nii.affine, nii.header)
-
-                        new_file_tmp_dir = tempfile.mkdtemp()
-                        new_file_tmp = os.path.join(new_file_tmp_dir, name) + ".nii.gz"
-                        nib.save(nii, new_file_tmp)
-                        f = ContentFile(open(new_file_tmp, "rb").read(), name=dname)
-                        shutil.rmtree(new_file_tmp_dir)
-                        label += " (old ext: %s)" % ext
-                    else:
-                        f = ContentFile(open(fpath, "rb").read(), name=dname)
-
-                    collection = get_collection(collection_cid, request)
-
-                    if os.path.join(path, name) in atlases:
-                        new_image = Atlas(
-                            name=spaced_name,
-                            description=raw_hdr["descrip"],
-                            collection=collection,
-                        )
-
-                        new_image.label_description_file = ContentFile(
-                            open(atlases[os.path.join(path, name)], "rb").read(),
-                            name=name + ".xml",
-                        )
-                    else:
-                        new_image = StatisticMap(
-                            name=spaced_name,
-                            is_valid=False,
-                            description=raw_hdr["descrip"] or label,
-                            collection=collection,
-                        )
-                        new_image.map_type = map_type
-
-                    new_image.file = f
-                    new_image.save()
-
-            except:
-                error = traceback.format_exc().splitlines()[-1]
-                msg = "An error occurred with this upload: {}".format(error)
-                messages.warning(request, msg)
-                return HttpResponseRedirect(collection.get_absolute_url())
-            finally:
-                shutil.rmtree(tmp_directory)
-            if not niftiFiles:
-                messages.warning(
-                    request,
-                    "No NIFTI files (.nii, .nii.gz, .img/.hdr) found in the upload.",
+                else:
+                    return HttpResponseRedirect(redirect)
+            else:
+                return HttpResponseRedirect(
+                    collection.get_absolute_url()
                 )
-            return HttpResponseRedirect(collection.get_absolute_url())
-    else:
-        form = UploadFileForm()
-    context["form"] = form
-    return render(request, "statmaps/upload_folder.html", context)
 
+    else:
+        # GET request do nothing
+        return HttpResponseRedirect(collection.get_absolute_url())
 
 @login_required
 def delete_image(request, pk):
@@ -1385,99 +1277,8 @@ def atlas_query_voxel(request):
     return JSONResponse(data)
 
 
-# Compare Two Images
 def compare_images(request, pk1, pk2):
-    import numpy as np
-
-    image1 = get_image(pk1, None, request)
-    image2 = get_image(pk2, None, request)
-    images = [image1, image2]
-
-    # Get image: collection: [map_type] names no longer than ~125 characters
-    image1_custom_name = format_image_collection_names(
-        image_name=image1.name,
-        collection_name=image1.collection.name,
-        map_type=image1.map_type,
-        total_length=125,
-    )
-    image2_custom_name = format_image_collection_names(
-        image_name=image2.name,
-        collection_name=image2.collection.name,
-        map_type=image2.map_type,
-        total_length=125,
-    )
-
-    image_names = [image1_custom_name, image2_custom_name]
-
-    # Create custom links for the visualization
-    custom = {
-        "IMAGE_1_LINK": "/images/%s" % (image1.pk),
-        "IMAGE_2_LINK": "/images/%s" % (image2.pk),
-    }
-
-    # create reduced representation in case it's not there
-    if not image1.reduced_representation or not os.path.exists(
-        image1.reduced_representation.path
-    ):
-        image1 = save_resampled_transformation_single(
-            image1.id
-        )  # cannot run this async
-    if not image2.reduced_representation or not os.path.exists(
-        image2.reduced_representation.path
-    ):
-        image2 = save_resampled_transformation_single(
-            image2.id
-        )  # cannot run this async
-
-    # Load image vectors from npy files
-    image_vector1 = np.load(image1.reduced_representation.file)
-    image_vector2 = np.load(image2.reduced_representation.file)
-
-    # Load atlas pickle, containing vectors of atlas labels, colors, and values for same voxel dimension (4mm)
-    this_path = os.path.abspath(os.path.dirname(__file__))
-    atlas_pkl_path = os.path.join(this_path, "static/atlas/atlas_mni_4mm.pkl")
-    atlas = joblib.load(atlas_pkl_path)
-
-    # Load the atlas svg, so we don't need to dynamically generate it
-    atlas_svg = os.path.join(this_path, "static/atlas/atlas_mni_2mm_svg.pkl")
-    atlas_svg = joblib.load(atlas_svg)
-
-    # Generate html for similarity search, do not specify atlas
-    html_snippet, _ = scatterplot_compare_vector(
-        image_vector1=image_vector1,
-        image_vector2=image_vector2,
-        image_names=image_names,
-        atlas_vector=atlas["atlas_vector"],
-        atlas_labels=atlas["atlas_labels"],
-        atlas_colors=atlas["atlas_colors"],
-        corr_type="pearson",
-        subsample_every=10,  # subsample every 10th voxel
-        custom=custom,
-        remove_scripts="D3_MIN_JS",
-        width=1000,
-    )
-
-    # Add atlas svg to the image, and prepare html for rendering
-    html = [h.replace("[coronal]", atlas_svg) for h in html_snippet]
-    html = [
-        h.strip("\n").replace("[axial]", "").replace("[sagittal]", "") for h in html
-    ]
-    context = {"html": html}
-
-    # Determine if either image is thresholded
-    threshold_status = np.array(
-        [image_names[i] for i in range(0, 2) if images[i].is_thresholded]
-    )
-    if len(threshold_status) > 0:
-        warnings = list()
-        for i in range(0, len(image_names)):
-            warnings.append(
-                "Warning: Thresholded image: %s (%.4g%% of voxels are zeros),"
-                % (image_names[i], images[i].perc_bad_voxels)
-            )
-        context["warnings"] = warnings
-
-    return render(request, "statmaps/compare_images.html", context)
+    raise Http404("Disabled for upgrade") 
 
 
 # Return search interface for one image vs rest
