@@ -80,6 +80,7 @@
            'modality': 'Modality',
            'task': 'Task',
          }
+         document.getElementById("custom-filters").classList.remove('d-none')
          Object.keys(selectPlaceholders).map(key => {
            $(`#${key}`).select2({
              theme: 'bootstrap4',
@@ -115,7 +116,7 @@
         commonly, a collection contains all of the images from a single study.</p>
     <h6>{{ query_explanation }}</h6>
     <div class="table-responsive-md">
-      <div class="col-sm-12" id="custom-filters">
+      <div class="d-none col-sm-12" id="custom-filters">
         <form class="form-inline flex-row-reverse">
           <div class="input-group mb-2 mr-sm-2" id="search-input-group">
           </div>
@@ -123,7 +124,7 @@
             <select class="form-control" id="task">
               <option></option>
               {% for entry in tasks %}
-              <option value="{{entry.cog_atlas_id}}">{{entry.name}} ({{ entry.count }})</option>
+              <option value="{{entry.cog_atlas_id}}">{{entry.name}}{% if not own_collections %}({{ entry.count }}){% endif %}</option>
               {% endfor %}
             </select>
           </div>
@@ -131,7 +132,7 @@
             <select class="form-control" id="modality">
               <option></option>
               {% for entry in modalities %}
-              <option value="{{entry.modality}}">{{entry.modality}} ({{ entry.count }})</option>
+              <option value="{{entry.modality}}">{{entry.modality}}{% if not own_collections %}({{ entry.count }}){% endif %}</option>
               {% endfor %}
             </select>
           </div>
