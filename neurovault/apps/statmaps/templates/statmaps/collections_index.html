@@ -36,7 +36,18 @@
            "columnDefs": [
              { "orderable": false, "targets": 1 },
              { "orderable": true, "targets": 3 },
-           ],
+             // Truncate the text in the 'Description' column (index 2)
+              {
+                "targets": 2,
+                "render": function(data, type, row) {
+                  // Only truncate for 'display' to avoid messing with sorting/searching data
+                  if (type === 'display' && data && data.length > 50) {
+                    return data.substring(0, 180) + '...';
+                  }
+                  return data;
+                }
+              }
+            ],
            "order": [[ 0, "asc" ]],
            "ajax": {
              {% if own_collections %}
@@ -107,7 +118,7 @@
         <form class="form-inline flex-row-reverse">
           <div class="input-group mb-2 mr-sm-2" id="search-input-group">
           </div>
-          <div class="input-group mb-2 mr-sm-2">
+          <div class="input-group mb-2 mr-sm-2" style="min-width: 280px;">
             <select class="form-control" id="task">
               <option></option>
               {% for entry in tasks %}
@@ -115,7 +126,7 @@
               {% endfor %}
             </select>
           </div>
-          <div class="input-group mb-2 mr-sm-2">
+          <div class="input-group mb-2 mr-sm-4" style="min-width: 200px;">
             <select class="form-control" id="modality">
               <option></option>
               {% for entry in modalities %}
@@ -123,7 +134,7 @@
               {% endfor %}
             </select>
           </div>
-          <div class="input-group mb-2 mr-sm-2">
+          <div class="input-group mb-2 mr-sm-2"> 
             <div class="form-check">
               <input class="form-check-input" type="checkbox" role="switch" id="doi-switch">
               <label class="form-check-label" for="doi-switch">Has Doi?</label>
