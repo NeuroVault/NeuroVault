@@ -15,7 +15,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.core.files.base import ContentFile
-from django.db.models import Max, Q
+from django.db.models import Max, Q, Exists, OuterRef
 from django.db.models.aggregates import Count
 from django.http import Http404, HttpResponse, StreamingHttpResponse, JsonResponse
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
@@ -1609,24 +1609,31 @@ class PublicCollectionsJson(BaseDatatableView):
 
     def filter_queryset(self, qs):
         # use parameters passed in GET request to filter queryset
-        filter_keys = ["hasDoi", "modality", "map_type", "task"]
+        filter_keys = ["hasDoi", "modality", "task"]
         filters = {k: self.request.GET.get(k, None) for k in filter_keys}
-        if filters["hasDoi"] == "true":
+        hasDOI = filters.pop("hasDoi", None)
+        if hasDOI == "true":
             qs = qs.exclude(DOI__isnull=True).exclude(DOI='')
-        smap_qs = StatisticMap.objects
-        if filters["modality"] != "false":
 
-            smap_qs = smap_qs.filter(modality=filters["modality"])
-        if filters["maptype"] != "false":
-            smap_qs = smap_qs.filter(map_type=filters["maptype"])
-        if filters["task"] != "false":
-            smap_qs = smap_qs.filter(cognitive_paradigm_cogatlas=filters["task"])
+        image_filters = {}
+        for key, value in filters.items():
+            if value != "false":
+                if key == "task":
+                    image_filters["cognitive_paradigm_cogatlas"] = value
+                else:
+                    image_filters[key] = value
 
-        if filters["modality"] != "false" or filters["maptype"] != "false" or filters["task"] != "false":
-            smap_qs = smap_qs.values_list('collection', flat=True).distinct()
-            qs = qs.filter(id__in=smap_qs)
-            
-        # simple example:
+        if image_filters:
+            # Build a subquery that matches the needed StatisticMap rows
+            matching_subq = StatisticMap.objects.filter(
+                collection=OuterRef('pk'),
+                **image_filters
+            )
+
+            qs = qs.annotate(
+                has_match=Exists(matching_subq)
+            ).filter(has_match=True)
+
         search = self.request.GET.get("search[value]", None)
         if search:
             qs = qs.filter(Q(name__icontains=search) | Q(description__icontains=search))
