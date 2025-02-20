@@ -1590,7 +1590,7 @@ class PublicCollectionsJson(BaseDatatableView):
         return Collection.objects.filter(
             ~Q(name__endswith="temporary collection"), private=False, basecollectionitem__isnull=False
         ).annotate(
-            latest_image_modify=Max('basecollectionitem__modify_date'),
+            latest_image_modify=Max('basecollectionitem__modify_date')
         )
 
     def render_column(self, row, column):
