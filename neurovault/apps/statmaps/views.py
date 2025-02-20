@@ -1562,15 +1562,30 @@ class AtlasesAndParcellationsJson(BaseDatatableView):
             qs = qs.filter(Q(name__icontains=search) | Q(description__icontains=search))
         return qs
 
+
 class PublicCollections(TemplateView):
     template_name = "statmaps/collections_index.html"
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["map_types"] = BaseStatisticMap.map_type.field.choices
-        context["modalities"] = list(StatisticMap.objects.exclude(modality='').values('modality').annotate(count=Count('modality')).order_by('-count'))
-        context["tasks"] = list(CognitiveAtlasTask.objects.exclude( pk='None').filter(statisticmap__isnull=False).values('pk', 'name').annotate(count=Count('pk')).order_by('-count').values())
+        context["modalities"] = list(
+            StatisticMap.objects.exclude(modality='')
+            .values('modality')
+            .annotate(count=Count('collection', distinct=True))
+            .order_by('-count')
+        )
+
+        context["tasks"] = list(
+            CognitiveAtlasTask.objects.exclude(pk='None')
+            .filter(statisticmap__isnull=False)
+            .values('pk', 'name')
+            .annotate(count=Count('statisticmap__collection', distinct=True))
+            .order_by('-count')
+        )
+
         return context
+
 
 class MyCollections(PublicCollections):
     def get_context_data(self, **kwargs):
