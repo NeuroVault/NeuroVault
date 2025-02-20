@@ -1609,7 +1609,7 @@ class PublicCollectionsJson(BaseDatatableView):
 
     def filter_queryset(self, qs):
         # use parameters passed in GET request to filter queryset
-        filter_keys = ["hasDoi", "modality", "map_type", "task"]
+        filter_keys = ["hasDoi", "modality", "task"]
         filters = {k: self.request.GET.get(k, None) for k in filter_keys}
         hasDOI = filters.pop("hasDoi", None)
         if hasDOI == "true":
