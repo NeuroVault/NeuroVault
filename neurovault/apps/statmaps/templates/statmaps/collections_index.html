@@ -131,7 +131,7 @@
             <select class="form-control" id="modality">
               <option></option>
               {% for entry in modalities %}
-              <option value="{{entry.0}}">{{entry.1}}</option>
+              <option value="{{entry.modality}}">{{entry.modality}} ({{ entry.count }})</option>
               {% endfor %}
             </select>
           </div>
