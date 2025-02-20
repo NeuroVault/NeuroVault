@@ -1611,7 +1611,6 @@ class PublicCollectionsJson(BaseDatatableView):
         # use parameters passed in GET request to filter queryset
         filter_keys = ["hasDoi", "modality", "maptype", "task"]
         filters = {k: self.request.GET.get(k, None) for k in filter_keys}
-        print(filters)
         if filters["hasDoi"] == "true":
             qs = qs.exclude(DOI__isnull=True).exclude(DOI='')
         if filters["modality"] != "false":
