@@ -1613,16 +1613,18 @@ class PublicCollectionsJson(BaseDatatableView):
         filters = {k: self.request.GET.get(k, None) for k in filter_keys}
         if filters["hasDoi"] == "true":
             qs = qs.exclude(DOI__isnull=True).exclude(DOI='')
+        smap_qs = StatisticMap.objects
         if filters["modality"] != "false":
-            modality_qs = StatisticMap.objects.filter(modality=filters["modality"]).values_list('collection', flat=True).distinct()
-            qs = qs.filter(id__in=modality_qs)
-        if filters["map_type"] != "false":
-            maptype_qs = StatisticMap.objects.filter(map_type=filters["map_type"]).values_list('collection', flat=True).distinct()
-            qs = qs.filter(id__in=maptype_qs)
-        if filters["task"] != "false":
-            task_qs = StatisticMap.objects.filter(cognitive_paradigm_cogatlas=filters["task"]).values_list('collection', flat=True).distinct()
-            qs = qs.filter(id__in=task_qs)
 
+            smap_qs = smap_qs.filter(modality=filters["modality"])
+        if filters["maptype"] != "false":
+            smap_qs = smap_qs.filter(map_type=filters["maptype"])
+        if filters["task"] != "false":
+            smap_qs = smap_qs.filter(cognitive_paradigm_cogatlas=filters["task"])
+
+        if filters["modality"] != "false" or filters["maptype"] != "false" or filters["task"] != "false":
+            smap_qs = smap_qs.values_list('collection', flat=True).distinct()
+            qs = qs.filter(id__in=smap_qs)
             
         # simple example:
         search = self.request.GET.get("search[value]", None)
