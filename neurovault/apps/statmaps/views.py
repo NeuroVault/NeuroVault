@@ -1609,7 +1609,7 @@ class PublicCollectionsJson(BaseDatatableView):
 
     def filter_queryset(self, qs):
         # use parameters passed in GET request to filter queryset
-        filter_keys = ["hasDoi", "modality", "maptype", "task"]
+        filter_keys = ["hasDoi", "modality", "map_type", "task"]
         filters = {k: self.request.GET.get(k, None) for k in filter_keys}
         print(filters)
         if filters["hasDoi"] == "true":
@@ -1617,8 +1617,8 @@ class PublicCollectionsJson(BaseDatatableView):
         if filters["modality"] != "false":
             modality_qs = StatisticMap.objects.filter(modality=filters["modality"]).values_list('collection', flat=True).distinct()
             qs = qs.filter(id__in=modality_qs)
-        if filters["maptype"] != "false":
-            maptype_qs = StatisticMap.objects.filter(maptype=filters["maptype"]).values_list('collection', flat=True).distinct()
+        if filters["map_type"] != "false":
+            maptype_qs = StatisticMap.objects.filter(map_type=filters["map_type"]).values_list('collection', flat=True).distinct()
             qs = qs.filter(id__in=maptype_qs)
         if filters["task"] != "false":
             task_qs = StatisticMap.objects.filter(cognitive_paradigm_cogatlas=filters["task"]).values_list('collection', flat=True).distinct()
