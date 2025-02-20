@@ -1603,7 +1603,10 @@ class PublicCollectionsJson(BaseDatatableView):
         elif column == "n_images":
             return row.basecollectionitem_set.count()
         elif column == "latest_image_modify":
-            return row.latest_image_modify.strftime("%Y-%m-%d")
+            if row.latest_image_modify is None:
+                return ""
+            else:
+                return row.latest_image_modify.strftime("%Y-%m-%d")
         else:
             return super(PublicCollectionsJson, self).render_column(row, column)
 
