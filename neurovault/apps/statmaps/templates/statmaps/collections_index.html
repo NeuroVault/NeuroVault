@@ -23,10 +23,11 @@
          var result = captured ? captured[1] : '';
          var base_url = captured  != '' ? window.location.href.split("?")[0] : window.location.href;
          let filters = {
-           hasDoi: false,
-           modality: false,
-           task: false,
-         }
+            hasDoi: $('#doi-switch').is(':checked'),
+            // If these selects have *nothing* selected, default to `false`
+            modality: $('#modality').val() || false,
+            task: $('#task').val() || false
+          }
          table = $('#collections-table').dataTable({
            "bJQueryUI": true,
            iDisplayLength: 25,
@@ -42,13 +43,13 @@
                 "render": function(data, type, row) {
                   // Only truncate for 'display' to avoid messing with sorting/searching data
                   if (type === 'display' && data && data.length > 50) {
-                    return data.substring(0, 180) + '...';
+                    return data.substring(0, ) + '...';
                   }
                   return data;
                 }
               }
             ],
-           "order": [[ 0, "asc" ]],
+           "order": [[ 4, "desc" ]],
            "ajax": {
              "url": "{% url 'statmaps:collections_list_json' %}",
              "data": function (d) {
