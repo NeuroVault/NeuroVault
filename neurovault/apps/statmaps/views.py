@@ -1570,7 +1570,9 @@ class PublicCollections(TemplateView):
         context = super().get_context_data(**kwargs)
         context["map_types"] = BaseStatisticMap.map_type.field.choices
         context["modalities"] = list(
-            StatisticMap.objects.exclude(modality='')
+            StatisticMap.objects.filter(collection__private=False)
+            .exclude(collection__name__endswith="temporary collection")
+            .exclude(modality='')
             .values('modality')
             .annotate(count=Count('collection', distinct=True))
             .order_by('-count')
@@ -1578,7 +1580,11 @@ class PublicCollections(TemplateView):
 
         context["tasks"] = list(
             CognitiveAtlasTask.objects.exclude(pk='None')
-            .filter(statisticmap__isnull=False)
+            .filter(
+                statisticmap__isnull=False,
+                statisticmap__collection__private=False
+            )
+            .exclude(statisticmap__collection__name__endswith="temporary collection")
             .values('pk', 'name')
             .annotate(count=Count('statisticmap__collection', distinct=True))
             .order_by('-count')
