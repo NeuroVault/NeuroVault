@@ -1609,12 +1609,13 @@ class PublicCollectionsJson(BaseDatatableView):
 
     def filter_queryset(self, qs):
         # use parameters passed in GET request to filter queryset
-        filter_keys = ["hasDoi", "modality", "maptype", "task"]
+        filter_keys = ["hasDoi", "modality", "map_type", "task"]
         filters = {k: self.request.GET.get(k, None) for k in filter_keys}
         if filters["hasDoi"] == "true":
             qs = qs.exclude(DOI__isnull=True).exclude(DOI='')
         smap_qs = StatisticMap.objects
         if filters["modality"] != "false":
+
             smap_qs = smap_qs.filter(modality=filters["modality"])
         if filters["maptype"] != "false":
             smap_qs = smap_qs.filter(map_type=filters["maptype"])
