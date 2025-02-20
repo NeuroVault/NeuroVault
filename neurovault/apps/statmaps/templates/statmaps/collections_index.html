@@ -39,7 +39,11 @@
            ],
            "order": [[ 0, "asc" ]],
            "ajax": {
+             {% if own_collections %}
+             "url": "{% url 'statmaps:my_collections_json' %}",
+             {% else %}
              "url": "{% url 'statmaps:collections_list_json' %}",
+             {% endif %}
              "data": function (d) {
                for (key in filters) {
                  d[key] = filters[key]
