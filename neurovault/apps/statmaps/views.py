@@ -1584,7 +1584,6 @@ class PublicCollections(TemplateView):
                 statisticmap__isnull=False,
                 statisticmap__collection__private=False
             )
-            .exclude(statisticmap__collection__name__endswith="temporary collection")
             .values('pk', 'name')
             .annotate(count=Count('statisticmap__collection', distinct=True))
             .order_by('-count')
@@ -1599,6 +1598,7 @@ class MyCollections(PublicCollections):
         context["own_collections"] = True
         return context
 
+
 class PublicCollectionsJson(BaseDatatableView):
     columns = ["name", "n_images", "description", "has_doi", "latest_image_modify"]
     order_columns = ["name", "", "description", "DOI", "latest_image_modify"]
@@ -1609,7 +1609,7 @@ class PublicCollectionsJson(BaseDatatableView):
         # You should not filter data returned here by any filter values entered by user. This is because
         # we need some base queryset to count total number of records.
         return Collection.objects.filter(
-            ~Q(name__endswith="temporary collection"), private=False, basecollectionitem__isnull=False
+            private=False, basecollectionitem__isnull=False
         ).annotate(
             latest_image_modify=Max('basecollectionitem__modify_date')
         )
