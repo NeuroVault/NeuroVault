@@ -195,8 +195,6 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.getenv("SOCIAL_AUTH_GOOGLE_OAUTH2_KEY")
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv("SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET")
 SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
 
-SESSION_SERIALIZER = "django.contrib.sessions.serializers.PickleSerializer"
-
 REST_FRAMEWORK = {
     # Use hyperlinked styles by default.
     # Only used if the `serializer_class` attribute is not set on a view.
@@ -335,3 +333,16 @@ if os.getenv("EMAIL_HOST") is None:
     EMAIL_FILE_PATH = '/tmp/email-fallback' 
 
 CSRF_TRUSTED_ORIGINS = ['https://54.202.202.179', 'https://neurovault.org']
+if os.getenv("USE_SENTRY") is not None:
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn="https://8381dd47c23b47fb83ed76274243b311@o164699.ingest.us.sentry.io/1235478",
+        # Set traces_sample_rate to 1.0 to capture 100%
+        # of transactions for tracing.
+        traces_sample_rate=1.0,
+        # Set profiles_sample_rate to 1.0 to profile 100%
+        # of sampled transactions.
+        # We recommend adjusting this value in production.
+        profiles_sample_rate=1.0,
+    )

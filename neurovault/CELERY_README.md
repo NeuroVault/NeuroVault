@@ -1,6 +1,6 @@
 # Setting Up Celery for NeuroVault
 
-Celery requires a task server. They recommend rabbitmq (and I tested this for the virtual machine) however django (a database) can also be used (but it's not recommended). The other option is redis, but they don't recommend because it is "suseptible to data loss in event of power failures"  This is really just like a task database or queue. I was going to do rabbit, but Gabriel said do redis, so I will do redis. Celery is python based so we install from pip.
+Celery requires a task server. They recommend rabbitmq (and I tested this for the virtual machine) however django (a database) can also be used (but it's not recommended). The other option is redis, but they don't recommend because it is "susceptible to data loss in event of power failures"  This is really just like a task database or queue. I was going to do rabbit, but Gabriel said do redis, so I will do redis. Celery is python based so we install from pip.
 
      source /opt/nv_env/bin/activate
      pip install -U celery[redis]

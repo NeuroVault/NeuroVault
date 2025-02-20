@@ -200,19 +200,19 @@ $(document).ready(function(){
             </button>
             <div class="dropdown-menu" aria-labelledby="btnGroupDropAnalysis">
                 {% if neurosynth_compatible %}
-                    <a class="dropdown-item" href="http://neurosynth.org/decode/?neurovault={{ api_cid }}" data-toggle="tooltip" title="Cognitive decoding using coordiante based data collected from thousands of papers.">
+                    <a class="dropdown-item" href="http://neurosynth.org/decode/?neurovault={{ api_cid }}" data-toggle="tooltip" title="Cognitive decoding using coordinate based data collected from thousands of papers.">
                         Cognitive decoding (neurosynth)
                     </a>
                 {% endif %}
                 {% if comparison_is_possible %}
-                    <a class="dropdown-item" href="{% url 'statmaps:find_similar' image.id %}" data-toggle="tooltip" title="Find maps with similar patters.">
+                    <a class="dropdown-item" href="{% url 'statmaps:find_similar' image.id %}" data-toggle="tooltip" title="Find maps with similar patterns.">
                         Similar maps search
                     </a>
                 {% else %}
-                    <a class="dropdown-item disabled" tabindex="-1" role="button" aria-disabled="true" href="#" data-toggle="tooltip" title="Find maps with similar patters. This function is only enabled for public group level unthresholded statistical maps.">
+                    <a class="dropdown-item disabled" tabindex="-1" role="button" aria-disabled="true" href="#" data-toggle="tooltip" title="Find maps with similar patterns. This function is only enabled for public group level unthresholded statistical maps.">
                         Similar maps search
                     </a>
-                    <a class="dropdown-item disabled" tabindex="-1" role="button" aria-disabled="true" href="#" data-toggle="tooltip" title="Find genes with similar expression patters. This function is only enabled for public group level unthresholded statistical maps.">
+                    <a class="dropdown-item disabled" tabindex="-1" role="button" aria-disabled="true" href="#" data-toggle="tooltip" title="Find genes with similar expression patterns. This function is only enabled for public group level unthresholded statistical maps.">
                         Gene expression decoding
                     </a>
                 {% endif %}

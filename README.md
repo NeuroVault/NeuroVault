@@ -2,6 +2,8 @@
 
 [![Join the chat at https://gitter.im/NeuroVault/NeuroVault](https://badges.gitter.im/NeuroVault/NeuroVault.svg)](https://gitter.im/NeuroVault/NeuroVault?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
+Blog: https://neurovault.github.io/
+
 Easy to use web database for brain statistical maps, atlases and parcellation maps.
 ## How to set up NeuroVault for local development?
 
@@ -16,14 +18,19 @@ Easy to use web database for brain statistical maps, atlases and parcellation ma
 ```
 docker-compose up -d
 ```
-The webpage will be available at 127.0.0.1.
-Initially, some data will be available by default with _username/password_ neurovault/neurovault and neurovault2/neurovault2.
+The webpage will be available at http://localhost:8000/
 
 ### Migrating the database
 ```
 docker-compose exec django python manage.py migrate
 ```
 The first time you run the application, you must migrate the db. You must also do this if you update any database models.
+
+### Creating super user
+```
+docker-compose exec django python manage.py createsuperuser
+````
+This will create a super user that you can use to test the application
 
 ### Stopping the server
 ```
@@ -34,7 +41,7 @@ After making changes to the code you need to restart the server (but just the uw
 ```
 docker-compose restart nginx django worker
 ```
-### Reseting the server
+### Resetting the server
 If you would like to reset the server and clean the database:
 ```
 docker-compose stop

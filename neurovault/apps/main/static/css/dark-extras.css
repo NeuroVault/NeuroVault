@@ -1,0 +1,21 @@
+body {
+    background: #1f1f1f !important;
+}
+
+/* Lighten help-block text color in dark mode */
+.text-muted {
+    color: #bbb3b3 !important; /* or any lighter color of your choice */
+}
+
+.invert {
+filter: invert(100%)
+}
+
+.binarize {
+filter: grayscale(100%) brightness(1000%) contrast(10000000%);
+}
+
+.invert-binarize {
+filter: invert(100%) grayscale(100%) brightness(1000%) contrast(10000000%);
+}
+

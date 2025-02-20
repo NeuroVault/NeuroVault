@@ -27,56 +27,37 @@ class TestAtlas(APITestCase):
         self.Collection1.save()
         _setup_test_cognitive_atlas()
 
-        self.unorderedAtlas = Atlas(
-            name="unorderedAtlas", description="", collection=self.Collection1
-        )
-
-        # Save new atlas object, unordered
-        print("Adding unordered and ordered atlas...")
-        nii_path = self.abs_data_path(
-            "api/VentralFrontal_thr75_summaryimage_2mm.nii.gz"
-        )
-        xml_path = self.abs_data_path(
-            "api/unordered_VentralFrontal_thr75_summaryimage_2mm.xml"
-        )
         self.unorderedAtlas = save_atlas_form(
-            nii_path=nii_path,
-            xml_path=xml_path,
+            nii_path=self.abs_data_path("api/VentralFrontal_thr75_summaryimage_2mm.nii.gz"),
+            xml_path=self.abs_data_path("api/unordered_VentralFrontal_thr75_summaryimage_2mm.xml"),
             collection=self.Collection1,
             name="unorderedAtlas",
         )
-        # Ordered
-        nii_path = self.abs_data_path(
-            "api/VentralFrontal_thr75_summaryimage_2mm.nii.gz"
-        )
-        xml_path = self.abs_data_path("api/VentralFrontal_thr75_summaryimage_2mm.xml")
+
         self.orderedAtlas = save_atlas_form(
-            nii_path=nii_path,
-            xml_path=xml_path,
+            nii_path=self.abs_data_path("api/VentralFrontal_thr75_summaryimage_2mm.nii.gz"),
+            xml_path=self.abs_data_path("api/VentralFrontal_thr75_summaryimage_2mm.xml"),
             collection=self.Collection1,
             name="orderedAtlas",
         )
 
-        # Statistical Map 1 and 2
-        print("Adding statistical maps...")
-        nii_path = self.abs_data_path("statmaps/motor_lips.nii.gz")
         self.Image1 = save_statmap_form(
-            image_path=nii_path, collection=self.Collection1
+            image_path=self.abs_data_path("statmaps/motor_lips.nii.gz"),
+            collection=self.Collection1
         )
 
-        nii_path = self.abs_data_path("statmaps/beta_0001.nii.gz")
         self.Image2 = save_statmap_form(
-            image_path=nii_path, collection=self.Collection1
+            image_path=self.abs_data_path("statmaps/beta_0001.nii.gz"),
+            collection=self.Collection1
         )
 
-        # Zip file with nidm results
-        print("Adding nidm results...")
-        zip_file = self.abs_data_path("nidm/spm_example.nidm.zip")
-        self.nidm = save_nidm_form(zip_file=zip_file, collection=self.Collection1)
+        self.nidm = save_nidm_form(
+            zip_file=self.abs_data_path("nidm/spm_example.nidm.zip"),
+            collection=self.Collection1
+        )
 
     def tearDown(self):
         clearDB()
-
     # Atlas Query Tests
 
     def test_query_region_out_of_order_indices(self):

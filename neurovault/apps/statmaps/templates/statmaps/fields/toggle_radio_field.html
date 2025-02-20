@@ -1,0 +1,96 @@
+{# statmaps/templates/statmaps/fields/toggle_radio_field.html #}
+<div
+  id="div_id_{{ field.name }}"
+  class="form-group row {% if field.errors %}has-error{% endif %}"
+>
+  <!-- Label Column -->
+  <label
+    for="{{ field.id_for_label }}"
+    class="col-form-label col-lg-2"
+  >
+    {% if field.label %}
+      {{ field.label|capfirst }}
+    {% endif %}
+    {% if field.field.required %}*
+    {% endif %}
+  </label>
+
+  <!-- Field Column -->
+  <div class="col-lg-10">
+    <!-- The toggle group -->
+    <div class="btn-group btn-group-toggle" data-toggle="buttons">
+      {% for value, label in field.field.widget.choices %}
+        <label
+          class="btn btn-secondary {% if value|stringformat:"s"|lower == field.value|stringformat:"s"|lower  %}active{% endif %}"
+        >
+          <input
+            type="radio"
+            name="{{ field.name }}"
+            value="{{ value }}"
+            autocomplete="off"
+            {% if value|stringformat:"s"|lower == field.value|stringformat:"s"|lower %}checked{% endif %}
+            {% if field.field.required %}required{% endif %}
+          >
+          {{ label }}
+        </label>
+      {% endfor %}
+    </div>
+
+    <!-- Help Text, if any -->
+    {% if field.help_text %}
+      <small class="form-text text-muted">
+        {{ field.help_text }}
+      </small>
+    {% endif %}
+
+    <!-- Error Messages -->
+    {% if field.errors %}
+      {% for error in field.errors %}
+        <div class="invalid-feedback d-block">
+          {{ error }}
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="requiredFieldModal" tabindex="-1" role="dialog" aria-labelledby="requiredFieldModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="requiredFieldModalLabel">Required Field</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        Please make a selection for the required field.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const form = document.querySelector("form");
+        form.addEventListener("submit", function(event) {
+            const requiredFields = document.querySelectorAll("input[required]");
+            let allFieldsFilled = true;
+
+            requiredFields.forEach(field => {
+                if (!field.checked) {
+                    allFieldsFilled = false;
+                }
+            });
+
+            if (!allFieldsFilled) {
+                event.preventDefault();
+                $("#requiredFieldModal").modal("show");
+            }
+        });
+    });
+</script>

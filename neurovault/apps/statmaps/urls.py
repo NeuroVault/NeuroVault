@@ -7,7 +7,9 @@ from neurovault import settings
 from neurovault.apps.statmaps.models import KeyValueTag
 from neurovault.apps.statmaps.views import (
     ImagesInCollectionJson,
+    PublicCollections,
     PublicCollectionsJson,
+    MyCollections,
     MyCollectionsJson,
     AtlasesAndParcellationsJson,
     ImagesByTaskJson,
@@ -31,7 +33,6 @@ from .views import (
     serve_image,
     serve_pycortex,
     view_collection_with_pycortex,
-    add_image,
     papaya_js_embed,
     view_images_by_tag,
     add_image_for_neuropower,
@@ -110,9 +111,7 @@ urlpatterns = [
     ),
     re_path(
         r"^my_collections/$",
-        login_required(
-            TemplateView.as_view(template_name="statmaps/my_collections.html")
-        ),
+        MyCollections.as_view(),
         name="my_collections",
     ),
     re_path(
@@ -122,7 +121,7 @@ urlpatterns = [
     ),
     re_path(
         r"^collections/$",
-        TemplateView.as_view(template_name="statmaps/collections_index.html"),
+        PublicCollections.as_view(),
         name="collections_list",
     ),
     re_path(
@@ -171,11 +170,6 @@ urlpatterns = [
         r"^collections/(?P<cid>\d+|[\w{}.-]{8})/download$",
         download_collection,
         name="download_collection",
-    ),
-    re_path(
-        r"^collections/(?P<collection_cid>\d+|[\w{}.-]{8})/addimage",
-        add_image,
-        name="add_image",
     ),
     re_path(
         r"^collections/(?P<collection_cid>\d+|[\w{}.-]{8})/upload_folder$",

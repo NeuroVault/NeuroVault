@@ -4,16 +4,15 @@ services:
     restart: always
     build:
       context: .
-      dockerfile: ./compose/django/Dockerfile
-      target: neurovault
-    image: neurovault/neurovault
+      dockerfile: ./compose/django/Dockerfile.dev
+      target: neurovault-dev
+    image: neurovault/neurovault-dev
     command: python manage.py runserver 0.0.0.0:8000 --insecure
     ports: 
       - "8000:8000"
     volumes:
       - .:/code
       - ${NV_IMAGE_DATA}:/image_data
-      - /efs/pycortex:/usr/local/share/pycortex:rw
     depends_on:
       - redis
       - postgres
@@ -36,13 +35,13 @@ services:
   worker:
     build:
       context: .
-      dockerfile: ./compose/django/Dockerfile
-      target: neurovault
-    image: neurovault/neurovault
-    command: celery -A neurovault.celery worker -Q default -n default@%h -c 1
+      dockerfile: ./compose/django/Dockerfile.dev
+      target: neurovault-dev
+    image: neurovault/neurovault-dev
+    command: celery -A neurovault.celery worker -Q default -n default@%h
     volumes:
       - .:/code
-      - ${NV_IMAGE_DATA}:/var/www/image_data
+      - ${NV_IMAGE_DATA}:/image_data
     depends_on:
       - redis
     env_file:
