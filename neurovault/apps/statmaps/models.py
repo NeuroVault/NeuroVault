@@ -1494,7 +1494,6 @@ class StatisticMap(BaseStatisticMap):
         null=True,
         blank=False,
         on_delete=models.PROTECT,
-        db_index=True,
     )
     cognitive_contrast_cogatlas = models.ForeignKey(
         CognitiveAtlasContrast,
@@ -1535,7 +1534,7 @@ class StatisticMap(BaseStatisticMap):
     class Meta:
             # Add a multi-column index on 'modality' and 'map_type'
             indexes = [
-                models.Index(fields=["modality", "map_type"]),
+                models.Index(fields=["modality", "cognitive_paradigm_cogatlas"]),
             ]
 
 post_save.connect(basecollectionitem_created, sender=StatisticMap, weak=True)

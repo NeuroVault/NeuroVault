@@ -17,6 +17,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='statisticmap',
-            index=models.Index(fields=['modality', 'map_type'], name='statmaps_st_modalit_b6a96d_idx'),
+            index=models.Index(fields=['modality', 'cognitive_paradigm_cogatlas'], name='statmaps_st_modalit_4bad2e_idx'),
         ),
     ]
