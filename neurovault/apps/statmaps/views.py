@@ -1642,8 +1642,9 @@ class PublicCollectionsJson(BaseDatatableView):
 
 class MyCollectionsJson(PublicCollectionsJson):
     def get_initial_queryset(self):
-        return get_objects_for_user(self.request.user, "statmaps.change_collection")
-
+        return get_objects_for_user(self.request.user, "statmaps.change_collection").annotate(
+            latest_image_modify=Max('basecollectionitem__modify_date'),
+        )
 
 class MyMetaanalysesJson(PublicCollectionsJson):
     columns = ["name", "description", "n_images", "status"]
