@@ -124,7 +124,7 @@
             <select class="form-control" id="task">
               <option></option>
               {% for entry in tasks %}
-              <option value="{{entry.pk}}">{{entry.name}}{% if not own_collections %}({{ entry.count }}){% endif %}</option>
+              <option value="{{entry.pk}}">{{entry.name}}{% if not own_collections %} ({{ entry.count }}){% endif %}</option>
               {% endfor %}
             </select>
           </div>
@@ -132,7 +132,7 @@
             <select class="form-control" id="modality">
               <option></option>
               {% for entry in modalities %}
-              <option value="{{entry.modality}}">{{entry.modality}}{% if not own_collections %}({{ entry.count }}){% endif %}</option>
+              <option value="{{entry.modality}}">{{entry.modality}}{% if not own_collections %} ({{ entry.count }}){% endif %}</option>
               {% endfor %}
             </select>
           </div>
