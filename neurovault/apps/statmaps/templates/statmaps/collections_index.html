@@ -124,7 +124,7 @@
             <select class="form-control" id="task">
               <option></option>
               {% for entry in tasks %}
-              <option value="{{entry.cog_atlas_id}}">{{entry.name}}{% if not own_collections %}({{ entry.count }}){% endif %}</option>
+              <option value="{{entry.pk}}">{{entry.name}}{% if not own_collections %}({{ entry.count }}){% endif %}</option>
               {% endfor %}
             </select>
           </div>
