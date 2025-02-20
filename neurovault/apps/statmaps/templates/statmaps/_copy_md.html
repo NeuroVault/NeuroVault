@@ -30,6 +30,7 @@
                 document.querySelector("#id_age").value = imageData.age;
                 document.querySelector("#id_statistic_parameters").value = imageData.statistic_parameters;
                 document.querySelector("#id_smoothness_fwhm").value = imageData.smoothness_fwhm;
+                document.querySelector("#id_race").value = imageData.race;
 
                 // Update radio buttons and add active class to the corresponding label
                 const updateRadioButton = (name, value) => {
@@ -44,7 +45,7 @@
                 };
 
                 updateRadioButton("analysis_level", imageData.analysis_level);
-                updateRadioButton("gender", imageData.gender);
+                updateRadioButton("sex", imageData.sex);
                 updateRadioButton("ethnicity", imageData.ethnicity);
                 updateRadioButton("handedness", imageData.handedness);
 

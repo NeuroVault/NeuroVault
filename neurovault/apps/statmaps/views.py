@@ -1568,7 +1568,7 @@ class PublicCollections(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["map_types"] = BaseStatisticMap.map_type.field.choices
-        context["modalities"] = StatisticMap.modality.field.choices
+        context["modalities"] = list(StatisticMap.objects.exclude(modality='').values('modality').annotate(count=Count('modality')).order_by('-count'))
         context["tasks"] = list(CognitiveAtlasTask.objects.exclude( pk='None').filter(statisticmap__isnull=False).values('pk', 'name').annotate(count=Count('pk')).order_by('-count').values())
         return context
 
@@ -1590,7 +1590,7 @@ class PublicCollectionsJson(BaseDatatableView):
         return Collection.objects.filter(
             ~Q(name__endswith="temporary collection"), private=False, basecollectionitem__isnull=False
         ).annotate(
-            latest_image_modify=Max('basecollectionitem__modify_date'),
+            latest_image_modify=Max('basecollectionitem__modify_date')
         )
 
     def render_column(self, row, column):
@@ -1603,7 +1603,10 @@ class PublicCollectionsJson(BaseDatatableView):
         elif column == "n_images":
             return row.basecollectionitem_set.count()
         elif column == "latest_image_modify":
-            return row.latest_image_modify.strftime("%Y-%m-%d")
+            if row.latest_image_modify is None:
+                return ""
+            else:
+                return row.latest_image_modify.strftime("%Y-%m-%d")
         else:
             return super(PublicCollectionsJson, self).render_column(row, column)
 
@@ -1642,8 +1645,9 @@ class PublicCollectionsJson(BaseDatatableView):
 
 class MyCollectionsJson(PublicCollectionsJson):
     def get_initial_queryset(self):
-        return get_objects_for_user(self.request.user, "statmaps.change_collection")
-
+        return get_objects_for_user(self.request.user, "statmaps.change_collection").annotate(
+            latest_image_modify=Max('basecollectionitem__modify_date'),
+        )
 
 class MyMetaanalysesJson(PublicCollectionsJson):
     columns = ["name", "description", "n_images", "status"]
