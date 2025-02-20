@@ -24,7 +24,6 @@
          var base_url = captured  != '' ? window.location.href.split("?")[0] : window.location.href;
          let filters = {
            hasDoi: false,
-           map_type: false,
            modality: false,
            task: false,
          }
@@ -63,7 +62,6 @@
          });
          let selectPlaceholders = {
            'modality': 'Modality',
-           'map_type': 'Map Type',
            'task': 'Task',
          }
          Object.keys(selectPlaceholders).map(key => {
@@ -117,14 +115,6 @@
             <select class="form-control" id="modality">
               <option></option>
               {% for entry in modalities %}
-              <option value="{{entry.0}}">{{entry.1}}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="input-group mb-2 mr-sm-2">
-            <select class="form-control" id="map_type">
-              <option></option>
-              {% for entry in map_types %}
               <option value="{{entry.0}}">{{entry.1}}</option>
               {% endfor %}
             </select>
