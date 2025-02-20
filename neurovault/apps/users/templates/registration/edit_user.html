@@ -2,6 +2,9 @@
 {% block content %}
 <form action="" method="post">{% csrf_token %}
 {{ form.as_p }}
+<input type="checkbox" id="opt-id">
+<label for="opt-in">Sign up for NeuroVault mailing list.</label>
+<br>
 <input type="submit" value="Submit" />
 <input type="hidden" name="next" value="{{ request.GET.next }}" />
 </form>
