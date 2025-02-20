@@ -70,6 +70,7 @@
            "dom": 'frtipl',
            "initComplete": function(settings, json) {
             $("#collections-table_filter label").appendTo('#search-input-group')
+            document.getElementById("custom-filters").classList.remove('d-none')
            }
          });
          $('#doi-switch').click(function() {
@@ -80,7 +81,6 @@
            'modality': 'Modality',
            'task': 'Task',
          }
-         document.getElementById("custom-filters").classList.remove('d-none')
          Object.keys(selectPlaceholders).map(key => {
            $(`#${key}`).select2({
              theme: 'bootstrap4',
