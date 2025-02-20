@@ -2,6 +2,8 @@
 
 [![Join the chat at https://gitter.im/NeuroVault/NeuroVault](https://badges.gitter.im/NeuroVault/NeuroVault.svg)](https://gitter.im/NeuroVault/NeuroVault?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
+Blog: https://neurovault.github.io/
+
 Easy to use web database for brain statistical maps, atlases and parcellation maps.
 ## How to set up NeuroVault for local development?
 
