@@ -19,7 +19,7 @@ cycler==0.11.0
 Cython==0.29.36
 defusedxml==0.7.1
 Deprecated==1.2.14
-Django==4.2.4
+Django==4.2.20
 django-braces==1.15.0
 django-cleanup==8.0.0
 django-cors-headers==4.2.0
