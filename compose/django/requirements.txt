@@ -37,7 +37,7 @@ fonttools==4.42.0
 frozendict==2.3.8
 future==0.18.3
 fuzzywuzzy==0.18.0
-gunicorn==21.2.0
+gunicorn==23.0.0
 h5py==3.9.0
 html5lib==1.1
 idna==3.4
