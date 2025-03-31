@@ -1248,7 +1248,7 @@ class UploadFileForm(Form):
             ext = os.path.splitext(file.name)[1]
             ext = ext.lower()
             if ext not in [".zip", ".gz"]:
-                raise ValidationError("Not allowed filetype!")
+                raise ValidationError("Filetype must be .zip or .gz.")
 
 
 class PathOnlyWidget(forms.Widget):
