@@ -959,7 +959,7 @@ class BaseCollectionItem(PolymorphicModel, models.Model):
     description = models.TextField(blank=True)
     collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
     add_date = models.DateTimeField("date published", auto_now_add=True)
-    modify_date = models.DateTimeField("date modified", auto_now=True)
+    modify_date = models.DateTimeField("date modified", auto_now=True, db_index=True)
     tags = TaggableManager(through=ValueTaggedItem, blank=True)
     is_valid = models.BooleanField(default=True)
 
