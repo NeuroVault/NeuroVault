@@ -142,7 +142,7 @@ def generate_pycortex_volume(image):
             )
         except CalledProcessError as e:
             raise RuntimeError(
-                str(e.cmd)
+                str(e.cmd.decode())
                 + " returned code "
                 + str(e.returncode)
                 + " with output "
