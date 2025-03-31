@@ -789,10 +789,12 @@ class StatisticMapForm(ImageForm):
 
         # If the model instance has a FileField, this will display the path/filename.
         # The user will not be able to upload a new file from this form.
+        ''' sex and company don't exist on the StatisticMap object.
         for field in ['sex', 'ethnicity', 'handedness']:
             self.fields[field].choices = [('', 'N/A')] + self.fields[field].choices[1:]
 
         self.fields['analysis_level'].choices = self.fields['analysis_level'].choices[1:]
+        '''
 
         self.helper.layout = Layout(
             alert_html,
