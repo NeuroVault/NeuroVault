@@ -7,4 +7,4 @@ set -o nounset
 
 python /code/manage.py collectstatic --noinput
 
-/usr/local/bin/gunicorn neurovault.wsgi --bind 0.0.0.0:8000 --chdir=/code --workers=4 -t 120 --keep-alive 5 --max-requests 5000
+/usr/local/bin/gunicorn neurovault.wsgi --worker-class gevent --bind 0.0.0.0:8000 --chdir=/code --threads=4 --workers=4 -t 120 --keep-alive 2 --max-requests 5000

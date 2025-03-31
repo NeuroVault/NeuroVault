@@ -74,7 +74,7 @@ prompt-toolkit==3.0.39
 prov==2.0.0
 psycopg==3.1.10
 py-cpuinfo==9.0.0
-pycortex==1.2.7
+pycortex==1.2.11
 pycparser==2.21
 PyJWT==2.8.0
 PyLD==2.0.3
