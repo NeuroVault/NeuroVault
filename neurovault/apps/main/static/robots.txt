@@ -1,8 +1,9 @@
-sitemap: https://neurovault.org/sitemap.xml
+# sitemap: https://neurovault.org/sitemap.xml
 
 user-agent: *
 disallow: /images/*/find_similar
 disallow: /images/*/gene_expression
 disallow: /*/*/pycortex
 disallow: /search
+disallow: /tasks/*
 Crawl-Delay: 5

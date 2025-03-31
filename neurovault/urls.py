@@ -12,11 +12,13 @@ from neurovault.api.sitemap import (
 
 admin.autodiscover()
 
+'''
 sitemaps = {
     "Collections": CollectionSitemap,
     "Images": ImageSitemap,
     "CognitiveAtlasTasks": CognitiveAtlasTaskSitemap,
 }
+'''
 
 urlpatterns = [
     path("", include("django.contrib.auth.urls")),
@@ -27,7 +29,7 @@ urlpatterns = [
     re_path(r"^admin/", admin.site.urls),
     re_path(r"^api/", include("neurovault.api.urls", namespace="api")),
     re_path(r"^api-auth/", include("rest_framework.urls", namespace="rest_framework")),
-    re_path(r"^sitemap\.xml$", index, {"sitemaps": sitemaps}),
-    re_path(r"^sitemap-(?P<section>.+)\.xml$", sitemap, {"sitemaps": sitemaps}),
+    # re_path(r"^sitemap\.xml$", index, {"sitemaps": sitemaps}, name="django.contrib.sitemaps.views.sitemap"),
+    # re_path(r"^sitemap-(?P<section>.+)\.xml$", sitemap, {"sitemaps": sitemaps}, name="django.contrib.sitemaps.views.sitemap"),
 ]
 
