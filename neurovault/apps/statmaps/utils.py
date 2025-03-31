@@ -142,11 +142,11 @@ def generate_pycortex_volume(image):
             )
         except CalledProcessError as e:
             raise RuntimeError(
-                str(e.cmd.decode())
+                str(e.cmd)
                 + " returned code "
                 + str(e.returncode)
                 + " with output "
-                + e.output
+                + str(e.output)
             )
 
         x = np.loadtxt(mni_mat)
