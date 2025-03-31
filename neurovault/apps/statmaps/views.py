@@ -15,8 +15,9 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.core.files.base import ContentFile
-from django.db.models import Max, Q, Exists, OuterRef
+from django.db.models import Max, Q, Exists, OuterRef, DateTimeField 
 from django.db.models.aggregates import Count
+from django.db.models import Value
 from django.http import Http404, HttpResponse, StreamingHttpResponse, JsonResponse
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render, redirect
@@ -597,7 +598,7 @@ def view_collection(request, cid):
         msg = "Some of the images in this collection are missing crucial metadata."
         if owner_or_contrib(request, collection):
             msg += " Please add the missing information by <a href='editmetadata'>editing images metadata</a>."
-        context["messages"] = [msg]
+        messages.warning(request, msg)
 
     if not is_empty:
         context["first_image"] = collection.basecollectionitem_set.order_by("pk")[0]
@@ -751,7 +752,6 @@ def edit_image(request, pk):
             **kw_params
         )
         if form.is_valid():
-            print("Form is valid!")
             form.save()
             if any(key in request.POST for key in ["submit_next", "submit_previous"]):
                 prev_img, next_img = _get_sibling_images(image)
@@ -989,8 +989,7 @@ def upload_folder(request, collection_cid):
                                 images_added.append(new_image)
                             except Exception as e:
                                 messages.warning(request, f"Skipping {label}: {str(e)}")
-
-                except Exception:
+                except Exception as e:
                     error = traceback.format_exc().splitlines()[-1]
                     messages.warning(request, f"An error occurred with this upload: {error}")
                     return HttpResponseRedirect(collection.get_absolute_url())
@@ -1014,7 +1013,11 @@ def upload_folder(request, collection_cid):
                 return HttpResponseRedirect(
                     collection.get_absolute_url()
                 )
-
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.warning(request, f"{error}")
+            return HttpResponseRedirect(collection.get_absolute_url())
     else:
         # GET request do nothing
         return HttpResponseRedirect(collection.get_absolute_url())
@@ -1569,6 +1572,7 @@ class PublicCollections(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["map_types"] = BaseStatisticMap.map_type.field.choices
+        '''
         context["modalities"] = list(
             StatisticMap.objects.filter(collection__private=False)
             .exclude(collection__name__endswith="temporary collection")
@@ -1588,6 +1592,7 @@ class PublicCollections(TemplateView):
             .annotate(count=Count('statisticmap__collection', distinct=True))
             .order_by('-count')
         )
+        '''
 
         return context
 
@@ -1609,10 +1614,17 @@ class PublicCollectionsJson(BaseDatatableView):
         # You should not filter data returned here by any filter values entered by user. This is because
         # we need some base queryset to count total number of records.
         return Collection.objects.filter(
-            private=False, basecollectionitem__isnull=False
+            private=False
         ).annotate(
-            latest_image_modify=Max('basecollectionitem__modify_date')
+            latest_image_modify=Value(None, output_field=DateTimeField())
         )
+        '''
+        .prefetch_related('basecollectionitem_set').annotate(
+            latest_modified_image=Subquery(
+                models.StatisticMap.objects.filter(collection=OuterRef('pk')).order_by('-modify_date').values('modify_date')[:1]))
+        ).prefetch_related("basecollectionitem_set").annotate(
+            latest_image_modify=Max('basecollectionitem__modify_date')
+        '''
 
     def render_column(self, row, column):
         # We want to render user as a custom column
@@ -1624,16 +1636,20 @@ class PublicCollectionsJson(BaseDatatableView):
         elif column == "n_images":
             return row.basecollectionitem_set.count()
         elif column == "latest_image_modify":
+            return ""
+            '''
             if row.latest_image_modify is None:
                 return ""
             else:
                 return row.latest_image_modify.strftime("%Y-%m-%d")
+            '''
         else:
             return super(PublicCollectionsJson, self).render_column(row, column)
 
     def filter_queryset(self, qs):
         # use parameters passed in GET request to filter queryset
-        filter_keys = ["hasDoi", "modality", "task"]
+        # filter_keys = ["hasDoi", "modality", "task"]
+        filter_keys = ["hasDoi"]
         filters = {k: self.request.GET.get(k, None) for k in filter_keys}
         hasDOI = filters.pop("hasDoi", None)
         if hasDOI == "true":
@@ -1649,6 +1665,7 @@ class PublicCollectionsJson(BaseDatatableView):
 
         if image_filters:
             # Build a subquery that matches the needed StatisticMap rows
+            '''
             matching_subq = StatisticMap.objects.filter(
                 collection=OuterRef('pk'),
                 **image_filters
@@ -1657,6 +1674,7 @@ class PublicCollectionsJson(BaseDatatableView):
             qs = qs.annotate(
                 has_match=Exists(matching_subq)
             ).filter(has_match=True)
+            '''
 
         search = self.request.GET.get("search[value]", None)
         if search:
@@ -1667,8 +1685,14 @@ class PublicCollectionsJson(BaseDatatableView):
 class MyCollectionsJson(PublicCollectionsJson):
     def get_initial_queryset(self):
         return get_objects_for_user(self.request.user, "statmaps.change_collection").annotate(
+            latest_image_modify=Value(None, output_field=DateTimeField())
+        )
+
+        '''
+        return get_objects_for_user(self.request.user, "statmaps.change_collection").annotate(
             latest_image_modify=Max('basecollectionitem__modify_date'),
         )
+        '''
 
 class MyMetaanalysesJson(PublicCollectionsJson):
     columns = ["name", "description", "n_images", "status"]
