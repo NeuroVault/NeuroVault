@@ -230,7 +230,7 @@
 <script>
     $(document).ready(function() {
         console.log("Document ready");
-        let potential_progress = {{ potential_progress }};
+        let potential_progress = {{ potential_progress|default_if_none:0 }};
 
         $("#submit-id-submit_save").on("click", function(e) {
             if (potential_progress <= 100) {

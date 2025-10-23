@@ -557,6 +557,9 @@ def not_in_mni(nii, target_template_image=DEFAULT_TEMPLATE, plot=False):
             interpolation="nearest",
         )
     else:
+        shape = nii.shape
+        if len(shape) == 4 and shape[3] == 1:
+            shape = shape[:3]
         mask_nii = resample_img(
             mask_nii,
             target_affine=nii.affine,

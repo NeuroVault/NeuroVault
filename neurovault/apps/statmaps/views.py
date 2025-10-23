@@ -483,9 +483,10 @@ def view_image(request, pk, collection_cid=None):
         elif not image.is_valid:
             context["warning"] = "Warning: This map is missing some mandatory metadata!"
             if user_owns_image:
+                edit_url = reverse("statmaps:edit_image", kwargs={"pk": pk})
                 context[
                     "warning"
-                ] += " Please <a href='edit'>edit image details</a> to provide the missing information."
+                ] += f" Please <a href='{edit_url}'>edit image details</a> to provide the missing information."
         elif image.not_mni:
             context["warning"] = (
                 "Warning: This map seems not to be in the MNI space (%.4g%% of meaningful voxels are outside of the brain). "
@@ -1398,8 +1399,8 @@ class AllDOIPublicGroupImages(BaseDatatableView):
 
 
 class ImagesInCollectionJson(BaseDatatableView):
-    columns = ["file.url", "pk", "name", "polymorphic_ctype.name", "is_valid"]
-    order_columns = ["", "pk", "name", "polymorphic_ctype.name", ""]
+    columns = ["file.url", "pk", "polymorphic_ctype.name", "is_valid"]
+    order_columns = ["", "pk", "polymorphic_ctype.name", ""]
 
     def get_initial_queryset(self):
         # return queryset used as base for further sorting/filtering
@@ -1450,6 +1451,7 @@ class ImagesInCollectionJson(BaseDatatableView):
         search = self.request.GET.get("search[value]", None)
         if search:
             qs = qs.filter(Q(name__icontains=search) | Q(description__icontains=search))
+            # qs = qs.filter(Q(polymorphic_ctype__name__icontains=search) | Q(description__icontains=search))
         return qs
 
 
@@ -1823,7 +1825,7 @@ def gene_expression_json(request, pk, collection_cid=None):
 
     map_data = np.load(image.reduced_representation.file)
 
-    mask = request.GET.get('mask', None)
+    mask = request.GET.get('mask', 'full')
     expression_results = calculate_gene_expression_similarity(map_data, mask)
     dict = expression_results.to_dict("split")
     del dict["index"]
