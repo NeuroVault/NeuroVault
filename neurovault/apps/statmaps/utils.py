@@ -884,7 +884,7 @@ def create_image_from_nifti(
     map_type = detect_stat_map_type(file_path)
 
     # 3) Convert to .nii.gz (or squeeze dimensions)
-    name_without_ext = os.path.splitext(os.path.basename(file_path))[0]
+    _, name_without_ext, _ = split_filename(file_path)
     new_img = squeeze_and_save_as_nii_gz(nii, name_without_ext)
     
     # 4) Create model instance

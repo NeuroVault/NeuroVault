@@ -969,8 +969,7 @@ def upload_folder(request, collection_cid):
                         for label, fpath in nifti_files:
                             # If file is in an atlas map, pass the xml path
                             # (note: we need to handle possible path differences)
-                            path, name_ext = os.path.split(fpath)
-                            name_no_ext, _ = os.path.splitext(name_ext)
+                            path, name_no_ext, _ = split_filename(fpath)
                             atlas_xml = None
 
                             # For matching, you might need to store the 
