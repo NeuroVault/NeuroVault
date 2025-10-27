@@ -900,7 +900,7 @@ inspect, modify, and/or delete your maps. If you wish to use Neurosynth decoding
 your maps private, consider creating a private collection."""
 
     return add_image_redirect(
-        request, SimplifiedStatisticMapForm, redirect_url, False, preamble
+        request, EditStatisticMapForm, redirect_url, False, preamble
     )
 
 
