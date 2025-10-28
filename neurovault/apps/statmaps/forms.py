@@ -1159,9 +1159,20 @@ class SimplifiedStatisticMapForm(EditStatisticMapForm):
             "map_type",
             "modality",
             "target_template_image",
-            "cognitive_paradigm_cogatlas",
-            "cognitive_contrast_cogatlas",
-            "cognitive_paradigm_description_url",
+            Fieldset(
+                "Cognitive Paradigm",
+                Field(
+                    "cognitive_task_choice",
+                    template="statmaps/fields/toggle_radio_field.html",
+                    help_text="Was a cognitive task performed?",
+                ),
+                "cognitive_paradigm_cogatlas",
+                "cognitive_contrast_cogatlas",
+                "cognitive_paradigm_name",
+                "cognitive_paradigm_short_description",
+                "cognitive_paradigm_description_url",
+                "contrast_definition",
+            ),
             "file",
             "ignore_file_warning",
             "hdr_file",
@@ -1203,6 +1214,7 @@ class NeuropowerStatisticMapForm(EditStatisticMapForm):
         )
 
     def __init__(self, *args, **kwargs):
+
         super().__init__(*args, **kwargs)
 
         # Mark these fields as required

@@ -879,7 +879,7 @@ def add_image_redirect(request, formclass, redirect_url, is_private, preamble):
     else:
         form = formclass(user=request.user, instance=image)
     contrasts = get_contrast_lookup()
-    context = {"form": form, "contrasts": json.dumps(contrasts), "preamble": preamble}
+    context = {"form": form, "contrasts": json.dumps(contrasts), "preamble": preamble, "progress": 0, "potential_progress": 1}
     return render(request, "statmaps/edit_image.html", context)
 
 
