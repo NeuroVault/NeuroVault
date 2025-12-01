@@ -33,7 +33,7 @@ django-sendfile==0.3.11
 django-taggit==4.0.0
 djangorestframework==3.14.0
 filelock==3.12.2
-fonttools==4.42.0
+fonttools==4.61.0
 frozendict==2.3.8
 future==0.18.3
 fuzzywuzzy==0.18.0
