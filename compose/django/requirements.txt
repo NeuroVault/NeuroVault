@@ -32,7 +32,7 @@ django-polymorphic==3.1.0
 django-sendfile==0.3.11
 django-taggit==4.0.0
 djangorestframework==3.14.0
-filelock==3.12.2
+filelock==3.20.1
 fonttools==4.42.0
 frozendict==2.3.8
 future==0.18.3
