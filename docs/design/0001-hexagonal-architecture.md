@@ -1,6 +1,6 @@
 # 0001 — Hexagonal architecture and removal of model polymorphism
 
-Status: proposed · 2026-10-21
+Status: implemented on branch refactor/hexagonal · 2026-10-21
 
 ## Question
 
@@ -368,3 +368,50 @@ SELECT count(*) FROM guardian_groupobjectpermission;
 -- sequence start for the new tables
 SELECT max(id) FROM statmaps_basecollectionitem;
 ```
+
+## 12. Implementation notes (2026-10-21)
+
+Commits on `refactor/hexagonal`: phase 0 `d29d9c00`; phases 1–3 `579b2848`
+(landed together, in dependency order: domain → ports/adapters → repositories over the
+polymorphic tables → use cases and rerouted driving adapters); phase 4 `bcd4b461`;
+phase 5 (drop the polymorphic tables, `django-polymorphic` and
+`GUARDIAN_GET_CONTENT_TYPE`) in the following commit.
+
+Verification:
+- the master test suite plus the phase 0 goldens (43 responses) and characterization
+  tests pass on every phase;
+- 25 use-case tests run on in-memory fakes without Django, Docker or a database
+  (`python -m unittest neurovault.application.tests.test_services`);
+- `application/tests/test_layering.py` enforces the dependency rule;
+- `test_migration_copy_items` migrates one row of every kind (plus tags, comparisons,
+  meta-analysis selections, permissions, NaN values) through 0007/0008;
+- on a copy of the local database, 126/126 items are identical after 0007.
+
+Golden normalizations added during implementation: ids are mapped per entity type
+(item and bundle ids are separate sequences after phase 4); `polymorphic_ctype` is a
+database-specific content type id; in POST/PUT/PATCH responses the outputs of the
+asynchronous processing task (thumbnail, surface files, reduced representation) depend
+on when the task finishes, so they are not compared.
+
+Behaviour that changed, each a master bug:
+
+| Flow | Master | Now |
+|------|--------|-----|
+| Move a statistic map to another collection | 500 (`Image.save()` getattr()s reverse relations); row moved, files not | files move with the row |
+| NIDM upload through the upload page | warning; `request.POST` is immutable | bundle created |
+| Owner's edit page after a contributor opened it | contributors field missing (shared fieldsets mutated) | always shown |
+| Gene-expression vector | mask path prefixed with `$`; fails | computed |
+| Quality checks on non-gzipped uploads | forced gzip decoding | reads by extension |
+| Image posted to a collection the user cannot change (Neurosynth/Neuropower form) | accepted | 403 |
+
+Still broken, recorded as expected failures (out of scope for a refactor): editing an
+atlas on the web (`EditAtlasForm` references a field it lacks), the owner's redirect to a
+private collection's token URL (its middleware is not installed), and the collection
+table when it holds an NIDM bundle (`nidmresults.Graph` fails with the installed
+rdflib). Also unchanged: the weighted meta-analysis path calls an undefined
+`weighted_stouffers`, and the `Stouffers` call predates NiMARE's estimator API.
+
+Removed as dead or broken: `Image.create`, AFNI sub-brick saving, `PolymorphicImageForm`,
+`meta.py` (moved into the NiMARE adapter and the use case), `trigger_comparisons`
+(imported a task that no longer exists). Stale content types of the old models remain;
+`manage.py remove_stale_contenttypes` clears them.

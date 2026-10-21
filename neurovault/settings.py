@@ -159,7 +159,6 @@ INSTALLED_APPS = [
     "taggit",
     "crispy_forms",
     "crispy_bootstrap4",
-    "polymorphic",
     "django_cleanup",
     "file_resubmit",
     "guardian",
@@ -313,9 +312,6 @@ if "test" in sys.argv or "benchmark" in sys.argv:
 
 
 TAGGIT_CASE_INSENSITIVE = True
-GUARDIAN_GET_CONTENT_TYPE = (
-    "polymorphic.contrib.guardian.get_polymorphic_base_content_type"
-)
 
 FIXTURE_DIRS = ("apps/statmaps/fixtures/",)
 
