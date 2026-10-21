@@ -1,12 +1,6 @@
+"""Web input: validation and layout. Changes are carried out by the use cases."""
 import os
-import re
-import shutil
-import subprocess
-from subprocess import CalledProcessError
-from io import BytesIO, StringIO
 
-import nibabel as nb
-import numpy as np
 from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.forms.models import ModelMultipleChoiceField
@@ -47,29 +41,19 @@ from .models import (
 
 from django.forms.forms import Form
 from django.forms.fields import FileField
-import tempfile
-from neurovault.apps.statmaps.utils import (
-    split_filename,
-    get_paper_properties,
-    detect_4D,
-    split_4D_to_3D,
-    memory_uploadfile,
-    is_thresholded,
-    not_in_mni,
-    splitext_nii_gz,
-)
-from neurovault.apps.statmaps.nidm_results import NIDMUpload
 from django import forms
+from django.db.models.fields.files import FieldFile
 from django.utils.encoding import smart_str
 from django.utils.safestring import mark_safe
 from django.forms.utils import flatatt
-from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.core.files.base import ContentFile
 from django.forms.widgets import HiddenInput, CheckboxSelectMultiple
-from neurovault import settings
-from gzip import GzipFile
 from file_resubmit.admin import AdminResubmitFileWidget
 from guardian.shortcuts import get_objects_for_user
+
+from neurovault.application.ports import SYSTEM
+from neurovault.application.services.items import ImageFilesInput
+from neurovault.bootstrap import services
+from neurovault.domain.errors import DomainValidationError
 
 
 # Create the form class.
@@ -385,33 +369,19 @@ class CollectionForm(ModelForm):
 
     def clean(self):
         cleaned_data = super(CollectionForm, self).clean()
-        doi = self.cleaned_data["DOI"]
-        if doi is not None and doi.strip() == "":
-            self.cleaned_data["DOI"] = None
-
-        if self.cleaned_data["DOI"]:
-            self.cleaned_data["DOI"] = self.cleaned_data["DOI"].strip()
-            try:
-                (
-                    self.cleaned_data["name"],
-                    self.cleaned_data["authors"],
-                    self.cleaned_data["paper_url"],
-                    _,
-                    self.cleaned_data["journal_name"],
-                ) = get_paper_properties(self.cleaned_data["DOI"].strip())
-            except:
-                self._errors["DOI"] = self.error_class(["Could not resolve DOI"])
-            else:
-                if "name" in self._errors:
-                    del self._errors["name"]
-        elif "name" not in cleaned_data or not cleaned_data["name"]:
-            self._errors["name"] = self.error_class(
-                ["You need to set the name or the DOI"]
+        try:
+            completed = services().collections.complete_publication(
+                {"DOI": cleaned_data.get("DOI"), "name": cleaned_data.get("name")}
             )
-            self._errors["DOI"] = self.error_class(
-                ["You need to set the name or the DOI"]
-            )
-
+        except DomainValidationError as e:
+            for field_name, messages in e.errors.items():
+                self._errors[field_name] = self.error_class(messages)
+            if self.cleaned_data.get("DOI") is not None and self.cleaned_data["DOI"].strip() == "":
+                self.cleaned_data["DOI"] = None
+            return cleaned_data
+        self.cleaned_data.update(completed)
+        if completed.get("DOI") and "name" in self._errors:
+            del self._errors["name"]
         return cleaned_data
 
     def __init__(self, *args, **kwargs):
@@ -455,191 +425,30 @@ class OwnerCollectionForm(CollectionForm):
         )
 
 
-class ImageValidationMixin(object):
-    def __init__(self, *args, **kwargs):
-        super(ImageValidationMixin, self).__init__()
-        self.afni_subbricks = []
-        self.afni_tmp = None
+def image_changes(form):
+    """(column changes, file uploads, tags) from a valid image form.
 
-    def clean_and_validate(self, cleaned_data):
-        surface_left_file = cleaned_data.get("surface_left_file")
-        surface_right_file = cleaned_data.get("surface_right_file")
-
-        if surface_left_file and surface_right_file:
-            if "file" in list(self._errors.keys()):
-                del self._errors["file"]
-            cleaned_data["data_origin"] = "surface"
-            tmp_dir = tempfile.mkdtemp()
-            try:
-                new_name = cleaned_data["name"] + ".nii.gz"
-                ribbon_projection_file = os.path.join(tmp_dir, new_name)
-
-                inputs_dict = {"lh": "surface_left_file", "rh": "surface_right_file"}
-                intent_dict = {"lh": "CortexLeft", "rh": "CortexRight"}
-
-                for hemi in ["lh", "rh"]:
-                    print(hemi)
-                    surface_file = cleaned_data.get(inputs_dict[hemi])
-                    _, ext = splitext_nii_gz(surface_file.name)
-
-                    if not ext.lower() in [".mgh", ".curv", ".gii", ".nii", ".nii.gz"]:
-                        self._errors[inputs_dict[hemi]] = self.error_class(
-                            ["Doesn't have proper extension"]
-                        )
-                        del cleaned_data[inputs_dict[hemi]]
-                        return cleaned_data
-
-                    infile = os.path.join(tmp_dir, hemi + ext)
-
-                    print("write " + hemi)
-                    print(surface_file.file)
-                    surface_file.open()
-                    surface_file = BytesIO(surface_file.read())
-                    with open(infile, "wb") as fd:
-                        surface_file.seek(0)
-                        shutil.copyfileobj(surface_file, fd)
-
-                    try:
-                        if ext.lower() != ".gii":
-                            out_gii = os.path.join(tmp_dir, hemi + ".gii")
-                            subprocess.check_output(
-                                [
-                                    os.path.join(
-                                        os.environ["FREESURFER_HOME"],
-                                        "bin",
-                                        "mris_convert",
-                                    ),
-                                    "-c",
-                                    infile,
-                                    os.path.join(
-                                        os.environ["FREESURFER_HOME"],
-                                        "subjects",
-                                        "fsaverage",
-                                        "surf",
-                                        hemi + ".white",
-                                    ),
-                                    out_gii,
-                                ]
-                            )
-                        else:
-                            out_gii = infile
-
-                        gii = nb.load(out_gii)
-
-                        if gii.darrays[0].dims != [163842]:
-                            self._errors[inputs_dict[hemi]] = self.error_class(
-                                [
-                                    "Doesn't have proper dimensions - are you sure it's fsaverage?"
-                                ]
-                            )
-                            del cleaned_data[inputs_dict[hemi]]
-                            return cleaned_data
-
-                        # fix intent
-                        old_dict = gii.meta.metadata
-                        old_dict["AnatomicalStructurePrimary"] = intent_dict[hemi]
-                        gii.meta = gii.meta.from_dict(old_dict)
-                        gii.to_filename(os.path.join(tmp_dir, hemi + ".gii"))
-
-                        subprocess.check_output(
-                            [
-                                os.path.join(
-                                    os.environ["FREESURFER_HOME"],
-                                    "bin",
-                                    "mri_surf2surf",
-                                ),
-                                "--s",
-                                "fsaverage",
-                                "--hemi",
-                                hemi,
-                                "--srcsurfval",
-                                os.path.join(tmp_dir, hemi + ".gii"),
-                                "--trgsubject",
-                                "ICBM2009c_asym_nlin",
-                                "--trgsurfval",
-                                os.path.join(tmp_dir, hemi + ".MNI.gii"),
-                            ]
-                        )
-                    except CalledProcessError as e:
-                        raise RuntimeError(
-                            str(e.cmd)
-                            + " returned code "
-                            + str(e.returncode)
-                            + " with output "
-                            + e.output
-                        )
-
-                cleaned_data["surface_left_file"] = memory_uploadfile(
-                    os.path.join(tmp_dir, "lh.gii"),
-                    new_name[:-7] + ".fsaverage.lh.func.gii",
-                    None,
-                )
-                cleaned_data["surface_right_file"] = memory_uploadfile(
-                    os.path.join(tmp_dir, "rh.gii"),
-                    new_name[:-7] + ".fsaverage.rh.func.gii",
-                    None,
-                )
-                print("surf2vol")
-                try:
-                    subprocess.check_output(
-                        [
-                            os.path.join(
-                                os.environ["FREESURFER_HOME"], "bin", "mri_surf2vol"
-                            ),
-                            "--subject",
-                            "ICBM2009c_asym_nlin",
-                            "--o",
-                            ribbon_projection_file[:-3],
-                            "--so",
-                            os.path.join(
-                                os.environ["FREESURFER_HOME"],
-                                "subjects",
-                                "ICBM2009c_asym_nlin",
-                                "surf",
-                                "lh.white",
-                            ),
-                            os.path.join(tmp_dir, "lh.MNI.gii"),
-                            "--so",
-                            os.path.join(
-                                os.environ["FREESURFER_HOME"],
-                                "subjects",
-                                "ICBM2009c_asym_nlin",
-                                "surf",
-                                "rh.white",
-                            ),
-                            os.path.join(tmp_dir, "rh.MNI.gii"),
-                        ]
-                    )
-                except CalledProcessError as e:
-                    raise RuntimeError(
-                        str(e.cmd)
-                        + " returned code "
-                        + str(e.returncode)
-                        + " with output "
-                        + e.output
-                    )
-
-                # fix one voxel offset
-                nii = nb.load(ribbon_projection_file[:-3])
-                affine = nii.affine
-                affine[0, 3] -= 1
-                nb.Nifti1Image(np.asanyarray(nii.dataobj), affine).to_filename(
-                    ribbon_projection_file
-                )
-
-                cleaned_data["file"] = memory_uploadfile(
-                    ribbon_projection_file, new_name, None
-                )
-            finally:
-                shutil.rmtree(tmp_dir)
-        # elif not getattr(self, "partial", False):
-        #     # Skip validation error if this is a partial update from the API
-        #     raise ValidationError("Couldn't read uploaded file")
-
-        return cleaned_data
+    Django's construct_instance has already applied the form to
+    form.instance (fields omitted from the POST keep their values), so the
+    columns are read back from it.
+    """
+    changes, files = {}, ImageFilesInput()
+    model_fields = {f.name: f for f in form.instance._meta.concrete_fields}
+    for name in form.fields:
+        field = model_fields.get(name)
+        if field is None or name in ("polymorphic_ctype", "nidm_results"):
+            continue
+        value = getattr(form.instance, field.attname)
+        if isinstance(value, FieldFile):
+            if value and not value._committed:
+                setattr(files, name, value.file)
+            continue
+        changes["collection_id" if name == "collection" else field.attname] = value
+    tags = form.cleaned_data.get("tags") if "tags" in form.fields else None
+    return changes, files, tags
 
 
-class ImageForm(ModelForm, ImageValidationMixin):
+class ImageForm(ModelForm):
     hdr_file = FileField(
         required=False,
         label=".hdr part of the map (if applicable)",
@@ -661,8 +470,7 @@ class ImageForm(ModelForm, ImageValidationMixin):
         self.max_image = kwargs.pop("max_image", None)
         self.curr_image = kwargs.pop("curr_image", None)
 
-        ImageValidationMixin.__init__(self, *args, **kwargs)
-        super().__init__(*args, **kwargs)  # calls ModelForm __init__
+        super().__init__(*args, **kwargs)
 
         self.helper = FormHelper(self)
         self.helper.form_class = "form-horizontal"
@@ -680,7 +488,12 @@ class ImageForm(ModelForm, ImageValidationMixin):
     def clean(self, **kwargs):
         cleaned_data = super().clean()
         cleaned_data["tags"] = clean_tags(cleaned_data)
-        return self.clean_and_validate(cleaned_data)
+        return cleaned_data
+
+    def save(self, commit=True):
+        raise NotImplementedError(
+            "image forms validate only; store with services().items (see image_changes)"
+        )
 
     def add_buttons(self):
         buttons = []
@@ -900,67 +713,18 @@ class StatisticMapForm(ImageForm):
             and "file" not in self._errors
             and "hdr_file" not in self._errors
         ):
-            django_file.open()
-            fileobj = BytesIO(django_file.read())
-            django_file.seek(0)
-            if django_file.name.endswith('.gz'):
-                fileobj = GzipFile(filename=django_file.name, mode="rb", fileobj=fileobj)
-            nii = nb.Nifti1Image.from_file_map(
-                {"image": nb.FileHolder(django_file.name, fileobj)}
+            report = services().items.check_map_file(
+                django_file,
+                cleaned_data.get("map_type"),
+                cleaned_data["target_template_image"],
+                cleaned_data.get("ignore_file_warning"),
             )
-            cleaned_data["is_thresholded"], ratio_bad = is_thresholded(nii)
-            cleaned_data["perc_bad_voxels"] = ratio_bad * 100.0
-
-            if (
-                cleaned_data["is_thresholded"]
-                and not cleaned_data.get("ignore_file_warning")
-                and cleaned_data.get("map_type") != "R"
-            ):
-                self._errors["file"] = self.error_class(
-                    [
-                        "This map seems to be thresholded (%.4g%% of voxels are zeros). "
-                        "Please use an unthresholded version of the map if possible."
-                        % (cleaned_data["perc_bad_voxels"])
-                    ]
-                )
+            cleaned_data.update(report.values)
+            if report.error:
+                self._errors["file"] = self.error_class([report.error])
                 if cleaned_data.get("hdr_file"):
-                    self._errors["hdr_file"] = self.error_class(
-                        [
-                            "This map seems to be thresholded (%.4g%% of voxels are zeros). "
-                            "Please use an unthresholded version of the map if possible."
-                            % (cleaned_data["perc_bad_voxels"])
-                        ]
-                    )
+                    self._errors["hdr_file"] = self.error_class([report.error])
                 self.fields["ignore_file_warning"].widget = forms.CheckboxInput()
-            else:
-                (
-                    cleaned_data["not_mni"],
-                    cleaned_data["brain_coverage"],
-                    cleaned_data["perc_voxels_outside"],
-                ) = not_in_mni(
-                    nii, target_template_image=cleaned_data["target_template_image"]
-                )
-                if (
-                    cleaned_data["not_mni"]
-                    and not cleaned_data.get("ignore_file_warning")
-                    and cleaned_data.get("map_type") != "R"
-                ):
-                    self._errors["file"] = self.error_class(
-                        [
-                            "This map seems not to be in the MNI space (%.4g%% of meaningful "
-                            "voxels are outside of the brain). Please transform your data to MNI space."
-                            % (cleaned_data["perc_voxels_outside"])
-                        ]
-                    )
-                    if cleaned_data.get("hdr_file"):
-                        self._errors["hdr_file"] = self.error_class(
-                            [
-                                "This map seems not to be in the MNI space (%.4g%% of meaningful "
-                                "voxels are outside of the brain). Please transform your data to MNI space."
-                                % (cleaned_data["perc_voxels_outside"])
-                            ]
-                        )
-                    self.fields["ignore_file_warning"].widget = forms.CheckboxInput()
 
             if cleaned_data.get("map_type") == "R":
                 if "not_mni" in cleaned_data:
@@ -969,40 +733,6 @@ class StatisticMapForm(ImageForm):
                     del cleaned_data["is_thresholded"]
 
         return cleaned_data
-
-    def save_afni_slices(self, commit):
-        try:
-            orig_img = self.instance
-
-            for n, (label, brick) in enumerate(self.afni_subbricks):
-                brick_fname = os.path.split(brick)[-1]
-                mfile = memory_uploadfile(brick, brick_fname, orig_img.file)
-                brick_img = StatisticMap(
-                    name="%s - %s" % (orig_img.name, label),
-                    collection=orig_img.collection,
-                    file=mfile,
-                )
-                for field in set(self.Meta.fields) - set(
-                    ["file", "hdr_file", "name", "collection"]
-                ):
-                    if field in self.cleaned_data:
-                        setattr(brick_img, field, self.cleaned_data[field])
-
-                brick_img.save()
-            return orig_img.collection
-
-        finally:
-            try:
-                shutil.rmtree(self.afni_tmp)
-            except OSError as exc:
-                if exc.errno != 2:
-                    raise
-
-    def save(self, commit=True):
-        if getattr(self, "afni_subbricks", None):
-            return self.save_afni_slices(commit)
-        else:
-            return super().save(commit=commit)
 
 
 class EditStatisticMapForm(StatisticMapForm):
@@ -1038,54 +768,6 @@ class AtlasForm(ImageForm):
         )
 
         self.add_buttons()
-
-
-class PolymorphicImageForm(ImageForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # Depending on the polymorphic ctype, reassign self.fields
-        if self.instance.polymorphic_ctype is not None:
-            if self.instance.polymorphic_ctype.model == "atlas":
-                # Use AtlasForm base fields
-                self.fields = AtlasForm.base_fields
-            elif self.instance.polymorphic_ctype.model == "nidmresultstatisticmap":
-                # Use NIDMResultStatisticMapForm (not shown fully here)
-                # Example usage: 
-                # NIDMResultStatisticMapForm(...) returns a form instance
-                # we then copy its fields
-                self.fields = NIDMResultStatisticMapForm(
-                    self.instance.collection.owner,
-                    instance=self.instance
-                ).fields
-            else:
-                # Default to StatisticMapForm fields
-                self.fields = StatisticMapForm.base_fields
-
-        # Because fields are dynamic, now define a layout based on the final fields:
-        # If you want a strict order, you can create if-conditions and specify them.
-        # Below is a simple approach that shows them in the order of self.fields.
-        self.helper.layout = Layout(
-            *list(self.fields.keys()),  # This enumerates whatever ended up in self.fields
-        )
-
-        self.add_buttons()
-
-    def clean(self, **kwargs):
-        # Determine which underlying form we should delegate to
-        if "label_description_file" in self.fields:
-            use_form = AtlasForm
-        elif "map_type" in self.fields:
-            use_form = StatisticMapForm
-        else:
-            raise Exception("Unknown image type! %s" % str(list(self.fields.keys())))
-
-        # Mock up an instance of the relevant form to do the cleaning
-        new_instance = use_form(self)
-        new_instance.cleaned_data = self.cleaned_data
-        new_instance._errors = self._errors
-        self.fields = new_instance.fields
-        return new_instance.clean()
 
 
 class EditAtlasForm(AtlasForm):
@@ -1280,131 +962,7 @@ class MapTypeListWidget(forms.Widget):
         return mark_safe("%s<strong>%s</strong><br /><br />" % (input, map_type))
 
 
-class NIDMResultsValidationMixin(object):
-    def clean_and_validate(self, data):
-        zip_file = data.get("zip_file")
-        partial = getattr(self, "partial", False)
-
-        if (zip_file and partial) or (not partial):
-            return self.clean_and_validate_zip_file(data, zip_file)
-
-        return data
-
-    def clean_and_validate_zip_file(self, data, zip_file):
-        # make sure the zip file has a unique name
-        base_subdir = os.path.split(data["zip_file"].name)[-1].replace(".nidm.zip", "")
-        nres = NIDMResults.objects.filter(
-            collection=data["collection"], name__startswith=base_subdir + ".nidm"
-        ).count()
-        # don't count current instance
-        if self.instance.pk is not None and nres != 0:
-            nres -= 1
-        safe_name = "{0}_{1}.nidm".format(base_subdir, nres)
-        data["name"] = base_subdir + ".nidm" if nres == 0 else safe_name
-        data["zip_file"].name = zip_file.name = data["name"] + ".zip"
-
-        try:
-            self.nidm = NIDMUpload(zip_file)
-        except Exception as e:
-            raise ValidationError("The NIDM file was not readable: {0}".format(e))
-
-        try:
-            self.clean_nidm(data)
-        except Exception as e:
-            raise ValidationError(e)
-
-        # delete existing images and files when changing file
-        if self.instance.pk is not None:
-            for statmap in self.instance.nidmresultstatisticmap_set.all():
-                statmap.delete()
-            cdir = os.path.dirname(self.instance.zip_file.path)
-            if os.path.isdir(cdir):
-                shutil.rmtree(cdir)
-
-        ttl_name = os.path.split(self.nidm.ttl.filename)[-1]
-
-        data["ttl_file"] = InMemoryUploadedFile(
-            # fix ttl for spm12
-            file=ContentFile(
-                self.nidm.fix_spm12_ttl(
-                    self.nidm.zip.read(self.nidm.ttl).decode("utf-8")
-                )
-            ),
-            field_name="file",
-            name=ttl_name,
-            content_type="text/turtle",
-            size=self.nidm.ttl.file_size,
-            charset="utf-8",
-        )
-
-        return data
-
-    def clean_nidm(self, cleaned_data):
-        for s in self.nidm.statmaps:
-            s["fname"] = os.path.split(s["file"])[-1]
-            s["statmap"] = NIDMResultStatisticMap(name=s["name"])
-            s["statmap"].collection = cleaned_data["collection"]
-            s["statmap"].description = cleaned_data["description"]
-            s["statmap"].map_type = s["type"]
-            s["statmap"].analysis_level = "Other"
-            s["statmap"].number_of_subjects = 0
-            s["statmap"].nidm_results = self.instance
-            s["statmap"].file = "images/1/foo/bar/"
-
-            try:
-                s["statmap"].clean_fields(exclude=("nidm_results", "file"))
-                s["statmap"].validate_unique()
-            except Exception as e:
-                import traceback
-
-                raise ValidationError(
-                    "There was a problem validating the Statistic Maps "
-                    + "for this NIDM Result: \n{0}\n{1}".format(
-                        e, traceback.format_exc()
-                    )
-                )
-
-
-def save_nidm_statmaps(nidm, instance):
-    for s in nidm.statmaps:
-        s["statmap"].nidm_results = instance
-        s["statmap"].file = ContentFile(
-            open(s["file"], "rb").read(), name=os.path.split(s["file"])[-1]
-        )
-        s["statmap"].save()
-
-    dest = os.path.dirname(instance.zip_file.path)
-    nidm.copy_to_dest(dest)
-    nidm.cleanup()
-
-
-def handle_update_ttl_urls(instance):
-    ttl_content = instance.ttl_file.file.read().decode("utf-8")
-    fname = os.path.basename(instance.nidmresultstatisticmap_set.first().file.name)
-
-    ttl_regx = re.compile(
-        r"(prov:atLocation\ \")(file:\/.*\/)?(" + fname + ')("\^\^xsd\:anyURI\ \;)'
-    )
-
-    hdr, urlprefix, nifti, ftr = re.search(ttl_regx, ttl_content).groups()
-    if not urlprefix:
-        urlprefix = ""
-    base_url = settings.DOMAIN_NAME
-    replace_path = (
-        base_url
-        + os.path.join(instance.collection.get_absolute_url(), instance.name)
-        + "/"
-    )
-
-    updated_ttl = ttl_content.replace(hdr + urlprefix, hdr + replace_path)
-    instance.ttl_file.file.close()
-
-    with open(instance.ttl_file.path, "w") as ttlf:
-        ttlf.write(updated_ttl)
-        ttlf.close()
-
-
-class NIDMResultsForm(forms.ModelForm, NIDMResultsValidationMixin):
+class NIDMResultsForm(forms.ModelForm):
     class Meta:
         model = NIDMResults
         widgets = {"is_valid": forms.HiddenInput()}
@@ -1432,8 +990,7 @@ class NIDMResultsForm(forms.ModelForm, NIDMResultsValidationMixin):
                 onclick='window.location.href=window.location.href+"/delete"',
             )
         )
-        self.nidm = None
-        self.new_statmaps = []
+        self.prepared = None
 
         if self.instance.pk is not None:
             self.fields["name"].widget = HiddenInput()
@@ -1445,25 +1002,39 @@ class NIDMResultsForm(forms.ModelForm, NIDMResultsValidationMixin):
         cleaned_data["tags"] = clean_tags(cleaned_data)
         # only process new uploads or replaced zips
         if self.instance.pk is None or "zip_file" in self.changed_data:
-            self.cleaned_data = self.clean_and_validate(cleaned_data)
+            zip_file = cleaned_data.get("zip_file")
+            if zip_file:
+                try:
+                    self.prepared = services().bundles.prepare(
+                        cleaned_data["collection"].pk, zip_file, replacing_id=self.instance.pk
+                    )
+                except DomainValidationError as e:
+                    raise ValidationError(list(e.errors.values())[0])
+                cleaned_data["name"] = self.prepared.name
 
     def save(self, commit=True):
-        if self.instance.pk is None or "zip_file" in self.changed_data:
-            do_update = True
+        """Store through the bundle use case (admin and test entry point)."""
+        if self.errors:
+            raise ValueError("The NIDM results could not be stored: %s" % self.errors.as_json())
+        bundles = services().bundles
+        data = self.cleaned_data
+        if self.prepared is not None:
+            bundle_id = bundles.ingest(
+                SYSTEM, data["collection"].pk, self.prepared,
+                description=data.get("description", ""), tags=data.get("tags") or (),
+                replacing_id=self.instance.pk, check_access=False,
+            )
+        else:
+            bundle_id = bundles.change(
+                SYSTEM, self.instance.pk,
+                {"description": data.get("description", ""), "name": data["name"]},
+                tags=data.get("tags"), check_access=False,
+            ).id
+        self.instance = NIDMResults.objects.get(pk=bundle_id)
+        return self.instance
 
-        nidm_r = super(NIDMResultsForm, self).save(commit)
-        if commit and do_update is not None:
-            self.save_nidm()
-            self.update_ttl_urls()
-        return nidm_r
-
-    def update_ttl_urls(self):
-        handle_update_ttl_urls(self.instance)
-
-    def save_nidm(self):
-        if self.nidm and "zip_file" in self.changed_data:
-            save_nidm_statmaps(self.nidm, self.instance)
-            # todo: rewrite ttl
+    def save_m2m(self):
+        pass
 
 
 class NIDMViewForm(forms.ModelForm):

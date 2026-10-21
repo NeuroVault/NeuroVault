@@ -183,7 +183,6 @@ class WebFlows(TestCase):
         got = sorted((i["name"], i["map_type"], i["is_valid"]) for i in self.images(cid))
         self.assertEqual(got, [("motor lips", "other", False), ("spmF 0002", "F map", False)])
 
-    @unittest.expectedFailure  # master: populate_nidm_results mutates the immutable request.POST
     def test_upload_nidm_through_upload_folder(self):
         self.create_collection()
         cid = self.collection_id("Web Collection")
@@ -242,7 +241,6 @@ class WebFlows(TestCase):
         self.assertIn("seems to be thresholded", r.context["form"].errors["file"][0])
         self.assertEqual(self.api("/api/images/%s/" % img["id"])["name"], "motor lips")
 
-    @unittest.expectedFailure  # master: Image.save() getattr()s reverse relations ('metaanalysis')
     def test_move_image_between_collections(self):
         self.create_collection("First")
         self.create_collection("Second")

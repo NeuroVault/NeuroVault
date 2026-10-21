@@ -38,7 +38,10 @@ from .serializers import (
     NIDMResultsSerializer,
 )
 
-from .permissions import ObjectOnlyPermissions, ObjectOnlyPolymorphicPermissions
+from neurovault.application.ports import Actor
+from neurovault.bootstrap import services
+
+from .permissions import CollectionItemPermissions, ObjectOnlyPermissions
 
 from .pagination import StandardResultPagination
 
@@ -53,6 +56,10 @@ class JSONResponse(HttpResponse):
         content = JSONRenderer().render(data)
         kwargs["content_type"] = "application/json"
         super(JSONResponse, self).__init__(content, **kwargs)
+
+
+def actor(request):
+    return Actor(request.user.pk, request.user.is_superuser)
 
 
 class APIHelper:
@@ -98,7 +105,7 @@ class ImageViewSet(
 ):
     queryset = Image.objects.filter(collection__private=False)
     serializer_class = ImageSerializer
-    permission_classes = (ObjectOnlyPolymorphicPermissions,)
+    permission_classes = (CollectionItemPermissions,)
 
     def _get_api_image(self, request, pk=None):
         private_url = re.match(r"^[A-Z]{8}\-\d+$", pk)
@@ -142,11 +149,14 @@ class ImageViewSet(
         self.perform_update(serializer)
         return Response(serializer.data)
 
+    def perform_destroy(self, instance):
+        services().items.delete(actor(self.request), instance.pk)
+
 
 class AtlasViewSet(ImageViewSet):
     queryset = Atlas.objects.filter(collection__private=False)
     serializer_class = AtlasSerializer
-    permission_classes = (ObjectOnlyPolymorphicPermissions,)
+    permission_classes = (CollectionItemPermissions,)
 
     @action(detail=True)
     def datatable(self, request, pk=None):
@@ -361,6 +371,9 @@ class CollectionViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
+    def perform_destroy(self, instance):
+        services().collections.delete(actor(self.request), instance.pk)
+
 
 class MyCollectionsViewSet(CollectionViewSet):
     permission_classes = (permissions.IsAuthenticated,)
@@ -378,7 +391,10 @@ class NIDMResultsViewSet(
 ):
     queryset = NIDMResults.objects.filter(collection__private=False)
     serializer_class = NIDMResultsSerializer
-    permission_classes = (ObjectOnlyPolymorphicPermissions,)
+    permission_classes = (CollectionItemPermissions,)
+
+    def perform_destroy(self, instance):
+        services().bundles.delete(actor(self.request), instance.pk)
 
 
 class TagViewSet(viewsets.ModelViewSet):

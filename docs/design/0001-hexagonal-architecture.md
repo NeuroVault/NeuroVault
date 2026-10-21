@@ -20,6 +20,10 @@ API or losing data?
 | D5 | The data migration runs in a maintenance window; no dual-write period. | user |
 | D6 | Django models stay in `apps/statmaps` (app label `statmaps`) and become the persistence adapter, so the migration history continues unbroken. | this doc |
 | D7 | Item permissions are derived from the collection; per-item guardian rows are dropped. | this doc, evidence in §7 |
+| D8 | Reads stay on the ORM (CQRS-lite): templates, datatables and API representations read ORM rows; every write goes through a use case. About 40 templates read model attributes and none are tested, so rendering from entities would be an untested rewrite with no architectural gain. | implementation |
+| D9 | The composition root is `neurovault/bootstrap.py`, outside `application/`, so the application layer never imports adapters. | implementation |
+| D10 | The dependency rule is enforced by a unit test (`application/tests/test_layering.py`) rather than import-linter, avoiding a new dependency. | implementation |
+| D11 | Input validation (types, choices, required fields, error wording) stays in Django forms and DRF serializers; domain rules (quality checks, DOI resolution, bundle naming, file layout) run in the use cases those adapters call. Forms no longer save: `image_changes(form)` reads back what `construct_instance` applied and the view passes it to the use case. | implementation |
 
 ## 1. Current state
 

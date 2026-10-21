@@ -1,18 +1,27 @@
-from neurovault.apps.statmaps.forms import StatisticMapForm, AtlasForm, NIDMResultsForm
-from neurovault.apps.statmaps.models import Collection, Image, CognitiveAtlasTask
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.urls import reverse
-from neurovault.settings import PRIVATE_MEDIA_ROOT
-import shutil
 import os
+import shutil
+
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db.models.fields.files import FieldFile
+
+from neurovault.application.ports import SYSTEM
+from neurovault.apps.statmaps.forms import StatisticMapForm, AtlasForm, NIDMResultsForm, image_changes
+from neurovault.apps.statmaps.models import Atlas, Collection, Image, CognitiveAtlasTask, StatisticMap
+from neurovault.bootstrap import services
+from neurovault.settings import PRIVATE_MEDIA_ROOT
+
+COLLECTION_SKIP = ("id", "owner", "add_date", "modify_date", "doi_add_date")
+ITEM_SKIP = ("id", "basecollectionitem_ptr", "image_ptr", "polymorphic_ctype", "collection",
+             "add_date", "modify_date")
+KINDS = {StatisticMap: "statmap", Atlas: "atlas"}
 
 
 def clearDB():
-    try:
-        Image.objects.all().delete()
-        Collection.objects.all().delete()
-    except Exception as e:
-        print(e)
+    """Remove stored files. The database is rolled back by TestCase.
+
+    (Deleting a mixed polymorphic Image queryset could leave orphaned child
+    rows behind, depending on row order.)
+    """
     if os.path.exists(PRIVATE_MEDIA_ROOT):
         for the_file in os.listdir(PRIVATE_MEDIA_ROOT):
             file_path = os.path.join(PRIVATE_MEDIA_ROOT, the_file)
@@ -25,10 +34,61 @@ def clearDB():
                 print(e)
 
 
+def persist(obj):
+    """Store an unsaved Collection, StatisticMap or Atlas built in a test through the use cases.
+
+    The object's primary key is set and its fields are refreshed, so the test
+    can keep using it.
+    """
+    if isinstance(obj, Collection):
+        changes = {
+            f.attname: getattr(obj, f.attname)
+            for f in obj._meta.concrete_fields
+            if f.name not in COLLECTION_SKIP
+        }
+        new_id = services().collections.save(SYSTEM, None, changes, owner_id=obj.owner_id)
+    else:
+        changes, files = {}, {}
+        for f in obj._meta.concrete_fields:
+            if f.name in ITEM_SKIP:
+                continue
+            value = getattr(obj, f.attname)
+            if isinstance(value, FieldFile):
+                if value and not value._committed:
+                    files[f.name] = value.file
+                continue
+            changes[f.attname] = value
+        from neurovault.application.services.items import ImageFilesInput
+
+        new_id = services().items.add(
+            SYSTEM, obj.collection_id, KINDS[type(obj)], changes, ImageFilesInput(**files),
+            check_access=False,
+        )
+    obj.pk = new_id
+    obj.refresh_from_db()
+    return obj
+
+
+def add_contributor(collection, user):
+    current = list(collection.contributors.values_list("pk", flat=True))
+    services().collections.save(SYSTEM, collection.pk, {}, contributor_ids=current + [user.pk])
+    collection.refresh_from_db()
+
+
+def save_image_form(form, collection, kind):
+    assert form.is_valid(), form.errors
+    changes, files, tags = image_changes(form)
+    changes.pop("collection_id", None)
+    new_id = services().items.add(SYSTEM, collection.pk, kind, changes, files, tags=tags,
+                                  check_access=False)
+    return Image.objects.get(pk=new_id)
+
+
 def save_statmap_form(
     image_path, collection, ignore_file_warning=False, image_name=None
-):  
-    collection.save()
+):
+    if collection.pk is None:
+        persist(collection)
     if image_name is None:
         image_name = image_path
 
@@ -49,11 +109,7 @@ def save_statmap_form(
     file_dict = {
         "file": SimpleUploadedFile(image_path, open(image_path, "rb").read()),
     }
-    form = StatisticMapForm(post_dict, file_dict)
-    statmap = form.save(commit=False)
-    statmap.collection = collection
-    statmap.save()
-    return statmap
+    return save_image_form(StatisticMapForm(post_dict, file_dict), collection, "statmap")
 
 
 def save_atlas_form(
@@ -75,11 +131,7 @@ def save_atlas_form(
             xml_path, open(xml_path, "rb").read()
         ),
     }
-    form = AtlasForm(post_dict, file_dict)
-    atlas = form.save(commit=False)
-    atlas.collection = collection
-    atlas.save()
-    return atlas
+    return save_image_form(AtlasForm(post_dict, file_dict), collection, "atlas")
 
 
 def save_nidm_form(zip_file, collection, name=None):
@@ -93,4 +145,5 @@ def save_nidm_form(zip_file, collection, name=None):
         }
         file_dict = {"zip_file": SimpleUploadedFile(zip_file, f.read())}
         form = NIDMResultsForm(post_dict, file_dict)
+    assert form.is_valid(), form.errors
     return form.save()

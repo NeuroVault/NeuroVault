@@ -10,6 +10,7 @@ from django.core.exceptions import FieldDoesNotExist
 from django.db.models.fields.related import ForeignKey
 
 from .models import StatisticMap, Image
+from neurovault.bootstrap import services
 
 
 class MetadataGridValidationError(ValidationError):
@@ -142,8 +143,8 @@ def set_object_data(image_obj, data):
                 set_data_attribute(image_obj, key, value)
 
 
-def save_metadata(collection, metadata):
-    image_obj_list = []
+def save_metadata(actor, collection, metadata):
+    """Validate the grid on unsaved copies, then store every row through the use case."""
     image_obj_errors = defaultdict(list)
 
     metadata_list = convert_to_list(metadata)
@@ -166,17 +167,22 @@ def save_metadata(collection, metadata):
         raise MetadataGridValidationError(image_obj_errors)
 
     for image_obj in image_obj_list:
-        image_obj.is_valid = True
-        image_obj.save()
+        changes = {"is_valid": True, "data": image_obj.data}
+        for name in image_obj.get_fixed_fields():
+            attname = image_obj._meta.get_field(name).attname
+            changes[attname] = getattr(image_obj, attname)
+        services().items.change(actor, image_obj.pk, changes)
 
     return metadata_list
 
 
 def handle_post_metadata(request, collection, success_message):
+    from .views import actor
+
     metadata = json.loads(request.body)
 
     try:
-        metadata_list = save_metadata(collection, metadata)
+        metadata_list = save_metadata(actor(request), collection, metadata)
     except ValidationError as e:
         return error_response(e)
 

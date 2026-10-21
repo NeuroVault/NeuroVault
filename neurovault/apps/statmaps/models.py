@@ -1,23 +1,12 @@
 # -*- coding: utf-8 -*-
+"""Persistence records. Rules and side effects live in neurovault.application."""
 import os
-import shutil
-import stat
-from datetime import datetime
-from gzip import GzipFile
 import uuid
 
-import nibabel as nb
 from django.contrib.auth.models import User
-from django.core.files import File
 from django.urls import reverse
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.db.models import Q
-from django.db.models.fields.files import FieldFile
-from django.db.models.signals import m2m_changed, post_delete, post_save
-from django.dispatch.dispatcher import receiver
-from django.utils import timezone
-from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
 from polymorphic.models import PolymorphicModel
 from taggit.managers import TaggableManager
 from taggit.models import GenericTaggedItemBase, TagBase
@@ -27,43 +16,11 @@ from neurovault.apps.statmaps.storage import (
     NIDMStorage,
     OverwriteStorage,
 )
+from neurovault.domain import vocabulary
 
-# from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, process_map
-from neurovault.apps.statmaps.tasks import process_map
-from neurovault.settings import PRIVATE_MEDIA_ROOT
-
-# possible templates
-POSSIBLE_TEMPLATES = {
-    "GenericMNI": {
-        "name": "Human (Generic/Unknown MNI)",
-        "species": "homo sapiens",
-        "pycortex_enabled": True,
-        "image_search_enabled": True,
-        "mask": "MNI152_T1_2mm_brain_mask.nii.gz",
-    },
-    "Dorr2008": {
-        "name": "Mouse (Dorr 2008 space)",
-        "species": "mus musculus",
-        "pycortex_enabled": False,
-        "image_search_enabled": False,
-        "mask": None,
-    },
-    "NMT": {
-        "name": "Rhesus - macacca mulatta (NMT)",
-        "species": "macaca mulatta",
-        "pycortex_enabled": False,
-        "image_search_enabled": False,
-        "mask": None,
-    },
-    "MNI152NLin2009cAsym": {
-        "name": "Human (MNI152 NLin 2009c Asym)",
-        "species": "homo sapiens",
-        "pycortex_enabled": True,
-        "image_search_enabled": True,
-        "mask": None,
-    },
-}
-DEFAULT_TEMPLATE = "GenericMNI"
+POSSIBLE_TEMPLATES = vocabulary.POSSIBLE_TEMPLATES
+DEFAULT_TEMPLATE = vocabulary.DEFAULT_TEMPLATE
+COMMUNITIES = vocabulary.COMMUNITIES
 
 
 def get_possible_templates():
@@ -71,16 +28,9 @@ def get_possible_templates():
 
 
 def get_target_template_list():
-    return [
-        (template, POSSIBLE_TEMPLATES[template]["name"])
-        for template in POSSIBLE_TEMPLATES
-    ]
+    return vocabulary.target_template_choices()
 
 
-COMMUNITIES = {
-    "developmental": {"short_desc": "Developmental Neuroscience"},
-    "nutrition": {"short_desc": "Nutrition Neuroscience"},
-}
 community_choices = []
 for k in list(COMMUNITIES.keys()):
     community_choices.append((k, COMMUNITIES[k]["short_desc"]))
@@ -801,93 +751,8 @@ class Collection(models.Model):
     def __str__(self):
         return self.name
 
-    def save(self, *args, **kwargs):
-        if self.DOI is not None and self.DOI.strip() == "":
-            self.DOI = None
-        if self.private_token is not None and self.private_token.strip() == "":
-            self.private_token = None
-
-        if self.DOI and not self.private and not self.doi_add_date:
-            self.doi_add_date = timezone.now()
-
-        # run calculations when collection turns public
-        privacy_changed = False
-        DOI_changed = False
-        if self.pk is not None:
-            old_object = Collection.objects.get(pk=self.pk)
-            old_is_private = old_object.private
-            old_has_DOI = old_object.DOI is not None
-            privacy_changed = old_is_private != self.private
-            DOI_changed = old_has_DOI != (self.DOI is not None)
-
-        super(Collection, self).save(*args, **kwargs)
-
-        """
-        if (privacy_changed and not self.private) or (DOI_changed and self.DOI is not None):
-            for image in self.basecollectionitem_set.instance_of(Image).all():
-                if image.pk:
-                    run_voxelwise_pearson_similarity.apply_async([image.pk])
-        """
-
     class Meta:
         app_label = "statmaps"
-
-    def delete(self, using=None):
-        cid = self.pk
-        for image in self.basecollectionitem_set.instance_of(Image):
-            image.delete()
-        for nidmresult in self.basecollectionitem_set.instance_of(NIDMResults):
-            nidmresult.delete()
-        ret = super(Collection, self).delete(using=using)
-        collDir = os.path.join(PRIVATE_MEDIA_ROOT, "images", str(cid))
-        try:
-            shutil.rmtree(collDir)
-        except OSError:
-            print("Image directory for collection %s does not exist" % cid)
-
-        return ret
-
-
-@receiver(post_save, sender=Collection)
-def collection_created(sender, instance, created, **kwargs):
-    if created:
-        assign_perm("delete_collection", instance.owner, instance)
-        assign_perm("change_collection", instance.owner, instance)
-        for image in instance.basecollectionitem_set.all():
-            assign_perm("change_basecollectionitem", instance.owner, image)
-            assign_perm("delete_basecollectionitem", instance.owner, image)
-
-
-def contributors_changed(sender, instance, action, **kwargs):
-    if action in ["post_remove", "post_add", "post_clear"]:
-        current_contributors = set([user.pk for user in get_users_with_perms(instance)])
-        new_contributors = set(
-            [
-                user.pk
-                for user in [
-                    instance.owner,
-                ]
-                + list(instance.contributors.all())
-            ]
-        )
-
-        for contributor in list(new_contributors - current_contributors):
-            contributor = User.objects.get(pk=contributor)
-            assign_perm("change_collection", contributor, instance)
-            for image in instance.basecollectionitem_set.all():
-                assign_perm("change_basecollectionitem", contributor, image)
-                assign_perm("delete_basecollectionitem", contributor, image)
-
-        for contributor in current_contributors - new_contributors:
-            contributor = User.objects.get(pk=contributor)
-            remove_perm("change_collection", contributor, instance)
-            for image in instance.basecollectionitem_set.all():
-                remove_perm("change_basecollectionitem", contributor, image)
-                remove_perm("delete_basecollectionitem", contributor, image)
-
-
-m2m_changed.connect(contributors_changed, sender=Collection.contributors.through)
-
 
 class CognitiveAtlasTask(models.Model):
     name = models.CharField(max_length=200, null=False, blank=False, db_index=True)
@@ -972,29 +837,9 @@ class BaseCollectionItem(PolymorphicModel, models.Model):
     def set_name(self, new_name):
         self.name = new_name
 
-    def save(self):
-        self.collection.modify_date = timezone.now()
-        self.collection.save()
-        super(BaseCollectionItem, self).save()
-
-    def delete(self):
-        self.collection.modify_date = timezone.now()
-        self.collection.save()
-        super(BaseCollectionItem, self).delete()
-
     @classmethod
     def get_fixed_fields(cls):
         return ("name", "description", "figure")
-
-
-# sadly signals are not emitted for base classes so we need to connect this to every class separately
-def basecollectionitem_created(sender, instance, created, **kwargs):
-    if created:
-        for user in [
-            instance.collection.owner,
-        ] + list(instance.collection.contributors.all()):
-            assign_perm("change_basecollectionitem", user, instance)
-            assign_perm("delete_basecollectionitem", user, instance)
 
 
 class Image(BaseCollectionItem):
@@ -1171,82 +1016,6 @@ class Image(BaseCollectionItem):
         return url
 
     @classmethod
-    def create(
-        cls, my_file, my_file_name, my_name, my_desc, my_collection_pk, my_map_type
-    ):
-        my_collection = Collection.objects.get(pk=my_collection_pk)
-
-        # Copy the nifti file into the proper location
-        image = cls(description=my_desc, name=my_name, collection=my_collection)
-        f = open(my_file)
-        niftiFile = File(f)
-        image.file.save(my_file_name, niftiFile)
-
-        # If a .img file was loaded then load the corresponding .hdr file as well
-        _, ext = os.path.splitext(my_file_name)
-        if ext in [".img"]:
-            f = open(my_file[:-3] + "hdr")
-            hdrFile = File(f)
-            image.hdr_file.save(my_file_name[:-3] + "hdr", hdrFile)
-
-        image.map_type = my_map_type
-
-        # create JSON file for neurosynth viewer
-        if os.path.exists(image.file.path):
-            nifti_gz_file = ".".join(image.file.path.split(".")[:-1]) + ".nii.gz"
-            nii = nb.load(image.file.path)
-            nb.save(nii, nifti_gz_file)
-            f = open(nifti_gz_file)
-            image.nifti_gz_file.save(
-                nifti_gz_file.split(os.path.sep)[-1], File(f), save=False
-            )
-
-        image.save()
-
-        return image
-
-    # Celery task to generate glass brain image on new/update
-    def save(self):
-        file_changed = False
-        collection_changed = False
-        if self.pk is not None:
-            old_pk = Image.objects.get(pk=self.pk)
-            if old_pk.file != self.file:
-                file_changed = True
-            if old_pk.collection != self.collection:
-                collection_changed = True
-
-        do_update = True if file_changed else False
-        new_image = True if self.pk is None else False
-        super(Image, self).save()
-
-        if do_update or new_image:
-            process_map.apply_async([self.pk])
-
-        if self.subject_species == None and self.target_template_image:
-            import neurovault.apps.statmaps.utils as nvutils
-
-            self.subject_species = nvutils.infer_subject_species(
-                self.target_template_image
-            )
-
-        if collection_changed:
-            for field_name in [f.name for f in self._meta.get_fields()]:
-                field_instance = getattr(self, field_name)
-                if field_instance and isinstance(field_instance, FieldFile):
-                    old_path = field_instance.path
-                    new_name = upload_img_to(self, field_instance.name.split("/")[-1])
-                    new_name = field_instance.storage.get_available_name(new_name)
-                    new_path = field_instance.storage.path(new_name)
-                    if not os.path.exists(os.path.dirname(new_path)):
-                        os.mkdir(os.path.dirname(new_path))
-                    shutil.copy(old_path, new_path)
-                    field_instance.name = new_name
-                    assert old_path != new_path
-                    os.remove(old_path)
-            super(Image, self).save()
-
-    @classmethod
     def get_fixed_fields(cls):
         return super(Image, cls).get_fixed_fields() + (
             "target_template_image",
@@ -1285,27 +1054,8 @@ class BaseStatisticMap(Image):
     M = "M"
     A = "A"
     V = "V"
-    MAP_TYPE_CHOICES = (
-        (T, "T map"),
-        (Z, "Z map"),
-        (F, "F map"),
-        (X2, "Chi squared map"),
-        (P, "P map (given null hypothesis)"),
-        (IP, '1-P map ("inverted" probability)'),
-        (M, "multivariate-beta map"),
-        (U, "univariate-beta map"),
-        (R, "ROI/mask"),
-        (Pa, "parcellation"),
-        (A, "anatomical"),
-        (V, "variance"),
-        (OTHER, "other"),
-    )
-    ANALYSIS_LEVEL_CHOICES = (
-        (S, "single-subject"),
-        (G, "group"),
-        (M, "meta-analysis"),
-        (OTHER, "other"),
-    )
+    MAP_TYPE_CHOICES = vocabulary.MAP_TYPE_CHOICES
+    ANALYSIS_LEVEL_CHOICES = vocabulary.ANALYSIS_LEVEL_CHOICES
 
     map_type = models.CharField(
         help_text=("Type of statistic that is the basis of the inference"),
@@ -1337,76 +1087,6 @@ class BaseStatisticMap(Image):
         blank=False,
     )
 
-    def save(self):
-        if self.perc_bad_voxels == None and self.file:
-            import neurovault.apps.statmaps.utils as nvutils
-
-            self.file.open()
-            gzfileobj = GzipFile(
-                filename=self.file.name, mode="rb", fileobj=self.file.file
-            )
-            nii = nb.Nifti1Image.from_file_map(
-                {"image": nb.FileHolder(self.file.name, gzfileobj)}
-            )
-            self.is_thresholded, ratio_bad = nvutils.is_thresholded(nii)
-            self.perc_bad_voxels = ratio_bad * 100.0
-
-        if self.brain_coverage == None and self.file:
-            import neurovault.apps.statmaps.utils as nvutils
-
-            self.file.open()
-            gzfileobj = GzipFile(
-                filename=self.file.name, mode="rb", fileobj=self.file.file
-            )
-            nii = nb.Nifti1Image.from_file_map(
-                {"image": nb.FileHolder(self.file.name, gzfileobj)}
-            )
-            (
-                self.not_mni,
-                self.brain_coverage,
-                self.perc_voxels_outside,
-            ) = nvutils.not_in_mni(nii, self.target_template_image)
-
-        if self.map_type == self.OTHER:
-            import neurovault.apps.statmaps.utils as nvutils
-
-            self.file.open()
-            gzfileobj = GzipFile(
-                filename=self.file.name, mode="rb", fileobj=self.file.file
-            )
-            nii = nb.Nifti1Image.from_file_map(
-                {"image": nb.FileHolder(self.file.name, gzfileobj)}
-            )
-            self.map_type = nvutils.infer_map_type(nii)
-
-        # Calculation of image reduced_representation and comparisons
-        file_changed = False
-        if self.pk is not None:
-            existing = Image.objects.get(pk=self.pk)
-            if existing.file != self.file:
-                file_changed = True
-        do_update = True if file_changed else False
-        new_image = True if self.pk is None else False
-
-        # If we have an update, delete old pkl and comparisons first before saving
-        if do_update and self.collection:
-            if self.reduced_representation:  # not applicable for private collections
-                self.reduced_representation.delete()
-
-                # If more than one metric is added to NeuroVault, this must also filter based on metric
-                comparisons = Comparison.objects.filter(Q(image1=self) | Q(image2=self))
-                if comparisons:
-                    comparisons.delete()
-        super(BaseStatisticMap, self).save()
-
-        # Calculate comparisons
-        """
-        if do_update or new_image:
-            run_voxelwise_pearson_similarity.apply_async([self.pk])
-        """
-
-        self.file.close()
-
     @classmethod
     def get_fixed_fields(cls):
         return super(BaseStatisticMap, cls).get_fixed_fields() + (
@@ -1431,19 +1111,7 @@ class StatisticMap(BaseStatisticMap):
     MEG = "MEG"
     EEG = "EEG"
     Other = "Other"
-    MODALITY_CHOICES = (
-        (fMRI_BOLD, "fMRI-BOLD"),
-        (fMRI_CBF, "fMRI-CBF"),
-        (fMRI_CBV, "fMRI-CBV"),
-        (Diffusion_MRI, "Diffusion MRI"),
-        (Structural_MRI, "Structural MRI"),
-        (PET_FDG, "PET FDG"),
-        (PET_15O, "PET [15O]-water"),
-        (PET_OTHER, "PET other"),
-        (MEG, "MEG"),
-        (EEG, "EEG"),
-        (Other, "Other"),
-    )
+    MODALITY_CHOICES = vocabulary.MODALITY_CHOICES
     ignore_file_warning = models.BooleanField(
         blank=False,
         default=False,
@@ -1536,7 +1204,6 @@ class StatisticMap(BaseStatisticMap):
                 models.Index(fields=["modality", "cognitive_paradigm_cogatlas"]),
             ]
 
-post_save.connect(basecollectionitem_created, sender=StatisticMap, weak=True)
 
 
 class NIDMResults(BaseCollectionItem):
@@ -1573,29 +1240,10 @@ class NIDMResults(BaseCollectionItem):
         return NIDMResultsForm
 
 
-@receiver(post_delete, sender=NIDMResults)
-def mymodel_delete(sender, instance, **kwargs):
-    nidm_path = os.path.dirname(instance.zip_file.path)
-    if os.path.isdir(nidm_path):
-        shutil.rmtree(nidm_path, onerror=remove_readonly)
-
-
-# Solution to delete read-only files from:
-# https://docs.python.org/3/library/shutil.html#rmtree-example
-def remove_readonly(func, path, _):
-    "Clear the readonly bit and reattempt the removal"
-    os.chmod(path, stat.S_IWRITE)
-    func(path)
-
-
-post_save.connect(basecollectionitem_created, sender=NIDMResults, weak=True)
-
-
 class NIDMResultStatisticMap(BaseStatisticMap):
     nidm_results = models.ForeignKey(NIDMResults, on_delete=models.CASCADE)
 
 
-post_save.connect(basecollectionitem_created, sender=NIDMResultStatisticMap, weak=True)
 
 
 class Atlas(Image):
@@ -1611,7 +1259,6 @@ class Atlas(Image):
         verbose_name_plural = "Atlases"
 
 
-post_save.connect(basecollectionitem_created, sender=Atlas, weak=True)
 
 
 class Similarity(models.Model):
@@ -1713,16 +1360,6 @@ class Metaanalysis(models.Model):
     output_maps = models.ForeignKey(
         Collection, blank=True, null=True, on_delete=models.SET_NULL
     )
-
-    def save(self, *args, **kwargs):
-        if self.status == "active":
-            for m in Metaanalysis.objects.filter(owner=self.owner).filter(
-                status="active"
-            ):
-                if m.pk != self.pk:
-                    m.status = "inactive"
-                    m.save()
-        super(Metaanalysis, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
         return reverse("statmaps:view_metaanalysis", args=[str(self.id)])

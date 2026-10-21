@@ -218,3 +218,43 @@ class NIDMUpload:
     @staticmethod
     def fix_spm12_ttl(ttl):
         return ttl.replace("nidm_NoiseModel", "nidm:NoiseModel")
+
+
+class NIDMPackageAdapter:
+    """An unpacked NIDM-Results zip (implements application.ports.NIDMPackage)."""
+
+    def __init__(self, upload):
+        self._upload = NIDMUpload(upload)
+
+    @property
+    def statmaps(self):
+        return self._upload.statmaps
+
+    @property
+    def ttl_filename(self):
+        return os.path.split(self._upload.ttl.filename)[-1]
+
+    @property
+    def ttl_size(self):
+        return self._upload.ttl.file_size
+
+    def ttl_text(self):
+        return self._upload.fix_spm12_ttl(
+            self._upload.zip.read(self._upload.ttl).decode("utf-8")
+        )
+
+    def bundled_files(self):
+        source = os.path.join(self._upload.workdir, self._upload.ttl_relpath)
+        return [
+            (name, os.path.join(source, name))
+            for name in os.listdir(source)
+            if self._upload.valid_path(name)
+        ]
+
+    def cleanup(self):
+        self._upload.cleanup()
+
+
+class RdflibNIDMParser:
+    def parse(self, zip_upload):
+        return NIDMPackageAdapter(zip_upload)

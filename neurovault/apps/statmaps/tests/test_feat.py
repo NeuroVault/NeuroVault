@@ -11,8 +11,9 @@ from nidmfsl.fsl_exporter.fsl_exporter import FSLtoNIDMExporter
 
 from neurovault.apps.statmaps.forms import NIDMResultsForm
 from neurovault.apps.statmaps.models import Collection, User
-from neurovault.apps.statmaps.utils import detect_feat_directory
+from neurovault.adapters.neuroimaging.workspace import detect_feat_directory
 from .utils import clearDB
+from neurovault.apps.statmaps.tests.utils import persist
 
 
 class FeatDirectoryTest(TestCase):
@@ -49,7 +50,7 @@ class FeatDirectoryTest(TestCase):
         self.client = Client()
         self.client.login(username=self.user)
         self.coll = Collection(owner=self.user, name="Test Collection")
-        self.coll.save()
+        persist(self.coll)
 
         # FEAT test data is large so it lives in the external data repo
         for fname, info in list(self.testfiles.items()):

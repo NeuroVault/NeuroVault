@@ -18,11 +18,13 @@ from neurovault.apps.statmaps.models import (
     Atlas,
     CognitiveAtlasTask,
 )
-from neurovault.apps.statmaps.utils import detect_4D, split_4D_to_3D
+from neurovault.domain.map_quality import detect_4D
+from neurovault.adapters.neuroimaging.workspace import split_4D_to_3D
 from neurovault.apps.statmaps.views import delete_collection, download_collection
 from neurovault.api.tests.utils import _setup_test_cognitive_atlas
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 from .utils import clearDB, save_statmap_form
+from neurovault.apps.statmaps.tests.utils import persist, add_contributor
 
 
 class CollectionSharingTest(TestCase):
@@ -38,9 +40,8 @@ class CollectionSharingTest(TestCase):
             self.client[role].login(username=self.user[role].username, password="pwd")
 
         self.coll = Collection(owner=self.user["owner"], name="Test %s" % self.uniqid())
-        self.coll.save()
-        self.coll.contributors.add(self.user["contrib"])
-        self.coll.save()
+        persist(self.coll)
+        add_contributor(self.coll, self.user["contrib"])
 
     def uniqid(self):
         return str(uuid4())[:8]
@@ -79,7 +80,7 @@ class DeleteCollectionsTest(TestCase):
         self.client = Client()
         self.client.login(username=self.user)
         self.Collection1 = Collection(name="Collection1", owner=self.user)
-        self.Collection1.save()
+        persist(self.Collection1)
         self.unorderedAtlas = Atlas(
             name="unorderedAtlas", description="", collection=self.Collection1
         )
@@ -103,10 +104,10 @@ class DeleteCollectionsTest(TestCase):
                 "rb",
             ).read(),
         )
-        self.unorderedAtlas.save()
+        persist(self.unorderedAtlas)
 
         self.Collection2 = Collection(name="Collection2", owner=self.user)
-        self.Collection2.save()
+        persist(self.Collection2)
         self.orderedAtlas = Atlas(
             name="orderedAtlas",
             collection=self.Collection2,
@@ -132,7 +133,7 @@ class DeleteCollectionsTest(TestCase):
                 "rb",
             ).read(),
         )
-        self.orderedAtlas.save()
+        persist(self.orderedAtlas)
 
     def tearDown(self):
         clearDB()
@@ -214,7 +215,7 @@ class CollectionMetaDataTest(TestCase):
         self.client.login(username=self.user.username, password=password)
 
         self.coll = Collection(owner=self.user, name="Test %s" % self.uniqid())
-        self.coll.save()
+        persist(self.coll)
         _setup_test_cognitive_atlas()
 
         cat = CognitiveAtlasTask.objects.update_or_create(
@@ -421,7 +422,7 @@ class DownloadCollectionsTest(TestCase):
         self.client = Client()
         self.client.login(username=self.user)
         self.Collection1 = Collection(name="Collection1", owner=self.user)
-        self.Collection1.save()
+        persist(self.Collection1)
         self.unorderedAtlas = Atlas(
             name="unorderedAtlas", description="", collection=self.Collection1
         )
@@ -445,7 +446,7 @@ class DownloadCollectionsTest(TestCase):
                 "rb",
             ).read(),
         )
-        self.unorderedAtlas.save()
+        persist(self.unorderedAtlas)
 
     def tearDown(self):
         clearDB()

@@ -9,6 +9,7 @@ from zipfile import ZipFile
 
 from neurovault.apps.statmaps.models import User, Collection, Image
 from .utils import clearDB
+from neurovault.apps.statmaps.tests.utils import persist
 
 
 # The function 'reverse' resolves a view name and its arguments into a path
@@ -41,7 +42,7 @@ class UploadFolderTestCase(TestCase):
         )
         self.assertTrue(login_successful)
         self.coll = Collection(owner=self.user, name="Test Collection")
-        self.coll.save()
+        persist(self.coll)
 
     def tearDown(self):
         clearDB()

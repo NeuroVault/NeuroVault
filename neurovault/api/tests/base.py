@@ -14,6 +14,7 @@ from neurovault.apps.statmaps.models import (
 )
 from neurovault.apps.statmaps.tests.utils import clearDB
 from neurovault.api.tests.utils import _setup_test_cognitive_atlas
+from neurovault.apps.statmaps.tests.utils import persist
 
 STATMAPS_TESTS_PATH = "../../apps/statmaps/tests/"
 
@@ -38,7 +39,7 @@ class BaseTestCases:
             self.user = User.objects.create_user("NeuroGuy")
             self.user.save()
             self.coll = Collection(owner=self.user, name="Test Collection")
-            self.coll.save()
+            persist(self.coll)
 
             _setup_test_cognitive_atlas()
 

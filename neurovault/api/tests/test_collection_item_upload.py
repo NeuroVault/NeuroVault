@@ -17,6 +17,7 @@ from neurovault.apps.statmaps.tests.utils import clearDB
 from neurovault.apps.statmaps.tests.test_nidm import NIDM_TEST_FILES
 from neurovault.api.tests.base import APITestCase
 from neurovault.api.tests.utils import _setup_test_cognitive_atlas
+from neurovault.apps.statmaps.tests.utils import persist
 
 
 class TestCollectionItemUpload(APITestCase):
@@ -24,7 +25,7 @@ class TestCollectionItemUpload(APITestCase):
         self.user = User.objects.create_user("NeuroGuy")
         self.user.save()
         self.coll = Collection(owner=self.user, name="Test Collection")
-        self.coll.save()
+        persist(self.coll)
         _setup_test_cognitive_atlas()
 
     def tearDown(self):
@@ -232,7 +233,7 @@ class TestCollectionItemUpload(APITestCase):
         other_user.save()
 
         other_collection = Collection(owner=other_user, name="Another Test Collection")
-        other_collection.save()
+        persist(other_collection)
 
         url = "/api/collections/%s/images/" % other_collection.pk
         fname = self.abs_data_path("statmaps/motor_lips.nii.gz")

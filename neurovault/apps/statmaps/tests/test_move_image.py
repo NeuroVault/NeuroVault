@@ -6,12 +6,16 @@ from uuid import uuid4
 import tempfile
 import os
 import shutil
-from neurovault.apps.statmaps.utils import detect_4D, split_4D_to_3D
+from neurovault.domain.map_quality import detect_4D
+from neurovault.adapters.neuroimaging.workspace import split_4D_to_3D
 import nibabel
 from .utils import clearDB
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 
 from neurovault.apps.statmaps.views import delete_collection
+from neurovault.apps.statmaps.tests.utils import persist
+from neurovault.application.ports import SYSTEM
+from neurovault.bootstrap import services
 
 
 class MoveImageTest(TestCase):
@@ -23,10 +27,10 @@ class MoveImageTest(TestCase):
         self.client = Client()
         self.client.login(username=self.user)
         self.coll1 = Collection(owner=self.user, name="Test Collection 1")
-        self.coll1.save()
+        persist(self.coll1)
 
         self.coll2 = Collection(owner=self.user, name="Test Collection 2")
-        self.coll2.save()
+        persist(self.coll2)
 
     def tearDown(self):
         clearDB()
@@ -55,7 +59,7 @@ class MoveImageTest(TestCase):
                 "rb",
             ).read(),
         )
-        self.unorderedAtlas.save()
+        persist(self.unorderedAtlas)
 
         self.unorderedAtlas = Image.objects.get(id=self.unorderedAtlas.id)
         print(self.unorderedAtlas.file.path)
@@ -64,8 +68,7 @@ class MoveImageTest(TestCase):
         self.assertTrue(os.path.exists(self.unorderedAtlas.thumbnail.path))
         old_path = self.unorderedAtlas.file.path
 
-        self.unorderedAtlas.collection = self.coll2
-        self.unorderedAtlas.save()
+        services().items.change(SYSTEM, self.unorderedAtlas.pk, {"collection_id": self.coll2.pk})
 
         # check if old files were deleted
         self.assertFalse(os.path.exists(old_path))

@@ -1,5 +1,7 @@
-from rest_framework.permissions import DjangoObjectPermissions, SAFE_METHODS, Http404
-from guardian.ctypes import get_content_type
+from rest_framework.permissions import SAFE_METHODS, BasePermission, DjangoObjectPermissions
+
+from neurovault.application.ports import Actor
+from neurovault.bootstrap import services
 
 
 class ObjectOnlyPermissions(DjangoObjectPermissions):
@@ -11,23 +13,14 @@ class ObjectOnlyPermissions(DjangoObjectPermissions):
         )
 
 
-class ObjectOnlyPolymorphicPermissions(ObjectOnlyPermissions):
+class CollectionItemPermissions(BasePermission):
+    """Reads are open; changing or deleting an item needs change rights on its collection."""
+
+    def has_permission(self, request, view):
+        return request.method in SAFE_METHODS or (request.user and request.user.is_authenticated)
+
     def has_object_permission(self, request, view, obj):
-        ctype = get_content_type(obj)
-
-        model_cls = ctype.model_class()
-        user = request.user
-
-        perms = self.get_required_object_permissions(request.method, model_cls)
-
-        if not user.has_perms(perms, obj):
-            if request.method in SAFE_METHODS:
-                raise Http404
-
-            read_perms = self.get_required_object_permissions("GET", model_cls)
-            if not user.has_perms(read_perms, obj):
-                raise Http404
-
-            return False
-
-        return True
+        if request.method in SAFE_METHODS:
+            return True
+        actor = Actor(request.user.pk, request.user.is_superuser)
+        return services().items.access.can_change(actor, obj.collection_id)

@@ -6,7 +6,8 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 
 from neurovault.apps.statmaps.models import Collection
-from neurovault.apps.statmaps.utils import generate_url_token
+from neurovault.domain.collection import generate_token
+from neurovault.apps.statmaps.tests.utils import persist, add_contributor
 
 
 class TestCollection(APITestCase):
@@ -15,7 +16,7 @@ class TestCollection(APITestCase):
         self.user = User.objects.create_user("NeuroGuy")
         self.user.save()
         self.coll = Collection(owner=self.user, name="Test Collection")
-        self.coll.save()
+        persist(self.coll)
 
         self.item_url = "/api/collections/%s/" % self.coll.id
 
@@ -41,9 +42,9 @@ class TestCollection(APITestCase):
             owner=self.user,
             name="Private Collection",
             private=True,
-            private_token=generate_url_token(),
+            private_token=generate_token(lambda t: Collection.objects.filter(private_token=t).exists()),
         )
-        private_collection.save()
+        persist(private_collection)
 
         response = self.client.get("/api/my_collections/", follow=True)
         self.assertEqual(len(response.data["results"]), 2)
@@ -60,8 +61,8 @@ class TestCollection(APITestCase):
 
         shared_collection = Collection(owner=sharer_user, name="Shared Test Collection")
 
-        shared_collection.save()
-        shared_collection.contributors.add(self.user)
+        persist(shared_collection)
+        add_contributor(shared_collection, self.user)
 
         # Re-fetch the data
         response = self.client.get("/api/my_collections/", follow=True)
@@ -200,7 +201,7 @@ class TestCollection(APITestCase):
         other_user.save()
 
         other_collection = Collection(owner=other_user, name="Another Test Collection")
-        other_collection.save()
+        persist(other_collection)
 
         url = "/api/collections/%s/" % other_collection.pk
 

@@ -9,10 +9,11 @@ import zipfile
 
 from neurovault.apps.statmaps.forms import NIDMResultsForm
 from neurovault.apps.statmaps.models import Collection, User
-from neurovault.apps.statmaps.nidm_results import NIDMUpload
+from neurovault.adapters.neuroimaging.nidm_upload import NIDMUpload
 from neurovault.apps.statmaps.views import download_collection
 from neurovault.apps.statmaps.tests.utils import clearDB, save_statmap_form
 from neurovault.api.tests.utils import _setup_test_cognitive_atlas
+from neurovault.apps.statmaps.tests.utils import persist
 
 TEST_PATH = os.path.abspath(os.path.dirname(__file__))
 NIDM_TEST_FILES = OrderedDict(
@@ -100,7 +101,7 @@ class NIDMResultsTest(TestCase):
             private=True,
             private_token="XBOLFOFU",
         )
-        self.coll.save()
+        persist(self.coll)
 
         _setup_test_cognitive_atlas()
 
@@ -169,7 +170,7 @@ class NIDMResultsTest(TestCase):
 
     def testDownloadCollection_NIDM_results(self):
         collection = Collection(owner=self.user, name="Collection2")
-        collection.save()
+        persist(collection)
 
         # Upload NIMDResult zip file
         zip_file = open(

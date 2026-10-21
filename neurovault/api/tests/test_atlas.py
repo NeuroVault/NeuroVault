@@ -17,6 +17,7 @@ from neurovault.apps.statmaps.tests.utils import (
 )
 from neurovault.apps.statmaps.models import Collection
 from neurovault.api.tests.base import APITestCase, BaseTestCases
+from neurovault.apps.statmaps.tests.utils import persist
 
 
 class TestAtlas(APITestCase):
@@ -24,7 +25,7 @@ class TestAtlas(APITestCase):
         self.user = User.objects.create(username="neurovault")
         self.client.login(username=self.user)
         self.Collection1 = Collection(name="Collection1", owner=self.user)
-        self.Collection1.save()
+        persist(self.Collection1)
         _setup_test_cognitive_atlas()
 
         self.unorderedAtlas = save_atlas_form(

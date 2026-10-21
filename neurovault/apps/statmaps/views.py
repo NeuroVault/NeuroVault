@@ -66,42 +66,34 @@ from neurovault.apps.statmaps.models import (
     DEFAULT_TEMPLATE,
     Metaanalysis,
 )
-from neurovault.apps.statmaps.tasks import save_resampled_transformation_single
 from neurovault.apps.statmaps.utils import (
     split_filename,
     generate_pycortex_volume,
     generate_pycortex_static,
-    generate_url_token,
     HttpRedirectException,
-    get_paper_properties,
     get_file_ctime,
-    send_email_notification,
-    populate_nidm_results,
     get_server_url,
     format_image_collection_names,
     is_search_compatible,
     get_similar_images,
-    extract_archive,
-    collect_nifti_files,
-    extract_multiple_files,
-    create_image_from_nifti,
-    write_file_to_disk
 )
 from neurovault.apps.statmaps.utils import (
     is_target_template_image_pycortex_compatible,
     is_target_template_image_neurosynth_compatible,
 )
-from neurovault.apps.statmaps.meta import (
-    load_default_mask,
-    create_collection_for_metaanalysis,
-    gather_images_and_sizes,
-    set_collection_description,
-    run_meta_analysis,
-    create_and_save_statmaps,
-)
+from neurovault.apps.statmaps.forms import image_changes
+from neurovault.application.ports import Actor
+from neurovault.bootstrap import services
+from neurovault.domain.errors import DomainValidationError, PermissionDenied as DomainPermissionDenied
 from neurovault.apps.statmaps.voxel_query_functions import *
 from . import image_metadata
 
+
+
+def actor(request):
+    if not request.user.is_authenticated:
+        return Actor(None)
+    return Actor(request.user.pk, request.user.is_superuser)
 
 
 def owner_or_contrib(request, collection):
@@ -182,8 +174,13 @@ def edit_metaanalysis(request, metaanalysis_id=None):
     if request.method == "POST":
         form = MetaanalysisForm(request.POST, request.FILES, instance=metaanalysis)
         if form.is_valid():
-            metaanalysis.save()
-            return HttpResponseRedirect(metaanalysis.get_absolute_url())
+            metaanalysis_id = services().metaanalyses.save(
+                actor(request), metaanalysis.pk, form.cleaned_data["name"],
+                form.cleaned_data.get("description"),
+            )
+            return HttpResponseRedirect(
+                reverse("statmaps:view_metaanalysis", args=[str(metaanalysis_id)])
+            )
     else:
         form = MetaanalysisForm(instance=metaanalysis)
 
@@ -198,62 +195,26 @@ def finalize_metaanalysis(request, metaanalysis_id):
     if request.user != metaanalysis.owner or metaanalysis.status == "completed":
         return HttpResponseForbidden()
 
-    # 2. Create a new collection
-    new_collection = create_collection_for_metaanalysis(metaanalysis)
-
-    # 3. Load default mask
-    #    (Use your actual get_possible_templates function to pass to the helper)
-    mask_img = load_default_mask(get_possible_templates, DEFAULT_TEMPLATE)
-
-    # 4. Gather Z images (and T->Z conversions) + sizes
-    z_imgs, sizes = gather_images_and_sizes(metaanalysis, mask_img)
-
-    # 5. Determine if weighted is possible (if sizes match #images)
-    #    Then update new_collection description
-    do_weighted = (len(sizes) == len(z_imgs)) and len(z_imgs) > 0
-    set_collection_description(new_collection, z_imgs, do_weighted)
-
-    # 6. Run meta-analysis
-    result, actually_weighted = run_meta_analysis(z_imgs, sizes, mask_img)
-
-    # 7. Create & save StatisticMap objects (Z/P/FFX)
-    tmp_dir = tempfile.mkdtemp()
-    try:
-        create_and_save_statmaps(result, actually_weighted, new_collection, tmp_dir)
-    finally:
-        shutil.rmtree(tmp_dir)
-
-    # 8. Finalize meta-analysis status
-    metaanalysis.output_maps = new_collection
-    metaanalysis.status = "completed"
-    metaanalysis.save()
-
+    collection_id = services().metaanalyses.finalize(
+        actor(request), metaanalysis.pk, metaanalysis.get_absolute_url()
+    )
+    new_collection = Collection.objects.get(pk=collection_id)
     return HttpResponseRedirect(new_collection.get_absolute_url())
 
 @login_required
 def toggle_active_metaanalysis(request, pk, collection_cid=None):
     image = get_image(pk, collection_cid, request)
-    metaanalysis = Metaanalysis.objects.filter(owner=request.user).filter(
-        status="active"
-    )[0]
-    if request.user != metaanalysis.owner:
-        return HttpResponseForbidden()
-    if metaanalysis in image.metaanalysis_set.all():
-        metaanalysis.maps.remove(image)
-        new_status = "out"
-    else:
-        metaanalysis.maps.add(image)
-        new_status = "in"
+    new_status = services().metaanalyses.toggle_map(actor(request), image.pk)
     return JSONResponse({"new_status": new_status})
 
 
 @login_required
 def activate_metaanalysis(request, metaanalysis_id):
     metaanalysis = Metaanalysis.objects.get(pk=metaanalysis_id)
-    if request.user != metaanalysis.owner or metaanalysis.status == "completed":
+    try:
+        services().metaanalyses.activate(actor(request), metaanalysis.pk)
+    except DomainPermissionDenied:
         return HttpResponseForbidden()
-    metaanalysis.status = "active"
-    metaanalysis.save()
     return HttpResponseRedirect(metaanalysis.get_absolute_url())
 
 
@@ -281,27 +242,16 @@ def edit_collection(request, cid=None):
         else:
             form = CollectionForm(request.POST, request.FILES, instance=collection)
         if form.is_valid():
-            previous_contribs = set()
-            if form.instance.pk is not None:
-                previous_contribs = set(form.instance.contributors.all())
-            collection = form.save(commit=False)
-            if collection.private and collection.private_token is None:
-                collection.private_token = generate_url_token()
-            collection.save()
-
-            if is_owner:
-                form.save_m2m()  # save contributors
-                current_contribs = set(collection.contributors.all())
-                new_contribs = list(current_contribs.difference(previous_contribs))
-                context = {
-                    "owner": collection.owner.username,
-                    "collection": collection.name,
-                    "url": get_server_url(request) + collection.get_absolute_url(),
-                }
-                subj = "%s has added you to a NeuroVault collection" % context["owner"]
-                send_email_notification("new_contributor", subj, new_contribs, context)
-
-            return HttpResponseRedirect(collection.get_absolute_url())
+            collection_id = services().collections.save(
+                actor(request),
+                form.instance.pk,
+                collection_changes(form),
+                contributor_ids=[u.pk for u in form.cleaned_data["contributors"]] if is_owner else None,
+                community_ids=[c.pk for c in form.cleaned_data["communities"]] if is_owner else None,
+                absolute_url=lambda cid: get_server_url(request)
+                + Collection.objects.get(pk=cid).get_absolute_url(),
+            )
+            return HttpResponseRedirect(Collection.objects.get(pk=collection_id).get_absolute_url())
     else:
         if is_owner:
             form = OwnerCollectionForm(instance=collection)
@@ -310,6 +260,20 @@ def edit_collection(request, cid=None):
 
     context = {"form": form, "page_header": page_header, "is_owner": is_owner, "preamble": "Please fill in the fields below to create a new collection."}
     return render(request, "statmaps/edit_collection.html", context)
+
+
+def collection_changes(form):
+    """Column changes from a valid collection form (read back from form.instance)."""
+    changes = {}
+    for name in form.fields:
+        if name in ("contributors", "communities"):
+            continue
+        try:
+            field = form.instance._meta.get_field(name)
+        except Exception:
+            continue
+        changes[name] = getattr(form.instance, field.attname)
+    return changes
 
 
 def choice_datasources(model):
@@ -615,7 +579,7 @@ def delete_collection(request, cid):
     collection = get_collection(cid, request)
     if not request.user.has_perm("statmaps.delete_collection", collection):
         return HttpResponseForbidden()
-    collection.delete()
+    services().collections.delete(actor(request), collection.pk)
     return redirect("statmaps:my_collections")
 
 
@@ -753,7 +717,8 @@ def edit_image(request, pk):
             **kw_params
         )
         if form.is_valid():
-            form.save()
+            changes, files, tags = image_changes(form)
+            services().items.change(actor(request), image.pk, changes, files, tags=tags)
             if any(key in request.POST for key in ["submit_next", "submit_previous"]):
                 prev_img, next_img = _get_sibling_images(image)
                 target_img = next_img if "submit_next" in request.POST else prev_img
@@ -796,11 +761,11 @@ def delete_nidm_results(request, collection_cid, nidm_name):
     collection = get_collection(collection_cid, request)
     nidmr = get_object_or_404(NIDMResults, collection=collection, name=nidm_name)
 
-    if request.user.has_perm("statmaps.delete_basecollectionitem", nidmr):
-        nidmr.delete()
-        return redirect("statmaps:collection_details", cid=collection_cid)
-    else:
+    try:
+        services().bundles.delete(actor(request), nidmr.pk)
+    except DomainPermissionDenied:
         return HttpResponseForbidden()
+    return redirect("statmaps:collection_details", cid=collection_cid)
 
 
 def view_task(request, cog_atlas_id=None):
@@ -852,28 +817,21 @@ def view_task(request, cog_atlas_id=None):
 
 
 def add_image_redirect(request, formclass, redirect_url, is_private, preamble):
-    temp_collection_name = "%s's temporary collection" % request.user.username
-    # this is a hack we need to make sure this collection can be only
-    # owned by the same user
-    try:
-        temp_collection = Collection.objects.get(name=temp_collection_name)
-    except Collection.DoesNotExist:
-        priv_token = generate_url_token()
-        temp_collection = Collection(
-            name=temp_collection_name,
-            owner=request.user,
-            private=is_private,
-            private_token=priv_token,
-        )
-        temp_collection.save()
+    temp_collection = Collection.objects.get(
+        pk=services().collections.temporary_for(request.user.pk, request.user.username, is_private)
+    )
     image = StatisticMap(collection=temp_collection)
     if request.method == "POST":
         form = formclass(request.POST, request.FILES, instance=image, user=request.user)
         if form.is_valid():
-            image = form.save()
+            changes, files, tags = image_changes(form)
+            collection_id = changes.pop("collection_id")
+            image_id = services().items.add(
+                actor(request), collection_id, "statmap", changes, files, tags=tags
+            )
             redirect = redirect_url % {
                 "private_token": temp_collection.private_token,
-                "image_id": image.id,
+                "image_id": image_id,
             }
             return HttpResponseRedirect(redirect)
     else:
@@ -924,111 +882,64 @@ inspect, modify, and/or delete your maps."""
 @login_required
 def upload_folder(request, collection_cid):
     collection = get_collection(collection_cid, request)
-    allowed_extensions = [".nii", ".img", ".nii.gz"]
-    images_added = []    
-    if request.method == "POST":
-        folder = False
-        form = UploadFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            with tempfile.TemporaryDirectory() as tmp_directory:
-                try:
-                    # 1. Check if "file" is an archive or NIDM
-                    if "file" in request.FILES:
-                        uploaded_file = request.FILES["file"]
-                        if fnmatch(uploaded_file.name, "*.nidm.zip"):
-                            new_form = populate_nidm_results(request, collection)
-                            if not new_form:
-                                messages.warning(request, "Invalid NIDM-Results file.")
-                            return HttpResponseRedirect(collection.get_absolute_url())
-                        
-                        elif fnmatch(uploaded_file.name, "*.zip") or fnmatch(uploaded_file.name, "*.tar.gz"):
-                            extract_archive(uploaded_file, tmp_directory)
-                        else:
-                            write_file_to_disk(uploaded_file, tmp_directory)
-
-                    # 2. Or check if multiple files have been uploaded
-                    elif "file_input[]" in request.FILES:
-                        folder = True
-                        file_list = request.FILES.getlist("file_input[]")
-                        path_list = request.POST.getlist("paths[]")
-                        extract_multiple_files(file_list, path_list, tmp_directory)
-                    else:
-                        raise ValueError("No uploaded files found.")
-
-
-                    # 3. Collect NIfTI files and atlas xml info
-                    nifti_files, atlases = collect_nifti_files(tmp_directory, allowed_extensions)
-
-                    # 4. Create model objects for each NIfTI
-                    if not nifti_files:
-                        messages.warning(
-                            request,
-                            "No NIFTI files (.nii, .nii.gz, .img/.hdr) found in the upload."
-                        )
-                    else:
-                        for label, fpath in nifti_files:
-                            # If file is in an atlas map, pass the xml path
-                            # (note: we need to handle possible path differences)
-                            path, name_no_ext, _ = split_filename(fpath)
-                            atlas_xml = None
-
-                            # For matching, you might need to store the 
-                            # *relative path* to match exactly. This will depend on how 
-                            # parse_atlas_xml() builds its keys.
-                            possible_key = os.path.join(path, name_no_ext)
-                            if possible_key in atlases:
-                                atlas_xml = atlases[possible_key]
-
-                            try:
-                                new_image = create_image_from_nifti(
-                                    collection,
-                                    label,
-                                    fpath,
-                                    atlas_xml_path=atlas_xml
-                                )
-                                images_added.append(new_image)
-                            except Exception as e:
-                                messages.warning(request, f"Skipping {label}: {str(e)}")
-                except Exception as e:
-                    error = traceback.format_exc().splitlines()[-1]
-                    messages.warning(request, f"An error occurred with this upload: {error}")
-                    return HttpResponseRedirect(collection.get_absolute_url())
-
-            # If we added images, redirect to the edit page for bulk edit
-            if images_added:
-                params = {
-                    "bulk": True,
-                    "show_instructions": True,
-                    "min_image": images_added[0].id,
-                    "max_image": images_added[-1].id,
-                }
-                redirect = images_added[0].get_absolute_url(edit=True) + f"?{urlencode(params)}"
-                if folder:
-                    return JsonResponse(
-                        {"redirect_url": redirect}
-                    )
-                else:
-                    return HttpResponseRedirect(redirect)
-            else:
-                return HttpResponseRedirect(
-                    collection.get_absolute_url()
-                )
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.warning(request, f"{error}")
-            return HttpResponseRedirect(collection.get_absolute_url())
-    else:
-        # GET request do nothing
+    if request.method != "POST":
         return HttpResponseRedirect(collection.get_absolute_url())
+    form = UploadFileForm(request.POST, request.FILES)
+    if not form.is_valid():
+        for field, errors in form.errors.items():
+            for error in errors:
+                messages.warning(request, f"{error}")
+        return HttpResponseRedirect(collection.get_absolute_url())
+
+    folder = "file" not in request.FILES and "file_input[]" in request.FILES
+    try:
+        result = services().uploads.ingest(
+            actor(request),
+            collection.pk,
+            upload=request.FILES.get("file"),
+            folder_files=request.FILES.getlist("file_input[]"),
+            folder_paths=request.POST.getlist("paths[]"),
+        )
+    except DomainValidationError:
+        messages.warning(request, "Invalid NIDM-Results file.")
+        return HttpResponseRedirect(collection.get_absolute_url())
+    except Exception:
+        error = traceback.format_exc().splitlines()[-1]
+        messages.warning(request, f"An error occurred with this upload: {error}")
+        return HttpResponseRedirect(collection.get_absolute_url())
+
+    for warning in result.warnings:
+        messages.warning(request, warning)
+    if result.bundle_id is not None:
+        return HttpResponseRedirect(collection.get_absolute_url())
+    if not result.item_ids:
+        if not result.warnings:
+            messages.warning(
+                request, "No NIFTI files (.nii, .nii.gz, .img/.hdr) found in the upload."
+            )
+        return HttpResponseRedirect(collection.get_absolute_url())
+
+    first = Image.objects.get(pk=result.item_ids[0])
+    params = {
+        "bulk": True,
+        "show_instructions": True,
+        "min_image": result.item_ids[0],
+        "max_image": result.item_ids[-1],
+    }
+    redirect_to = first.get_absolute_url(edit=True) + f"?{urlencode(params)}"
+    if folder:
+        return JsonResponse({"redirect_url": redirect_to})
+    return HttpResponseRedirect(redirect_to)
+
 
 @login_required
 def delete_image(request, pk):
     image = get_object_or_404(Image, pk=pk)
     cid = image.collection.pk
-    if not request.user.has_perm("statmaps.delete_basecollectionitem", image):
+    try:
+        services().items.delete(actor(request), image.pk)
+    except DomainPermissionDenied:
         return HttpResponseForbidden()
-    image.delete()
     return redirect(reverse("statmaps:collection_details", kwargs={"cid": cid}))
 
 
@@ -1145,8 +1056,7 @@ def stats_view(request):
         Q(DOI__isnull=True) | Q(DOI__exact="")
     ):
         if not collection.journal_name:
-            _, _, _, _, collection.journal_name = get_paper_properties(collection.DOI)
-            collection.save()
+            collection.journal_name = services().collections.refresh_journal_name(collection.pk)
         if collection.journal_name not in list(collections_by_journals.keys()):
             collections_by_journals[collection.journal_name] = 1
         else:
@@ -1820,7 +1730,8 @@ def gene_expression_json(request, pk, collection_cid=None):
         raise Http404
 
     if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
-        image = save_resampled_transformation_single(image.id)
+        services().items.ensure_reduced_representation(image.id)
+        image = Image.objects.get(pk=image.id)
 
     map_data = np.load(image.reduced_representation.file)
 

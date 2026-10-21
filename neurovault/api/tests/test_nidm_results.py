@@ -9,6 +9,7 @@ from neurovault.apps.statmaps.tests.utils import save_nidm_form, clearDB
 from neurovault.api.tests.base import BaseTestCases
 
 from neurovault.api.tests.base import APITestCase
+from neurovault.apps.statmaps.tests.utils import persist
 
 
 class TestNIDMResults(APITestCase):
@@ -16,7 +17,7 @@ class TestNIDMResults(APITestCase):
         self.user = User.objects.create_user("NeuroGuy")
         self.user.save()
         self.collection = Collection(owner=self.user, name="Test Collection")
-        self.collection.save()
+        persist(self.collection)
 
         zip_file = self.abs_data_path("nidm/spm_example.nidm.zip")
         self.nidm = save_nidm_form(zip_file=zip_file, collection=self.collection)

@@ -15,12 +15,15 @@ from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from neurovault.apps.statmaps.models import Collection
-from neurovault.apps.statmaps.tests.utils import clearDB
+from neurovault.apps.statmaps.tests.utils import clearDB, persist
 from neurovault.api.tests.base import APITestCase
 from neurovault.api.tests.utils import _setup_test_cognitive_atlas
 
 GOLDEN_DIR = os.path.join(os.path.dirname(__file__), "golden")
 UPDATE = os.environ.get("GOLDEN_UPDATE") == "1"
+# Outputs of the asynchronous processing task: whether a POST response already
+# shows them depends on when the task finishes, not on the API.
+ASYNC_OUTPUTS = ("thumbnail", "surface_left_file", "surface_right_file", "reduced_representation")
 DATETIME = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?([+-]\d{2}:\d{2}|Z)?")
 
 
@@ -31,11 +34,11 @@ class GoldenResponses(APITestCase):
         self.user = User.objects.create_user("NeuroGuy", email="neuro@example.org")
         self.other = User.objects.create_user("OtherGuy")
         self.coll = Collection(owner=self.user, name="Golden Collection", description="d\nline")
-        self.coll.save()
+        persist(self.coll)
         self.private = Collection(
             owner=self.user, name="Private Golden", private=True, private_token="ABCDEFGH"
         )
-        self.private.save()
+        persist(self.private)
         _setup_test_cognitive_atlas()
         self.client.force_authenticate(user=self.user)
         self._pending_posts = []
@@ -185,7 +188,17 @@ class GoldenResponses(APITestCase):
             self.assertEqual(response.status_code, status, response.content)
         body = json.loads(response.content) if response.content else None
         got = {"status": response.status_code, "body": self._normalize(body, self._id_maps())}
+        if name.startswith(("post_", "put_", "patch_")) and isinstance(got["body"], dict):
+            for key in ASYNC_OUTPUTS:
+                if key in got["body"]:
+                    got["body"][key] = "<ASYNC_OUTPUT>"
         path = os.path.join(GOLDEN_DIR, name + ".json")
+        dump_dir = os.environ.get("GOLDEN_DUMP")
+        if dump_dir:
+            os.makedirs(dump_dir, exist_ok=True)
+            with open(os.path.join(dump_dir, name + ".json"), "w") as f:
+                json.dump(got, f, indent=2, sort_keys=True)
+                f.write("\n")
         if UPDATE:
             os.makedirs(GOLDEN_DIR, exist_ok=True)
             with open(path, "w") as f:

@@ -8,9 +8,11 @@ from django.test import TestCase, Client
 
 from neurovault.apps.statmaps.forms import StatisticMapForm
 from neurovault.apps.statmaps.models import Collection, User, StatisticMap
-from neurovault.apps.statmaps.utils import detect_4D, split_4D_to_3D
+from neurovault.domain.map_quality import detect_4D
+from neurovault.adapters.neuroimaging.workspace import split_4D_to_3D
 from neurovault.api.tests.utils import _setup_test_cognitive_atlas
 from .utils import clearDB
+from neurovault.apps.statmaps.tests.utils import persist, save_image_form
 
 
 class AddStatmapsTests(TestCase):
@@ -20,7 +22,7 @@ class AddStatmapsTests(TestCase):
         self.client = Client()
         self.client.login(username=self.user, password="pass")
         self.coll = Collection(owner=self.user, name="Test Collection")
-        self.coll.save()
+        persist(self.coll)
         _setup_test_cognitive_atlas()
 
     def tearDown(self):
@@ -45,7 +47,7 @@ class AddStatmapsTests(TestCase):
         form = StatisticMapForm(post_dict, file_dict)
         self.assertTrue(form.is_valid())
 
-        form.save()
+        save_image_form(form, self.coll, "statmap")
 
         self.assertEqual(
             StatisticMap.objects.filter(collection=self.coll.pk)[0].name, "test map"
@@ -77,7 +79,7 @@ class AddStatmapsTests(TestCase):
 
         self.assertTrue(form.is_valid())
 
-        form.save()
+        save_image_form(form, self.coll, "statmap")
 
         self.assertEqual(
             StatisticMap.objects.filter(collection=self.coll.pk).count(), 2
@@ -128,7 +130,7 @@ class AddStatmapsTests(TestCase):
         form = StatisticMapForm(post_dict, file_dict)
         self.assertTrue(form.is_valid())
 
-        form.save()
+        save_image_form(form, self.coll, "statmap")
 
         self.assertEqual(
             StatisticMap.objects.filter(collection=self.coll.pk)[0].name, "test map"

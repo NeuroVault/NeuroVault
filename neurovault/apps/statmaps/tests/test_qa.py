@@ -5,7 +5,7 @@ import numpy as np
 from django.test import TestCase
 
 from neurovault.apps.statmaps.models import BaseStatisticMap
-from neurovault.apps.statmaps.utils import is_thresholded, infer_map_type
+from neurovault.domain.map_quality import is_thresholded, infer_map_type
 
 
 class QATest(TestCase):

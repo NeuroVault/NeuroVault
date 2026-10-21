@@ -8,16 +8,16 @@ from django.forms.utils import ErrorDict, ErrorList
 from rest_framework import serializers
 from rest_framework.relations import PrimaryKeyRelatedField, StringRelatedField
 
-from neurovault.apps.statmaps.forms import (
-    handle_update_ttl_urls,
-    ImageValidationMixin,
-    NIDMResultsValidationMixin,
-    save_nidm_statmaps,
-)
+from neurovault.application.ports import Actor
+from neurovault.application.services.bundles import NamedBytes
+from neurovault.application.services.items import ImageFilesInput
+from neurovault.bootstrap import services
+from neurovault.domain.errors import DomainValidationError
 
 from neurovault.apps.statmaps.models import (
     Atlas,
     BaseCollectionItem,
+    Image,
     CognitiveAtlasTask,
     CognitiveAtlasContrast,
     Collection,
@@ -28,7 +28,35 @@ from neurovault.apps.statmaps.models import (
 
 from neurovault.utils import strip, logical_xor
 from neurovault.api import fields as api_fields
-from neurovault.apps.statmaps.utils import get_paper_properties
+
+FILE_FIELDS = ("file", "surface_left_file", "surface_right_file", "label_description_file")
+FOREIGN_KEYS = ("cognitive_paradigm_cogatlas", "cognitive_contrast_cogatlas")
+KIND_OF = {StatisticMap: "statmap", Atlas: "atlas"}
+
+
+def actor_of(serializer):
+    user = serializer.context["request"].user
+    if not user.is_authenticated:
+        return Actor(None)
+    return Actor(user.pk, user.is_superuser)
+
+
+def image_command(validated_data):
+    """(column changes, file uploads) from validated image data."""
+    changes, files = {}, ImageFilesInput()
+    for key, value in validated_data.items():
+        if key in FILE_FIELDS:
+            if value:
+                setattr(files, key, value)
+            else:
+                changes[key] = value
+        elif key in FOREIGN_KEYS:
+            changes[key + "_id"] = value.pk if value is not None else None
+        elif key in ("collection", "polymorphic_ctype"):
+            continue
+        else:
+            changes[key] = value
+    return changes, files
 
 
 class HyperlinkedFileField(serializers.FileField):
@@ -79,7 +107,7 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         fields = ("id", "username", "email", "first_name", "last_name")
 
 
-class ImageSerializer(serializers.HyperlinkedModelSerializer, ImageValidationMixin):
+class ImageSerializer(serializers.HyperlinkedModelSerializer):
     id = serializers.ReadOnlyField()
     file = HyperlinkedFileField()
     collection = HyperlinkedRelatedURL(read_only=True)
@@ -137,17 +165,17 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer, ImageValidationMix
         return {key: initial_data[key] for key in metadata_field_set}
 
     def validate(self, data):
-        self.afni_subbricks = []
-        self.afni_tmp = None
-        self._errors = ErrorDict()
-        self.error_class = ErrorList
-
-        cleaned_data = self.clean_and_validate(data)
-
-        if self.errors:
-            raise serializers.ValidationError(self.errors)
-
-        return cleaned_data
+        left, right = data.get("surface_left_file"), data.get("surface_right_file")
+        if left and right:
+            data["data_origin"] = "surface"
+            try:
+                projected = services().items.project_surfaces(left, right, data["name"])
+            except DomainValidationError as e:
+                raise serializers.ValidationError(e.errors)
+            data["surface_left_file"] = NamedBytes(projected.left_name, projected.left)
+            data["surface_right_file"] = NamedBytes(projected.right_name, projected.right)
+            data["file"] = NamedBytes(projected.volume_name, projected.volume)
+        return data
 
     def save(self, *args, **kwargs):
         metadata_dict = getattr(self, "_metadata_dict", None)
@@ -155,8 +183,19 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer, ImageValidationMix
             data = self.instance.data.copy() if self.instance.data else {}
             data.update(self._metadata_dict)
             kwargs["data"] = data
-        self.is_valid = True
-        super(ImageSerializer, self).save(*args, **kwargs)
+        return super(ImageSerializer, self).save(*args, **kwargs)
+
+    def update(self, instance, validated_data):
+        """Add (unsaved instance from add_item) or change an image."""
+        changes, files = image_command(validated_data)
+        items = services().items
+        if instance.pk is None:
+            item_id = items.add(
+                actor_of(self), instance.collection_id, KIND_OF[type(instance)], changes, files
+            )
+        else:
+            item_id = items.change(actor_of(self), instance.pk, changes, files).id
+        return Image.objects.get(pk=item_id)
 
 
 class EditableStatisticMapSerializer(ImageSerializer):
@@ -256,7 +295,38 @@ class EditableAtlasSerializer(ImageSerializer):
         read_only_fields = ("collection",)
 
 
-class NIDMResultsSerializer(serializers.ModelSerializer, NIDMResultsValidationMixin):
+class NIDMResultsCommands:
+    """validate/update shared by the NIDM-Results serializers."""
+
+    def validate(self, data):
+        data["collection"] = self.instance.collection
+        zip_file = data.get("zip_file")
+        if zip_file or not getattr(self, "partial", False):
+            try:
+                self.prepared = services().bundles.prepare(
+                    self.instance.collection_id, data["zip_file"], replacing_id=self.instance.pk
+                )
+            except DomainValidationError as e:
+                raise serializers.ValidationError(list(e.errors.values())[0])
+            data["name"] = self.prepared.name
+        return data
+
+    def update(self, instance, validated_data):
+        bundles = services().bundles
+        prepared = getattr(self, "prepared", None)
+        if prepared is not None:
+            bundle_id = bundles.ingest(
+                actor_of(self), instance.collection_id, prepared,
+                description=validated_data.get("description", instance.description),
+                replacing_id=instance.pk,
+            )
+        else:
+            changes = {k: validated_data[k] for k in ("name", "description") if k in validated_data}
+            bundle_id = bundles.change(actor_of(self), instance.pk, changes).id
+        return NIDMResults.objects.get(pk=bundle_id)
+
+
+class NIDMResultsSerializer(serializers.ModelSerializer):
     zip_file = HyperlinkedFileField()
     ttl_file = HyperlinkedFileField(required=False)
     statmaps = ImageSerializer(
@@ -264,20 +334,8 @@ class NIDMResultsSerializer(serializers.ModelSerializer, NIDMResultsValidationMi
     )
     url = HyperlinkedImageURL(source="get_absolute_url", read_only=True)
 
-    def validate(self, data):
-        data["collection"] = self.instance.collection
-        return self.clean_and_validate(data)
-
-    def save(self):
-        instance = super(NIDMResultsSerializer, self).save()
-        nidm = getattr(self, "nidm", False)
-
-        if nidm:
-            # Handle file upload
-            save_nidm_statmaps(nidm, instance)
-            handle_update_ttl_urls(instance)
-
-        return instance
+    validate = NIDMResultsCommands.validate
+    update = NIDMResultsCommands.update
 
     class Meta:
         model = NIDMResults
@@ -285,22 +343,11 @@ class NIDMResultsSerializer(serializers.ModelSerializer, NIDMResultsValidationMi
         read_only_fields = ("collection",)
 
 
-class EditableNIDMResultsSerializer(
-    serializers.ModelSerializer, NIDMResultsValidationMixin
-):
+class EditableNIDMResultsSerializer(serializers.ModelSerializer):
     url = HyperlinkedImageURL(source="get_absolute_url", read_only=True)
 
-    def validate(self, data):
-        data["collection"] = self.instance.collection
-        return self.clean_and_validate(data)
-
-    def save(self):
-        instance = super(EditableNIDMResultsSerializer, self).save()
-
-        save_nidm_statmaps(self.nidm, instance)
-        handle_update_ttl_urls(instance)
-
-        return instance
+    validate = NIDMResultsCommands.validate
+    update = NIDMResultsCommands.update
 
     class Meta:
         model = NIDMResults
@@ -333,14 +380,33 @@ class CollectionSerializer(serializers.ModelSerializer):
 
         if doi:
             try:
-                (name, authors, paper_url, _, journal_name) = get_paper_properties(doi)
-                data["name"] = name
-                data["authors"] = authors
-                data["paper_url"] = paper_url
-                data["journal_name"] = journal_name
-            except:
+                completed = services().collections.complete_publication(
+                    {"DOI": doi}, require_name=False
+                )
+                completed.pop("DOI")
+                data.update(completed)
+            except DomainValidationError:
                 raise serializers.ValidationError("Could not resolve DOI")
         return data
+
+    def create(self, validated_data):
+        return self._save(None, validated_data)
+
+    def update(self, instance, validated_data):
+        return self._save(instance.pk, validated_data)
+
+    def _save(self, collection_id, validated_data):
+        changes = dict(validated_data)
+        changes.pop("owner", None)
+        changes.pop("contributors", None)
+        communities = changes.pop("communities", None)
+        collection_id = services().collections.save(
+            actor_of(self),
+            collection_id,
+            changes,
+            community_ids=[c.pk for c in communities] if communities is not None else None,
+        )
+        return Collection.objects.get(pk=collection_id)
 
     class Meta:
         model = Collection
