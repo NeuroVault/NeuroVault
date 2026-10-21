@@ -18,11 +18,11 @@ API or losing data?
 | D3 | Public API response shape is unchanged (`image_type` strings, field names, ids, URLs). | user |
 | D4 | Existing plain `Image` rows (polymorphic type `image`) become `kind="other"`. | user |
 | D5 | The data migration runs in a maintenance window; no dual-write period. | user |
-| D6 | Django models stay in `apps/statmaps` (app label `statmaps`) and become the persistence adapter, so the migration history continues unbroken. | this doc |
+| D6 | The ORM models and migrations form the persistence adapter (`adapters/persistence`), keeping the app label `statmaps` so the migration history, tables and content types continue unbroken. | this doc, revised after implementation |
 | D7 | Item permissions are derived from the collection; per-item guardian rows are dropped. | this doc, evidence in §7 |
 | D8 | Reads stay on the ORM (CQRS-lite): templates, datatables and API representations read ORM rows; every write goes through a use case. About 40 templates read model attributes and none are tested, so rendering from entities would be an untested rewrite with no architectural gain. | implementation |
-| D9 | The composition root is `neurovault/bootstrap.py`, outside `application/`, so the application layer never imports adapters. | implementation |
-| D10 | The dependency rule is enforced by a unit test (`application/tests/test_layering.py`) rather than import-linter, avoiding a new dependency. | implementation |
+| D9 | The composition root is `neurovault/config/bootstrap.py`, outside `core/`, so the application layer never imports adapters. | implementation |
+| D10 | The dependency rule is enforced by a unit test (`core/application/tests/test_layering.py`) rather than import-linter, avoiding a new dependency. | implementation |
 | D11 | Input validation (types, choices, required fields, error wording) stays in Django forms and DRF serializers; domain rules (quality checks, DOI resolution, bundle naming, file layout) run in the use cases those adapters call. Forms no longer save: `image_changes(form)` reads back what `construct_instance` applied and the view passes it to the use case. | implementation |
 
 ## 1. Current state
@@ -58,30 +58,38 @@ Two existing pieces already have the target shape and are followed here:
 
 ## 2. Layers and packages
 
+Every code directory is the hexagon (`core/`), an adapter (`adapters/`) or project wiring (`config/`). Adapters
+are grouped by what they connect to, inbound (web, api, tasks) and outbound alike.
+
 ```
 neurovault/
-  domain/            entities, value objects, pure domain services (no Django imports)
-    items.py         CollectionItem, StatMap, Atlas, OtherImage, NIDMBundle, ...
-    collection.py    Collection aggregate and its value objects
-    nifti.py         infer_map_type, is_thresholded, detect_4D, not_in_mni (pure, take arrays/affines)
-    access.py        AccessPolicy (derived from collection owner/contributors/private)
-  application/
-    ports.py         Protocols for driven ports (§4)
-    services/        use cases (§5), one module per aggregate
-    bootstrap.py     composition root: wires adapters into services
+  core/
+    domain/          entities, value objects, vocabularies, map quality, NIDM rules
+    application/     ports.py, services/ (use cases), layout.py; tests/fakes.py holds
+                     in-memory implementations of every port for the use-case tests
   adapters/
-    persistence/     repositories + mappers over the Django ORM (models stay in apps/statmaps)
-    storage/         LocalMapStore (today's PRIVATE_MEDIA_ROOT layout)
-    queue/           CeleryTaskQueue
-    neuroimaging/    FreeSurferProjector, NilearnThumbnailRenderer, NiMAREEngine
-    external/        CrossRefLookup, CognitiveAtlasGateway, DjangoEmailNotifier
-  apps/statmaps/     web adapter (views, forms, templates) + ORM models (persistence adapter)
-  api/               DRF adapter
+    web/             inbound: Django apps
+      statmaps/      views, forms, urls, templates, static, admin, management commands
+                     (app label "web")
+      main/  users/  home page and accounts
+    api/             inbound: DRF serializers, viewsets, permissions
+    tasks/           inbound: Celery entry points (task names keep their old paths)
+    persistence/     outbound: Django app with the ORM models and migrations
+                     (app label "statmaps", so tables and history are unchanged),
+                     repositories, mappers, guardian access grants, FileField storages
+    storage/         outbound: LocalMapStore
+    queue/           outbound: CeleryTaskQueue
+    neuroimaging/    outbound: FreeSurfer, nilearn renderers, NiMARE, NIDM parser,
+                     upload workspace
+    external/        outbound: CrossRef, Cognitive Atlas, email, clock
+  config/            Django project: settings, urls, wsgi, celery, and
+                     bootstrap.py (composition root: wires adapters into the use cases)
+  local_data/  pycortex_data/   runtime data, not code
 ```
 
-Dependency rule: `domain` imports nothing from the project; `application` imports
-`domain` only; adapters import `application` and `domain`. Enforced with
-`import-linter` contracts in CI.
+Dependency rule: `core.domain` imports nothing from the project; `core.application`
+imports `core.domain` only; adapters import `core` and other adapters. Enforced by
+`core/application/tests/test_layering.py`.
 
 ## 3. Domain model (composition)
 
@@ -381,8 +389,8 @@ Verification:
 - the master test suite plus the phase 0 goldens (43 responses) and characterization
   tests pass on every phase;
 - 25 use-case tests run on in-memory fakes without Django, Docker or a database
-  (`python -m unittest neurovault.application.tests.test_services`);
-- `application/tests/test_layering.py` enforces the dependency rule;
+  (`python -m unittest neurovault.core.application.tests.test_services`);
+- `core/application/tests/test_layering.py` enforces the dependency rule;
 - `test_migration_copy_items` migrates one row of every kind (plus tags, comparisons,
   meta-analysis selections, permissions, NaN values) through 0007/0008;
 - on a copy of the local database, 126/126 items are identical after 0007.

@@ -38,7 +38,7 @@ services:
       dockerfile: ./compose/django/Dockerfile.dev
       target: neurovault-dev
     image: neurovault/neurovault-dev
-    command: celery -A neurovault.celery worker -Q default -n default@%h
+    command: celery -A neurovault.config.celery worker -Q default -n default@%h
     volumes:
       - .:/code
       - ${NV_IMAGE_DATA}:/image_data

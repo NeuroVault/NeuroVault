@@ -8,11 +8,11 @@ Update database with image transformations
 import django
 import os
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.config.settings")
 django.setup()
 
-from neurovault.apps.statmaps.models import Similarity, Comparison, Image, Collection
-from neurovault.apps.statmaps.tasks import run_voxelwise_pearson_similarity, save_resampled_transformation_single
+from neurovault.adapters.persistence.models import Similarity, Comparison, Image, Collection
+from neurovault.adapters.tasks import run_voxelwise_pearson_similarity, save_resampled_transformation_single
 
 # Images should have the "transform" field after applying migrations (I think)
 

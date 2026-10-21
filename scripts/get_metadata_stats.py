@@ -1,4 +1,4 @@
-from neurovault.apps.statmaps.models import Collection, StatisticMap,\
+from neurovault.adapters.persistence.models import Collection, StatisticMap,\
     BaseStatisticMap
 from django.db.models import Q
 total_collection = Collection.objects.all().count()

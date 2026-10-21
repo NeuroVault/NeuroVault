@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from django.core.files import File
 from django.core.files.base import ContentFile
 
-from neurovault.apps.statmaps.storage import DoubleExtensionStorage, OverwriteStorage
+from neurovault.adapters.persistence.storage import DoubleExtensionStorage, OverwriteStorage
 
 
 def _remove_readonly(func, path, _):

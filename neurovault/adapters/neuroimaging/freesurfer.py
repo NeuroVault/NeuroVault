@@ -9,7 +9,7 @@ from subprocess import CalledProcessError
 import nibabel as nb
 import numpy as np
 
-from neurovault.application.ports import ProjectedSurface, SurfaceInputError
+from neurovault.core.application.ports import ProjectedSurface, SurfaceInputError
 
 FIELDS = {"lh": "surface_left_file", "rh": "surface_right_file"}
 INTENTS = {"lh": "CortexLeft", "rh": "CortexRight"}

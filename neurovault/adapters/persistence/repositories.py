@@ -2,10 +2,10 @@
 from django.db import transaction
 from django.db.models import Q
 
-from neurovault.apps.statmaps import models as orm
-from neurovault.domain import collection as dc
-from neurovault.domain.errors import NotFound
-from neurovault.domain.items import (
+from neurovault.adapters.persistence import models as orm
+from neurovault.core.domain import collection as dc
+from neurovault.core.domain.errors import NotFound
+from neurovault.core.domain.items import (
     Annotation,
     Atlas,
     CognitiveParadigm,
@@ -20,7 +20,7 @@ from neurovault.domain.items import (
     SubjectInfo,
     TemplateSpace,
 )
-from neurovault.domain.metaanalysis import Metaanalysis
+from neurovault.core.domain.metaanalysis import Metaanalysis
 
 from .mapping import assign, flatten, names, read, value
 

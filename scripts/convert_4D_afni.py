@@ -3,11 +3,11 @@ import django
 import tempfile
 import shutil
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.config.settings")
 django.setup()
 
-from neurovault.apps.statmaps.models import Image,ValueTaggedItem
-from neurovault.apps.statmaps.utils import detect_4D, split_4D_to_3D,memory_uploadfile
+from neurovault.adapters.persistence.models import Image,ValueTaggedItem
+from neurovault.adapters.web.statmaps.utils import detect_4D, split_4D_to_3D,memory_uploadfile
 
 
 def populate_afni(image):

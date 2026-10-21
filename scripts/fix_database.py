@@ -7,10 +7,10 @@ Created on 1 Sep 2014
 import os
 import django
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.config.settings")
 django.setup()
 
-from neurovault.apps.statmaps.models import Image
+from neurovault.adapters.persistence.models import Image
 
 import errno
 

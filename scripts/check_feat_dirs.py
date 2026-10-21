@@ -4,11 +4,11 @@ import tempfile
 import shutil
 from subprocess import call
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.config.settings")
 django.setup()
 
 from nidmfsl.fsl_exporter.fsl_exporter import FSLtoNIDMExporter
-from neurovault.apps.statmaps.utils import detect_feat_directory, get_traceback
+from neurovault.adapters.web.statmaps.utils import detect_feat_directory, get_traceback
 
 
 if __name__ == '__main__':

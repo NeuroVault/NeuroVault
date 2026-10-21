@@ -9,10 +9,10 @@ import os
 import time
 import django
 import numpy as np
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.config.settings")
 django.setup()
-from neurovault.apps.statmaps.models import Similarity, Comparison, Image
-from neurovault.apps.statmaps.utils import count_existing_comparisons, \
+from neurovault.adapters.persistence.models import Similarity, Comparison, Image
+from neurovault.adapters.web.statmaps.utils import count_existing_comparisons, \
     count_processing_comparisons, get_existing_comparisons, count_possible_comparisons
 
 
@@ -80,7 +80,7 @@ print("count_possible_comparisons for all images: %s" %(np.mean(times)))
 
 
 ## SAVED LOG to compare with times from previous times
-scripts_directory = os.path.abspath(os.path.join(neurovault.settings.BASE_DIR,"..","scripts"))
+scripts_directory = os.path.abspath(os.path.join(neurovault.config.settings.BASE_DIR,"..","scripts"))
 number_images = Image.objects.all().count()
 
 if os.path.exists("%s/time_log.pkl" %(scripts_directory)):

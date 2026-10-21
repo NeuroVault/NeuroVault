@@ -6,7 +6,7 @@ from datetime import date
 
 from lxml import etree
 
-from neurovault.application.ports import PaperProperties
+from neurovault.core.application.ports import PaperProperties
 
 QUERY_URL = "http://doi.crossref.org/servlet/query"
 

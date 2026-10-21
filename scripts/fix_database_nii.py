@@ -3,7 +3,7 @@ Created on 1 Sep 2014
 
 @author: gorgolewski
 '''
-from neurovault.apps.statmaps.models import Image
+from neurovault.adapters.persistence.models import Image
 import os
 
 import os, errno

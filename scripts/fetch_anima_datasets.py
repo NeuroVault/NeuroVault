@@ -1,2 +1,2 @@
-from neurovault.apps.statmaps.tasks import crawl_anima
+from neurovault.adapters.tasks import crawl_anima
 crawl_anima()

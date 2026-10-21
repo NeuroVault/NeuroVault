@@ -13,7 +13,7 @@ import nibabel as nib
 import numpy as np
 from lxml import etree
 
-from neurovault.domain.map_quality import detect_4D
+from neurovault.core.domain.map_quality import detect_4D
 
 
 def splitext_nii_gz(fname):

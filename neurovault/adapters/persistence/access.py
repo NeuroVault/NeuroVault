@@ -2,7 +2,7 @@
 from django.contrib.auth.models import User
 from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
 
-from neurovault.apps.statmaps.models import Collection
+from neurovault.adapters.persistence.models import Collection
 
 
 class GuardianAccessGrants:

@@ -6,8 +6,8 @@ import nibabel as nib
 import numpy
 
 ANATOMICAL = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-    "apps", "statmaps", "static", "anatomical",
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "web", "statmaps", "static", "anatomical",
 )
 
 
@@ -94,7 +94,7 @@ class NilearnMapReducer:
 
 class StaticTemplateMasks:
     def mask(self, template):
-        from neurovault.domain.vocabulary import POSSIBLE_TEMPLATES
+        from neurovault.core.domain.vocabulary import POSSIBLE_TEMPLATES
 
         mask_file = POSSIBLE_TEMPLATES[template]["mask"]
         if mask_file is None:

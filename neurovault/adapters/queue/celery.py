@@ -3,6 +3,6 @@
 
 class CeleryTaskQueue:
     def process_item(self, item_id):
-        from neurovault.apps.statmaps.tasks import process_map
+        from neurovault.adapters.tasks import process_map
 
         process_map.apply_async([item_id])

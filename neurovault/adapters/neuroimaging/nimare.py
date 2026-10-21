@@ -9,7 +9,7 @@ import os
 import nibabel as nib
 import numpy as np
 
-from neurovault.application.ports import MetaAnalysisResult
+from neurovault.core.application.ports import MetaAnalysisResult
 
 from .rendering import ANATOMICAL
 

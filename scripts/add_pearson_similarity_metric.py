@@ -5,11 +5,11 @@ Created on 30 Jan 2015
 '''
 import os
 import django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.config.settings")
 django.setup()
 
-from neurovault.apps.statmaps.models import Similarity, Comparison, Image
-from neurovault.apps.statmaps.tasks import save_voxelwise_pearson_similarity
+from neurovault.adapters.persistence.models import Similarity, Comparison, Image
+from neurovault.adapters.tasks import save_voxelwise_pearson_similarity
 from django.db import IntegrityError
 import errno
 
