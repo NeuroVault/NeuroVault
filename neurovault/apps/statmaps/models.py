@@ -732,9 +732,15 @@ class Collection(models.Model):
 
     @property
     def is_statisticmap_set(self):
-        return all(
-            (isinstance(i, StatisticMap) for i in self.basecollectionitem_set.all())
+        """Holds only uploaded statistic maps (no atlases, other images or NIDM bundles)."""
+        return not (
+            self.nidm_bundles.exists()
+            or self.items.exclude(kind="statmap", source_bundle__isnull=True).exists()
         )
+
+    def item_count(self):
+        """Images plus NIDM bundles."""
+        return self.items.count() + self.nidm_bundles.count()
 
     def get_absolute_url(self):
         return_cid = self.id
@@ -797,12 +803,9 @@ def upload_nidm_to(instance, filename):
 
 
 def upload_img_to(instance, filename):
-    nidm_types = ["nidmresultstatisticmap"]
-    if (
-        hasattr(instance, "polymorphic_ctype")
-        and instance.polymorphic_ctype.model in nidm_types
-    ):
-        return upload_nidm_to(instance.nidm_results, filename)
+    """Storage path of an item's file (the use cases store files with the same layout)."""
+    if getattr(instance, "source_bundle_id", None):
+        return upload_nidm_to(instance.source_bundle, filename)
     return os.path.join("images", str(instance.collection.id), filename)
 
 
@@ -1261,6 +1264,425 @@ class Atlas(Image):
 
 
 
+
+class ItemQuerySet(models.QuerySet):
+    def statmaps(self):
+        """Uploaded statistic maps (the former StatisticMap)."""
+        return self.filter(kind=Item.STATMAP, source_bundle__isnull=True)
+
+    def nidm_statmaps(self):
+        return self.filter(kind=Item.STATMAP, source_bundle__isnull=False)
+
+    def all_statmaps(self):
+        return self.filter(kind=Item.STATMAP)
+
+    def atlases(self):
+        return self.filter(kind=Item.ATLAS)
+
+
+STATMAP_FIXED_FIELDS = (
+    "name", "description", "figure", "target_template_image", "age", "sex", "ethnicity",
+    "race", "handedness", "bis11_score", "bis_bas_score", "spsrq_score", "BMI",
+    "fat_percentage", "waist_hip_ratio", "hours_since_last_meal", "days_since_menstruation",
+    "mean_PDS_score", "tanner_stage", "map_type", "analysis_level", "number_of_subjects",
+    "modality", "contrast_definition", "cognitive_paradigm_cogatlas",
+    "cognitive_paradigm_description_url",
+)
+
+
+class NIDMBundle(models.Model):
+    """An uploaded NIDM-Results zip; its statistic maps are Items with source_bundle set."""
+
+    name = models.CharField(max_length=200, null=False, blank=False, db_index=True)
+    description = models.TextField(blank=True)
+    collection = models.ForeignKey(Collection, on_delete=models.CASCADE, related_name="nidm_bundles")
+    add_date = models.DateTimeField("date published", auto_now_add=True)
+    modify_date = models.DateTimeField("date modified", auto_now=True, db_index=True)
+    tags = TaggableManager(through=ValueTaggedItem, blank=True)
+    is_valid = models.BooleanField(default=True)
+    ttl_file = models.FileField(
+        upload_to=upload_nidm_to,
+        storage=NIDMStorage(),
+        null=True,
+        blank=True,
+        verbose_name="Turtle serialization of NIDM Results (.ttl)",
+    )
+
+    zip_file = models.FileField(
+        upload_to=upload_nidm_to,
+        storage=NIDMStorage(),
+        null=False,
+        blank=False,
+        verbose_name="NIDM Results zip file",
+    )
+
+    class Meta:
+        verbose_name = "NIDM results"
+        verbose_name_plural = "NIDMResults"
+
+    def __str__(self):
+        return self.name
+
+    type_label = "nidm results"
+
+    def get_absolute_url(self):
+        return_args = [str(self.collection_id), self.name]
+        if self.collection.private:
+            return_args[0] = str(self.collection.private_token)
+        return reverse("statmaps:view_nidm_results", args=return_args)
+
+
+class Item(models.Model):
+    """An image of any kind. `kind` and `source_bundle` replace the old subclasses."""
+
+    STATMAP, ATLAS, OTHER = "statmap", "atlas", "other"
+    KIND_CHOICES = ((STATMAP, "statistic map"), (ATLAS, "atlas"), (OTHER, "image"))
+    MAP_TYPE_CHOICES = vocabulary.MAP_TYPE_CHOICES
+    ANALYSIS_LEVEL_CHOICES = vocabulary.ANALYSIS_LEVEL_CHOICES
+    MODALITY_CHOICES = vocabulary.MODALITY_CHOICES
+    Pa = vocabulary.Pa
+
+    objects = ItemQuerySet.as_manager()
+
+    kind = models.CharField(max_length=20, choices=KIND_CHOICES, db_index=True)
+    name = models.CharField(max_length=200, null=False, blank=False, db_index=True)
+    description = models.TextField(blank=True)
+    collection = models.ForeignKey(Collection, on_delete=models.CASCADE, related_name="items")
+    add_date = models.DateTimeField("date published", auto_now_add=True)
+    modify_date = models.DateTimeField("date modified", auto_now=True, db_index=True)
+    tags = TaggableManager(through=ValueTaggedItem, blank=True)
+    is_valid = models.BooleanField(default=True)
+    file = models.FileField(
+        upload_to=upload_img_to,
+        null=False,
+        blank=False,
+        storage=DoubleExtensionStorage(),
+        max_length=500,
+        verbose_name="File with the unthresholded volume map (.img, .nii, .nii.gz)",
+    )
+    surface_left_file = models.FileField(
+        upload_to=upload_img_to,
+        null=True,
+        blank=True,
+        storage=DoubleExtensionStorage(),
+        verbose_name="File with the unthresholded LEFT hemisphere fsaverage surface map (.mgh, .curv, .gii)",
+    )
+    surface_right_file = models.FileField(
+        upload_to=upload_img_to,
+        null=True,
+        blank=True,
+        storage=DoubleExtensionStorage(),
+        verbose_name="File with the unthresholded RIGHT hemisphere fsaverage surface map (.mgh, .curv, .gii)",
+    )
+    data_origin = models.CharField(
+        help_text=("Was this map originally derived from volume or surface?"),
+        verbose_name="Data origin",
+        default="volume",
+        max_length=200,
+        null=True,
+        blank=True,
+        choices=[("volume", "volume"), ("surface", "surface")],
+    )
+    target_template_image = models.CharField(
+        choices=get_target_template_list(),
+        help_text="Name of target template image",
+        verbose_name="Target template image",
+        default=DEFAULT_TEMPLATE,
+        max_length=200,
+        null=False,
+        blank=False,
+    )
+    subject_species = models.CharField(
+        max_length=200,
+        default=POSSIBLE_TEMPLATES[DEFAULT_TEMPLATE]["species"],
+        blank=True,
+        null=True,
+    )
+    figure = models.CharField(
+        help_text="Which figure in the corresponding paper was this map displayed in?",
+        verbose_name="Manuscript figure",
+        max_length=200,
+        null=True,
+        blank=True,
+    )
+
+    ### Added for the NutBrain project BEGIN
+    handedness = models.CharField(
+        max_length=200,
+        null=True,
+        blank=True,
+        choices=[("L", "Left"), ("R", "Right")],
+        verbose_name="Handedness",
+    )
+    age = models.FloatField(null=True, blank=True, verbose_name="Age (years)")
+    sex = models.CharField(
+        max_length=200,
+        null=True,
+        blank=True,
+        choices=[("M", "Male"), ("F", "Female"), ("O", "Other")],
+        verbose_name="Sex",
+    )
+    race = models.CharField(
+        max_length=200,
+        null=True,
+        blank=True,
+        choices=[
+            ("W", "White"),
+            ("B", "Black or African American"),
+            ("I", "American Indian or Alaska Native"),
+            ("A", "Asian"),
+            ("H", "Native Hawaiian or Other Pacific Islander"),
+        ],
+        verbose_name="Race (US Census definition)",
+    )
+    ethnicity = models.CharField(
+        max_length=200,
+        null=True,
+        blank=True,
+        choices=[("H", "Hispanic or Latino"), ("NH", "Not Hispanic or Latino")],
+        verbose_name="Ethnicity (US Census definition)",
+    )
+    BMI = models.FloatField(
+        null=True, blank=True, verbose_name="Body Mass Index (kg/m2)"
+    )
+    fat_percentage = models.FloatField(null=True, blank=True, verbose_name="% body fat")
+    waist_hip_ratio = models.FloatField(
+        null=True, blank=True, verbose_name="waist-hip-ratio"
+    )
+    mean_PDS_score = models.FloatField(
+        null=True, blank=True, verbose_name="Mean Puberty Development Scale score"
+    )
+    tanner_stage = models.CharField(
+        max_length=200,
+        null=True,
+        blank=True,
+        choices=[("I", "I"), ("II", "II"), ("III", "III"), ("IV", "IV"), ("V", "V")],
+        verbose_name="Tanner stage",
+    )
+    days_since_menstruation = models.FloatField(
+        null=True, blank=True, verbose_name="Number of days since menstruation"
+    )
+    hours_since_last_meal = models.FloatField(
+        null=True, blank=True, verbose_name="Time since last meal (hours)"
+    )
+    bis_bas_score = models.FloatField(
+        null=True,
+        blank=True,
+        verbose_name="Behavioral inhibition, behavioral activation " "(BIS/BAS) score",
+    )
+    spsrq_score = models.FloatField(
+        null=True,
+        blank=True,
+        verbose_name="Sensitivity to Punishment and Sensitivity to "
+        "Reward Questionnaire (SPSRQ) score",
+    )
+    bis11_score = models.FloatField(
+        null=True, blank=True, verbose_name="Barratt Impulsiveness Scale (BIS-11) score"
+    )
+    # END
+
+    thumbnail = models.FileField(
+        help_text="The orthogonal view thumbnail path of the nifti image",
+        null=True,
+        blank=True,
+        upload_to=upload_img_to,
+        verbose_name="Image orthogonal view thumbnail 2D bitmap",
+        storage=DoubleExtensionStorage(),
+    )
+    reduced_representation = models.FileField(
+        help_text=(
+            "Binary file with the vector of in brain values resampled to lower resolution"
+        ),
+        verbose_name="Reduced representation of the image",
+        null=True,
+        blank=True,
+        upload_to=upload_img_to,
+        storage=OverwriteStorage(),
+    )
+    data = models.JSONField(blank=True, null=True)
+
+    # statistic maps
+    map_type = models.CharField(
+        help_text=("Type of statistic that is the basis of the inference"),
+        verbose_name="Map type",
+        max_length=200,
+        null=True,
+        blank=False,
+        choices=MAP_TYPE_CHOICES,
+    )
+    is_thresholded = models.BooleanField(null=True, blank=True)
+    perc_bad_voxels = models.FloatField(null=True, blank=True)
+    not_mni = models.BooleanField(null=True, blank=True)
+    brain_coverage = models.FloatField(null=True, blank=True)
+    perc_voxels_outside = models.FloatField(null=True, blank=True)
+    analysis_level = models.CharField(
+        help_text=(
+            "What level of summary data was used as the input to this analysis?"
+        ),
+        verbose_name="Analysis level",
+        max_length=200,
+        null=True,
+        blank=False,
+        choices=ANALYSIS_LEVEL_CHOICES,
+    )
+    number_of_subjects = models.IntegerField(
+        help_text="Number of subjects used to generate this map",
+        null=True,
+        verbose_name="No. of subjects",
+        blank=False,
+    )
+    ignore_file_warning = models.BooleanField(
+        null=True,
+        blank=False,
+        default=False,
+        verbose_name="Ignore the warning",
+        help_text="Ignore the warning when the map is sparse by nature, an ROI mask, or was acquired with limited field of view.",
+    )
+    modality = models.CharField(
+        verbose_name="Modality & Acquisition Type",
+        help_text="Brain imaging procedure that was used to acquire the data.",
+        max_length=200,
+        null=True,
+        blank=False,
+        choices=MODALITY_CHOICES,
+        db_index=True,
+    )
+
+    statistic_parameters = models.FloatField(
+        help_text="Parameters of the null distribution of the test statistic, typically degrees of freedom (should be clear from the test statistic what these are).",
+        null=True,
+        verbose_name="Statistic parameters",
+        blank=True,
+    )
+    smoothness_fwhm = models.FloatField(
+        help_text="Noise smoothness for statistical inference; this is the estimated smoothness used with Random Field Theory or a simulation-based inference method.",
+        verbose_name="Smoothness FWHM",
+        null=True,
+        blank=True,
+    )
+    contrast_definition = models.CharField(
+        help_text="Exactly what terms are subtracted from what? Define these in terms of task or stimulus conditions (e.g., 'one-back task with objects versus zero-back task with objects') instead of underlying psychological concepts (e.g., 'working memory').",
+        verbose_name="Contrast definition",
+        max_length=200,
+        null=True,
+        blank=True,
+    )
+    contrast_definition_cogatlas = models.CharField(
+        help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast",
+        verbose_name="Cognitive Atlas definition",
+        max_length=200,
+        null=True,
+        blank=True,
+    )
+    cognitive_paradigm_cogatlas = models.ForeignKey(
+        CognitiveAtlasTask,
+        help_text="Task performed by the subjects in the scanner described using <a href='http://www.cognitiveatlas.org/' target='_blank'>Cognitive Atlas</a>. If there's no match, select 'None / Other'. ",
+        verbose_name="Cognitive Atlas Paradigm",
+        null=True,
+        blank=False,
+        on_delete=models.PROTECT
+    )
+    cognitive_contrast_cogatlas = models.ForeignKey(
+        CognitiveAtlasContrast,
+        help_text="Link to <a href='http://www.cognitiveatlas.org/'>Cognitive Atlas</a> definition of this contrast",
+        verbose_name="Cognitive Atlas Contrast",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT
+    )
+    cognitive_paradigm_description_url = models.URLField(
+        help_text="Link to a paper, poster, abstract describing in detail the task performed by the subject(s) in the scanner.",
+        verbose_name="Description URL",
+        null=True,
+        blank=True,
+    )
+    cognitive_paradigm_short_description = models.CharField(
+        help_text="Describe your task",
+        verbose_name="Task Description",
+        null=True,
+        blank=True,
+    )
+    cognitive_paradigm_name = models.CharField(
+        help_text="Name of your task (if it)",
+        verbose_name="Task Name",
+        null=True,
+        blank=True
+     )
+    source_bundle = models.ForeignKey(
+        NIDMBundle, null=True, blank=True, on_delete=models.CASCADE, related_name="statmaps"
+    )
+
+    # atlases
+    label_description_file = models.FileField(
+        upload_to=upload_img_to,
+        null=True,
+        blank=True,
+        storage=DoubleExtensionStorage(),
+        verbose_name="FSL compatible label description file (.xml)",
+    )
+
+    class Meta:
+        indexes = [models.Index(fields=["modality", "cognitive_paradigm_cogatlas"])]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(kind__in=["statmap", "atlas", "other"]), name="item_kind_valid"
+            ),
+            models.CheckConstraint(
+                check=~models.Q(kind="atlas") | models.Q(label_description_file__isnull=False),
+                name="item_atlas_has_labels",
+            ),
+            models.CheckConstraint(
+                check=models.Q(kind="statmap") | models.Q(map_type__isnull=True),
+                name="item_map_type_only_on_statmaps",
+            ),
+            models.CheckConstraint(
+                check=models.Q(source_bundle__isnull=True) | models.Q(kind="statmap"),
+                name="item_bundle_maps_are_statmaps",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(kind="statmap", source_bundle__isnull=True)
+                | models.Q(modality__isnull=False),
+                name="item_uploaded_statmaps_have_modality",
+            ),
+        ]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def is_statmap(self):
+        return self.kind == self.STATMAP
+
+    @property
+    def type_label(self):
+        """The label the collection tables have always shown for each kind."""
+        if self.kind == self.STATMAP:
+            return "nidm result statistic map" if self.source_bundle_id else "statistic map"
+        return {self.ATLAS: "atlas", self.OTHER: "image"}[self.kind]
+
+    def get_absolute_url(self, edit=False):
+        return_args = [str(self.id)]
+        if edit:
+            return reverse("statmaps:edit_image", args=return_args)
+        url_name = "statmaps:image_details"
+        if self.collection.private:
+            return_args.insert(0, str(self.collection.private_token))
+            url_name = "statmaps:private_image_details"
+        return reverse(url_name, args=return_args)
+
+    def get_thumbnail_url(self):
+        try:
+            url = self.thumbnail.url
+        except ValueError:
+            url = os.path.abspath(os.path.join("/static", "images", "glass_brain_empty.jpg"))
+        return url
+
+    @staticmethod
+    def get_fixed_fields():
+        return STATMAP_FIXED_FIELDS
+
+
+
 class Similarity(models.Model):
     similarity_metric = models.CharField(
         max_length=200,
@@ -1312,10 +1734,10 @@ class Similarity(models.Model):
 
 class Comparison(models.Model):
     image1 = models.ForeignKey(
-        Image, related_name="image1", db_index=True, on_delete=models.CASCADE
+        "Item", related_name="image1", db_index=True, on_delete=models.CASCADE
     )
     image2 = models.ForeignKey(
-        Image, related_name="image2", db_index=True, on_delete=models.CASCADE
+        "Item", related_name="image2", db_index=True, on_delete=models.CASCADE
     )
     similarity_metric = models.ForeignKey(Similarity, on_delete=models.CASCADE)
     similarity_score = models.FloatField(
@@ -1345,7 +1767,7 @@ class Metaanalysis(models.Model):
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     name = models.CharField(max_length=200, unique=True, null=False)
     description = models.TextField(blank=True, null=True)
-    maps = models.ManyToManyField(StatisticMap, blank=True)
+    maps = models.ManyToManyField(Item, blank=True)
     status = models.CharField(
         choices=[
             ("active", "active"),

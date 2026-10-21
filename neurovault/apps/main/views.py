@@ -15,7 +15,7 @@ def index_view(request):
     # this is faster than using annotate and count!
     '''
     recent_collections = [
-        col for col in recent_collections if col.basecollectionitem_set.count() > 0
+        col for col in recent_collections if col.item_count() > 0
     ][:10]
     '''
 
@@ -40,7 +40,7 @@ def community_view(request, community_label):
     )
     # this is faster than using annotate and count!
     recent_collections = [
-        col for col in recent_collections if col.basecollectionitem_set.count() > 0
+        col for col in recent_collections if col.item_count() > 0
     ][:10]
 
     context = {

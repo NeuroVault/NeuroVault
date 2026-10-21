@@ -65,7 +65,7 @@
                                 <a href="{% url 'statmaps:collection_details' collection.id %}">{{ collection.name }}</a>
                             </th>
                             <td>
-                                {{ collection.basecollectionitem_set.all.count }}
+                                {{ collection.item_count }}
                             </td>
                         </tr>
                     {% endfor %}

@@ -4,7 +4,7 @@ from cognitiveatlas.api import get_task, get_concept
 from neurovault.apps.statmaps.models import (
     CognitiveAtlasTask,
     CognitiveAtlasContrast,
-    StatisticMap,
+    Item,
 )
 
 
@@ -46,7 +46,7 @@ def get_task_graph(task_id, images=None):
 
         # Do we have images tagged with the contrast?
         if not images:
-            images = StatisticMap.objects.filter(cognitive_contrast_cogatlas=contrast)
+            images = Item.objects.statmaps().filter(cognitive_contrast_cogatlas=contrast)
 
         for concept in contrast_concepts.json:
             if concept and concept["name"] not in current_names:

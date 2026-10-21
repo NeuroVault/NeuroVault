@@ -4,7 +4,7 @@ import nibabel as nb
 import numpy as np
 from django.test import TestCase
 
-from neurovault.apps.statmaps.models import BaseStatisticMap
+from neurovault.domain import vocabulary
 from neurovault.domain.map_quality import is_thresholded, infer_map_type
 
 
@@ -57,6 +57,6 @@ class QATest(TestCase):
             self.assertEqual(t, is_thr)
 
     def testInferMapType(self):
-        self.assertEqual(infer_map_type(self.roi_map), BaseStatisticMap.R)
-        self.assertEqual(infer_map_type(self.parcellation), BaseStatisticMap.Pa)
-        self.assertEqual(infer_map_type(self.brain), BaseStatisticMap.OTHER)
+        self.assertEqual(infer_map_type(self.roi_map), vocabulary.R)
+        self.assertEqual(infer_map_type(self.parcellation), vocabulary.Pa)
+        self.assertEqual(infer_map_type(self.brain), vocabulary.OTHER)

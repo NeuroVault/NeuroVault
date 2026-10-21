@@ -11,13 +11,7 @@ from django.urls import reverse
 from django.test import TestCase, Client, override_settings, RequestFactory
 from uuid import uuid4
 
-from neurovault.apps.statmaps.models import (
-    Collection,
-    User,
-    Image,
-    Atlas,
-    CognitiveAtlasTask,
-)
+from neurovault.apps.statmaps.models import Collection, User, Item, CognitiveAtlasTask
 from neurovault.domain.map_quality import detect_4D
 from neurovault.adapters.neuroimaging.workspace import split_4D_to_3D
 from neurovault.apps.statmaps.views import delete_collection, download_collection
@@ -81,7 +75,8 @@ class DeleteCollectionsTest(TestCase):
         self.client.login(username=self.user)
         self.Collection1 = Collection(name="Collection1", owner=self.user)
         persist(self.Collection1)
-        self.unorderedAtlas = Atlas(
+        self.unorderedAtlas = Item(
+            kind=Item.ATLAS,
             name="unorderedAtlas", description="", collection=self.Collection1
         )
         self.unorderedAtlas.file = SimpleUploadedFile(
@@ -108,7 +103,8 @@ class DeleteCollectionsTest(TestCase):
 
         self.Collection2 = Collection(name="Collection2", owner=self.user)
         persist(self.Collection2)
-        self.orderedAtlas = Atlas(
+        self.orderedAtlas = Item(
+            kind=Item.ATLAS,
             name="orderedAtlas",
             collection=self.Collection2,
             label_description_file="VentralFrontal_thr75_summaryimage_2mm.xml",
@@ -273,7 +269,7 @@ class CollectionMetaDataTest(TestCase):
 
         self.assertEqual(resp.status_code, 200)
 
-        image1 = Image.objects.get(id=self.image1.id)
+        image1 = Item.objects.get(id=self.image1.id)
 
         self.assertEqual(image1.data, {"Sex": "1", "Subject ID": "12"})
 
@@ -282,7 +278,7 @@ class CollectionMetaDataTest(TestCase):
             image1.cognitive_paradigm_cogatlas.name, cognitive_paradigms[0]
         )
 
-        image2 = Image.objects.get(id=self.image2.id)
+        image2 = Item.objects.get(id=self.image2.id)
 
         self.assertEqual(
             image2.cognitive_paradigm_cogatlas.name, cognitive_paradigms[1]
@@ -305,10 +301,10 @@ class CollectionMetaDataTest(TestCase):
 
         self.assertEqual(resp.status_code, 200)
 
-        image1 = Image.objects.get(id=self.image1.id)
+        image1 = Item.objects.get(id=self.image1.id)
         self.assertIsNone(image1.age)
 
-        image2 = Image.objects.get(id=self.image2.id)
+        image2 = Item.objects.get(id=self.image2.id)
         self.assertIsNone(image2.age)
 
     def test_metadata_for_files_missing_in_the_collection(self):
@@ -423,7 +419,8 @@ class DownloadCollectionsTest(TestCase):
         self.client.login(username=self.user)
         self.Collection1 = Collection(name="Collection1", owner=self.user)
         persist(self.Collection1)
-        self.unorderedAtlas = Atlas(
+        self.unorderedAtlas = Item(
+            kind=Item.ATLAS,
             name="unorderedAtlas", description="", collection=self.Collection1
         )
         self.unorderedAtlas.file = SimpleUploadedFile(

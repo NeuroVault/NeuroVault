@@ -160,11 +160,11 @@ class NIDMResultsTest(TestCase):
             nidm = form.save()
 
             self.assertEqual(
-                len(nidm.nidmresultstatisticmap_set.all()), info["num_statmaps"]
+                len(nidm.statmaps.all()), info["num_statmaps"]
             )
 
             map_type = info["output_row"]["type"][0]
-            map_imgs = nidm.nidmresultstatisticmap_set.filter(map_type=map_type).all()
+            map_imgs = nidm.statmaps.filter(map_type=map_type).all()
 
             self.assertTrue(info["output_row"]["name"] in [m.name for m in map_imgs])
 

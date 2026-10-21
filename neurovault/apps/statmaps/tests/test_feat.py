@@ -123,7 +123,7 @@ class FeatDirectoryTest(TestCase):
             self.assertEqual(form.errors, {})
             nidm = form.save()
 
-            statmaps = nidm.nidmresultstatisticmap_set.all()
+            statmaps = nidm.statmaps.all()
             self.assertEqual(len(statmaps), info["num_statmaps"])
 
             map_types = [v.map_type for v in statmaps]

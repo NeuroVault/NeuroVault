@@ -9,7 +9,7 @@ from django.db.models import Model
 from django.core.exceptions import FieldDoesNotExist
 from django.db.models.fields.related import ForeignKey
 
-from .models import StatisticMap, Image
+from .models import Item
 from neurovault.bootstrap import services
 
 
@@ -150,7 +150,7 @@ def save_metadata(actor, collection, metadata):
     metadata_list = convert_to_list(metadata)
     metadata_dict = list_to_dict(metadata_list, key=lambda x: x["Filename"])
 
-    image_obj_list = collection.basecollectionitem_set.instance_of(Image).all()
+    image_obj_list = collection.items.all()
     image_obj_dict = list_to_dict(image_obj_list, key=file_basename)
 
     pairs = pair_data_and_objects(metadata_dict, image_obj_dict)
@@ -228,7 +228,7 @@ def get_data_headers(image_obj_list):
     def to_extra_field_header(header):
         return {"name": header}
 
-    fixed_field_headers = list(map(to_fixed_header, get_fixed_fields(StatisticMap)))
+    fixed_field_headers = list(map(to_fixed_header, get_fixed_fields(Item)))
 
     extra_field_headers = list(map(to_extra_field_header, metadata_keys))
 
@@ -237,7 +237,7 @@ def get_data_headers(image_obj_list):
 
 def get_images_metadata(image_obj_list):
     metadata_keys = list(get_all_metadata_keys(image_obj_list))
-    fixed_fields = get_fixed_fields(StatisticMap)
+    fixed_fields = get_fixed_fields(Item)
 
     def serialize(obj, field):
         value = getattr(obj, field)
@@ -265,5 +265,5 @@ def get_images_metadata(image_obj_list):
 def get_images_filenames(collection):
     return [
         os.path.basename(image.file.name)
-        for image in collection.basecollection_set.instance_of(Image).all()
+        for image in collection.items.all()
     ]

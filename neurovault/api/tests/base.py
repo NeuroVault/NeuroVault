@@ -7,11 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import test as rest_framework_test
 from rest_framework import status
 
-from neurovault.apps.statmaps.models import (
-    Collection,
-    CognitiveAtlasTask,
-    CognitiveAtlasContrast,
-)
+from neurovault.apps.statmaps.models import Collection, CognitiveAtlasTask, CognitiveAtlasContrast
 from neurovault.apps.statmaps.tests.utils import clearDB
 from neurovault.api.tests.utils import _setup_test_cognitive_atlas
 from neurovault.apps.statmaps.tests.utils import persist

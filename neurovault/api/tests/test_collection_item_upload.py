@@ -5,13 +5,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 
 from rest_framework import status
 
-from neurovault.apps.statmaps.models import (
-    Collection,
-    StatisticMap,
-    NIDMResults,
-    CognitiveAtlasTask,
-    CognitiveAtlasContrast,
-)
+from neurovault.apps.statmaps.models import Collection, Item, NIDMBundle, CognitiveAtlasTask, CognitiveAtlasContrast
 
 from neurovault.apps.statmaps.tests.utils import clearDB
 from neurovault.apps.statmaps.tests.test_nidm import NIDM_TEST_FILES
@@ -59,7 +53,7 @@ class TestCollectionItemUpload(APITestCase):
         for key in ("name", "modality"):
             self.assertEqual(response.data[key], post_dict[key])
 
-        statmap = StatisticMap.objects.get(pk=response.data["id"])
+        statmap = Item.objects.get(pk=response.data["id"])
         self.assertEqual(
             statmap.cognitive_paradigm_cogatlas.name, "action observation task"
         )
@@ -104,7 +98,7 @@ class TestCollectionItemUpload(APITestCase):
 
         self.assertEqual(response.data["custom_metadata_numeric_field"], 42)
 
-        statmap = StatisticMap.objects.get(pk=response.data["id"])
+        statmap = Item.objects.get(pk=response.data["id"])
         self.assertEqual(statmap.map_type, "T")
         self.assertEqual(statmap.data["custom_metadata_numeric_field"], "42")
         self.assertEqual(statmap.data["custom_metadata_string_field"], "forty two")
@@ -128,7 +122,7 @@ class TestCollectionItemUpload(APITestCase):
 
         self.assertEqual(response.data["data"], 42)
 
-        statmap = StatisticMap.objects.get(pk=response.data["id"])
+        statmap = Item.objects.get(pk=response.data["id"])
         self.assertEqual(statmap.data["data"], "42")
 
     def test_upload_atlas(self):
@@ -179,13 +173,13 @@ class TestCollectionItemUpload(APITestCase):
         self.assertRegex(response.data["zip_file"], r"\.nidm\.zip$")
         self.assertRegex(response.data["url"], r"\.nidm$")
 
-        nidm = NIDMResults.objects.get(pk=response.data["id"])
+        nidm = NIDMBundle.objects.get(pk=response.data["id"])
         self.assertEqual(
-            len(nidm.nidmresultstatisticmap_set.all()), data["num_statmaps"]
+            len(nidm.statmaps.all()), data["num_statmaps"]
         )
 
         map_type = data["output_row"]["type"][0]
-        map_imgs = nidm.nidmresultstatisticmap_set.filter(map_type=map_type).all()
+        map_imgs = nidm.statmaps.filter(map_type=map_type).all()
 
         self.assertTrue(data["output_row"]["name"] in [m.name for m in map_imgs])
 

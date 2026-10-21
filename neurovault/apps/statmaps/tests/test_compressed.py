@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.test import TestCase, Client
 from zipfile import ZipFile
 
-from neurovault.apps.statmaps.models import User, Collection, Image
+from neurovault.apps.statmaps.models import User, Collection, Item
 from .utils import clearDB
 from neurovault.apps.statmaps.tests.utils import persist
 
@@ -61,7 +61,7 @@ class UploadFolderTestCase(TestCase):
             )
         # Assert that self.post is actually returned by the post_detail view
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(self.coll.basecollectionitem_set.instance_of(Image).count(), 4)
+        self.assertEqual(self.coll.items.count(), 4)
 
     def test_upload_tar_gz(self):
         with open(os.path.join(self.tmpdir, "example.tar.gz"), "rb") as fp:
@@ -73,7 +73,7 @@ class UploadFolderTestCase(TestCase):
             )
         # Assert that self.post is actually returned by the post_detail view
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(self.coll.basecollectionitem_set.instance_of(Image).count(), 4)
+        self.assertEqual(self.coll.items.count(), 4)
 
     def test_upload_handles_plain_and_gz_extensions(self):
         test_path = os.path.abspath(os.path.dirname(__file__))
@@ -98,7 +98,7 @@ class UploadFolderTestCase(TestCase):
 
         self.assertEqual(response.status_code, 302)
 
-        images = list(self.coll.basecollectionitem_set.instance_of(Image))
+        images = list(self.coll.items.all())
         self.assertEqual(len(images), 2)
 
         for image in images:

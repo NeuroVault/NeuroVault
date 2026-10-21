@@ -1,11 +1,11 @@
 from django.contrib.sitemaps import Sitemap
-from django.db.models.aggregates import Count
+
+from django.db.models import Q
 
 from neurovault.apps.statmaps.models import (
-    Image,
+    Item,
     Collection,
     CognitiveAtlasTask,
-    StatisticMap,
 )
 
 
@@ -24,7 +24,7 @@ class ImageSitemap(BaseSitemap):
     changefreq = "weekly"
 
     def items(self):
-        return Image.objects.filter(collection__private=False)
+        return Item.objects.filter(collection__private=False)
 
 
 class CollectionSitemap(BaseSitemap):
@@ -34,8 +34,8 @@ class CollectionSitemap(BaseSitemap):
     def items(self):
         return (
             Collection.objects.filter(private=False)
-            .annotate(num_submissions=Count("basecollectionitem"))
-            .filter(num_submissions__gt=0)
+            .filter(Q(items__isnull=False) | Q(nidm_bundles__isnull=False))
+            .distinct()
         )
 
 
@@ -45,7 +45,7 @@ class CognitiveAtlasTaskSitemap(Sitemap):
 
     def items(self):
         task_ids = (
-            StatisticMap.objects.filter(collection__private=False)
+            Item.objects.statmaps().filter(collection__private=False)
             .values_list("cognitive_paradigm_cogatlas", flat=True)
             .distinct()
         )

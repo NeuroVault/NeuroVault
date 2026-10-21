@@ -178,7 +178,7 @@ allowed to bypass the use cases.
 
 Two tables replace six:
 
-**`statmaps_item`** (images): every column of `basecollectionitem` + `image`, the 8
+**`statmaps_item`** (images; ORM model `Item`): every column of `basecollectionitem` + `image`, the 8
 `BaseStatisticMap` columns, the 11 `StatisticMap` columns, `atlas.label_description_file`,
 and:
 
@@ -190,12 +190,15 @@ CheckConstraints:
 - `kind<>'statmap'` ⇒ the statmap and paradigm columns are null
 - `source_bundle_id` is not null ⇒ `kind='statmap'` and the paradigm columns are null
 
-**`statmaps_nidmbundle`**: `basecollectionitem` columns + `zip_file`, `ttl_file`.
+**`statmaps_nidmbundle`** (ORM model `NIDMBundle`): `basecollectionitem` columns + `zip_file`, `ttl_file`.
 
 Ids: each row keeps its `basecollectionitem.id`. URLs, API ids, `Comparison.image1/2`,
 `Metaanalysis.maps` and on-disk paths stay valid. Both new sequences start at
-`max(basecollectionitem.id) + 1`, so ids stay unique across the two tables and no
-new id collides with an old URL.
+`max(basecollectionitem.id) + 1`, so no new id reuses an old one. After that, ids are
+unique within each table only: an image and a bundle created later can share a
+number. Nothing needs a shared id space: images and bundles have separate URLs
+and API endpoints, tags are keyed by content type, and per-item permissions are
+gone.
 
 Foreign keys re-pointed: `Comparison.image1/2` → `statmaps_item`;
 `Metaanalysis.maps` → `statmaps_item` (the use case enforces

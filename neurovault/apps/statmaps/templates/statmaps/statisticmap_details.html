@@ -136,8 +136,8 @@ $(document).ready(function(){
                 {% endfor %}
             </p>
         {% endif %}
-        {% if image.nidm_results %}
-            <p><b>Source</b>: <a href="{{ image.nidm_results.get_absolute_url }}">{{ image.nidm_results.name }}.zip</a></p>
+        {% if image.source_bundle %}
+            <p><b>Source</b>: <a href="{{ image.source_bundle.get_absolute_url }}">{{ image.source_bundle.name }}.zip</a></p>
         {% endif %}
         {% if image.description %}
             <p><b>Description</b>: {{ image.description }}</p>
@@ -156,19 +156,19 @@ $(document).ready(function(){
         {% if image.data_origin == "volume" and pycortex_compatible %}
             <a class="btn btn-primary" href="pycortex">3D View</a>
         {% endif %}
-        {% if image.nidm_results %}
+        {% if image.source_bundle %}
             <div class="btn-group" role="group">
                 <button id="btnGroupDropDownloads" type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     Download
                 </button>
                 <div class="dropdown-menu" aria-labelledby="btnGroupDropDownloads">
-                    <a class="dropdown-item" href="{{ image.nidm_results.zip_file.url }}"}>
+                    <a class="dropdown-item" href="{{ image.source_bundle.zip_file.url }}"}>
                             NIDM Results
                     </a>
                     <a class="dropdown-item" href="{{ image.file.url }}"}>
                             Statistical Map
                     </a>
-                    <a class="dropdown-item" href="{{ image.nidm_results.ttl_file.url }}"}>
+                    <a class="dropdown-item" href="{{ image.source_bundle.ttl_file.url }}"}>
                             Turtle File
                     </a>
                 </div>
@@ -224,7 +224,7 @@ $(document).ready(function(){
 
         {% if user_owns_image %}
             <a class="btn btn-primary" href="{% url 'statmaps:edit_image' image.id %}">Edit details</a>
-            {% if not image.nidm_results %}
+            {% if not image.source_bundle %}
                 <a class="btn btn-danger" href="{% url 'statmaps:delete_image' image.id %}" id="delete_image">Delete</a>
             {% endif %}
         {% endif %}

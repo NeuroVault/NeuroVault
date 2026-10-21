@@ -1,6 +1,6 @@
 from django.test import TestCase, Client, override_settings, RequestFactory
 from django.urls import reverse
-from neurovault.apps.statmaps.models import Collection, User, Atlas, Image
+from neurovault.apps.statmaps.models import Collection, User, Item
 from django.core.files.uploadedfile import SimpleUploadedFile
 from uuid import uuid4
 import tempfile
@@ -36,7 +36,8 @@ class MoveImageTest(TestCase):
         clearDB()
 
     def testCollectionSharing(self):
-        self.unorderedAtlas = Atlas(
+        self.unorderedAtlas = Item(
+            kind=Item.ATLAS,
             name="unorderedAtlas", description="", collection=self.coll1
         )
         self.unorderedAtlas.file = SimpleUploadedFile(
@@ -61,7 +62,7 @@ class MoveImageTest(TestCase):
         )
         persist(self.unorderedAtlas)
 
-        self.unorderedAtlas = Image.objects.get(id=self.unorderedAtlas.id)
+        self.unorderedAtlas = Item.objects.get(id=self.unorderedAtlas.id)
         print(self.unorderedAtlas.file.path)
         self.assertTrue(os.path.exists(self.unorderedAtlas.file.path))
         self.assertTrue(os.path.exists(self.unorderedAtlas.label_description_file.path))
@@ -74,14 +75,14 @@ class MoveImageTest(TestCase):
         self.assertFalse(os.path.exists(old_path))
 
         # check if new files exist
-        self.unorderedAtlas = Image.objects.get(id=self.unorderedAtlas.id)
+        self.unorderedAtlas = Item.objects.get(id=self.unorderedAtlas.id)
         self.assertTrue(os.path.exists(self.unorderedAtlas.file.path))
         self.assertTrue(os.path.exists(self.unorderedAtlas.label_description_file.path))
         self.assertTrue(os.path.exists(self.unorderedAtlas.thumbnail.path))
 
         self.coll1.delete()
 
-        self.unorderedAtlas = Image.objects.get(id=self.unorderedAtlas.id)
+        self.unorderedAtlas = Item.objects.get(id=self.unorderedAtlas.id)
         print(self.unorderedAtlas.file.path)
         self.assertTrue(os.path.exists(self.unorderedAtlas.file.path))
         self.assertTrue(os.path.exists(self.unorderedAtlas.label_description_file.path))

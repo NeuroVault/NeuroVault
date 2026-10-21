@@ -116,20 +116,21 @@ class GoldenResponses(APITestCase):
     def _id_maps(self):
         collections = {self.coll.pk: "COLLECTION", self.private.pk: "PRIVATE_COLLECTION"}
         users = {self.user.pk: "USER", self.other.pk: "OTHER_USER"}
-        items = {}
+        items, bundles = {}, {}
         for attr, label in (
             ("statmap", "STATMAP"),
             ("atlas", "ATLAS"),
-            ("bundle", "BUNDLE"),
             ("private_statmap", "PRIVATE_STATMAP"),
         ):
             if hasattr(self, attr):
                 items[getattr(self, attr)["id"]] = label
+        if hasattr(self, "bundle"):
+            bundles[self.bundle["id"]] = "BUNDLE"
         for i, s in enumerate(getattr(self, "bundle_statmaps", [])):
             items[s["id"]] = "NIDM_STATMAP_%d" % i
         for extra in getattr(self, "extra_collections", []):
             collections[extra] = "EXTRA_COLLECTION"
-        return {"collection": collections, "user": users, "item": items}
+        return {"collection": collections, "user": users, "item": items, "bundle": bundles}
 
     @staticmethod
     def _label(table, n):
@@ -140,6 +141,8 @@ class GoldenResponses(APITestCase):
             return "user"
         if "owner_name" in d or "number_of_images" in d:
             return "collection"
+        if "zip_file" in d:
+            return "bundle"
         return "item"
 
     def _normalize(self, value, maps, key=None, context="item"):
@@ -166,7 +169,7 @@ class GoldenResponses(APITestCase):
             if key == "owner":
                 return self._label(maps["user"], value)
             if key == "nidm_results":
-                return self._label(maps["item"], value)
+                return self._label(maps["bundle"], value)
             return value
         if isinstance(value, str):
             value = DATETIME.sub("<DATETIME>", value)

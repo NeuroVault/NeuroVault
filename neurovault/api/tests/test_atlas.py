@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 from django.contrib.auth.models import User
 from rest_framework import status
 
-from neurovault.apps.statmaps.models import Atlas
+from neurovault.apps.statmaps.models import Item
 from neurovault.api.tests.utils import _setup_test_cognitive_atlas
 from neurovault.apps.statmaps.tests.utils import (
     clearDB,
@@ -212,4 +212,4 @@ class TestAtlasChange(BaseTestCases.TestCollectionItemChange):
         self.assertEqual(response.data["name"], put_dict["name"])
 
     def test_atlas_destroy(self):
-        self._test_collection_item_destroy(Atlas)
+        self._test_collection_item_destroy(Item)

@@ -6,21 +6,17 @@ from django.db.models.fields.files import FieldFile
 
 from neurovault.application.ports import SYSTEM
 from neurovault.apps.statmaps.forms import StatisticMapForm, AtlasForm, NIDMResultsForm, image_changes
-from neurovault.apps.statmaps.models import Atlas, Collection, Image, CognitiveAtlasTask, StatisticMap
+from neurovault.apps.statmaps.models import Item, Collection, CognitiveAtlasTask
 from neurovault.bootstrap import services
 from neurovault.settings import PRIVATE_MEDIA_ROOT
 
 COLLECTION_SKIP = ("id", "owner", "add_date", "modify_date", "doi_add_date")
-ITEM_SKIP = ("id", "basecollectionitem_ptr", "image_ptr", "polymorphic_ctype", "collection",
-             "add_date", "modify_date")
-KINDS = {StatisticMap: "statmap", Atlas: "atlas"}
+ITEM_SKIP = ("id", "kind", "collection", "add_date", "modify_date")
 
 
 def clearDB():
     """Remove stored files. The database is rolled back by TestCase.
 
-    (Deleting a mixed polymorphic Image queryset could leave orphaned child
-    rows behind, depending on row order.)
     """
     if os.path.exists(PRIVATE_MEDIA_ROOT):
         for the_file in os.listdir(PRIVATE_MEDIA_ROOT):
@@ -35,7 +31,7 @@ def clearDB():
 
 
 def persist(obj):
-    """Store an unsaved Collection, StatisticMap or Atlas built in a test through the use cases.
+    """Store an unsaved Collection or Item built in a test through the use cases.
 
     The object's primary key is set and its fields are refreshed, so the test
     can keep using it.
@@ -48,9 +44,12 @@ def persist(obj):
         }
         new_id = services().collections.save(SYSTEM, None, changes, owner_id=obj.owner_id)
     else:
+        from neurovault.domain.items import column_names
+
+        allowed = column_names(obj.kind, from_nidm=obj.source_bundle_id is not None)
         changes, files = {}, {}
         for f in obj._meta.concrete_fields:
-            if f.name in ITEM_SKIP:
+            if f.name in ITEM_SKIP or (f.attname not in allowed and f.name not in allowed):
                 continue
             value = getattr(obj, f.attname)
             if isinstance(value, FieldFile):
@@ -61,7 +60,7 @@ def persist(obj):
         from neurovault.application.services.items import ImageFilesInput
 
         new_id = services().items.add(
-            SYSTEM, obj.collection_id, KINDS[type(obj)], changes, ImageFilesInput(**files),
+            SYSTEM, obj.collection_id, obj.kind, changes, ImageFilesInput(**files),
             check_access=False,
         )
     obj.pk = new_id
@@ -81,7 +80,7 @@ def save_image_form(form, collection, kind):
     changes.pop("collection_id", None)
     new_id = services().items.add(SYSTEM, collection.pk, kind, changes, files, tags=tags,
                                   check_access=False)
-    return Image.objects.get(pk=new_id)
+    return Item.objects.get(pk=new_id)
 
 
 def save_statmap_form(

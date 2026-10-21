@@ -29,13 +29,9 @@ from urllib.parse import urlencode
 
 from .models import (
     Collection,
-    Image,
+    Item,
     User,
-    StatisticMap,
-    BaseStatisticMap,
-    Atlas,
-    NIDMResults,
-    NIDMResultStatisticMap,
+    NIDMBundle,
     Metaanalysis,
 )
 
@@ -436,7 +432,7 @@ def image_changes(form):
     model_fields = {f.name: f for f in form.instance._meta.concrete_fields}
     for name in form.fields:
         field = model_fields.get(name)
-        if field is None or name in ("polymorphic_ctype", "nidm_results"):
+        if field is None or name in ("kind", "source_bundle"):
             continue
         value = getattr(form.instance, field.attname)
         if isinstance(value, FieldFile):
@@ -456,8 +452,8 @@ class ImageForm(ModelForm):
     )
 
     class Meta:
-        model = Image
-        exclude = []
+        model = Item
+        exclude = ["kind"]
         widgets = {
             "file": AdminResubmitFileWidget,
             "hdr_file": AdminResubmitFileWidget,
@@ -521,7 +517,7 @@ class StatisticMapForm(ImageForm):
         label="Cognitive Task"
     )
     class Meta(ImageForm.Meta):
-        model = StatisticMap
+        model = Item
 
         fields = [
             "file",
@@ -744,7 +740,7 @@ class EditStatisticMapForm(StatisticMapForm):
 
 class AtlasForm(ImageForm):
     class Meta(ImageForm.Meta):
-        model = Atlas
+        model = Item
         fields = (
             "name",
             "description",
@@ -757,6 +753,7 @@ class AtlasForm(ImageForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["label_description_file"].required = True
 
         self.helper.layout = Layout(
             "name",
@@ -957,14 +954,14 @@ class PathOnlyWidget(forms.Widget):
 
 class MapTypeListWidget(forms.Widget):
     def render(self, name, value, attrs=None, renderer=None):
-        map_type = [v for k, v in BaseStatisticMap.MAP_TYPE_CHOICES if k == value].pop()
+        map_type = [v for k, v in Item.MAP_TYPE_CHOICES if k == value].pop()
         input = '<input type="hidden" name="%s" value="%s" />' % (name, value)
         return mark_safe("%s<strong>%s</strong><br /><br />" % (input, map_type))
 
 
 class NIDMResultsForm(forms.ModelForm):
     class Meta:
-        model = NIDMResults
+        model = NIDMBundle
         widgets = {"is_valid": forms.HiddenInput()}
         exclude = []
 
@@ -1030,7 +1027,7 @@ class NIDMResultsForm(forms.ModelForm):
                 {"description": data.get("description", ""), "name": data["name"]},
                 tags=data.get("tags"), check_access=False,
             ).id
-        self.instance = NIDMResults.objects.get(pk=bundle_id)
+        self.instance = NIDMBundle.objects.get(pk=bundle_id)
         return self.instance
 
     def save_m2m(self):
@@ -1039,7 +1036,7 @@ class NIDMResultsForm(forms.ModelForm):
 
 class NIDMViewForm(forms.ModelForm):
     class Meta:
-        model = NIDMResults
+        model = NIDMBundle
         exclude = ["is_valid"]
 
     def __init__(self, *args, **kwargs):
@@ -1062,7 +1059,7 @@ class NIDMViewForm(forms.ModelForm):
 
 class NIDMResultStatisticMapForm(ImageForm):
     class Meta:
-        model = NIDMResultStatisticMap
+        model = Item
         fields = (
             "name",
             "collection",
@@ -1071,7 +1068,7 @@ class NIDMResultStatisticMapForm(ImageForm):
             "figure",
             "file",
             "tags",
-            "nidm_results",
+            "source_bundle",
         )
 
     def __init__(self, *args, **kwargs):
@@ -1086,8 +1083,8 @@ class NIDMResultStatisticMapForm(ImageForm):
             # 'disabled' causes the values to not be sent in the POST (?)
             #   self.fields[fld].widget.attrs['disabled'] = 'disabled'
 
-            if self.fields.get("nidm_results"):
-                self.fields["nidm_results"].widget = HiddenInput()
+            if self.fields.get("source_bundle"):
+                self.fields["source_bundle"].widget = HiddenInput()
             self.fields["map_type"].widget = MapTypeListWidget()
             self.fields["file"].widget = PathOnlyWidget()
 

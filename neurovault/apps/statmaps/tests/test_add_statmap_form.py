@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.test import TestCase, Client
 
 from neurovault.apps.statmaps.forms import StatisticMapForm
-from neurovault.apps.statmaps.models import Collection, User, StatisticMap
+from neurovault.apps.statmaps.models import Collection, User, Item
 from neurovault.domain.map_quality import detect_4D
 from neurovault.adapters.neuroimaging.workspace import split_4D_to_3D
 from neurovault.api.tests.utils import _setup_test_cognitive_atlas
@@ -50,7 +50,7 @@ class AddStatmapsTests(TestCase):
         save_image_form(form, self.coll, "statmap")
 
         self.assertEqual(
-            StatisticMap.objects.filter(collection=self.coll.pk)[0].name, "test map"
+            Item.objects.filter(collection=self.coll.pk)[0].name, "test map"
         )
 
     @unittest.skip("Not supporting AFNI file uploads")
@@ -82,7 +82,7 @@ class AddStatmapsTests(TestCase):
         save_image_form(form, self.coll, "statmap")
 
         self.assertEqual(
-            StatisticMap.objects.filter(collection=self.coll.pk).count(), 2
+            Item.objects.filter(collection=self.coll.pk).count(), 2
         )
 
     @unittest.skip("Not supporting separate hdr/img files")
@@ -133,5 +133,5 @@ class AddStatmapsTests(TestCase):
         save_image_form(form, self.coll, "statmap")
 
         self.assertEqual(
-            StatisticMap.objects.filter(collection=self.coll.pk)[0].name, "test map"
+            Item.objects.filter(collection=self.coll.pk)[0].name, "test map"
         )

@@ -55,14 +55,10 @@ from neurovault.apps.statmaps.forms import (
 )
 from neurovault.apps.statmaps.models import (
     Collection,
-    Image,
-    Atlas,
-    StatisticMap,
-    NIDMResults,
-    NIDMResultStatisticMap,
+    Item,
+    NIDMBundle,
     CognitiveAtlasTask,
     CognitiveAtlasContrast,
-    BaseStatisticMap,
     DEFAULT_TEMPLATE,
     Metaanalysis,
 )
@@ -145,7 +141,7 @@ def get_image(pk, collection_cid, request, mode=None):
     :param pk: statmaps.models.Image.pk the primary key of the image
     :param collection_cid: the primary key of the image collection
     """
-    image = get_object_or_404(Image, pk=pk)
+    image = get_object_or_404(Item, pk=pk)
     if image.collection.private and image.collection.private_token != collection_cid:
         if owner_or_contrib(request, image.collection):
             if mode == "api":
@@ -289,7 +285,7 @@ def choice_datasources(model):
 
 
 def get_field_datasources():
-    ds = choice_datasources(StatisticMap)
+    ds = choice_datasources(Item)
     ds["cognitive_paradigm_cogatlas"] = [
         x.name for x in (CognitiveAtlasTask.objects.all())
     ]
@@ -329,9 +325,7 @@ def edit_metadata(request, collection_cid):
             )
         )
 
-    collection_images = collection.basecollectionitem_set.instance_of(Image).order_by(
-        "pk"
-    )
+    collection_images = collection.items.order_by("pk")
     data_headers = image_metadata.get_data_headers(collection_images)
     metadata = image_metadata.get_images_metadata(collection_images)
     datasources = get_field_datasources()
@@ -399,7 +393,8 @@ def view_image(request, pk, collection_cid=None):
         != 0
     )
     is_metaanalysis_compatible = (
-        isinstance(image, StatisticMap)
+        image.kind == Item.STATMAP
+        and image.source_bundle_id is None
         and image.analysis_level == "G"
         and image.map_type in ["T", "Z"]
     )
@@ -435,11 +430,11 @@ def view_image(request, pk, collection_cid=None):
     communities = image.collection.communities.all()
     add_communities_context(communities, context)
 
-    if isinstance(image, NIDMResultStatisticMap):
+    if image.source_bundle_id is not None:
         context["img_basename"] = os.path.basename(image.file.url)
-        context["ttl_basename"] = os.path.basename(image.nidm_results.ttl_file.url)
+        context["ttl_basename"] = os.path.basename(image.source_bundle.ttl_file.url)
 
-    if isinstance(image, Atlas):
+    if image.kind == Item.ATLAS:
         template = "statmaps/atlas_details.html"
     else:
         if np.isnan(image.perc_bad_voxels) or np.isnan(image.perc_voxels_outside):
@@ -487,11 +482,11 @@ def view_collection(request, cid):
     collection = get_collection(cid, request)
     edit_permission = request.user.has_perm("statmaps.change_collection", collection)
     delete_permission = request.user.has_perm("statmaps.delete_collection", collection)
-    is_empty = not collection.basecollectionitem_set.exists()
+    is_empty = collection.item_count() == 0
     pycortex_compatible = all(
         [
             is_target_template_image_pycortex_compatible(image.target_template_image)
-            for image in collection.basecollectionitem_set.instance_of(Image)
+            for image in collection.items.all()
         ]
     )
 
@@ -510,12 +505,14 @@ def view_collection(request, cid):
         context[i] = False
 
     context["oimages_title"] = "Other"
-    if collection.basecollectionitem_set.not_instance_of(StatisticMap).count() > 0:
+    if collection.nidm_bundles.exists() or collection.items.exclude(
+        kind=Item.STATMAP, source_bundle__isnull=True
+    ).exists():
         context["images_visible"] = True
     else:
         context["images_visible"] = False
         if (
-            StatisticMap.objects.filter(collection=collection)
+            Item.objects.statmaps().filter(collection=collection)
             .filter(analysis_level="G")
             .count()
             > 0
@@ -524,7 +521,7 @@ def view_collection(request, cid):
             context["gimages_active"] = True
 
         if (
-            StatisticMap.objects.filter(collection=collection)
+            Item.objects.statmaps().filter(collection=collection)
             .filter(analysis_level="S")
             .count()
             > 0
@@ -534,13 +531,13 @@ def view_collection(request, cid):
                 context["simages_active"] = True
 
         if (
-            StatisticMap.objects.filter(collection=collection)
+            Item.objects.statmaps().filter(collection=collection)
             .filter(~Q(analysis_level__in=["G", "S"]))
             .count()
             > 0
         ):
             if (
-                StatisticMap.objects.filter(collection=collection)
+                Item.objects.statmaps().filter(collection=collection)
                 .filter(~Q(analysis_level__in=["G", "S"]))
                 .filter(is_valid=False)
                 .count()
@@ -556,9 +553,7 @@ def view_collection(request, cid):
     add_communities_context(communities, context)
 
     if not all(
-        collection.basecollectionitem_set.instance_of(StatisticMap).values_list(
-            "is_valid", flat=True
-        )
+        collection.items.statmaps().values_list("is_valid", flat=True)
     ):
         msg = "Some of the images in this collection are missing crucial metadata."
         if owner_or_contrib(request, collection):
@@ -566,7 +561,10 @@ def view_collection(request, cid):
         messages.warning(request, msg)
 
     if not is_empty:
-        context["first_image"] = collection.basecollectionitem_set.order_by("pk")[0]
+        first_items = [
+            qs.order_by("pk").first() for qs in (collection.items.all(), collection.nidm_bundles.all())
+        ]
+        context["first_image"] = min((i for i in first_items if i is not None), key=lambda i: i.pk)
 
     if owner_or_contrib(request, collection):
         form = UploadFileForm()
@@ -584,9 +582,7 @@ def delete_collection(request, cid):
 
 
 def _get_sibling_images(current_image):
-    collection_images = current_image.collection.basecollectionitem_set.instance_of(
-        Image
-    )
+    collection_images = current_image.collection.items.all()
     image_ids = sorted(list(collection_images.values_list("id", flat=True)))
     current_index = image_ids.index(current_image.id)
 
@@ -621,8 +617,8 @@ def _serialize_collection(collection_images):
         data = {field: getattr(img, field, "") for field in base_fields}
         data["last_edited"] = img.modify_date.strftime('%Y-%m-%d %H:%M:%S') if img.modify_date != img.add_date else None
 
-        # If it's a StatisticMap, copy the statmap-specific fields.
-        if isinstance(img, StatisticMap):
+        # If it's an uploaded statistic map, copy the statmap-specific fields.
+        if img.kind == Item.STATMAP and img.source_bundle_id is None:
             for field in statmap_fields:
                 data[field] = getattr(img, field, "") or ""
             data["cognitive_atlas_paradigm"] = getattr(img.cognitive_paradigm_cogatlas, "cog_atlas_id", None)
@@ -645,11 +641,11 @@ def _get_form_for_image(image):
     Return the appropriate form class (and extra kwargs if needed)
     based on the image's model class.
     """
-    if isinstance(image, StatisticMap):
+    if image.kind == Item.STATMAP and image.source_bundle_id is None:
         return EditStatisticMapForm
-    elif isinstance(image, Atlas):
+    elif image.kind == Item.ATLAS:
         return EditAtlasForm
-    elif isinstance(image, NIDMResultStatisticMap):
+    elif image.kind == Item.STATMAP:
         return EditNIDMResultStatisticMapForm
     else:
         raise Exception("Unsupported image type.")
@@ -671,7 +667,7 @@ def _compute_progress(min_image, max_image):
     Compute the progress of images being processed based on is_valid attribute
     Potential progress is computed by assuming the next image is valid.
     """
-    images = Image.objects.filter(pk__gte=min_image, pk__lte=max_image)
+    images = Item.objects.filter(pk__gte=min_image, pk__lte=max_image)
     total_images = images.count()
     valid_images = images.filter(is_valid=True).count()
     progress = int((valid_images / total_images) * 100) if total_images > 0 else 0
@@ -681,7 +677,7 @@ def _compute_progress(min_image, max_image):
 
 @login_required
 def edit_image(request, pk):
-    image = get_object_or_404(Image, pk=pk)
+    image = get_object_or_404(Item, pk=pk)
 
     show_instructions = request.GET.get("show_instructions") == "True"
 
@@ -698,8 +694,7 @@ def edit_image(request, pk):
         progress, label, potential_progress = None, None, None
 
     collection_images_qs = (
-        image.collection.basecollectionitem_set
-        .instance_of(Image)
+        image.collection.items
         .exclude(pk=image.pk)
     )
 
@@ -734,7 +729,7 @@ def edit_image(request, pk):
         else:
             print(form.errors)
     else:
-        if isinstance(image, StatisticMap) and kw_params["bulk"] and not image.is_valid:
+        if image.kind == Item.STATMAP and kw_params["bulk"] and not image.is_valid:
             image.name = ""
             image.map_type = None
 
@@ -759,7 +754,7 @@ def view_nidm_results(request, collection_cid, nidm_name):
 @login_required
 def delete_nidm_results(request, collection_cid, nidm_name):
     collection = get_collection(collection_cid, request)
-    nidmr = get_object_or_404(NIDMResults, collection=collection, name=nidm_name)
+    nidmr = get_object_or_404(NIDMBundle, collection=collection, name=nidm_name)
 
     try:
         services().bundles.delete(actor(request), nidmr.pk)
@@ -787,7 +782,7 @@ def view_task(request, cog_atlas_id=None):
         return search(request, error_message="Invalid search for Cognitive Atlas.")
 
     if task:
-        images = StatisticMap.objects.filter(
+        images = Item.objects.statmaps().filter(
             cognitive_paradigm_cogatlas=cog_atlas_id, collection__private=False
         ).order_by("pk")
 
@@ -820,7 +815,7 @@ def add_image_redirect(request, formclass, redirect_url, is_private, preamble):
     temp_collection = Collection.objects.get(
         pk=services().collections.temporary_for(request.user.pk, request.user.username, is_private)
     )
-    image = StatisticMap(collection=temp_collection)
+    image = Item(kind=Item.STATMAP, collection=temp_collection)
     if request.method == "POST":
         form = formclass(request.POST, request.FILES, instance=image, user=request.user)
         if form.is_valid():
@@ -919,7 +914,7 @@ def upload_folder(request, collection_cid):
             )
         return HttpResponseRedirect(collection.get_absolute_url())
 
-    first = Image.objects.get(pk=result.item_ids[0])
+    first = Item.objects.get(pk=result.item_ids[0])
     params = {
         "bulk": True,
         "show_instructions": True,
@@ -934,7 +929,7 @@ def upload_folder(request, collection_cid):
 
 @login_required
 def delete_image(request, pk):
-    image = get_object_or_404(Image, pk=pk)
+    image = get_object_or_404(Item, pk=pk)
     cid = image.collection.pk
     try:
         services().items.delete(actor(request), image.pk)
@@ -945,11 +940,11 @@ def delete_image(request, pk):
 
 def view_images_by_tag(request, tag):
     if request.user.is_authenticated:
-        images = Image.objects.filter(tags__name__in=[tag]).filter(
+        images = Item.objects.filter(tags__name__in=[tag]).filter(
             Q(collection__private=False) | Q(collection__owner=request.user)
         )
     else:
-        images = Image.objects.filter(tags__name__in=[tag]).filter(
+        images = Item.objects.filter(tags__name__in=[tag]).filter(
             collection__private=False
         )
     context = {"images": images, "tag": tag}
@@ -973,7 +968,7 @@ def view_image_with_pycortex(request, pk, collection_cid=None):
 def view_collection_with_pycortex(request, cid):
     volumes = {}
     collection = get_collection(cid, request, mode="file")
-    images = collection.basecollectionitem_set.instance_of(Image)
+    images = collection.items.all()
 
     if not images:
         return redirect(collection)
@@ -1025,9 +1020,7 @@ def serve_nidm(request, collection_cid, nidmdir, sep, path):
     basepath = os.path.join(settings.PRIVATE_MEDIA_ROOT, "images")
     fpath = path if sep == "/" else "".join([nidmdir, sep, path])
     try:
-        nidmr = collection.basecollectionitem_set.instance_of(NIDMResults).get(
-            name=nidmdir
-        )
+        nidmr = collection.nidm_bundles.get(name=nidmdir)
     except ObjectDoesNotExist:
         return HttpResponseForbidden()
 
@@ -1066,21 +1059,21 @@ def stats_view(request):
     )
 
     non_empty_collections_count = (
-        Collection.objects.annotate(num_submissions=Count("basecollectionitem"))
-        .filter(num_submissions__gt=0)
+        Collection.objects.filter(Q(items__isnull=False) | Q(nidm_bundles__isnull=False))
+        .distinct()
         .count()
     )
     public_collections_count = (
         Collection.objects.filter(private=False)
-        .annotate(num_submissions=Count("basecollectionitem"))
-        .filter(num_submissions__gt=0)
+        .filter(Q(items__isnull=False) | Q(nidm_bundles__isnull=False))
+        .distinct()
         .count()
     )
     public_collections_with_DOIs_count = (
         Collection.objects.filter(private=False)
         .exclude(Q(DOI__isnull=True) | Q(DOI__exact=""))
-        .annotate(num_submissions=Count("basecollectionitem"))
-        .filter(num_submissions__gt=0)
+        .filter(Q(items__isnull=False) | Q(nidm_bundles__isnull=False))
+        .distinct()
         .count()
     )
     context = {
@@ -1122,7 +1115,7 @@ def atlas_query_region(request):
             "error: could not find collection: %s" % collection, status=400
         )
     try:
-        atlas_object = Atlas.objects.filter(name=atlas, collection=collection_object)[0]
+        atlas_object = Item.objects.atlases().filter(name=atlas, collection=collection_object)[0]
         atlas_image = atlas_object.file
         atlas_xml = atlas_object.label_description_file
     except IndexError:
@@ -1176,7 +1169,7 @@ def atlas_query_voxel(request):
             "error: could not find collection: %s" % collection, status=400
         )
     try:
-        atlas_object = Atlas.objects.filter(name=atlas, collection=collection_object)[0]
+        atlas_object = Item.objects.atlases().filter(name=atlas, collection=collection_object)[0]
         atlas_image = atlas_object.file
         atlas_xml = atlas_object.label_description_file
     except IndexError:
@@ -1287,7 +1280,7 @@ class AllDOIPublicGroupImages(BaseDatatableView):
                 .values_list("id", flat=True)
             )
             return (
-                StatisticMap.objects.filter(analysis_level="G")
+                Item.objects.statmaps().filter(analysis_level="G")
                 .filter(map_type__in=["T", "Z"])
                 .filter(collection_id__in=public_collections_ids)
             )
@@ -1308,30 +1301,47 @@ class AllDOIPublicGroupImages(BaseDatatableView):
 
 
 class ImagesInCollectionJson(BaseDatatableView):
-    columns = ["file.url", "pk", "polymorphic_ctype.name", "is_valid"]
-    order_columns = ["", "pk", "polymorphic_ctype.name", ""]
+    """Images and NIDM bundles of a collection (two tables, listed together)."""
+
+    columns = ["file.url", "pk", "type_label", "is_valid"]
+    order_columns = ["", "pk", "kind", ""]
 
     def get_initial_queryset(self):
-        # return queryset used as base for further sorting/filtering
-        # these are simply objects displayed in datatable
-        # You should not filter data returned here by any filter values entered by user. This is because
-        # we need some base queryset to count total number of records.
         collection = get_collection(self.kwargs["cid"], self.request)
-        return collection.basecollectionitem_set.all()
+        return sorted(
+            list(collection.items.all()) + list(collection.nidm_bundles.all()), key=lambda r: r.pk
+        )
+
+    def count_records(self, qs):
+        return len(qs) if isinstance(qs, list) else super().count_records(qs)
+
+    def ordering(self, qs):
+        if not isinstance(qs, list):
+            return super().ordering(qs)
+        keys = {"pk": lambda r: r.pk, "kind": lambda r: r.type_label}
+        for n in reversed(range(len(self.order_columns))):
+            column = self._querydict.get("order[%s][column]" % n)
+            if column is None:
+                continue
+            name = self.order_columns[int(column)]
+            if name in keys:
+                qs = sorted(qs, key=keys[name],
+                            reverse=self._querydict.get("order[%s][dir]" % n) == "desc")
+        return qs
 
     def render_column(self, row, column):
-        if row.polymorphic_ctype.name == "statistic map":
+        if row.type_label == "statistic map":
             type = row.get_map_type_display()
         else:
-            type = row.polymorphic_ctype.name
+            type = row.type_label
 
         # We want to render user as a custom column
         if column == "file.url":
-            if isinstance(row, Image):
+            if isinstance(row, Item):
                 return get_button_html(
                     filepath_to_uri(row.file.url), type, row.target_template_image
                 )
-            elif isinstance(row, NIDMResults):
+            elif isinstance(row, NIDMBundle):
                 try:
                     excursion_sets = list(
                         Graph(row.zip_file.path).get_excursion_set_maps().values()
@@ -1343,10 +1353,10 @@ class ImagesInCollectionJson(BaseDatatableView):
                     maps = Graph(row.zip_file.path).get_statistic_maps()
                     map_url = row.get_absolute_url() + "/" + str(maps[0].file.path)
                 return get_button_html(map_url, type, DEFAULT_TEMPLATE)
-        elif column == "polymorphic_ctype.name":
+        elif column == "type_label":
             return type
         elif column == "is_valid":
-            if row.polymorphic_ctype.name == "nidm results":
+            if isinstance(row, NIDMBundle):
                 return True
             else:
                 return row.is_valid
@@ -1354,20 +1364,21 @@ class ImagesInCollectionJson(BaseDatatableView):
             return super(ImagesInCollectionJson, self).render_column(row, column)
 
     def filter_queryset(self, qs):
-        # use parameters passed in GET request to filter queryset
-
-        # simple example:
         search = self.request.GET.get("search[value]", None)
         if search:
-            qs = qs.filter(Q(name__icontains=search) | Q(description__icontains=search))
-            # qs = qs.filter(Q(polymorphic_ctype__name__icontains=search) | Q(description__icontains=search))
+            if isinstance(qs, list):
+                needle = search.lower()
+                qs = [r for r in qs if needle in (r.name or "").lower()
+                      or needle in (r.description or "").lower()]
+            else:
+                qs = qs.filter(Q(name__icontains=search) | Q(description__icontains=search))
         return qs
 
 
 class SingleSubjectImagesInCollectionJson(ImagesInCollectionJson):
     def get_initial_queryset(self):
         collection = get_collection(self.kwargs["cid"], self.request)
-        return StatisticMap.objects.filter(collection=collection).filter(
+        return Item.objects.statmaps().filter(collection=collection).filter(
             analysis_level="S"
         )
 
@@ -1375,7 +1386,7 @@ class SingleSubjectImagesInCollectionJson(ImagesInCollectionJson):
 class GroupImagesInCollectionJson(ImagesInCollectionJson):
     def get_initial_queryset(self):
         collection = get_collection(self.kwargs["cid"], self.request)
-        return StatisticMap.objects.filter(collection=collection).filter(
+        return Item.objects.statmaps().filter(collection=collection).filter(
             analysis_level="G"
         )
 
@@ -1383,7 +1394,7 @@ class GroupImagesInCollectionJson(ImagesInCollectionJson):
 class OtherImagesInCollectionJson(ImagesInCollectionJson):
     def get_initial_queryset(self):
         collection = get_collection(self.kwargs["cid"], self.request)
-        return StatisticMap.objects.filter(collection=collection).filter(
+        return Item.objects.statmaps().filter(collection=collection).filter(
             ~Q(analysis_level__in=["G", "S"])
         )
 
@@ -1395,18 +1406,18 @@ class ImagesByTaskJson(BaseDatatableView):
     def get_initial_queryset(self):
         # Do not filter by task here, we may want other parameters
         cog_atlas_id = self.kwargs["cog_atlas_id"]
-        return StatisticMap.objects.filter(collection__private=False).filter(
+        return Item.objects.statmaps().filter(collection__private=False).filter(
             cognitive_paradigm_cogatlas=cog_atlas_id
         )
 
     def render_column(self, row, column):
         # We want to render user as a custom column
         if column == "file.url":
-            if isinstance(row, Image):
+            if isinstance(row, Item):
                 return get_button_html(
                     filepath_to_uri(row.file.url), type, row.target_template_image
                 )
-            elif isinstance(row, NIDMResults):
+            elif isinstance(row, NIDMBundle):
                 return ""
         else:
             return super(ImagesByTaskJson, self).render_column(row, column)
@@ -1426,33 +1437,31 @@ class AtlasesAndParcellationsJson(BaseDatatableView):
         "name",
         "collection.name",
         "collection.authors",
-        "polymorphic_ctype.name",
+        "type_label",
     ]
-    order_columns = ["", "name", "polymorphic_ctype.name"]
+    order_columns = ["", "name", "kind"]
 
     def get_initial_queryset(self):
         # return queryset used as base for further sorting/filtering
         # these are simply objects displayed in datatable
         # You should not filter data returned here by any filter values entered by user. This is because
         # we need some base queryset to count total number of records.
-        qs = Image.objects.instance_of(Atlas) | Image.objects.instance_of(
-            StatisticMap
-        ).filter(statisticmap__map_type=BaseStatisticMap.Pa)
+        qs = Item.objects.atlases() | Item.objects.statmaps().filter(map_type=Item.Pa)
         qs = qs.filter(collection__private=False).exclude(collection__DOI__isnull=True)
         return qs
 
     def render_column(self, row, column):
-        if row.polymorphic_ctype.name == "statistic map":
+        if row.type_label == "statistic map":
             type = row.get_map_type_display()
         else:
-            type = row.polymorphic_ctype.name
+            type = row.type_label
 
         # We want to render user as a custom column
         if column == "file.url":
             return get_button_html(
                 filepath_to_uri(row.file.url), type, row.target_template_image
             )
-        elif column == "polymorphic_ctype.name":
+        elif column == "type_label":
             return type
         if column == "collection.authors" and row.collection.authors:
             return row.collection.authors.split(",")[0].split(" ")[-1] + " et al."
@@ -1482,7 +1491,7 @@ class PublicCollections(TemplateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["map_types"] = BaseStatisticMap.map_type.field.choices
+        context["map_types"] = Item.map_type.field.choices
         '''
         context["modalities"] = list(
             StatisticMap.objects.filter(collection__private=False)
@@ -1545,7 +1554,7 @@ class PublicCollectionsJson(BaseDatatableView):
             else:
                 return ""
         elif column == "n_images":
-            return row.basecollectionitem_set.count()
+            return row.item_count()
         elif column == "latest_image_modify":
             return ""
             '''
@@ -1642,16 +1651,8 @@ def download_collection(request, cid):
     # Files (local path) to put in the .zip
     collection = get_collection(cid, request)
 
-    filenames = [
-        img.zip_file.path
-        for img in collection.basecollectionitem_set.instance_of(NIDMResults)
-    ] + [
-        img.file.path
-        for img in (
-            collection.basecollectionitem_set.instance_of(Image).not_instance_of(
-                NIDMResultStatisticMap
-            )
-        )
+    filenames = [bundle.zip_file.path for bundle in collection.nidm_bundles.all()] + [
+        img.file.path for img in collection.items.filter(source_bundle__isnull=True)
     ]
 
     # Folder name in ZIP archive which contains the above files
@@ -1731,7 +1732,7 @@ def gene_expression_json(request, pk, collection_cid=None):
 
     if not image.reduced_representation or not os.path.exists(image.reduced_representation.path):
         services().items.ensure_reduced_representation(image.id)
-        image = Image.objects.get(pk=image.id)
+        image = Item.objects.get(pk=image.id)
 
     map_data = np.load(image.reduced_representation.file)
 

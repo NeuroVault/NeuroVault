@@ -13,13 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from taggit.models import Tag
 
-from neurovault.apps.statmaps.models import (
-    Atlas,
-    Collection,
-    Image,
-    StatisticMap,
-    NIDMResults,
-)
+from neurovault.apps.statmaps.models import Collection, Item, NIDMBundle
 from neurovault.apps.statmaps.views import get_collection, get_image, owner_or_contrib
 from neurovault.apps.statmaps.voxel_query_functions import (
     getAtlasVoxels,
@@ -103,7 +97,7 @@ class ImageViewSet(
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
-    queryset = Image.objects.filter(collection__private=False)
+    queryset = Item.objects.filter(collection__private=False)
     serializer_class = ImageSerializer
     permission_classes = (CollectionItemPermissions,)
 
@@ -134,7 +128,7 @@ class ImageViewSet(
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
-        if isinstance(instance, StatisticMap):
+        if instance.kind == Item.STATMAP and instance.source_bundle_id is None:
             serializer = EditableStatisticMapSerializer(
                 data=request.data,
                 instance=instance,
@@ -154,7 +148,7 @@ class ImageViewSet(
 
 
 class AtlasViewSet(ImageViewSet):
-    queryset = Atlas.objects.filter(collection__private=False)
+    queryset = Item.objects.atlases().filter(collection__private=False)
     serializer_class = AtlasSerializer
     permission_classes = (CollectionItemPermissions,)
 
@@ -221,7 +215,7 @@ class AtlasViewSet(ImageViewSet):
                 "error: could not find collection: %s" % collection, status=400
             )
         try:
-            atlas_object = Atlas.objects.filter(
+            atlas_object = Item.objects.atlases().filter(
                 name=atlas, collection=collection_object
             )[0]
             atlas_image = atlas_object.file
@@ -285,8 +279,8 @@ class AtlasViewSet(ImageViewSet):
             )
         try:
             print(atlas)
-            print([x.name for x in Atlas.objects.filter(collection=collection_object)])
-            atlas_object = Atlas.objects.filter(
+            print([x.name for x in Item.objects.atlases().filter(collection=collection_object)])
+            atlas_object = Item.objects.atlases().filter(
                 name=atlas, collection=collection_object
             )[0]
             atlas_image = atlas_object.file
@@ -321,11 +315,11 @@ class CollectionViewSet(viewsets.ModelViewSet):
         if request.method == "POST":
             return self.add_item(request, pk, EditableStatisticMapSerializer)
 
-        return self._get_paginated_results(Image, pk, request, ImageSerializer)
+        return self._get_paginated_results(Item.objects.all(), pk, request, ImageSerializer)
 
-    def _get_paginated_results(self, obj_class, pk, request, serializer):
+    def _get_paginated_results(self, queryset, pk, request, serializer):
         collection = get_collection(pk, request, mode="api")
-        queryset = obj_class.objects.filter(collection=collection).order_by("id")
+        queryset = queryset.filter(collection=collection).order_by("id")
         paginator = StandardResultPagination()
         page = paginator.paginate_queryset(queryset, request)
         serializer = serializer(page, context={"request": request}, many=True)
@@ -336,7 +330,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
         if request.method == "POST":
             return self.add_item(request, pk, EditableAtlasSerializer)
 
-        return self._get_paginated_results(Atlas, pk, request, AtlasSerializer)
+        return self._get_paginated_results(Item.objects.atlases(), pk, request, AtlasSerializer)
 
     @action(detail=True, methods=["get", "post"])
     def nidm_results(self, request, pk):
@@ -344,7 +338,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
             return self.add_item(request, pk, EditableNIDMResultsSerializer)
 
         return self._get_paginated_results(
-            NIDMResults, pk, request, NIDMResultsSerializer
+            NIDMBundle.objects.all(), pk, request, NIDMResultsSerializer
         )
 
     def add_item(self, request, pk, obj_serializer):
@@ -354,6 +348,8 @@ class CollectionViewSet(viewsets.ModelViewSet):
             self.permission_denied(request)
 
         obj = obj_serializer.Meta.model(collection=collection)
+        if getattr(obj_serializer, "kind", None):
+            obj.kind = obj_serializer.kind
         serializer = obj_serializer(
             data=request.data, instance=obj, context={"request": request}
         )
@@ -389,7 +385,7 @@ class NIDMResultsViewSet(
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
-    queryset = NIDMResults.objects.filter(collection__private=False)
+    queryset = NIDMBundle.objects.filter(collection__private=False)
     serializer_class = NIDMResultsSerializer
     permission_classes = (CollectionItemPermissions,)
 

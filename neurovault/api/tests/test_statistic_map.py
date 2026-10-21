@@ -2,7 +2,7 @@ import uuid
 
 from rest_framework import status
 
-from neurovault.apps.statmaps.models import StatisticMap
+from neurovault.apps.statmaps.models import Item
 from neurovault.apps.statmaps.tests.utils import save_statmap_form
 
 from neurovault.api.tests.base import BaseTestCases
@@ -41,7 +41,7 @@ class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
         self.assertEqual(response.data["name"], put_dict["name"])
         self.assertEqual(response.data["custom_metadata_numeric_field"], 42)
 
-        statmap = StatisticMap.objects.get(pk=response.data["id"])
+        statmap = Item.objects.get(pk=response.data["id"])
         self.assertEqual(
             statmap.cognitive_paradigm_cogatlas.name, "action observation task"
         )
@@ -78,7 +78,7 @@ class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
         )
         self.assertEqual(response.data["custom_metadata_field_c"], 42)
 
-        statmap = StatisticMap.objects.get(pk=response.data["id"])
+        statmap = Item.objects.get(pk=response.data["id"])
         self.assertEqual(statmap.data["custom_metadata_field_a"], "a text")
         self.assertEqual(
             statmap.data["custom_metadata_field_b"],
@@ -94,8 +94,8 @@ class TestStatisticMapChange(BaseTestCases.TestCollectionItemChange):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         self.assertEqual(response.data["data"], 42)
-        statmap = StatisticMap.objects.get(pk=response.data["id"])
+        statmap = Item.objects.get(pk=response.data["id"])
         self.assertEqual(statmap.data["data"], "42")
 
     def test_statistic_map_destroy(self):
-        self._test_collection_item_destroy(StatisticMap)
+        self._test_collection_item_destroy(Item)

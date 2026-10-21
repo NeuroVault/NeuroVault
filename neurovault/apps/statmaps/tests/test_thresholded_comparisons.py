@@ -6,7 +6,6 @@ from django.test import TestCase
 from numpy.testing import assert_equal
 
 from neurovault.apps.statmaps.models import (
-    Image,
     Comparison,
     Similarity,
     User,

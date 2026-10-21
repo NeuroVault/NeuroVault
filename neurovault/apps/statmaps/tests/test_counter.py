@@ -5,7 +5,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, Client
 
 from neurovault.apps.statmaps.forms import NIDMResultsForm
-from neurovault.apps.statmaps.models import Collection, StatisticMap, Similarity
+from neurovault.apps.statmaps.models import Collection, Similarity
 from neurovault.apps.statmaps.utils import (
     count_processing_comparisons,
     count_existing_comparisons,

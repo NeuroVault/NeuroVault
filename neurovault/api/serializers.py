@@ -14,16 +14,14 @@ from neurovault.application.services.items import ImageFilesInput
 from neurovault.bootstrap import services
 from neurovault.domain.errors import DomainValidationError
 
+from django.contrib.contenttypes.models import ContentType
+
 from neurovault.apps.statmaps.models import (
-    Atlas,
-    BaseCollectionItem,
-    Image,
     CognitiveAtlasTask,
     CognitiveAtlasContrast,
     Collection,
-    NIDMResults,
-    NIDMResultStatisticMap,
-    StatisticMap,
+    Item,
+    NIDMBundle,
 )
 
 from neurovault.utils import strip, logical_xor
@@ -31,7 +29,17 @@ from neurovault.api import fields as api_fields
 
 FILE_FIELDS = ("file", "surface_left_file", "surface_right_file", "label_description_file")
 FOREIGN_KEYS = ("cognitive_paradigm_cogatlas", "cognitive_contrast_cogatlas")
-KIND_OF = {StatisticMap: "statmap", Atlas: "atlas"}
+
+
+class ContentTypeIdField(serializers.SerializerMethodField):
+    """The `polymorphic_ctype` key the API has always emitted: a content type id."""
+
+    def __init__(self, model_name, **kwargs):
+        self.model_name = model_name
+        super().__init__(**kwargs)
+
+    def to_representation(self, value):
+        return ContentType.objects.get_by_natural_key("statmaps", self.model_name).pk
 
 
 def actor_of(serializer):
@@ -52,7 +60,7 @@ def image_command(validated_data):
                 changes[key] = value
         elif key in FOREIGN_KEYS:
             changes[key + "_id"] = value.pk if value is not None else None
-        elif key in ("collection", "polymorphic_ctype"):
+        elif key in ("collection", "polymorphic_ctype", "kind"):
             continue
         else:
             changes[key] = value
@@ -96,7 +104,7 @@ class SerializedContributors(serializers.CharField):
 class NIDMDescriptionSerializedField(serializers.CharField):
     def to_representation(self, value):
         if value and self.parent.instance is not None:
-            parent = self.parent.instance.nidm_results.name
+            parent = self.parent.instance.source_bundle.name
             fname = os.path.split(self.parent.instance.file.name)[-1]
             return "NIDM Results: {0}.zip > {1}".format(parent, fname)
 
@@ -115,8 +123,10 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
     url = HyperlinkedImageURL(source="get_absolute_url", read_only=True)
     file_size = serializers.SerializerMethodField()
 
+    kind = None  # set by the serializers that create items
+
     class Meta:
-        model = BaseCollectionItem
+        model = Item
         fields = api_fields.IMAGE_FIELDS
 
     def __init__(self, *args, **kwargs):
@@ -134,21 +144,19 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
             return 0
 
     def to_representation(self, obj):
-        """
-        Because Image is Polymorphic
-        """
-        if isinstance(obj, StatisticMap):
-            serializer = StatisticMapSerializer
-            image_type = "statistic_map"
-        elif isinstance(obj, Atlas):
-            serializer = AtlasSerializer
-            image_type = "atlas"
-        elif isinstance(obj, NIDMResultStatisticMap):
-            serializer = NIDMResultStatisticMapSerializer
-            image_type = "NIDM results statistic map"
-        elif isinstance(obj, NIDMResults):
+        """Dispatch on the kind of item, adding the legacy `image_type`."""
+        if isinstance(obj, NIDMBundle):
             serializer = NIDMResultsSerializer
             image_type = "NIDM Results"
+        elif obj.kind == Item.STATMAP and obj.source_bundle_id is None:
+            serializer = StatisticMapSerializer
+            image_type = "statistic_map"
+        elif obj.kind == Item.ATLAS:
+            serializer = AtlasSerializer
+            image_type = "atlas"
+        elif obj.kind == Item.STATMAP:
+            serializer = NIDMResultStatisticMapSerializer
+            image_type = "NIDM results statistic map"
 
         orderedDict = serializer(
             obj, context={"request": self.context["request"]}
@@ -190,12 +198,10 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
         changes, files = image_command(validated_data)
         items = services().items
         if instance.pk is None:
-            item_id = items.add(
-                actor_of(self), instance.collection_id, KIND_OF[type(instance)], changes, files
-            )
+            item_id = items.add(actor_of(self), instance.collection_id, self.kind, changes, files)
         else:
             item_id = items.change(actor_of(self), instance.pk, changes, files).id
-        return Image.objects.get(pk=item_id)
+        return Item.objects.get(pk=item_id)
 
 
 class EditableStatisticMapSerializer(ImageSerializer):
@@ -206,10 +212,16 @@ class EditableStatisticMapSerializer(ImageSerializer):
         queryset=CognitiveAtlasContrast.objects.all(), allow_null=True, required=False
     )
 
+    kind = Item.STATMAP
+
     class Meta:
-        model = StatisticMap
+        model = Item
         read_only_fields = ("collection",)
         fields = api_fields.EDITABLE_STATISTIC_MAP_FIELDS
+        extra_kwargs = {
+            "map_type": {"required": True, "allow_null": False},
+            "modality": {"required": True, "allow_null": False},
+        }
 
 
 class StatisticMapSerializer(ImageSerializer):
@@ -231,7 +243,7 @@ class StatisticMapSerializer(ImageSerializer):
         return obj.get_analysis_level_display()
 
     class Meta:
-        model = StatisticMap
+        model = Item
         fields = api_fields.STATISTIC_MAP_FIELDS
 
     def value_to_python(self, value):
@@ -254,7 +266,7 @@ class StatisticMapSerializer(ImageSerializer):
 
 
 class NIDMResultStatisticMapSerializer(ImageSerializer):
-    nidm_results = HyperlinkedRelatedURL(read_only=True)
+    nidm_results = HyperlinkedRelatedURL(read_only=True, source="source_bundle")
     nidm_results_ttl = serializers.SerializerMethodField()
     description = NIDMDescriptionSerializedField(source="get_absolute_url")
     map_type = serializers.SerializerMethodField()
@@ -267,10 +279,10 @@ class NIDMResultStatisticMapSerializer(ImageSerializer):
         return obj.get_analysis_level_display()
 
     def get_nidm_results_ttl(self, obj):
-        return self.context["request"].build_absolute_uri(obj.nidm_results.ttl_file.url)
+        return self.context["request"].build_absolute_uri(obj.source_bundle.ttl_file.url)
 
     class Meta:
-        model = NIDMResultStatisticMap
+        model = Item
         fields = api_fields.NIDM_RESULT_STATISTIC_MAP_FIELDS
 
     def to_representation(self, obj):
@@ -281,7 +293,7 @@ class AtlasSerializer(ImageSerializer):
     label_description_file = HyperlinkedFileField()
 
     class Meta:
-        model = Atlas
+        model = Item
         fields = api_fields.ATLAS_FIELDS
 
     def to_representation(self, obj):
@@ -289,10 +301,14 @@ class AtlasSerializer(ImageSerializer):
 
 
 class EditableAtlasSerializer(ImageSerializer):
+    kind = Item.ATLAS
+    polymorphic_ctype = ContentTypeIdField("item")
+
     class Meta:
-        model = Atlas
+        model = Item
         fields = api_fields.EDITABLE_ATLAS_FIELDS
         read_only_fields = ("collection",)
+        extra_kwargs = {"label_description_file": {"required": True, "allow_null": False}}
 
 
 class NIDMResultsCommands:
@@ -323,34 +339,36 @@ class NIDMResultsCommands:
         else:
             changes = {k: validated_data[k] for k in ("name", "description") if k in validated_data}
             bundle_id = bundles.change(actor_of(self), instance.pk, changes).id
-        return NIDMResults.objects.get(pk=bundle_id)
+        return NIDMBundle.objects.get(pk=bundle_id)
 
 
 class NIDMResultsSerializer(serializers.ModelSerializer):
     zip_file = HyperlinkedFileField()
     ttl_file = HyperlinkedFileField(required=False)
     statmaps = ImageSerializer(
-        many=True, required=False, source="nidmresultstatisticmap_set"
+        many=True, required=False
     )
+    polymorphic_ctype = ContentTypeIdField("nidmbundle")
     url = HyperlinkedImageURL(source="get_absolute_url", read_only=True)
 
     validate = NIDMResultsCommands.validate
     update = NIDMResultsCommands.update
 
     class Meta:
-        model = NIDMResults
+        model = NIDMBundle
         fields = api_fields.NIDM_RESULTS_FIELDS
         read_only_fields = ("collection",)
 
 
 class EditableNIDMResultsSerializer(serializers.ModelSerializer):
     url = HyperlinkedImageURL(source="get_absolute_url", read_only=True)
+    polymorphic_ctype = ContentTypeIdField("nidmbundle")
 
     validate = NIDMResultsCommands.validate
     update = NIDMResultsCommands.update
 
     class Meta:
-        model = NIDMResults
+        model = NIDMBundle
         read_only_fields = ("collection",)
         fields = api_fields.EDITABLE_NIDM_RESULTS_FIELDS
 
@@ -365,7 +383,7 @@ class CollectionSerializer(serializers.ModelSerializer):
     number_of_images = serializers.SerializerMethodField("num_im")
 
     def num_im(self, obj):
-        return obj.basecollectionitem_set.count()
+        return obj.item_count()
 
     def get_owner_name(self, obj):
         return obj.owner.username

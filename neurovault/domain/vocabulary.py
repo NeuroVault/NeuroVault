@@ -4,7 +4,7 @@ The persistence models and forms take their choices from here, so each
 vocabulary has one definition.
 """
 
-# Map types (BaseStatisticMap.map_type)
+# Map types
 T = "T"
 Z = "Z"
 F = "F"

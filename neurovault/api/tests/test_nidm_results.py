@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 
 from rest_framework import status
 
-from neurovault.apps.statmaps.models import NIDMResults, Collection
+from neurovault.apps.statmaps.models import NIDMBundle, Collection
 from neurovault.apps.statmaps.tests.utils import save_nidm_form, clearDB
 from neurovault.api.tests.base import BaseTestCases
 
@@ -72,4 +72,4 @@ class TestNIDMResultsChange(BaseTestCases.TestCollectionItemChange):
         self.assertRegex(response.data["ttl_file"], r"fsl_course_fluency2\.nidm\.ttl$")
 
     def test_nidm_results_destroy(self):
-        self._test_collection_item_destroy(NIDMResults)
+        self._test_collection_item_destroy(NIDMBundle)

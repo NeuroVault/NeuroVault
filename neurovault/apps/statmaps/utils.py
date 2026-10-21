@@ -17,18 +17,11 @@ from django.db.models import Q
 from neurovault.adapters.neuroimaging.workspace import split_filename  # noqa: F401
 
 from neurovault.apps.statmaps.models import (
-    Collection,
-    NIDMResults,
-    StatisticMap,
     Comparison,
-    NIDMResultStatisticMap,
-    BaseStatisticMap,
+    Item,
     get_possible_templates,
     DEFAULT_TEMPLATE,
-    Atlas,
 )
-
-
 
 
 # see CollectionRedirectMiddleware
@@ -192,15 +185,13 @@ def is_target_template_image_search_compatible(target_template_image=DEFAULT_TEM
 
 
 def is_search_compatible(pk):
-    from neurovault.apps.statmaps.models import Image
-
     try:
-        img = Image.objects.get(pk=pk)
+        img = Item.objects.get(pk=pk)
     except ObjectDoesNotExist:
         return False
 
     if (
-        img.polymorphic_ctype.model in ["image", "atlas"]
+        img.kind != Item.STATMAP
         or img.is_thresholded
         or img.analysis_level is None
         or img.analysis_level == "S"
@@ -215,20 +206,14 @@ def is_search_compatible(pk):
 
 
 def get_images_to_compare_with(pk1, for_generation=False):
-    from neurovault.apps.statmaps.models import (
-        StatisticMap,
-        NIDMResultStatisticMap,
-        Image,
-    )
-
     # if the map in question is invalid do not generate any comparisons
     if not is_search_compatible(pk1):
         return []
 
-    img = Image.objects.get(pk=pk1)
+    img = Item.objects.get(pk=pk1)
     image_pks = []
-    for cls in [StatisticMap, NIDMResultStatisticMap]:
-        qs = cls.objects.filter(
+    for qs in [Item.objects.statmaps(), Item.objects.nidm_statmaps()]:
+        qs = qs.filter(
             collection__private=False, is_thresholded=False, not_mni=False
         )
         if not (for_generation and img.collection.DOI is not None):
@@ -254,15 +239,13 @@ def count_existing_comparisons(pk1):
 def count_possible_comparisons(pk1):
     # Comparisons possible for one pk is the number of other pks
     count_statistic_maps = (
-        StatisticMap.objects.filter(is_thresholded=False, collection__private=False)
+        Item.objects.statmaps().filter(is_thresholded=False, collection__private=False)
         .exclude(pk=pk1)
         .exclude(analysis_level="S")
         .count()
     )
     count_nidm_maps = (
-        NIDMResultStatisticMap.objects.filter(
-            is_thresholded=False, collection__private=False
-        )
+        Item.objects.nidm_statmaps().filter(is_thresholded=False, collection__private=False)
         .exclude(pk=pk1)
         .exclude(analysis_level="S")
         .count()
@@ -309,7 +292,7 @@ def get_similar_images(pk, max_results=100):
     for comp in comparisons:
         # pick the image we are comparing with
         image = [image for image in [comp.image1, comp.image2] if image.id != pk][0]
-        if hasattr(image, "map_type") and image.thumbnail:
+        if image.kind == Item.STATMAP and image.thumbnail:
             df = pd.DataFrame(
                 {
                     "image_id": [image.pk],
