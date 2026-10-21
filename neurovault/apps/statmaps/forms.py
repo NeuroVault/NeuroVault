@@ -428,9 +428,9 @@ class CollectionForm(ModelForm):
         self.fields['publication_status'].choices = self.fields['publication_status'].choices[1:]
 
         for fs in collection_fieldsets:
-            # manually enforce field exclusion
-            fs[1]["fields"] = [v for v in fs[1]["fields"] if v not in self.Meta.exclude]
-            tab_holder.append(Tab(fs[1]["legend"], *fs[1]["fields"]))
+            # manually enforce field exclusion (without mutating the shared fieldsets)
+            fields = [v for v in fs[1]["fields"] if v not in self.Meta.exclude]
+            tab_holder.append(Tab(fs[1]["legend"], *fields))
         self.helper.layout.extend(
             [tab_holder, Submit("submit", "Save", css_class="btn-large offset2")]
         )

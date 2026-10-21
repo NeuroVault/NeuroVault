@@ -27,6 +27,7 @@ from neurovault.apps.statmaps.models import (
 )
 
 from neurovault.utils import strip, logical_xor
+from neurovault.api import fields as api_fields
 from neurovault.apps.statmaps.utils import get_paper_properties
 
 
@@ -88,7 +89,7 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer, ImageValidationMix
 
     class Meta:
         model = BaseCollectionItem
-        exclude = ["polymorphic_ctype"]
+        fields = api_fields.IMAGE_FIELDS
 
     def __init__(self, *args, **kwargs):
         super(ImageSerializer, self).__init__(*args, **kwargs)
@@ -169,7 +170,7 @@ class EditableStatisticMapSerializer(ImageSerializer):
     class Meta:
         model = StatisticMap
         read_only_fields = ("collection",)
-        exclude = ["polymorphic_ctype", "ignore_file_warning", "data"]
+        fields = api_fields.EDITABLE_STATISTIC_MAP_FIELDS
 
 
 class StatisticMapSerializer(ImageSerializer):
@@ -192,7 +193,7 @@ class StatisticMapSerializer(ImageSerializer):
 
     class Meta:
         model = StatisticMap
-        exclude = ["polymorphic_ctype", "ignore_file_warning", "data"]
+        fields = api_fields.STATISTIC_MAP_FIELDS
 
     def value_to_python(self, value):
         if not value:
@@ -231,7 +232,7 @@ class NIDMResultStatisticMapSerializer(ImageSerializer):
 
     class Meta:
         model = NIDMResultStatisticMap
-        exclude = ["polymorphic_ctype"]
+        fields = api_fields.NIDM_RESULT_STATISTIC_MAP_FIELDS
 
     def to_representation(self, obj):
         return super(ImageSerializer, self).to_representation(obj)
@@ -242,7 +243,7 @@ class AtlasSerializer(ImageSerializer):
 
     class Meta:
         model = Atlas
-        exclude = ["polymorphic_ctype"]
+        fields = api_fields.ATLAS_FIELDS
 
     def to_representation(self, obj):
         return super(ImageSerializer, self).to_representation(obj)
@@ -251,7 +252,7 @@ class AtlasSerializer(ImageSerializer):
 class EditableAtlasSerializer(ImageSerializer):
     class Meta:
         model = Atlas
-        fields = "__all__"
+        fields = api_fields.EDITABLE_ATLAS_FIELDS
         read_only_fields = ("collection",)
 
 
@@ -280,7 +281,7 @@ class NIDMResultsSerializer(serializers.ModelSerializer, NIDMResultsValidationMi
 
     class Meta:
         model = NIDMResults
-        exclude = ["is_valid"]
+        fields = api_fields.NIDM_RESULTS_FIELDS
         read_only_fields = ("collection",)
 
 
@@ -304,7 +305,7 @@ class EditableNIDMResultsSerializer(
     class Meta:
         model = NIDMResults
         read_only_fields = ("collection",)
-        exclude = ["is_valid"]
+        fields = api_fields.EDITABLE_NIDM_RESULTS_FIELDS
 
 
 class CollectionSerializer(serializers.ModelSerializer):
@@ -343,6 +344,6 @@ class CollectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Collection
-        exclude = ["private_token"]
+        fields = api_fields.COLLECTION_FIELDS
         # Override `required` to allow name fetching by DOI
         extra_kwargs = {"name": {"required": False}}
