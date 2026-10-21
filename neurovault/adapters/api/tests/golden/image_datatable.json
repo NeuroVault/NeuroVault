@@ -1,0 +1,107 @@
+{
+  "body": {
+    "aaData": [
+      [
+        "url",
+        "http://testserver/images/<STATMAP>/"
+      ],
+      [
+        "id",
+        "<STATMAP>"
+      ],
+      [
+        "file",
+        "http://testserver/media/images/<COLLECTION>/motor_lips.nii.gz"
+      ],
+      [
+        "collection",
+        "http://testserver/collections/<COLLECTION>/"
+      ],
+      [
+        "collection_id",
+        "<COLLECTION>"
+      ],
+      [
+        "file_size",
+        856688
+      ],
+      [
+        "cognitive_paradigm_cogatlas",
+        "action observation task"
+      ],
+      [
+        "cognitive_paradigm_cogatlas_id",
+        "trm_4f24126c22011"
+      ],
+      [
+        "cognitive_contrast_cogatlas",
+        "standard deviation from the mean accuracy score"
+      ],
+      [
+        "cognitive_contrast_cogatlas_id",
+        "cnt_4e08fefbf0382"
+      ],
+      [
+        "map_type",
+        "T map"
+      ],
+      [
+        "analysis_level",
+        "group"
+      ],
+      [
+        "surface_left_file",
+        "http://testserver/media/images/<COLLECTION>/<STATMAP>.L.func.gii"
+      ],
+      [
+        "surface_right_file",
+        "http://testserver/media/images/<COLLECTION>/<STATMAP>.R.func.gii"
+      ],
+      [
+        "data_origin",
+        "volume"
+      ],
+      [
+        "target_template_image",
+        "GenericMNI"
+      ],
+      [
+        "subject_species",
+        "homo sapiens"
+      ],
+      [
+        "thumbnail",
+        "http://testserver/media/images/<COLLECTION>/glass_brain_<STATMAP>.jpg"
+      ],
+      [
+        "perc_bad_voxels",
+        75.00733967111626
+      ],
+      [
+        "brain_coverage",
+        82.00785178766034
+      ],
+      [
+        "perc_voxels_outside",
+        16.94083540566778
+      ],
+      [
+        "number_of_subjects",
+        12
+      ],
+      [
+        "modality",
+        "fMRI-BOLD"
+      ],
+      [
+        "custom_field",
+        "custom value"
+      ],
+      [
+        "image_type",
+        "statistic_map"
+      ]
+    ]
+  },
+  "status": 200
+}

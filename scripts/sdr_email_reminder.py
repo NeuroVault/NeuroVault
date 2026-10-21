@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.db.models.query_utils import Q
 
-from neurovault.apps.statmaps.models import Collection
+from neurovault.adapters.persistence.models import Collection
 
 template = """<p>Dear {username},<br \>
 <br \>

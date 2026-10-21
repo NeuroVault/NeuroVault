@@ -1,0 +1,15 @@
+{
+  "body": {
+    "add_date": "<DATETIME>",
+    "collection": "<COLLECTION>",
+    "description": "golden nidm upload",
+    "id": "<BUNDLE>",
+    "modify_date": "<DATETIME>",
+    "name": "spm_example.nidm",
+    "polymorphic_ctype": "<CONTENT_TYPE_ID>",
+    "ttl_file": "http://testserver/collections/<COLLECTION>/spm_example.nidm.ttl",
+    "url": "http://testserver/collections/<COLLECTION>/spm_example.nidm",
+    "zip_file": "http://testserver/collections/<COLLECTION>/spm_example.nidm.zip"
+  },
+  "status": 201
+}

@@ -1,0 +1,39 @@
+{
+  "body": {
+    "aaData": [
+      [
+        "id",
+        "<COLLECTION>"
+      ],
+      [
+        "url",
+        "http://testserver/collections/<COLLECTION>/"
+      ],
+      [
+        "download_url",
+        "http://testserver/collections/<COLLECTION>/download"
+      ],
+      [
+        "owner_name",
+        "NeuroGuy"
+      ],
+      [
+        "number_of_images",
+        4
+      ],
+      [
+        "name",
+        "Golden Collection"
+      ],
+      [
+        "description",
+        "d<br />line"
+      ],
+      [
+        "add_date",
+        "<DATETIME>"
+      ]
+    ]
+  },
+  "status": 200
+}

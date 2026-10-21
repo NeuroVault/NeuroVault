@@ -3,10 +3,12 @@ deletes collection folders for collections that were deleted. after this update,
 automatically when the collection is deleted so this is simply to delete folders created before this update
 """
 
-from neurovault.settings import PRIVATE_MEDIA_ROOT
+from django.conf import settings
+
+PRIVATE_MEDIA_ROOT = settings.PRIVATE_MEDIA_ROOT
 import os
 import os.path
-from neurovault.apps.statmaps.models import *
+from neurovault.adapters.persistence.models import *
 
 def delOldCollDir():
     collDir = os.path.join(PRIVATE_MEDIA_ROOT, 'images')

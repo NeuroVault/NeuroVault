@@ -4,10 +4,10 @@ from gzip import GzipFile
 import django
 import nibabel as nb
 
-import neurovault.apps.statmaps.utils as nvutils
-from neurovault.apps.statmaps.models import StatisticMap, BaseStatisticMap
+import neurovault.adapters.web.statmaps.utils as nvutils
+from neurovault.adapters.persistence.models import StatisticMap, BaseStatisticMap
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.config.settings")
 django.setup()
 
 for image in StatisticMap.objects.filter(map_type=BaseStatisticMap.OTHER):
