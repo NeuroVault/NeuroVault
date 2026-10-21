@@ -218,10 +218,15 @@ def _names(cls):
     return {f.name for f in fields(cls)}
 
 
+IMAGE_COLUMNS = frozenset(
+    set(HEADER_FIELDS) | set(ITEM_SCALARS) | _names(TemplateSpace) | _names(SubjectInfo)
+    | _names(ImageFiles)
+)
+
+
 def column_names(kind, from_nidm=False):
     """Every column name `apply_changes` accepts for an item of `kind`."""
-    names = set(HEADER_FIELDS) | set(ITEM_SCALARS) | _names(TemplateSpace) | _names(SubjectInfo)
-    names |= _names(ImageFiles)
+    names = set(IMAGE_COLUMNS)
     if kind == "statmap":
         names |= _names(MapStats)
         if not from_nidm:
