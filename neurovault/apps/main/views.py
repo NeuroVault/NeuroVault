@@ -11,11 +11,13 @@ def index_view(request):
         Collection.objects.exclude(DOI__isnull=True)
         .exclude(private=True)
         .order_by("-doi_add_date")
-    )
+        )[:10]
     # this is faster than using annotate and count!
+    '''
     recent_collections = [
         col for col in recent_collections if col.basecollectionitem_set.count() > 0
     ][:10]
+    '''
 
     context = {
         "recent_collections": recent_collections,
@@ -52,7 +54,7 @@ def community_view(request, community_label):
         % community.short_desc,
         "name_subscript": community.label,
         "name_subscript_url": reverse(
-            "view_community", kwargs={"community_label": community_label}
+            "main:view_community", kwargs={"community_label": community_label}
         ),
     }
     return render(request, "index.html", context)

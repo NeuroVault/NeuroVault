@@ -1,6 +1,7 @@
 import csv
 import functools
 import json
+import logging
 import shutil
 import numpy as np
 import os
@@ -15,8 +16,9 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.core.files.base import ContentFile
-from django.db.models import Max, Q, Exists, OuterRef
+from django.db.models import Max, Q, Exists, OuterRef, DateTimeField 
 from django.db.models.aggregates import Count
+from django.db.models import Value
 from django.http import Http404, HttpResponse, StreamingHttpResponse, JsonResponse
 from django.http.response import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render, redirect
@@ -100,6 +102,8 @@ from neurovault.apps.statmaps.meta import (
 )
 from neurovault.apps.statmaps.voxel_query_functions import *
 from . import image_metadata
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -404,7 +408,7 @@ def add_communities_context(communities, context):
         main_community = communities[0]
         context["name_subscript"] = main_community.label
         context["name_subscript_url"] = reverse(
-            "statmaps:view_community", kwargs={"community_label": main_community.label}
+            "main:view_community", kwargs={"community_label": main_community.label}
         )
 
 
@@ -482,9 +486,10 @@ def view_image(request, pk, collection_cid=None):
         elif not image.is_valid:
             context["warning"] = "Warning: This map is missing some mandatory metadata!"
             if user_owns_image:
+                edit_url = reverse("statmaps:edit_image", kwargs={"pk": pk})
                 context[
                     "warning"
-                ] += " Please <a href='edit'>edit image details</a> to provide the missing information."
+                ] += f" Please <a href='{edit_url}'>edit image details</a> to provide the missing information."
         elif image.not_mni:
             context["warning"] = (
                 "Warning: This map seems not to be in the MNI space (%.4g%% of meaningful voxels are outside of the brain). "
@@ -597,7 +602,7 @@ def view_collection(request, cid):
         msg = "Some of the images in this collection are missing crucial metadata."
         if owner_or_contrib(request, collection):
             msg += " Please add the missing information by <a href='editmetadata'>editing images metadata</a>."
-        context["messages"] = [msg]
+        messages.warning(request, msg)
 
     if not is_empty:
         context["first_image"] = collection.basecollectionitem_set.order_by("pk")[0]
@@ -700,19 +705,6 @@ def _parse_int_param(value, default=""):
         return default
 
 
-def _compute_progress(min_image, max_image):
-    """
-    Compute the progress of images being processed based on is_valid attribute
-    Potential progress is computed by assuming the next image is valid.
-    """
-    images = Image.objects.filter(pk__gte=min_image, pk__lte=max_image)
-    total_images = images.count()
-    valid_images = images.filter(is_valid=True).count()
-    progress = int((valid_images / total_images) * 100) if total_images > 0 else 0
-    potential_progress = int((valid_images + 1 / total_images) * 100) if total_images > 0 else 0
-    label = f"{valid_images}/{total_images}"
-    return progress, label, potential_progress
-
 @login_required
 def edit_image(request, pk):
     image = get_object_or_404(Image, pk=pk)
@@ -725,11 +717,6 @@ def edit_image(request, pk):
         "max_image": _parse_int_param(request.GET.get("max_image")),
     }
     passalong_query = f"?{urlencode(kw_params)}"
-
-    if kw_params["bulk"] and kw_params["min_image"] != "":
-        progress, label, potential_progress = _compute_progress(kw_params["min_image"], kw_params["max_image"])
-    else:
-        progress, label, potential_progress = None, None, None
 
     collection_images_qs = (
         image.collection.basecollectionitem_set
@@ -751,7 +738,6 @@ def edit_image(request, pk):
             **kw_params
         )
         if form.is_valid():
-            print("Form is valid!")
             form.save()
             if any(key in request.POST for key in ["submit_next", "submit_previous"]):
                 prev_img, next_img = _get_sibling_images(image)
@@ -766,7 +752,7 @@ def edit_image(request, pk):
                 else:
                     return HttpResponseRedirect(image.get_absolute_url())
         else:
-            print(form.errors)
+            logger.warning("Rejected edit of image %s: %s", image.pk, form.errors.as_json())
     else:
         if isinstance(image, StatisticMap) and kw_params["bulk"] and not image.is_valid:
             image.name = ""
@@ -778,9 +764,6 @@ def edit_image(request, pk):
         "form": form,
         "contrasts": json.dumps(get_contrast_lookup()),
         "collection_images": _serialize_collection(collection_images_qs),
-        "progress": progress,
-        "progress_label": label,
-        "potential_progress": potential_progress,
         "show_instructions": show_instructions,
     }
     return render(request, "statmaps/edit_image.html", context)
@@ -968,8 +951,7 @@ def upload_folder(request, collection_cid):
                         for label, fpath in nifti_files:
                             # If file is in an atlas map, pass the xml path
                             # (note: we need to handle possible path differences)
-                            path, name_ext = os.path.split(fpath)
-                            name_no_ext, _ = os.path.splitext(name_ext)
+                            path, name_no_ext, _ = split_filename(fpath)
                             atlas_xml = None
 
                             # For matching, you might need to store the 
@@ -989,8 +971,7 @@ def upload_folder(request, collection_cid):
                                 images_added.append(new_image)
                             except Exception as e:
                                 messages.warning(request, f"Skipping {label}: {str(e)}")
-
-                except Exception:
+                except Exception as e:
                     error = traceback.format_exc().splitlines()[-1]
                     messages.warning(request, f"An error occurred with this upload: {error}")
                     return HttpResponseRedirect(collection.get_absolute_url())
@@ -1014,7 +995,11 @@ def upload_folder(request, collection_cid):
                 return HttpResponseRedirect(
                     collection.get_absolute_url()
                 )
-
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.warning(request, f"{error}")
+            return HttpResponseRedirect(collection.get_absolute_url())
     else:
         # GET request do nothing
         return HttpResponseRedirect(collection.get_absolute_url())
@@ -1395,8 +1380,8 @@ class AllDOIPublicGroupImages(BaseDatatableView):
 
 
 class ImagesInCollectionJson(BaseDatatableView):
-    columns = ["file.url", "pk", "name", "polymorphic_ctype.name", "is_valid"]
-    order_columns = ["", "pk", "name", "polymorphic_ctype.name", ""]
+    columns = ["file.url", "pk", "polymorphic_ctype.name", "is_valid"]
+    order_columns = ["", "pk", "polymorphic_ctype.name", ""]
 
     def get_initial_queryset(self):
         # return queryset used as base for further sorting/filtering
@@ -1447,6 +1432,7 @@ class ImagesInCollectionJson(BaseDatatableView):
         search = self.request.GET.get("search[value]", None)
         if search:
             qs = qs.filter(Q(name__icontains=search) | Q(description__icontains=search))
+            # qs = qs.filter(Q(polymorphic_ctype__name__icontains=search) | Q(description__icontains=search))
         return qs
 
 
@@ -1569,6 +1555,7 @@ class PublicCollections(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["map_types"] = BaseStatisticMap.map_type.field.choices
+        '''
         context["modalities"] = list(
             StatisticMap.objects.filter(collection__private=False)
             .exclude(collection__name__endswith="temporary collection")
@@ -1588,6 +1575,7 @@ class PublicCollections(TemplateView):
             .annotate(count=Count('statisticmap__collection', distinct=True))
             .order_by('-count')
         )
+        '''
 
         return context
 
@@ -1609,10 +1597,17 @@ class PublicCollectionsJson(BaseDatatableView):
         # You should not filter data returned here by any filter values entered by user. This is because
         # we need some base queryset to count total number of records.
         return Collection.objects.filter(
-            private=False, basecollectionitem__isnull=False
+            private=False
         ).annotate(
-            latest_image_modify=Max('basecollectionitem__modify_date')
+            latest_image_modify=Value(None, output_field=DateTimeField())
         )
+        '''
+        .prefetch_related('basecollectionitem_set').annotate(
+            latest_modified_image=Subquery(
+                models.StatisticMap.objects.filter(collection=OuterRef('pk')).order_by('-modify_date').values('modify_date')[:1]))
+        ).prefetch_related("basecollectionitem_set").annotate(
+            latest_image_modify=Max('basecollectionitem__modify_date')
+        '''
 
     def render_column(self, row, column):
         # We want to render user as a custom column
@@ -1624,16 +1619,20 @@ class PublicCollectionsJson(BaseDatatableView):
         elif column == "n_images":
             return row.basecollectionitem_set.count()
         elif column == "latest_image_modify":
+            return ""
+            '''
             if row.latest_image_modify is None:
                 return ""
             else:
                 return row.latest_image_modify.strftime("%Y-%m-%d")
+            '''
         else:
             return super(PublicCollectionsJson, self).render_column(row, column)
 
     def filter_queryset(self, qs):
         # use parameters passed in GET request to filter queryset
-        filter_keys = ["hasDoi", "modality", "task"]
+        # filter_keys = ["hasDoi", "modality", "task"]
+        filter_keys = ["hasDoi"]
         filters = {k: self.request.GET.get(k, None) for k in filter_keys}
         hasDOI = filters.pop("hasDoi", None)
         if hasDOI == "true":
@@ -1649,6 +1648,7 @@ class PublicCollectionsJson(BaseDatatableView):
 
         if image_filters:
             # Build a subquery that matches the needed StatisticMap rows
+            '''
             matching_subq = StatisticMap.objects.filter(
                 collection=OuterRef('pk'),
                 **image_filters
@@ -1657,6 +1657,7 @@ class PublicCollectionsJson(BaseDatatableView):
             qs = qs.annotate(
                 has_match=Exists(matching_subq)
             ).filter(has_match=True)
+            '''
 
         search = self.request.GET.get("search[value]", None)
         if search:
@@ -1667,8 +1668,14 @@ class PublicCollectionsJson(BaseDatatableView):
 class MyCollectionsJson(PublicCollectionsJson):
     def get_initial_queryset(self):
         return get_objects_for_user(self.request.user, "statmaps.change_collection").annotate(
+            latest_image_modify=Value(None, output_field=DateTimeField())
+        )
+
+        '''
+        return get_objects_for_user(self.request.user, "statmaps.change_collection").annotate(
             latest_image_modify=Max('basecollectionitem__modify_date'),
         )
+        '''
 
 class MyMetaanalysesJson(PublicCollectionsJson):
     columns = ["name", "description", "n_images", "status"]
@@ -1724,7 +1731,7 @@ def download_collection(request, cid):
     zip_subdir = collection.name
     zip_filename = "%s.zip" % collection.name
 
-    zf = zipstream.ZipFile(mode="w", compression=zipstream.ZIP_DEFLATED)
+    zf = zipstream.ZipFile(mode="w", compression=zipstream.ZIP_DEFLATED, allowZip64=True)
     for fpath in filenames:
         # Calculate path for file in zip
         fdir, fname = os.path.split(fpath)
@@ -1799,7 +1806,7 @@ def gene_expression_json(request, pk, collection_cid=None):
 
     map_data = np.load(image.reduced_representation.file)
 
-    mask = request.GET.get('mask', None)
+    mask = request.GET.get('mask', 'full')
     expression_results = calculate_gene_expression_similarity(map_data, mask)
     dict = expression_results.to_dict("split")
     del dict["index"]

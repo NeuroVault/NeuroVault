@@ -13,6 +13,7 @@ services:
     volumes:
       - .:/code
       - ${NV_IMAGE_DATA}:/image_data
+      - /efs/pycortex:/usr/local/share/pycortex:rw
     depends_on:
       - redis
       - postgres
@@ -38,10 +39,10 @@ services:
       dockerfile: ./compose/django/Dockerfile
       target: neurovault
     image: neurovault/neurovault
-    command: celery -A neurovault.celery worker -Q default -n default@%h
+    command: celery -A neurovault.celery worker -Q default -n default@%h -c 1
     volumes:
       - .:/code
-      - ${NV_IMAGE_DATA}:/image_data
+      - ${NV_IMAGE_DATA}:/var/www/image_data
     depends_on:
       - redis
     env_file:

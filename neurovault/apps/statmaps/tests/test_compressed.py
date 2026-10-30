@@ -1,3 +1,4 @@
+import gzip
 import os
 import shutil
 import tarfile
@@ -72,3 +73,38 @@ class UploadFolderTestCase(TestCase):
         # Assert that self.post is actually returned by the post_detail view
         self.assertEqual(response.status_code, 302)
         self.assertEqual(self.coll.basecollectionitem_set.instance_of(Image).count(), 4)
+
+    def test_upload_handles_plain_and_gz_extensions(self):
+        test_path = os.path.abspath(os.path.dirname(__file__))
+        gz_source = os.path.join(test_path, "test_data/statmaps/motor_lips.nii.gz")
+        plain_target = os.path.join(self.tmpdir, "motor_lips_plain.nii")
+
+        with gzip.open(gz_source, "rb") as src, open(plain_target, "wb") as dst:
+            shutil.copyfileobj(src, dst)
+
+        mixed_zip = os.path.join(self.tmpdir, "mixed_extensions.zip")
+        with ZipFile(mixed_zip, "w") as archive:
+            archive.write(gz_source, arcname="motor_lips.nii.gz")
+            archive.write(plain_target, arcname="motor_lips_plain.nii")
+
+        with open(mixed_zip, "rb") as fp:
+            response = self.client.post(
+                reverse(
+                    "statmaps:upload_folder", kwargs={"collection_cid": self.coll.id}
+                ),
+                {"collection_cid": self.coll.id, "file": fp},
+            )
+
+        self.assertEqual(response.status_code, 302)
+
+        images = list(self.coll.basecollectionitem_set.instance_of(Image))
+        self.assertEqual(len(images), 2)
+
+        for image in images:
+            self.assertTrue(image.file.name.endswith(".nii.gz"))
+            self.assertNotIn(".nii.nii.gz", image.file.name)
+
+        self.assertTrue(
+            any("motor_lips_plain" in image.file.name for image in images),
+            "Expected a converted .nii upload to be saved with a single .nii.gz extension",
+        )

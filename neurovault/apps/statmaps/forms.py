@@ -7,7 +7,7 @@ from io import BytesIO, StringIO
 
 import nibabel as nb
 import numpy as np
-from django.core.exceptions import ValidationError
+from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
 from django.forms import ModelForm
 from django.forms.models import ModelMultipleChoiceField
 from django.forms.widgets import RadioSelect
@@ -692,6 +692,19 @@ class ImageForm(ModelForm, ImageValidationMixin):
         buttons.append(Submit("submit_save", "Save and Exit", css_class="btn btn-primary float-right"))
         self.helper.layout.append(FormActions(*buttons))
 
+    def unrendered_errors(self):
+        """Errors on fields the layout doesn't show (or shows as hidden inputs)."""
+        shown = {
+            pointer.name
+            for pointer in self.helper.layout.get_field_names()
+            if pointer.name in self.fields and not self[pointer.name].is_hidden
+        }
+        return [
+            (self[name].label if name in self.fields else name, errors)
+            for name, errors in self.errors.items()
+            if name != NON_FIELD_ERRORS and name not in shown
+        ]
+
 
 class StatisticMapForm(ImageForm):
     COGNITIVE_TASK_CHOICES = [
@@ -777,25 +790,47 @@ class StatisticMapForm(ImageForm):
         self.helper.label_class = "col-lg-2"
         self.helper.field_class = "col-lg-10"
 
-        alert_html = ""
+        alerts = []
         if not self.instance.is_valid and not self.bulk:
-            alert_html = HTML(
+            alerts.append(HTML(
                 """
                 <div class="alert alert-warning" role="alert">
                 <strong>Warning!</strong> critical image meta-data is incomplete and needs to be filled out.
                 </div>
                 """
-            )
+            ))
+        # File QA ran when the map was uploaded; on edit it is informational only.
+        if self.instance.pk and self.instance.map_type != BaseStatisticMap.R:
+            if self.instance.is_thresholded:
+                alerts.append(HTML(
+                    """
+                    <div class="alert alert-warning" role="alert">
+                    This map seems to be thresholded (%.4g%% of voxels are zeros).
+                    Please use an unthresholded version of the map if possible.
+                    </div>
+                    """ % (self.instance.perc_bad_voxels or 0)
+                ))
+            if self.instance.not_mni:
+                alerts.append(HTML(
+                    """
+                    <div class="alert alert-warning" role="alert">
+                    This map seems not to be in the MNI space (%.4g%% of meaningful
+                    voxels are outside of the brain).
+                    </div>
+                    """ % (self.instance.perc_voxels_outside or 0)
+                ))
 
         # If the model instance has a FileField, this will display the path/filename.
         # The user will not be able to upload a new file from this form.
+        ''' sex and company don't exist on the StatisticMap object.
         for field in ['sex', 'ethnicity', 'handedness']:
             self.fields[field].choices = [('', 'N/A')] + self.fields[field].choices[1:]
 
         self.fields['analysis_level'].choices = self.fields['analysis_level'].choices[1:]
+        '''
 
         self.helper.layout = Layout(
-            alert_html,
+            *alerts,
             "collection",
             Fieldset(
                 "Essentials",
@@ -895,15 +930,17 @@ class StatisticMapForm(ImageForm):
             cleaned_data["brain_coverage"] = 100
         elif (
             django_file
+            and ("file" in self.changed_data or "hdr_file" in self.changed_data)
             and "file" not in self._errors
             and "hdr_file" not in self._errors
         ):
             django_file.open()
             fileobj = BytesIO(django_file.read())
             django_file.seek(0)
-            gzfileobj = GzipFile(filename=django_file.name, mode="rb", fileobj=fileobj)
+            if django_file.name.endswith('.gz'):
+                fileobj = GzipFile(filename=django_file.name, mode="rb", fileobj=fileobj)
             nii = nb.Nifti1Image.from_file_map(
-                {"image": nb.FileHolder(django_file.name, gzfileobj)}
+                {"image": nb.FileHolder(django_file.name, fileobj)}
             )
             cleaned_data["is_thresholded"], ratio_bad = is_thresholded(nii)
             cleaned_data["perc_bad_voxels"] = ratio_bad * 100.0
@@ -1156,9 +1193,20 @@ class SimplifiedStatisticMapForm(EditStatisticMapForm):
             "map_type",
             "modality",
             "target_template_image",
-            "cognitive_paradigm_cogatlas",
-            "cognitive_contrast_cogatlas",
-            "cognitive_paradigm_description_url",
+            Fieldset(
+                "Cognitive Paradigm",
+                Field(
+                    "cognitive_task_choice",
+                    template="statmaps/fields/toggle_radio_field.html",
+                    help_text="Was a cognitive task performed?",
+                ),
+                "cognitive_paradigm_cogatlas",
+                "cognitive_contrast_cogatlas",
+                "cognitive_paradigm_name",
+                "cognitive_paradigm_short_description",
+                "cognitive_paradigm_description_url",
+                "contrast_definition",
+            ),
             "file",
             "ignore_file_warning",
             "hdr_file",
@@ -1200,6 +1248,7 @@ class NeuropowerStatisticMapForm(EditStatisticMapForm):
         )
 
     def __init__(self, *args, **kwargs):
+
         super().__init__(*args, **kwargs)
 
         # Mark these fields as required
@@ -1248,7 +1297,7 @@ class UploadFileForm(Form):
             ext = os.path.splitext(file.name)[1]
             ext = ext.lower()
             if ext not in [".zip", ".gz"]:
-                raise ValidationError("Not allowed filetype!")
+                raise ValidationError("Filetype must be .zip or .gz.")
 
 
 class PathOnlyWidget(forms.Widget):

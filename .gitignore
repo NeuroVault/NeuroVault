@@ -8,6 +8,7 @@ neurovault/local_settings.py
 neurovault/secrets.py
 neurovault/static/
 neurovault/pycortex_data/
+compose/nginx/certs
 
 # test data
 neurovault/apps/statmaps/tests/test_data/feat/*

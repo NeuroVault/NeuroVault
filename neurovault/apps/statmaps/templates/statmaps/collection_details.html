@@ -216,7 +216,7 @@
             {% if collection.communities.all %}
                 Communities:
                 {% for community in collection.communities.all %}
-                    <a href="{%  url 'view_community' community_label=community.label %}">{{ community.label }}</a>
+                    <a href="{%  url 'main:view_community' community_label=community.label %}">{{ community.label }}</a>
                 {% endfor %}
             {% endif %}
             {% if collection.DOI %}
@@ -255,7 +255,7 @@
                 {% if pycortex_compatible %}
                     <a class="btn btn-primary" href="pycortex">3D View</a>
                 {% endif %}
-                <a class="btn btn-primary" href="{% url 'statmaps:download_collection' 1 %}">Download</a>
+                <a class="btn btn-primary" href="{% url 'statmaps:download_collection' cid %}">Download</a>
             {% endif %}
 
             {% if edit_permission %}
@@ -278,7 +278,7 @@
                         Upload
                     </button>
                     <div class="dropdown-menu" aria-labelledby="btnGroupDropUpload">
-                        <a class="dropdown-item upload_archive" href="#">Image</a>
+                        <a class="dropdown-item upload_archive" href="#">Image (.nii.gz)</a>
                         <a class="dropdown-item upload_archive" href="#">Archive (.zip)</a>
                         <a class="dropdown-item upload_archive" href="#">NIDM-Results (.nidm.zip)</a>
                         <!--[if !IE]> -->
@@ -337,7 +337,7 @@
                 </div>
                 <div class="btn-group-vertical w-100">
                     <a type="button" class="btn btn-light upload_archive"
-                       href="#">Upload a single image</a>
+                       href="#">Upload a single image (.nii.gz)</a>
                     <a type="button" class="btn btn-light upload_archive"
                        href="#">Upload an archive with images (.zip or .tar.gz)</a>
                     <a type="button" class="btn btn-light upload_archive"

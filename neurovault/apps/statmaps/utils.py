@@ -146,7 +146,7 @@ def generate_pycortex_volume(image):
                 + " returned code "
                 + str(e.returncode)
                 + " with output "
-                + e.output
+                + str(e.output)
             )
 
         x = np.loadtxt(mni_mat)
@@ -557,6 +557,9 @@ def not_in_mni(nii, target_template_image=DEFAULT_TEMPLATE, plot=False):
             interpolation="nearest",
         )
     else:
+        shape = nii.shape
+        if len(shape) == 4 and shape[3] == 1:
+            shape = shape[:3]
         mask_nii = resample_img(
             mask_nii,
             target_affine=nii.affine,
@@ -881,7 +884,7 @@ def create_image_from_nifti(
     map_type = detect_stat_map_type(file_path)
 
     # 3) Convert to .nii.gz (or squeeze dimensions)
-    name_without_ext = os.path.splitext(os.path.basename(file_path))[0]
+    _, name_without_ext, _ = split_filename(file_path)
     new_img = squeeze_and_save_as_nii_gz(nii, name_without_ext)
     
     # 4) Create model instance
