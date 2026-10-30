@@ -94,7 +94,7 @@ scipy==1.11.1
 shapely==2.0.1
 six==1.16.0
 social-auth-app-django==5.6.0
-social-auth-core==4.4.2
+social-auth-core==6.2.0
 sparse==0.14.0
 sqlparse==0.4.4
 statsmodels==0.14.0
