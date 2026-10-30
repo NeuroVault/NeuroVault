@@ -1684,10 +1684,10 @@ class Comparison(models.Model):
 
     class Meta:
         unique_together = ("image1", "image2")
-        index_together = [
-            ["image1", "image2", "similarity_metric"],
-            ["image2", "similarity_metric"],
-            ["image1", "similarity_metric"],
+        indexes = [
+            models.Index(fields=["image1", "image2", "similarity_metric"]),
+            models.Index(fields=["image2", "similarity_metric"]),
+            models.Index(fields=["image1", "similarity_metric"])
         ]
 
         verbose_name = "pairwise image comparison"
