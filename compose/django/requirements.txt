@@ -76,7 +76,7 @@ psycopg==3.1.10
 py-cpuinfo==9.0.0
 pycortex==1.2.11
 pycparser==2.21
-PyJWT==2.8.0
+PyJWT==2.15.0
 PyLD==2.0.3
 PyMARE==0.0.8
 pyparsing==3.0.9
