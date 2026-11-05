@@ -64,7 +64,7 @@ NiMARE==0.4.1
 numba==0.57.1
 numexpr==2.8.5
 numpy==1.24.4
-oauthlib==3.2.2
+oauthlib==4.0.0
 packaging==23.1
 pandas==2.0.3
 patsy==0.5.3
