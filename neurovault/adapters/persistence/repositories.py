@@ -229,10 +229,6 @@ class DjangoCollectionRepository:
         except (orm.Collection.DoesNotExist, ValueError):
             raise NotFound("collection %s" % collection_id)
 
-    def find_by_token(self, token):
-        obj = orm.Collection.objects.filter(private_token=token).first()
-        return collection_from_row(obj) if obj else None
-
     def find_by_name(self, name):
         obj = orm.Collection.objects.filter(name=name).first()
         return collection_from_row(obj) if obj else None

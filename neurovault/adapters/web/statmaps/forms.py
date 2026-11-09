@@ -1067,20 +1067,12 @@ class NIDMResultsForm(forms.ModelForm):
         """Store through the bundle use case (admin and test entry point)."""
         if self.errors:
             raise ValueError("The NIDM results could not be stored: %s" % self.errors.as_json())
-        bundles = services().bundles
         data = self.cleaned_data
-        if self.prepared is not None:
-            bundle_id = bundles.ingest(
-                SYSTEM, data["collection"].pk, self.prepared,
-                description=data.get("description", ""), tags=data.get("tags") or (),
-                replacing_id=self.instance.pk, check_access=False,
-            )
-        else:
-            bundle_id = bundles.change(
-                SYSTEM, self.instance.pk,
-                {"description": data.get("description", ""), "name": data["name"]},
-                tags=data.get("tags"), check_access=False,
-            ).id
+        bundle_id = services().bundles.submit(
+            SYSTEM, data["collection"].pk, self.instance.pk, self.prepared,
+            {"description": data.get("description", ""), "name": data["name"]},
+            tags=data.get("tags"), check_access=False,
+        )
         self.instance = NIDMBundle.objects.get(pk=bundle_id)
         return self.instance
 

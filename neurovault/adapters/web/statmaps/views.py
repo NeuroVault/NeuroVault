@@ -80,6 +80,7 @@ from neurovault.adapters.web.statmaps.utils import (
 from neurovault.adapters.web.statmaps.forms import collection_changes, image_changes
 from neurovault.adapters.http import actor, can_change, can_delete, get_collection, get_image
 from neurovault.config.bootstrap import services
+from neurovault.core.application.layout import collection_dir
 from neurovault.core.domain.errors import DomainValidationError, PermissionDenied as DomainPermissionDenied
 from neurovault.adapters.neuroimaging.atlas_queries import *
 from . import image_metadata
@@ -886,7 +887,7 @@ def view_collection_with_pycortex(request, cid):
 
     else:
         basedir = os.path.join(
-            settings.PRIVATE_MEDIA_ROOT, "images", str(collection.id)
+            settings.PRIVATE_MEDIA_ROOT, collection_dir(collection.id)
         )
         baseurl = os.path.join(settings.PRIVATE_MEDIA_URL, cid)
 
@@ -913,7 +914,7 @@ def view_collection_with_pycortex(request, cid):
 def serve_image(request, collection_cid, img_name):
     collection = get_collection(collection_cid, request, mode="file")
     path = os.path.join(
-        settings.PRIVATE_MEDIA_ROOT, "images", str(collection.id), img_name
+        settings.PRIVATE_MEDIA_ROOT, collection_dir(collection.id), img_name
     )
     return sendfile(request, path, encoding="utf-8")
 
@@ -921,7 +922,7 @@ def serve_image(request, collection_cid, img_name):
 def serve_pycortex(request, collection_cid, path, pycortex_dir="pycortex_all"):
     collection = get_collection(collection_cid, request, mode="file")
     int_path = os.path.join(
-        settings.PRIVATE_MEDIA_ROOT, "images", str(collection.id), pycortex_dir, path
+        settings.PRIVATE_MEDIA_ROOT, collection_dir(collection.id), pycortex_dir, path
     )
     return sendfile(request, int_path)
 
@@ -949,7 +950,7 @@ def serve_nidm(request, collection_cid, nidmdir, sep, path):
 def serve_nidm_image(request, collection_cid, nidmdir, sep, path):
     collection = get_collection(collection_cid, request, mode="file")
     path = os.path.join(
-        settings.PRIVATE_MEDIA_ROOT, "images", str(collection.id), nidmdir, path
+        settings.PRIVATE_MEDIA_ROOT, collection_dir(collection.id), nidmdir, path
     )
     return sendfile(request, path, encoding="utf-8")
 

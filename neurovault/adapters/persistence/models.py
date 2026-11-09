@@ -15,6 +15,7 @@ from neurovault.adapters.persistence.storage import (
     NIDMStorage,
     OverwriteStorage,
 )
+from neurovault.core.application.layout import bundle_dir, collection_dir
 from neurovault.core.domain import vocabulary
 
 POSSIBLE_TEMPLATES = vocabulary.POSSIBLE_TEMPLATES
@@ -797,15 +798,14 @@ class CognitiveAtlasContrast(models.Model):
 
 
 def upload_nidm_to(instance, filename):
-    base_subdir = os.path.split(instance.zip_file.name)[-1].replace(".zip", "")
-    return os.path.join("images", str(instance.collection.id), base_subdir, filename)
+    return os.path.join(bundle_dir(instance.collection_id, instance.zip_file.name), filename)
 
 
 def upload_img_to(instance, filename):
-    """Storage path of an item's file (the use cases store files with the same layout)."""
+    """Storage path of an item's file: the layout the use cases store files with."""
     if getattr(instance, "source_bundle_id", None):
         return upload_nidm_to(instance.source_bundle, filename)
-    return os.path.join("images", str(instance.collection.id), filename)
+    return os.path.join(collection_dir(instance.collection_id), filename)
 
 
 upload_to = upload_img_to  # for migration backwards compat.

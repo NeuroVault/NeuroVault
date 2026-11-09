@@ -87,9 +87,6 @@ class InMemoryCollectionRepository(_Repository):
         super().__init__()
         self.touched = []
 
-    def find_by_token(self, token):
-        return next((copy.deepcopy(c) for c in self.rows.values() if c.private_token == token), None)
-
     def find_by_name(self, name):
         return next((copy.deepcopy(c) for c in self.rows.values() if c.name == name), None)
 

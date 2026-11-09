@@ -331,17 +331,13 @@ class NIDMResultsCommands:
         return data
 
     def update(self, instance, validated_data):
-        bundles = services().bundles
-        prepared = getattr(self, "prepared", None)
-        if prepared is not None:
-            bundle_id = bundles.ingest(
-                actor_of(self), instance.collection_id, prepared,
-                description=validated_data.get("description", instance.description),
-                replacing_id=instance.pk,
-            )
-        else:
-            changes = {k: validated_data[k] for k in ("name", "description") if k in validated_data}
-            bundle_id = bundles.change(actor_of(self), instance.pk, changes).id
+        changes = {k: validated_data[k] for k in ("name", "description") if k in validated_data}
+        if "description" not in changes:
+            changes["description"] = instance.description
+        bundle_id = services().bundles.submit(
+            actor_of(self), instance.collection_id, instance.pk, getattr(self, "prepared", None),
+            changes, ttl_upload=validated_data.get("ttl_file"),
+        )
         return NIDMBundle.objects.get(pk=bundle_id)
 
 

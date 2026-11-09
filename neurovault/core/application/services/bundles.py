@@ -135,8 +135,22 @@ class BundleService:
             self.collections.touch(collection_id, self.clock.now())
         return bundle_id
 
-    def change(self, actor, bundle_id, changes, tags=None, check_access=True):
-        """Change a bundle's description or name without a new zip."""
+    def submit(self, actor, collection_id, bundle_id, prepared, changes, tags=None,
+               ttl_upload=None, check_access=True):
+        """Store a form or API submission: a new zip (prepared) or other changes.
+
+        Returns the bundle id.
+        """
+        if prepared is not None:
+            return self.ingest(
+                actor, collection_id, prepared, description=changes.get("description", ""),
+                tags=tags or (), replacing_id=bundle_id, check_access=check_access,
+            )
+        return self.change(actor, bundle_id, changes, tags=tags, ttl_upload=ttl_upload,
+                           check_access=check_access).id
+
+    def change(self, actor, bundle_id, changes, tags=None, ttl_upload=None, check_access=True):
+        """Change a bundle's name, description or TTL file without a new zip."""
         bundle = self.bundles.get(bundle_id)
         if check_access:
             self.item_service.require_change(actor, bundle.collection_id)
@@ -145,9 +159,17 @@ class BundleService:
                 setattr(bundle.header, key, changes[key])
         if tags is not None:
             bundle.header.tags = frozenset(tags)
+        superseded = None
+        if ttl_upload is not None:
+            superseded = bundle.ttl_file
+            bundle.ttl_file = self.store.save(
+                bundle_dir(bundle.collection_id, bundle.zip_file), ttl_upload.name, ttl_upload
+            )
         with self.uow.atomic():
             self.bundles.save(bundle)
             self.collections.touch(bundle.collection_id, self.clock.now())
+        if superseded and superseded != bundle.ttl_file:
+            self.store.delete(superseded)
         return bundle
 
     def delete(self, actor, bundle_id, check_access=True):

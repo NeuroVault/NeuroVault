@@ -11,17 +11,11 @@ import numpy as np
 
 from neurovault.core.application.ports import ProjectedSurface, SurfaceInputError
 
+from .workspace import splitext_nii_gz
+
 FIELDS = {"lh": "surface_left_file", "rh": "surface_right_file"}
 INTENTS = {"lh": "CortexLeft", "rh": "CortexRight"}
 SURFACE_EXTENSIONS = [".mgh", ".curv", ".gii", ".nii", ".nii.gz"]
-
-
-def _splitext_nii_gz(fname):
-    head, ext = os.path.splitext(fname)
-    if ext.lower() == ".gz":
-        _, ext2 = os.path.splitext(fname[:-3])
-        ext = ext2 + ext
-    return head, ext
 
 
 def _run(cmd):
@@ -48,7 +42,7 @@ class FreeSurferProjector:
             ribbon_projection_file = os.path.join(tmp_dir, new_name)
             for hemi in ["lh", "rh"]:
                 surface_file = uploads[hemi]
-                _, ext = _splitext_nii_gz(surface_file.name)
+                _, ext = splitext_nii_gz(surface_file.name)
                 if ext.lower() not in SURFACE_EXTENSIONS:
                     raise SurfaceInputError(FIELDS[hemi], "Doesn't have proper extension")
 

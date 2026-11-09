@@ -10,7 +10,6 @@ the persistence adapter is generic.
 """
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass, field, fields, replace
 from datetime import datetime
 from typing import Optional, Union
@@ -301,22 +300,3 @@ def new_item(kind, collection_id, changes=None, bundle_id=None):
     )
     apply_changes(item, dict(changes or {}))
     return item
-
-
-def legacy_image_type(item: Union[CollectionItem, NIDMBundle]) -> Optional[str]:
-    """The `image_type` string the public API has always emitted."""
-    if isinstance(item, NIDMBundle):
-        return "NIDM Results"
-    payload = item.payload
-    if isinstance(payload, Atlas):
-        return "atlas"
-    if isinstance(payload, StatMap):
-        return "statistic_map" if payload.source is None else "NIDM results statistic map"
-    return None
-
-
-def same_value(a, b):
-    """Equality that treats NaN as equal to NaN (stored QA metrics can be NaN)."""
-    if isinstance(a, float) and isinstance(b, float) and math.isnan(a) and math.isnan(b):
-        return True
-    return a == b
