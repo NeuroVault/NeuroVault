@@ -108,6 +108,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.common.BrokenLinkEmailsMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "neurovault.adapters.web.statmaps.middleware.DomainErrorMiddleware",
 ]
 
 ROOT_URLCONF = "neurovault.config.urls"

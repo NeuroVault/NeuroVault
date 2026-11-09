@@ -145,6 +145,8 @@ class ItemService:
         old_collection = item.collection_id
         old_file = item.files.file
         apply_changes(item, changes)
+        if check_access and item.collection_id != old_collection:
+            self.require_change(actor, item.collection_id)
         if data_updates:
             item.data = {**(item.data or {}), **data_updates}
         if tags is not None:

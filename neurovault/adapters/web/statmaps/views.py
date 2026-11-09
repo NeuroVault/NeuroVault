@@ -67,7 +67,6 @@ from neurovault.adapters.web.statmaps.utils import (
     split_filename,
     generate_pycortex_volume,
     generate_pycortex_static,
-    HttpRedirectException,
     get_file_ctime,
     get_server_url,
     format_image_collection_names,
@@ -78,8 +77,8 @@ from neurovault.adapters.web.statmaps.utils import (
     is_target_template_image_pycortex_compatible,
     is_target_template_image_neurosynth_compatible,
 )
-from neurovault.adapters.web.statmaps.forms import image_changes
-from neurovault.core.application.ports import Actor
+from neurovault.adapters.web.statmaps.forms import collection_changes, image_changes
+from neurovault.adapters.http import actor, can_change, can_delete, get_collection, get_image
 from neurovault.config.bootstrap import services
 from neurovault.core.domain.errors import DomainValidationError, PermissionDenied as DomainPermissionDenied
 from neurovault.adapters.web.statmaps.voxel_query_functions import *
@@ -89,25 +88,6 @@ logger = logging.getLogger(__name__)
 
 
 
-NIF_GRAPH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "NIFgraph.pkl")
-
-
-def actor(request):
-    if not request.user.is_authenticated:
-        return Actor(None)
-    return Actor(request.user.pk, request.user.is_superuser)
-
-
-def owner_or_contrib(request, collection):
-    """owner_or_contrib determines if user is an owner or contributor to a collection
-    :param collection: statmaps.models.Collection
-    """
-    return (
-        request.user.has_perm("statmaps.change_collection", collection)
-        or request.user.is_superuser
-    )
-
-
 def get_button_html(url, type, target_template_image):
     return (
         '<a role="button" class="btn btn-outline-secondary btn-sm viewimage" '
@@ -115,49 +95,6 @@ def get_button_html(url, type, target_template_image):
         'target_template_image="%s"><i class="fa fa-lg '
         'fa-eye"></i></a>' % (url, type, target_template_image)
     )
-
-
-def get_collection(cid, request, mode=None):
-    """get_collection returns collection object based on a primary key (cid)
-    :param cid: statmaps.models.Collection.pk the primary key of the collection
-    """
-    keyargs = {"pk": cid}
-    private_url = re.match(r"^[A-Z]{8}$", cid)
-    if private_url is not None:
-        keyargs = {"private_token": cid}
-    try:
-        collection = Collection.objects.get(**keyargs)
-
-        if private_url is None and collection.private:
-            if owner_or_contrib(request, collection):
-                if mode in ["file", "api"]:
-                    raise PermissionDenied()
-                else:
-                    raise HttpRedirectException(collection.get_absolute_url())
-            else:
-                raise PermissionDenied()
-    except Collection.DoesNotExist:
-        raise Http404
-    else:
-        return collection
-
-
-def get_image(pk, collection_cid, request, mode=None):
-    """get_image returns image object from a collection based on a primary key (pk)
-    :param pk: statmaps.models.Image.pk the primary key of the image
-    :param collection_cid: the primary key of the image collection
-    """
-    image = get_object_or_404(Item, pk=pk)
-    if image.collection.private and image.collection.private_token != collection_cid:
-        if owner_or_contrib(request, image.collection):
-            if mode == "api":
-                raise PermissionDenied()
-            else:
-                raise HttpRedirectException(image.get_absolute_url())
-        else:
-            raise PermissionDenied()
-    else:
-        return image
 
 
 @login_required
@@ -228,10 +165,8 @@ def edit_collection(request, cid=None):
     page_header = "Add new collection"
     if cid:
         collection = get_collection(cid, request)
-        edit_permission = request.user.has_perm(
-            "statmaps.change_collection", collection
-        )
-        is_owner = request.user.has_perm("statmaps.delete_collection", collection)
+        edit_permission = can_change(request, collection)
+        is_owner = can_delete(request, collection)
         page_header = "Edit collection"
         if not edit_permission:
             return HttpResponseForbidden()
@@ -262,20 +197,6 @@ def edit_collection(request, cid=None):
 
     context = {"form": form, "page_header": page_header, "is_owner": is_owner, "preamble": "Please fill in the fields below to create a new collection."}
     return render(request, "statmaps/edit_collection.html", context)
-
-
-def collection_changes(form):
-    """Column changes from a valid collection form (read back from form.instance)."""
-    changes = {}
-    for name in form.fields:
-        if name in ("contributors", "communities"):
-            continue
-        try:
-            field = form.instance._meta.get_field(name)
-        except Exception:
-            continue
-        changes[name] = getattr(form.instance, field.attname)
-    return changes
 
 
 def choice_datasources(model):
@@ -314,7 +235,7 @@ def get_contrast_lookup():
 def edit_metadata(request, collection_cid):
     collection = get_collection(collection_cid, request)
 
-    if not owner_or_contrib(request, collection):
+    if not can_change(request, collection):
         return HttpResponseForbidden()
 
     if not collection.is_statisticmap_set:
@@ -379,7 +300,7 @@ def view_image(request, pk, collection_cid=None):
     :param collection_cid: statmaps.models.Collection.pk the primary key of the collection. Default None
     """
     image = get_image(pk, collection_cid, request)
-    user_owns_image = owner_or_contrib(request, image.collection)
+    user_owns_image = can_change(request, image.collection)
     api_cid = pk
 
     # if no template is specified use MNI152
@@ -486,8 +407,8 @@ def view_collection(request, cid):
     :param cid: statmaps.models.Collection.pk the primary key of the collection
     """
     collection = get_collection(cid, request)
-    edit_permission = request.user.has_perm("statmaps.change_collection", collection)
-    delete_permission = request.user.has_perm("statmaps.delete_collection", collection)
+    edit_permission = can_change(request, collection)
+    delete_permission = can_delete(request, collection)
     is_empty = collection.item_count() == 0
     pycortex_compatible = all(
         [
@@ -562,7 +483,7 @@ def view_collection(request, cid):
         collection.items.statmaps().values_list("is_valid", flat=True)
     ):
         msg = "Some of the images in this collection are missing crucial metadata."
-        if owner_or_contrib(request, collection):
+        if can_change(request, collection):
             msg += " Please add the missing information by <a href='editmetadata'>editing images metadata</a>."
         messages.warning(request, msg)
 
@@ -572,7 +493,7 @@ def view_collection(request, cid):
         ]
         context["first_image"] = min((i for i in first_items if i is not None), key=lambda i: i.pk)
 
-    if owner_or_contrib(request, collection):
+    if can_change(request, collection):
         form = UploadFileForm()
         context["form"] = UploadFileForm()
     return render(request, "statmaps/collection_details.html", context)
@@ -581,7 +502,7 @@ def view_collection(request, cid):
 @login_required
 def delete_collection(request, cid):
     collection = get_collection(cid, request)
-    if not request.user.has_perm("statmaps.delete_collection", collection):
+    if not can_delete(request, collection):
         return HttpResponseForbidden()
     services().collections.delete(actor(request), collection.pk)
     return redirect("statmaps:my_collections")
@@ -686,7 +607,7 @@ def edit_image(request, pk):
         .exclude(pk=image.pk)
     )
 
-    if not owner_or_contrib(request, image.collection):
+    if not can_change(request, image.collection):
         return HttpResponseForbidden()
 
     form_class = _get_form_for_image(image)
@@ -883,6 +804,8 @@ def upload_folder(request, collection_cid):
     except DomainValidationError:
         messages.warning(request, "Invalid NIDM-Results file.")
         return HttpResponseRedirect(collection.get_absolute_url())
+    except DomainPermissionDenied:
+        return HttpResponseForbidden()
     except Exception:
         error = traceback.format_exc().splitlines()[-1]
         messages.warning(request, f"An error occurred with this upload: {error}")
@@ -1663,7 +1586,7 @@ def download_collection(request, cid):
 
 def serve_surface_archive(request, pk, collection_cid=None):
     img = get_image(pk, collection_cid, request)
-    user_owns_image = owner_or_contrib(request, img.collection)
+    user_owns_image = can_change(request, img.collection)
     api_cid = pk
 
     filenames = [img.surface_left_file.path, img.surface_right_file.path]

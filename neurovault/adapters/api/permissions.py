@@ -1,6 +1,6 @@
 from rest_framework.permissions import SAFE_METHODS, BasePermission, DjangoObjectPermissions
 
-from neurovault.core.application.ports import Actor
+from neurovault.adapters.http import actor
 from neurovault.config.bootstrap import services
 
 
@@ -22,5 +22,4 @@ class CollectionItemPermissions(BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.method in SAFE_METHODS:
             return True
-        actor = Actor(request.user.pk, request.user.is_superuser)
-        return services().items.access.can_change(actor, obj.collection_id)
+        return services().collections.can_change(actor(request), obj.collection_id)

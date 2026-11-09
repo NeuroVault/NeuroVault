@@ -14,12 +14,8 @@ from rest_framework.views import APIView
 from taggit.models import Tag
 
 from neurovault.adapters.persistence.models import Collection, Item, NIDMBundle
-from neurovault.adapters.web.statmaps.views import (
-    NIF_GRAPH,
-    get_collection,
-    get_image,
-    owner_or_contrib,
-)
+from neurovault.adapters.http import actor, can_change, get_collection, get_image
+from neurovault.adapters.web.statmaps.voxel_query_functions import NIF_GRAPH
 from neurovault.adapters.web.statmaps.voxel_query_functions import (
     getAtlasVoxels,
     getSynonyms,
@@ -37,7 +33,6 @@ from .serializers import (
     NIDMResultsSerializer,
 )
 
-from neurovault.core.application.ports import Actor
 from neurovault.config.bootstrap import services
 
 from .permissions import CollectionItemPermissions, ObjectOnlyPermissions
@@ -55,10 +50,6 @@ class JSONResponse(HttpResponse):
         content = JSONRenderer().render(data)
         kwargs["content_type"] = "application/json"
         super(JSONResponse, self).__init__(content, **kwargs)
-
-
-def actor(request):
-    return Actor(request.user.pk, request.user.is_superuser)
 
 
 class APIHelper:
@@ -346,7 +337,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
     def add_item(self, request, pk, obj_serializer):
         collection = get_collection(pk, request, mode="api")
 
-        if not owner_or_contrib(request, collection):
+        if not can_change(request, collection):
             self.permission_denied(request)
 
         obj = obj_serializer.Meta.model(collection=collection)

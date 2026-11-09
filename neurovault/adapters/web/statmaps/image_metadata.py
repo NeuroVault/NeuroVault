@@ -10,6 +10,7 @@ from django.core.exceptions import FieldDoesNotExist
 from django.db.models.fields.related import ForeignKey
 
 from neurovault.adapters.persistence.models import Item
+from neurovault.adapters.http import actor
 from neurovault.config.bootstrap import services
 
 
@@ -177,8 +178,6 @@ def save_metadata(actor, collection, metadata):
 
 
 def handle_post_metadata(request, collection, success_message):
-    from .views import actor
-
     metadata = json.loads(request.body)
 
     try:

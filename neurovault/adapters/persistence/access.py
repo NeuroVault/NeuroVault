@@ -33,11 +33,15 @@ class GuardianAccessGrants:
         assign_perm("change_collection", owner, collection)
 
     def sync_contributors(self, collection_id, user_ids):
-        """Owner and `user_ids` can change the collection; nobody else can."""
+        """Owner and `user_ids` can change the collection; only the owner can delete it."""
         collection = Collection.objects.get(pk=collection_id)
-        current = set(u.pk for u in get_users_with_perms(collection))
-        wanted = set(user_ids) | ({collection.owner_id} if collection.owner_id else set())
-        for user in User.objects.filter(pk__in=wanted - current):
-            assign_perm("change_collection", user, collection)
-        for user in User.objects.filter(pk__in=current - wanted):
+        perms = {u.pk: set(p) for u, p in get_users_with_perms(collection, attach_perms=True).items()}
+        owner = {collection.owner_id} if collection.owner_id else set()
+        wanted = set(user_ids) | owner
+        for user in User.objects.filter(pk__in=wanted):
+            if "change_collection" not in perms.get(user.pk, ()):
+                assign_perm("change_collection", user, collection)
+        for user in User.objects.filter(pk__in=set(perms) - wanted):
             remove_perm("change_collection", user, collection)
+        for user in User.objects.filter(pk__in={pk for pk, p in perms.items() if "delete_collection" in p} - owner):
+            remove_perm("delete_collection", user, collection)

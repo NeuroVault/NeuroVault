@@ -30,6 +30,14 @@ class CollectionService:
     def get(self, collection_id) -> Collection:
         return self.collections.get(collection_id)
 
+    def can_change(self, actor, collection_id):
+        """Owner, contributor or administrator: may edit the collection and its items."""
+        return self.access.can_change(actor, collection_id)
+
+    def can_delete(self, actor, collection_id):
+        """Owner or administrator: may delete the collection and manage contributors."""
+        return self.access.can_delete(actor, collection_id)
+
     def complete_publication(self, changes: dict, require_name=True) -> dict:
         """Fill name, authors, paper URL and journal from the DOI, if any.
 
@@ -72,6 +80,16 @@ class CollectionService:
             if not self.access.can_change(actor, collection_id):
                 raise PermissionDenied("cannot change collection %s" % collection_id)
         previous = set(collection.contributor_ids)
+        new_owner = (
+            owner_id if not creating and owner_id is not None and owner_id != collection.owner_id else None
+        )
+        if new_owner is not None:
+            if not actor.is_superuser:
+                raise PermissionDenied("only an administrator can change the owner")
+            collection.owner_id = new_owner
+        if contributor_ids is not None and not creating and set(contributor_ids) != previous:
+            if not self.access.can_delete(actor, collection_id):
+                raise PermissionDenied("only the owner can change contributors")
 
         collection.apply(changes)
         if contributor_ids is not None:
@@ -87,7 +105,9 @@ class CollectionService:
                 self.access.grant_owner(collection_id, collection.owner_id)
             else:
                 self.collections.save(collection)
-            if contributor_ids is not None:
+            if new_owner is not None:
+                self.access.grant_owner(collection_id, new_owner)
+            if contributor_ids is not None or new_owner is not None:
                 self.access.sync_contributors(collection_id, collection.contributor_ids)
 
         added = set(collection.contributor_ids) - previous

@@ -176,6 +176,15 @@ class ItemUseCases(unittest.TestCase):
             self.assertTrue(self.f.store.exists(ref))
         self.assertFalse(any(n.startswith("images/%s/" % self.cid) for n in self.f.store.files))
 
+    def test_moving_into_a_collection_without_rights_is_denied(self):
+        theirs = self.f.collection(owner=STRANGER, name="theirs")
+        item_id = self.f.statmap(self.cid)
+        before = dict(self.f.store.files)
+        with self.assertRaises(PermissionDenied):
+            self.f.item_service.change(OWNER, item_id, {"collection_id": theirs})
+        self.assertEqual(self.f.items.get(item_id).collection_id, self.cid)
+        self.assertEqual(self.f.store.files, before)
+
     def test_moving_an_atlas_moves_its_label_file(self):
         other = self.f.collection(name="other")
         item_id = self.f.item_service.add(
@@ -303,6 +312,14 @@ class BundleUseCases(unittest.TestCase):
         ttl = self.f.store.files[bundle.ttl_file].decode()
         self.assertIn('"https://neurovault.org/collections/%s/spm.nidm/TStatistic.nii.gz"' % self.cid, ttl)
         self.assertTrue(self.package.cleaned)
+
+    def test_bundle_maps_cannot_leave_the_bundle_collection(self):
+        bundle_id = self.ingest()
+        [map_id] = self.f.items.ids_from_bundle(bundle_id)
+        other = self.f.collection(name="other")
+        with self.assertRaises(DomainValidationError):
+            self.f.item_service.change(OWNER, map_id, {"collection_id": other})
+        self.assertEqual(self.f.items.get(map_id).collection_id, self.cid)
 
     def test_second_upload_of_same_name_is_numbered(self):
         self.ingest()

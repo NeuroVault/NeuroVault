@@ -8,7 +8,7 @@ from django.forms.utils import ErrorDict, ErrorList
 from rest_framework import serializers
 from rest_framework.relations import PrimaryKeyRelatedField, StringRelatedField
 
-from neurovault.core.application.ports import Actor
+from neurovault.adapters.http import actor
 from neurovault.core.application.services.bundles import NamedBytes
 from neurovault.core.application.services.items import ImageFilesInput
 from neurovault.config.bootstrap import services
@@ -43,10 +43,7 @@ class ContentTypeIdField(serializers.SerializerMethodField):
 
 
 def actor_of(serializer):
-    user = serializer.context["request"].user
-    if not user.is_authenticated:
-        return Actor(None)
-    return Actor(user.pk, user.is_superuser)
+    return actor(serializer.context["request"])
 
 
 def image_command(validated_data):

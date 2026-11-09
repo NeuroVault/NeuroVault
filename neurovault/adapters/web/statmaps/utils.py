@@ -25,10 +25,6 @@ from neurovault.adapters.persistence.models import (
 
 
 # see CollectionRedirectMiddleware
-class HttpRedirectException(Exception):
-    pass
-
-
 def generate_pycortex_volume(image):
     nifti_file = str(image.file.path)
     transform_name = "trans_%s" % image.pk

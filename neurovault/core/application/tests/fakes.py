@@ -157,6 +157,7 @@ class FakeAccess:
         owner = self.collections.rows[collection_id].owner_id
         g = self.grants.setdefault(collection_id, {"change": set(), "delete": set()})
         g["change"] = set(user_ids) | {owner}
+        g["delete"] = {owner}
 
 
 class InMemoryMapStore:

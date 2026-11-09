@@ -444,6 +444,23 @@ def image_changes(form):
     return changes, files, tags
 
 
+def collection_changes(form):
+    """Column changes from a valid collection form (read back from form.instance).
+
+    Contributors, communities and the owner are passed to the use case separately.
+    """
+    changes = {}
+    for name in form.fields:
+        if name in ("contributors", "communities", "owner"):
+            continue
+        try:
+            field = form.instance._meta.get_field(name)
+        except Exception:
+            continue
+        changes[name] = getattr(form.instance, field.attname)
+    return changes
+
+
 class ImageForm(ModelForm):
     hdr_file = FileField(
         required=False,
@@ -765,11 +782,20 @@ class StatisticMapForm(ImageForm):
         return cleaned_data
 
 
+def changeable_collections(user):
+    """The collections `user` may put an image into."""
+    if user.is_superuser:
+        return Collection.objects.all()
+    return get_objects_for_user(user, "statmaps.change_collection")
+
+
 class EditStatisticMapForm(StatisticMapForm):
-    """ Pass through """
+    """StatisticMapForm whose collection choices are limited to the user's."""
+
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user")
         super().__init__(*args, **kwargs)
+        self.fields["collection"].queryset = changeable_collections(user)
 
 
 class AtlasForm(ImageForm):
@@ -813,13 +839,7 @@ class EditAtlasForm(AtlasForm):
         user = kwargs.pop("user")
         super().__init__(*args, **kwargs)
 
-        # Restrict collection queryset if not a superuser
-        if user.is_superuser:
-            self.fields["collection"].queryset = Collection.objects.all()
-        else:
-            self.fields["collection"].queryset = get_objects_for_user(
-                user, "statmaps.change_collection"
-            )
+        self.fields["collection"].queryset = changeable_collections(user)
 
         # Optionally override the layout defined in AtlasForm or keep it:
         self.helper.layout = Layout(
@@ -1126,6 +1146,8 @@ class NIDMResultStatisticMapForm(ImageForm):
 class EditNIDMResultStatisticMapForm(NIDMResultStatisticMapForm):
     def __init__(self, user, *args, **kwargs):
         super(EditNIDMResultStatisticMapForm, self).__init__(*args, **kwargs)
+        # a map stays in its bundle's collection; ignore any posted value
+        self.fields["collection"].disabled = True
 
 
 def clean_tags(self):

@@ -16,6 +16,7 @@ from datetime import datetime
 from typing import Optional, Union
 
 from . import vocabulary as v
+from .errors import DomainValidationError
 
 MapRef = str  # storage name of a file; "" or None means no file
 
@@ -242,6 +243,15 @@ def apply_changes(item: CollectionItem, changes: dict):
     unknown = set(changes) - allowed
     if unknown:
         raise KeyError("not columns of a %s: %s" % (item.kind, sorted(unknown)))
+
+    if (
+        item.is_statmap
+        and item.payload.from_nidm
+        and changes.get("collection_id", item.collection_id) != item.collection_id
+    ):
+        raise DomainValidationError(
+            {"collection": ["A map from an NIDM-Results bundle stays in the bundle's collection."]}
+        )
 
     def pick(cls):
         return {k: v for k, v in changes.items() if k in _names(cls)}

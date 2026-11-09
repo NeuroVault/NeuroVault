@@ -10,6 +10,8 @@ import urllib.request, urllib.error, urllib.parse
 import pickle as pickle
 import numpy.linalg as npl
 
+NIF_GRAPH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "NIFgraph.pkl")
+
 
 def getAtlasVoxels(regions, atlas_image, atlas_xml):
     atlas_xml.open()
