@@ -3,7 +3,6 @@
 Driving adapters (views, API, tasks, commands) call `services()`; tests can
 build their own services with the fakes in core/application/tests/fakes.py.
 """
-import os
 from dataclasses import dataclass
 from functools import lru_cache
 
@@ -23,20 +22,6 @@ class Services:
     metaanalyses: MetaanalysisService
 
 
-def _bundle_public_url(collection_id, bundle_name):
-    from django.conf import settings
-    from neurovault.adapters.persistence.models import Collection
-
-    collection = Collection.objects.get(pk=collection_id)
-    return settings.DOMAIN_NAME + os.path.join(collection.get_absolute_url(), bundle_name) + "/"
-
-
-def _username(user_id):
-    from django.contrib.auth.models import User
-
-    return User.objects.get(pk=user_id).username
-
-
 def build():
     from neurovault.adapters.external.clock import DjangoClock
     from neurovault.adapters.external.crossref import CrossRefLookup
@@ -52,6 +37,7 @@ def build():
     )
     from neurovault.adapters.neuroimaging.workspace import UploadWorkspace
     from neurovault.adapters.persistence.access import GuardianAccessGrants
+    from neurovault.adapters.persistence.directory import DjangoDirectory
     from neurovault.adapters.persistence.repositories import (
         DjangoBundleRepository,
         DjangoCollectionRepository,
@@ -63,7 +49,7 @@ def build():
     from neurovault.adapters.storage.local import LocalMapStore
 
     uow, clock, store = DjangoUnitOfWork(), DjangoClock(), LocalMapStore()
-    access = GuardianAccessGrants()
+    access, directory = GuardianAccessGrants(), DjangoDirectory()
     collections, items, bundles = (
         DjangoCollectionRepository(), DjangoItemRepository(), DjangoBundleRepository()
     )
@@ -74,11 +60,11 @@ def build():
     )
     bundle_service = BundleService(
         bundles, items, collections, item_service, store, RdflibNIDMParser(), clock, uow,
-        _bundle_public_url,
+        directory,
     )
     collection_service = CollectionService(
         collections, items, bundles, access, store, CrossRefLookup(), EmailNotifier(), clock, uow,
-        item_service, bundle_service, _username,
+        item_service, bundle_service, directory,
     )
     return Services(
         collections=collection_service,

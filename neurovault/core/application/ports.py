@@ -130,7 +130,8 @@ class MapStore(Protocol):
 
     def open(self, ref: MapRef): ...
 
-    def local_path(self, ref: MapRef) -> AbstractContextManager: ...
+    def local_path(self, ref: MapRef) -> AbstractContextManager:
+        """A path to read the file at, for tools that need one (read-only)."""
 
     def exists(self, ref: MapRef) -> bool: ...
 
@@ -200,7 +201,7 @@ class MetaAnalysisInput:
 
 @dataclass(frozen=True)
 class MetaAnalysisResult:
-    images: dict  # name -> nibabel image ("z", "p", "ffx_stat")
+    images: dict  # name -> gzipped NIfTI bytes ("z", "p", "ffx_stat")
     n_maps: int
     weighted: bool
 
@@ -210,19 +211,41 @@ class MetaAnalysisEngine(Protocol):
 
 
 class NIDMPackage(Protocol):
-    statmaps: list  # [{"name", "type", "file"}]
+    statmaps: list  # [{"name", "type", "filename"}]
     ttl_filename: str
     ttl_size: int
 
     def ttl_text(self) -> str: ...
 
-    def bundled_files(self) -> list: ...  # [(filename, local path)]
+    def read_map(self, statmap: dict) -> bytes: ...
+
+    def bundled_files(self) -> list: ...  # [(filename, bytes)]
 
     def cleanup(self) -> None: ...
 
 
 class NIDMParser(Protocol):
     def parse(self, zip_upload: Upload) -> NIDMPackage: ...
+
+
+class UploadWorkspace(Protocol):
+    """A scratch area for an uploaded archive or folder; a context manager."""
+
+    def __enter__(self) -> "UploadWorkspace": ...
+
+    def __exit__(self, *exc) -> None: ...
+
+    def extract(self, archive: Upload) -> None: ...
+
+    def write(self, upload: Upload) -> None: ...
+
+    def write_tree(self, uploads: list, relative_paths: list) -> None: ...
+
+    def collect(self, allowed_extensions: list) -> list: ...  # [(label, path, atlas xml path or None)]
+
+    def squeezed_volume(self, path: str) -> tuple: ...  # (base name, .nii.gz bytes)
+
+    def read(self, path: str) -> bytes: ...
 
 
 # ------------------------------------------------------------------ external
@@ -243,6 +266,14 @@ class PublicationLookup(Protocol):
 
 class Notifier(Protocol):
     def notify(self, kind: str, subject: str, user_ids: Iterable[int], context: dict) -> None: ...
+
+
+class Directory(Protocol):
+    """Facts outside the aggregates: user names and public URLs."""
+
+    def username(self, user_id: int) -> str: ...
+
+    def bundle_url(self, collection_id: int, bundle_name: str) -> str: ...
 
 
 class Clock(Protocol):

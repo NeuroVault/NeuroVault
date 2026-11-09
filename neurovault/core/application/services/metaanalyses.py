@@ -1,12 +1,10 @@
 """Use cases for image-based meta-analyses."""
 from __future__ import annotations
 
-import os
-import shutil
-import tempfile
+from contextlib import ExitStack
 
 from neurovault.core.domain import metaanalysis as dm
-from neurovault.core.domain.errors import DomainValidationError, PermissionDenied
+from neurovault.core.domain.errors import DomainValidationError, NotFound, PermissionDenied
 
 from ..ports import MetaAnalysisInput
 from .bundles import NamedBytes
@@ -90,12 +88,16 @@ class MetaanalysisService:
             {"name": f"Metaanalysis {m.id}: {m.name}", "full_dataset_url": absolute_url},
             owner_id=m.owner_id,
         )
-        inputs = []
-        for item_id in sorted(m.map_ids):
-            item = self.items.get(item_id)
-            with self.store.local_path(item.files.file) as path:
+        with ExitStack() as paths:
+            inputs = []
+            for item_id in sorted(m.map_ids):
+                try:
+                    item = self.items.get(item_id)
+                except NotFound:
+                    continue  # deleted since it was selected
+                path = paths.enter_context(self.store.local_path(item.files.file))
                 inputs.append(MetaAnalysisInput(path, item.stats.map_type, item.stats.number_of_subjects))
-        result = self.engine.run(inputs)
+            result = self.engine.run(inputs)
         self.collection_service.save(
             actor, collection_id, {"description": dm.description_for(result.n_maps, result.weighted)}
         )
@@ -106,23 +108,16 @@ class MetaanalysisService:
         ]
         if result.weighted:
             outputs.append(("FFX map", "ffx_stat", "ffx_stat.nii.gz", "Other", None))
-        tmp_dir = tempfile.mkdtemp()
-        try:
-            for name, key, filename, map_type, n_subjects in outputs:
-                path = os.path.join(tmp_dir, filename)
-                result.images[key].to_filename(path)
-                with open(path, "rb") as f:
-                    upload = NamedBytes(filename, f.read())
-                changes = {
-                    "name": name, "description": "", "modality": "Other", "map_type": map_type,
-                    "analysis_level": "M", "target_template_image": "GenericMNI",
-                }
-                if n_subjects is not None:
-                    changes["number_of_subjects"] = n_subjects
-                self.item_service.add(actor, collection_id, "statmap", changes,
-                                      ImageFilesInput(file=upload), check_access=False)
-        finally:
-            shutil.rmtree(tmp_dir)
+        for name, key, filename, map_type, n_subjects in outputs:
+            changes = {
+                "name": name, "description": "", "modality": "Other", "map_type": map_type,
+                "analysis_level": "M", "target_template_image": "GenericMNI",
+            }
+            if n_subjects is not None:
+                changes["number_of_subjects"] = n_subjects
+            self.item_service.add(actor, collection_id, "statmap", changes,
+                                  ImageFilesInput(file=NamedBytes(filename, result.images[key])),
+                                  check_access=False)
 
         m.output_collection_id = collection_id
         m.status = dm.COMPLETED

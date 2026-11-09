@@ -13,7 +13,7 @@ NEW_CONTRIBUTOR_SUBJECT = "%s has added you to a NeuroVault collection"
 
 class CollectionService:
     def __init__(self, collections, items, bundles, access, store, lookup, notifier, clock, uow,
-                 item_service, bundle_service, owner_name: Callable[[int], str]):
+                 item_service, bundle_service, directory):
         self.collections = collections
         self.items = items
         self.bundles = bundles
@@ -25,7 +25,7 @@ class CollectionService:
         self.uow = uow
         self.item_service = item_service
         self.bundle_service = bundle_service
-        self.owner_name = owner_name
+        self.directory = directory
 
     def get(self, collection_id) -> Collection:
         return self.collections.get(collection_id)
@@ -114,7 +114,7 @@ class CollectionService:
 
         added = set(collection.contributor_ids) - previous
         if contributor_ids is not None and absolute_url is not None and added:
-            owner = self.owner_name(collection.owner_id)
+            owner = self.directory.username(collection.owner_id)
             self.notifier.notify(
                 "new_contributor",
                 NEW_CONTRIBUTOR_SUBJECT % owner,

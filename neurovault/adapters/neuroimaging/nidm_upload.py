@@ -228,7 +228,11 @@ class NIDMPackageAdapter:
 
     @property
     def statmaps(self):
-        return self._upload.statmaps
+        return [dict(s, filename=os.path.split(s["file"])[-1]) for s in self._upload.statmaps]
+
+    def read_map(self, statmap):
+        with open(statmap["file"], "rb") as f:
+            return f.read()
 
     @property
     def ttl_filename(self):
@@ -245,11 +249,13 @@ class NIDMPackageAdapter:
 
     def bundled_files(self):
         source = os.path.join(self._upload.workdir, self._upload.ttl_relpath)
-        return [
-            (name, os.path.join(source, name))
-            for name in os.listdir(source)
-            if self._upload.valid_path(name)
-        ]
+        files = []
+        for name in sorted(os.listdir(source)):
+            path = os.path.join(source, name)
+            if self._upload.valid_path(name) and os.path.isfile(path):
+                with open(path, "rb") as f:
+                    files.append((name, f.read()))
+        return files
 
     def cleanup(self):
         self._upload.cleanup()

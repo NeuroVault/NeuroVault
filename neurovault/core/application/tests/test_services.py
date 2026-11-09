@@ -48,6 +48,7 @@ class Fixture:
         self.store = fakes.InMemoryMapStore()
         self.queue = fakes.RecordingQueue()
         self.notifier = fakes.RecordingNotifier()
+        self.engine = fakes.FakeMetaAnalysisEngine()
         uow, clock = fakes.FakeUnitOfWork(), fakes.FixedClock(NOW)
         self.item_service = ItemService(
             self.items, self.bundles, self.collections, self.access, self.store, self.queue,
@@ -57,17 +58,17 @@ class Fixture:
         self.bundle_service = BundleService(
             self.bundles, self.items, self.collections, self.item_service, self.store,
             fakes.FakeNIDMParser(nidm_package), clock, uow,
-            lambda cid, name: "https://neurovault.org/collections/%s/%s/" % (cid, name),
+            fakes.FakeDirectory(),
         )
         self.collection_service = CollectionService(
             self.collections, self.items, self.bundles, self.access, self.store,
             fakes.FakeLookup(papers), self.notifier, clock, uow, self.item_service,
-            self.bundle_service, lambda user_id: "user%s" % user_id,
+            self.bundle_service, fakes.FakeDirectory(),
         )
-        self.uploads = UploadService(self.item_service, self.bundle_service, _Workspace)
+        self.uploads = UploadService(self.item_service, self.bundle_service, fakes.FakeUploadWorkspace)
         self.meta = MetaanalysisService(
             self.metaanalyses, self.items, self.collection_service, self.item_service,
-            self.store, None, uow,
+            self.store, self.engine, uow,
         )
 
     def collection(self, owner=OWNER, **changes):
@@ -79,33 +80,6 @@ class Fixture:
             {"name": "map", "map_type": "T", "modality": "fMRI-BOLD", **changes},
             ImageFilesInput(file=statistic_volume()),
         )
-
-
-class _Workspace:
-    """Minimal UploadWorkspace: a single uploaded NIfTI file."""
-
-    def __enter__(self):
-        self.root = tempfile.mkdtemp()
-        return self
-
-    def __exit__(self, *exc):
-        pass
-
-    def write(self, upload):
-        with open(os.path.join(self.root, upload.name), "wb") as f:
-            f.write(upload.read())
-
-    def collect(self, allowed):
-        return [(n, os.path.join(self.root, n), None) for n in sorted(os.listdir(self.root))]
-
-    @staticmethod
-    def squeezed_volume(path):
-        nii = nb.load(path)
-        if len(nii.shape) > 3 and nii.shape[3] > 1:
-            raise ValueError("4D file detected.")
-        base = os.path.basename(path).replace(".nii.gz", "")
-        with open(path, "rb") as f:
-            return base, f.read()
 
 
 class ItemUseCases(unittest.TestCase):
@@ -286,11 +260,11 @@ class BundleUseCases(unittest.TestCase):
     TTL = 'prov:atLocation "file:///tmp/x/TStatistic.nii.gz"^^xsd:anyURI ;'
 
     def setUp(self):
-        map_path = os.path.join(tempfile.mkdtemp(), "TStatistic.nii.gz")
-        with open(map_path, "wb") as f:
-            f.write(statistic_volume().read())
         self.package = fakes.FakeNIDMPackage(
-            [{"name": "contrast", "type": "T", "file": map_path}], self.TTL
+            [{"name": "contrast", "type": "T", "filename": "TStatistic.nii.gz",
+              "content": statistic_volume().read()}],
+            self.TTL,
+            files=[("nidm.ttl", b"already stored"), ("design.png", b"png")],
         )
         self.f = Fixture(nidm_package=self.package)
         self.cid = self.f.collection()
@@ -321,6 +295,21 @@ class BundleUseCases(unittest.TestCase):
             self.f.item_service.change(OWNER, map_id, {"collection_id": other})
         self.assertEqual(self.f.items.get(map_id).collection_id, self.cid)
 
+    def test_bundled_files_are_stored_next_to_the_maps(self):
+        bundle = self.f.bundles.get(self.ingest())
+        directory = "images/%s/spm.nidm/" % self.cid
+        self.assertEqual(self.f.store.files[directory + "design.png"], b"png")
+        self.assertNotEqual(self.f.store.files[bundle.ttl_file], b"already stored")
+
+    def test_failed_ingest_leaves_nothing_behind(self):
+        self.package.statmaps.append({"name": "broken", "type": "T", "filename": "broken.nii.gz",
+                                      "content": b"not a nifti"})
+        prepared = self.f.bundle_service.prepare(self.cid, NamedBytes("spm.nidm.zip", b"zip"))
+        with self.assertRaises(Exception):
+            self.f.bundle_service.ingest(OWNER, self.cid, prepared, description="d")
+        self.assertEqual((self.f.items.rows, self.f.bundles.rows, self.f.store.files), ({}, {}, {}))
+        self.assertTrue(self.package.cleaned)
+
     def test_second_upload_of_same_name_is_numbered(self):
         self.ingest()
         second = self.f.bundles.get(self.ingest())
@@ -343,6 +332,24 @@ class UploadUseCases(unittest.TestCase):
         self.assertEqual((item.header.name, item.stats.map_type, item.header.is_valid),
                          ("spmT 0001", "T", False))
 
+    def test_zip_archive(self):
+        import zipfile
+        from io import BytesIO
+
+        buf = BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("maps/spmT_0001.nii.gz", statistic_volume().read())
+            zf.writestr("maps/beta.nii.gz", statistic_volume().read())
+        result = self.f.uploads.ingest(OWNER, self.cid, upload=NamedBytes("maps.zip", buf.getvalue()))
+        names = sorted(self.f.items.get(i).header.name for i in result.item_ids)
+        self.assertEqual(names, ["beta", "spmT 0001"])
+
+    def test_folder_upload(self):
+        files = [statistic_volume("a.nii.gz"), statistic_volume("b.nii.gz")]
+        result = self.f.uploads.ingest(OWNER, self.cid, folder_files=files,
+                                       folder_paths=["run1/a.nii.gz", "run2/b.nii.gz"])
+        self.assertEqual(len(result.item_ids), 2)
+
     def test_4d_volumes_are_skipped_with_a_warning(self):
         upload = nifti_bytes(np.ones((4, 4, 4, 2)), "series.nii.gz")
         result = self.f.uploads.ingest(OWNER, self.cid, upload=upload)
@@ -360,6 +367,22 @@ class MetaanalysisUseCases(unittest.TestCase):
         self.assertEqual(f.metaanalyses.get(second).status, "inactive")
         with self.assertRaises(PermissionDenied):
             f.meta.activate(STRANGER, first)
+
+    def test_finalize_writes_the_results_into_a_new_collection(self):
+        f = Fixture()
+        cid = f.collection()
+        maps = [f.statmap(cid, analysis_level="G", number_of_subjects=12) for _ in range(2)]
+        meta_id = f.meta.save(OWNER, None, "one", "")
+        for item_id in maps:
+            f.meta.toggle_map(OWNER, item_id)
+        f.item_service.delete(OWNER, maps[1])  # deleted after selection: skipped
+        out = f.meta.finalize(OWNER, meta_id, "http://x/metaanalyses/1")
+        self.assertEqual(len(f.engine.inputs), 1)
+        results = [f.items.get(i) for i in f.items.ids_in_collection(out)]
+        self.assertEqual(sorted((r.header.name, r.stats.map_type) for r in results),
+                         [("FWE corrected P map", "P"), ("FWE corrected Z map", "Z")])
+        self.assertEqual(f.metaanalyses.get(meta_id).status, "completed")
+        self.assertIn("on 1 maps", f.collections.get(out).description)
 
     def test_toggle_map(self):
         f = Fixture()

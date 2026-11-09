@@ -168,6 +168,10 @@ class UploadWorkspace:
             out.append((label, path, atlases.get(os.path.join(directory, name_no_ext))))
         return out
 
+    def read(self, path):
+        with open(path, "rb") as f:
+            return f.read()
+
     @staticmethod
     def squeezed_volume(path):
         """(base name, .nii.gz bytes) of a 3D volume; 4D volumes raise ValueError."""

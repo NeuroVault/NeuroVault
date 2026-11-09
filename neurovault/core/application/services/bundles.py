@@ -38,7 +38,7 @@ class NamedBytes:
 
 class BundleService:
     def __init__(self, bundles, items, collections, item_service, store, parser, clock, uow,
-                 public_url):
+                 directory):
         self.bundles = bundles
         self.items = items
         self.collections = collections
@@ -47,7 +47,7 @@ class BundleService:
         self.parser = parser
         self.clock = clock
         self.uow = uow
-        self.public_url = public_url  # callable(collection_id, bundle_name) -> absolute url prefix
+        self.directory = directory
 
     def get(self, bundle_id) -> NIDMBundle:
         return self.bundles.get(bundle_id)
@@ -77,34 +77,11 @@ class BundleService:
             self._remove_contents(self.bundles.get(replacing_id))
 
         package = prepared.package
-        directory = bundle_dir(collection_id, prepared.zip_upload.name)
-        zip_ref = self.store.save(directory, prepared.zip_upload.name, prepared.zip_upload)
-        ttl_ref = self.store.save(directory, package.ttl_filename, package.ttl_text().encode("utf-8"))
-
-        if replacing_id is None:
-            bundle = NIDMBundle(
-                header=ItemHeader(id=None, collection_id=collection_id, name=prepared.name,
-                                  description=description, tags=frozenset(tags)),
-                zip_file=zip_ref,
-                ttl_file=ttl_ref,
-            )
-            with self.uow.atomic():
-                bundle_id = self.bundles.add(bundle)
-                self.collections.touch(collection_id, self.clock.now())
-        else:
-            bundle = self.bundles.get(replacing_id)
-            bundle.header.name, bundle.header.description = prepared.name, description
-            bundle.zip_file, bundle.ttl_file = zip_ref, ttl_ref
-            with self.uow.atomic():
-                self.bundles.save(bundle)
-                self.collections.touch(collection_id, self.clock.now())
-            bundle_id = bundle.id
-
-        map_ids = []
-        for s in package.statmaps:
-            with open(s["file"], "rb") as f:
-                upload = NamedBytes(os.path.split(s["file"])[-1], f.read())
-            map_ids.append(
+        bundle_id = None
+        try:
+            bundle_id = self._store_bundle(collection_id, prepared, description, tags, replacing_id)
+            directory = bundle_dir(collection_id, prepared.zip_upload.name)
+            map_ids = [
                 self.item_service.add(
                     actor,
                     collection_id,
@@ -116,20 +93,46 @@ class BundleService:
                         "analysis_level": "Other",
                         "number_of_subjects": 0,
                     },
-                    ImageFilesInput(file=upload),
+                    ImageFilesInput(file=NamedBytes(s["filename"], package.read_map(s))),
                     bundle_id=bundle_id,
                     check_access=False,
                 )
-            )
+                for s in package.statmaps
+            ]
+            for filename, content in package.bundled_files():
+                if not self.store.exists(os.path.join(directory, filename)):
+                    self.store.save(directory, filename, content)
+            if map_ids:
+                self._rewrite_ttl(bundle_id, map_ids[0])
+        except Exception:
+            # leave no half-stored bundle behind
+            if bundle_id is not None:
+                self.delete(None, bundle_id, check_access=False)
+            raise
+        finally:
+            package.cleanup()
+        return bundle_id
 
-        for filename, path in package.bundled_files():
-            if not self.store.exists(os.path.join(directory, filename)):
-                if os.path.isfile(path):
-                    self.store.save_local(directory, filename, path)
-        package.cleanup()
-
-        if map_ids:
-            self._rewrite_ttl(bundle_id, map_ids[0])
+    def _store_bundle(self, collection_id, prepared, description, tags, replacing_id):
+        package = prepared.package
+        directory = bundle_dir(collection_id, prepared.zip_upload.name)
+        zip_ref = self.store.save(directory, prepared.zip_upload.name, prepared.zip_upload)
+        ttl_ref = self.store.save(directory, package.ttl_filename, package.ttl_text().encode("utf-8"))
+        with self.uow.atomic():
+            if replacing_id is None:
+                bundle_id = self.bundles.add(NIDMBundle(
+                    header=ItemHeader(id=None, collection_id=collection_id, name=prepared.name,
+                                      description=description, tags=frozenset(tags)),
+                    zip_file=zip_ref,
+                    ttl_file=ttl_ref,
+                ))
+            else:
+                bundle = self.bundles.get(replacing_id)
+                bundle.header.name, bundle.header.description = prepared.name, description
+                bundle.zip_file, bundle.ttl_file = zip_ref, ttl_ref
+                self.bundles.save(bundle)
+                bundle_id = bundle.id
+            self.collections.touch(collection_id, self.clock.now())
         return bundle_id
 
     def change(self, actor, bundle_id, changes, tags=None, check_access=True):
@@ -170,11 +173,12 @@ class BundleService:
         updated = nidm.rewrite_ttl_locations(
             ttl,
             os.path.basename(first_map.files.file),
-            self.public_url(bundle.collection_id, bundle.header.name),
+            self.directory.bundle_url(bundle.collection_id, bundle.header.name),
         )
-        with self.store.local_path(bundle.ttl_file) as path:
-            with open(path, "w") as ttlf:
-                ttlf.write(updated)
+        self.store.save(
+            os.path.dirname(bundle.ttl_file), os.path.basename(bundle.ttl_file),
+            updated.encode("utf-8"), overwrite=True,
+        )
 
 
 class PreparedBundle:

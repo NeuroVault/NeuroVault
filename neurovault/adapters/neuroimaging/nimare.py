@@ -48,4 +48,23 @@ class NiMAREEngine:
             result = Stouffers(
                 z_data, mask_img, inference="ffx", null="theoretical", corr="FWE", two_sided=True
             )
-        return MetaAnalysisResult(images=result.images, n_maps=len(z_imgs), weighted=do_weighted)
+        return MetaAnalysisResult(
+            images={name: _nifti_bytes(img) for name, img in result.images.items()},
+            n_maps=len(z_imgs),
+            weighted=do_weighted,
+        )
+
+
+def _nifti_bytes(img):
+    """Gzipped NIfTI bytes of a nibabel image."""
+    import shutil
+    import tempfile
+
+    tmp_dir = tempfile.mkdtemp()
+    try:
+        path = os.path.join(tmp_dir, "map.nii.gz")
+        img.to_filename(path)
+        with open(path, "rb") as f:
+            return f.read()
+    finally:
+        shutil.rmtree(tmp_dir)

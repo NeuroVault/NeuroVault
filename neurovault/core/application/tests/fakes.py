@@ -286,6 +286,8 @@ class RecordingNotifier:
 
 
 class FakeNIDMPackage:
+    """statmaps: [{"name", "type", "filename", "content"}]; files: [(filename, bytes)]."""
+
     def __init__(self, statmaps, ttl, files=()):
         self.statmaps = statmaps
         self.ttl_filename = "nidm.ttl"
@@ -296,6 +298,9 @@ class FakeNIDMPackage:
 
     def ttl_text(self):
         return self._ttl
+
+    def read_map(self, statmap):
+        return statmap["content"]
 
     def bundled_files(self):
         return self._files
@@ -312,3 +317,82 @@ class FakeNIDMParser:
         return self.package
 
 
+
+
+class FakeDirectory:
+    def username(self, user_id):
+        return "user%s" % user_id
+
+    def bundle_url(self, collection_id, bundle_name):
+        return "https://neurovault.org/collections/%s/%s/" % (collection_id, bundle_name)
+
+
+class FakeMetaAnalysisEngine:
+    """Returns the first input map as every output; records what it was given."""
+
+    def __init__(self, weighted=False):
+        self.weighted = weighted
+        self.inputs = None
+
+    def run(self, maps):
+        from neurovault.core.application.ports import MetaAnalysisResult
+
+        self.inputs = list(maps)
+        with open(maps[0].path, "rb") as f:
+            content = f.read()
+        names = ("z", "p", "ffx_stat") if self.weighted else ("z", "p")
+        return MetaAnalysisResult(images={n: content for n in names}, n_maps=len(maps),
+                                  weighted=self.weighted)
+
+
+class FakeUploadWorkspace:
+    """An upload workspace over a temporary directory, with zip archives and folders."""
+
+    def __enter__(self):
+        self.root = tempfile.mkdtemp()
+        return self
+
+    def __exit__(self, *exc):
+        import shutil
+
+        shutil.rmtree(self.root, ignore_errors=True)
+
+    def extract(self, archive):
+        import zipfile
+
+        archive.seek(0)
+        with zipfile.ZipFile(BytesIO(archive.read())) as zf:
+            zf.extractall(self.root)
+
+    def write(self, upload, directory=None):
+        upload.seek(0)
+        with open(os.path.join(directory or self.root, upload.name), "wb") as f:
+            f.write(upload.read())
+
+    def write_tree(self, uploads, relative_paths):
+        for upload, relative_path in zip(uploads, relative_paths):
+            if upload.name.endswith(".nidm.zip"):
+                continue
+            directory = os.path.dirname(os.path.join(self.root, relative_path))
+            os.makedirs(directory, exist_ok=True)
+            self.write(upload, directory)
+
+    def collect(self, allowed_extensions):
+        found = []
+        for dirpath, _, files in os.walk(self.root):
+            for name in sorted(files):
+                if name.endswith(tuple(allowed_extensions)):
+                    found.append((name, os.path.join(dirpath, name), None))
+        return found
+
+    def read(self, path):
+        with open(path, "rb") as f:
+            return f.read()
+
+    def squeezed_volume(self, path):
+        import nibabel as nb
+
+        nii = nb.load(path)
+        if len(nii.shape) > 3 and nii.shape[3] > 1:
+            raise ValueError("4D file detected.")
+        return os.path.basename(path).replace(".nii.gz", ""), self.read(path)

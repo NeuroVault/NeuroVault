@@ -69,8 +69,7 @@ class UploadService:
         spaced_name = base_name.replace("_", " ").replace("-", " ")
         files = ImageFilesInput(file=NamedBytes(base_name + ".nii.gz", volume))
         if atlas_xml:
-            with open(atlas_xml, "rb") as f:
-                files.label_description_file = NamedBytes(base_name + ".xml", f.read())
+            files.label_description_file = NamedBytes(base_name + ".xml", ws.read(atlas_xml))
             return self.item_service.add(
                 actor, collection_id, "atlas", {"name": spaced_name}, files, check_access=False
             )

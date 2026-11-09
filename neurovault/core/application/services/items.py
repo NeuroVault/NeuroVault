@@ -126,13 +126,18 @@ class ItemService:
         if tags is not None:
             item.header.tags = frozenset(tags)
         directory = self.directory_of(item)
+        before = item.file_refs()
         self._store_uploads(item, files, directory)
-        if item.is_statmap:
-            self._complete_quality_metrics(item)
-        item.ensure_species()
-        with self.uow.atomic():
-            item_id = self.items.add(item)
-            self.collections.touch(collection_id, self.clock.now())
+        try:
+            if item.is_statmap:
+                self._complete_quality_metrics(item)
+            item.ensure_species()
+            with self.uow.atomic():
+                item_id = self.items.add(item)
+                self.collections.touch(collection_id, self.clock.now())
+        except Exception:
+            self._discard_new_files(item, before)
+            raise
         self.queue.process_item(item_id)
         return item_id
 
@@ -152,7 +157,20 @@ class ItemService:
         if tags is not None:
             item.header.tags = frozenset(tags)
 
+        before = item.file_refs()
         replaced = self._store_uploads(item, files or ImageFilesInput(), self._dir_for(item, old_collection))
+        try:
+            self._finish_change(item, old_collection, old_file)
+        except Exception:
+            self._discard_new_files(item, before)
+            raise
+        for ref in replaced:
+            self.store.delete(ref)
+        if item.files.file != old_file:
+            self.queue.process_item(item.id)
+        return item
+
+    def _finish_change(self, item, old_collection, old_file):
         file_changed = item.files.file != old_file
 
         if file_changed and item.files.reduced_representation:
@@ -165,17 +183,18 @@ class ItemService:
             self._complete_quality_metrics(item)
         item.ensure_species()
 
-        if item.collection_id != old_collection:
-            self._move_files(item)
-
-        with self.uow.atomic():
-            self.items.save(item)
-            self.collections.touch(item.collection_id, self.clock.now())
-        for ref in replaced:
-            self.store.delete(ref)
-        if file_changed:
-            self.queue.process_item(item.id)
-        return item
+        moved = self._move_files(item) if item.collection_id != old_collection else {}
+        try:
+            with self.uow.atomic():
+                self.items.save(item)
+                self.collections.touch(item.collection_id, self.clock.now())
+        except Exception:
+            # put moved files back, so _discard_new_files sees the refs it started from
+            back = {new: self.store.move(new, os.path.dirname(old)) for new, old in moved.items()}
+            item.with_files(**{k: back[v] for k, v in item.files.refs().items() if v in back})
+            if item.kind == "atlas" and item.payload.label_description_file in back:
+                apply_changes(item, {"label_description_file": back[item.payload.label_description_file]})
+            raise
 
     def delete(self, actor, item_id, check_access=True):
         item = self.items.get(item_id)
@@ -294,10 +313,24 @@ class ItemService:
         item.with_stats(**changes)
 
     def _move_files(self, item):
+        """Move every file into the item's collection; returns {new ref: old ref}."""
         directory = collection_dir(item.collection_id)
-        moved = {name: self.store.move(ref, directory) for name, ref in item.files.refs().items()}
-        item.with_files(**moved)
+        moved = {}
+        refs = item.files.refs()
+        new_refs = {}
+        for name, ref in refs.items():
+            new_refs[name] = self.store.move(ref, directory)
+            moved[new_refs[name]] = ref
+        item.with_files(**new_refs)
         if item.kind == "atlas" and item.payload.label_description_file:
-            apply_changes(
-                item, {"label_description_file": self.store.move(item.payload.label_description_file, directory)}
-            )
+            old_ref = item.payload.label_description_file
+            new_ref = self.store.move(old_ref, directory)
+            moved[new_ref] = old_ref
+            apply_changes(item, {"label_description_file": new_ref})
+        return moved
+
+    def _discard_new_files(self, item, before):
+        """Delete files stored for this request (refs the item did not have before)."""
+        for ref in item.file_refs().values():
+            if ref not in before.values():
+                self.store.delete(ref)
