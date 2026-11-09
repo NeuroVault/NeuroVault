@@ -260,7 +260,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(forward, backward, elidable=False),
+        migrations.RunPython(forward, migrations.RunPython.noop, elidable=False),
         migrations.AlterField(
             model_name="comparison",
             name="image1",
@@ -280,6 +280,10 @@ class Migration(migrations.Migration):
             name="maps",
             field=models.ManyToManyField(blank=True, to="statmaps.item"),
         ),
+        # Reversing runs operations last-to-first: the old tables are recreated,
+        # then rows are copied back, and only then are the foreign keys above
+        # pointed back at them (a re-added constraint checks existing rows).
+        migrations.RunPython(migrations.RunPython.noop, backward, elidable=False),
         migrations.RemoveIndex(model_name="statisticmap", name="statmaps_st_modalit_4bad2e_idx"),
         migrations.DeleteModel(name="NIDMResultStatisticMap"),
         migrations.DeleteModel(name="StatisticMap"),
