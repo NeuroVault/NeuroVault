@@ -15,8 +15,8 @@ from taggit.models import Tag
 
 from neurovault.adapters.persistence.models import Collection, Item, NIDMBundle
 from neurovault.adapters.http import actor, can_change, get_collection, get_image
-from neurovault.adapters.web.statmaps.voxel_query_functions import NIF_GRAPH
-from neurovault.adapters.web.statmaps.voxel_query_functions import (
+from neurovault.adapters.neuroimaging.atlas_queries import NIF_GRAPH
+from neurovault.adapters.neuroimaging.atlas_queries import (
     getAtlasVoxels,
     getSynonyms,
     toAtlas,

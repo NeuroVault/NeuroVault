@@ -21,8 +21,10 @@ from neurovault.adapters.api.tests.utils import _setup_test_cognitive_atlas
 
 GOLDEN_DIR = os.path.join(os.path.dirname(__file__), "golden")
 UPDATE = os.environ.get("GOLDEN_UPDATE") == "1"
-# Outputs of the asynchronous processing task: whether a POST response already
-# shows them depends on when the task finishes, not on the API.
+# Outputs of the asynchronous processing task. A request that stores a new
+# file (POST, or PUT with a file) queues the task, and whether the response
+# already shows its outputs depends on when it finishes. Other writes queue
+# nothing, so their values are compared.
 ASYNC_OUTPUTS = ("thumbnail", "surface_left_file", "surface_right_file", "reduced_representation")
 DATETIME = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?([+-]\d{2}:\d{2}|Z)?")
 
@@ -90,7 +92,7 @@ class GoldenResponses(APITestCase):
                 "map_type": "Z",
                 "file": self._file("statmaps/beta_0001.nii.gz"),
             },
-            None,
+            "post_private_statmap",
         )
         for name, response in self._pending_posts:
             self.assertGolden(name, response)
@@ -161,7 +163,11 @@ class GoldenResponses(APITestCase):
             return value
         if isinstance(value, int):
             if key == "polymorphic_ctype":
-                return "<CONTENT_TYPE_ID>"  # a database-specific content type id
+                # ids differ between databases; compare which content type it names
+                from django.contrib.contenttypes.models import ContentType
+
+                ct = ContentType.objects.get(pk=value)
+                return "<CTYPE %s.%s>" % (ct.app_label, ct.model)
             if key == "id":
                 return self._label(maps[context], value)
             if key in ("collection_id", "collection"):
@@ -191,7 +197,7 @@ class GoldenResponses(APITestCase):
             self.assertEqual(response.status_code, status, response.content)
         body = json.loads(response.content) if response.content else None
         got = {"status": response.status_code, "body": self._normalize(body, self._id_maps())}
-        if name.startswith(("post_", "put_", "patch_")) and isinstance(got["body"], dict):
+        if name.startswith(("post_", "put_")) and isinstance(got["body"], dict):
             for key in ASYNC_OUTPUTS:
                 if key in got["body"]:
                     got["body"][key] = "<ASYNC_OUTPUT>"
@@ -315,6 +321,69 @@ class GoldenResponses(APITestCase):
         )
 
     # -------------------------------------------------------------- errors
+
+    # ------------------------------------------- auth, sharing, paging
+
+    def test_token_auth_write(self):
+        from rest_framework.authtoken.models import Token
+
+        self.client.force_authenticate(user=None)
+        token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION="Token " + token.key)
+        response = self.client.patch(
+            "/api/images/%s/" % self.statmap["id"], {"description": "by token"}
+        )
+        self.assertGolden("token_patch_statmap", response, 200)
+
+    def test_contributor_writes(self):
+        # share through the web form, as an owner does
+        self.client.force_login(self.user)
+        r = self.client.post(
+            "/collections/%s/edit" % self.coll.pk,
+            {"name": "Golden Collection", "publication_status": "in_preparation",
+             "private": False, "description": "d\nline", "contributors": "OtherGuy"},
+            HTTP_HOST="testserver",
+        )
+        self.assertEqual(r.status_code, 302)
+        self.client.logout()
+        self.client.force_authenticate(user=self.other)
+        self.assertGolden(
+            "contributor_patch_statmap",
+            self.client.patch("/api/images/%s/" % self.statmap["id"], {"description": "by contributor"}),
+        )
+        self.assertGolden(
+            "contributor_post_statmap",
+            self.client.post(
+                "/api/collections/%s/images/" % self.coll.pk,
+                {"name": "contributed", "modality": "fMRI-BOLD", "map_type": "T",
+                 "file": self._file("statmaps/motor_lips.nii.gz")},
+                format="multipart",
+            ),
+        )
+        self.assertGolden(
+            "contributor_delete_collection",
+            self.client.delete("/api/collections/%s/" % self.coll.pk),
+        )
+
+    def test_paging_and_filters(self):
+        cases = {
+            "list_images_limit_offset": "/api/images/?limit=1&offset=1",
+            "list_collections_limit": "/api/collections/?limit=1",
+            "list_collections_name_filter": "/api/collections/?name=Golden%20Collection",
+            "collection_images_limit": "/api/collections/%s/images/?limit=1" % self.coll.pk,
+        }
+        for name, url in cases.items():
+            with self.subTest(name):
+                self.assertGolden(name, self.client.get(url))
+
+    def test_put_nidm_results_with_new_zip(self):
+        response = self.client.put(
+            "/api/nidm_results/%s/" % self.bundle["id"],
+            {"name": "golden nidm", "description": "replaced",
+             "zip_file": self._file("nidm/fsl_course_av.nidm.zip")},
+            format="multipart",
+        )
+        self.assertGolden("put_nidm_results", response, 200)
 
     def test_errors(self):
         self.assertGolden(

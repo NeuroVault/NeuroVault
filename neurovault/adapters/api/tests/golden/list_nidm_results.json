@@ -11,7 +11,7 @@
         "id": "<BUNDLE>",
         "modify_date": "<DATETIME>",
         "name": "spm_example.nidm",
-        "polymorphic_ctype": "<CONTENT_TYPE_ID>",
+        "polymorphic_ctype": "<CTYPE statmaps.nidmresults>",
         "statmaps": [
           {
             "BMI": null,

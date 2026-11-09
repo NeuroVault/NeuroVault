@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Callable, Iterable, Optional
 
-from neurovault.core.domain.collection import Collection
+from neurovault.core.domain.collection import NAME_OR_DOI, NAME_XOR_DOI, Collection, blank_to_none
 from neurovault.core.domain.errors import DomainValidationError, PermissionDenied
 
 from ..layout import collection_dir
@@ -38,15 +38,18 @@ class CollectionService:
         """Owner or administrator: may delete the collection and manage contributors."""
         return self.access.can_delete(actor, collection_id)
 
-    def complete_publication(self, changes: dict, require_name=True) -> dict:
+    def complete_publication(self, changes: dict, rule="name_or_doi") -> dict:
         """Fill name, authors, paper URL and journal from the DOI, if any.
 
-        A blank DOI becomes None. Without a DOI a name is required.
+        A blank DOI becomes None. `rule` is what the collection must name:
+        "name_or_doi" (the web form), "name_xor_doi" (creating through the
+        API) or "none" (changing through the API).
         """
         changes = dict(changes)
-        doi = changes.get("DOI")
-        if doi is not None and doi.strip() == "":
-            changes["DOI"] = doi = None
+        doi = changes["DOI"] = blank_to_none(changes.get("DOI"))
+        name = blank_to_none(changes.get("name"))
+        if rule == "name_xor_doi" and bool(doi and doi.strip()) == bool(name and name.strip()):
+            raise DomainValidationError({"__all__": [NAME_XOR_DOI]})
         if doi:
             changes["DOI"] = doi = doi.strip()
             try:
@@ -57,9 +60,8 @@ class CollectionService:
                 name=paper.title, authors=paper.authors, paper_url=paper.url,
                 journal_name=paper.journal_name,
             )
-        elif require_name and not changes.get("name"):
-            msg = ["You need to set the name or the DOI"]
-            raise DomainValidationError({"name": msg, "DOI": msg})
+        elif rule == "name_or_doi" and not name:
+            raise DomainValidationError({"name": [NAME_OR_DOI], "DOI": [NAME_OR_DOI]})
         return changes
 
     def save(self, actor, collection_id: Optional[int], changes: dict,

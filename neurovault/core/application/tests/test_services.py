@@ -363,10 +363,55 @@ class MetaanalysisUseCases(unittest.TestCase):
 
     def test_toggle_map(self):
         f = Fixture()
+        cid = f.collection()
+        group_map = f.statmap(cid, analysis_level="G")
         f.meta.save(OWNER, None, "one", "")
-        self.assertEqual(f.meta.toggle_map(OWNER, 7), "in")
-        self.assertEqual(f.meta.toggle_map(OWNER, 7), "out")
+        self.assertEqual(f.meta.toggle_map(OWNER, group_map), "in")
+        self.assertEqual(f.meta.toggle_map(OWNER, group_map), "out")
+
+    def test_only_group_t_or_z_statmaps_can_join(self):
+        f = Fixture()
+        cid = f.collection()
+        single = f.statmap(cid, analysis_level="S")
+        atlas = f.item_service.add(
+            OWNER, cid, "atlas", {"name": "a"},
+            ImageFilesInput(file=statistic_volume("a.nii.gz"), label_description_file=NamedBytes("a.xml", b"<a/>")),
+        )
+        f.meta.save(OWNER, None, "one", "")
+        for item_id in (single, atlas):
+            with self.assertRaises(DomainValidationError):
+                f.meta.toggle_map(OWNER, item_id)
 
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FieldGroups(unittest.TestCase):
+    """Value objects compose: no column belongs to two groups."""
+
+    def assert_disjoint(self, groups):
+        from itertools import combinations
+
+        for (a, fa), (b, fb) in combinations(groups.items(), 2):
+            with self.subTest(a=a, b=b):
+                self.assertEqual(fa & fb, set())
+
+    def test_item_groups_are_disjoint(self):
+        from neurovault.core.domain import items as d
+
+        self.assert_disjoint({
+            "header": set(d.HEADER_FIELDS), "scalars": set(d.ITEM_SCALARS),
+            "space": d._names(d.TemplateSpace), "subject": d._names(d.SubjectInfo),
+            "files": d._names(d.ImageFiles), "stats": d._names(d.MapStats),
+            "annotation": set(d.ANNOTATION_SCALARS), "paradigm": d._names(d.CognitiveParadigm),
+            "atlas": {"label_description_file"},
+        })
+
+    def test_collection_groups_are_disjoint(self):
+        from neurovault.core.domain import collection as c
+        from neurovault.core.domain.items import _names
+
+        groups = {k: _names(v) for k, v in c.METADATA_GROUPS.items()}
+        groups["scalars"] = set(c.SCALARS)
+        self.assert_disjoint(groups)

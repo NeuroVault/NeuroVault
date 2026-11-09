@@ -158,6 +158,15 @@ METADATA_GROUPS = {
 SCALARS = ("name", "description", "full_dataset_url", "private", "private_token")
 
 
+NAME_OR_DOI = "You need to set the name or the DOI"
+NAME_XOR_DOI = 'Specify either "name" or "DOI"'
+
+
+def blank_to_none(value):
+    """A blank DOI or token is no DOI or token."""
+    return None if value is not None and value.strip() == "" else value
+
+
 def group_of(field_name):
     for attr, cls in METADATA_GROUPS.items():
         if field_name in {f.name for f in fields(cls)}:
@@ -200,14 +209,6 @@ class Collection:
     def DOI(self):
         return self.publication.DOI
 
-    def get(self, field_name):
-        if field_name in SCALARS:
-            return getattr(self, field_name)
-        group = group_of(field_name)
-        if group is None:
-            raise KeyError(field_name)
-        return getattr(getattr(self, group), field_name)
-
     def apply(self, changes: dict):
         """Set scalar and metadata fields by column name."""
         by_group = {}
@@ -225,22 +226,12 @@ class Collection:
 
     def normalize(self, now: datetime):
         """Rules applied on every save (blank DOI/token become None, DOI date)."""
-        doi = self.publication.DOI
-        if doi is not None and doi.strip() == "":
+        if blank_to_none(self.publication.DOI) is None:
             self.apply({"DOI": None})
-        if self.private_token is not None and self.private_token.strip() == "":
-            self.private_token = None
+        self.private_token = blank_to_none(self.private_token)
         if self.publication.DOI and not self.private and not self.publication.doi_add_date:
             self.apply({"doi_add_date": now})
 
     def ensure_token(self, exists: Callable[[str], bool]):
         if self.private and self.private_token is None:
             self.private_token = generate_token(exists)
-
-    def require_name_or_doi(self):
-        if not self.publication.DOI and not self.name:
-            msg = ["You need to set the name or the DOI"]
-            raise DomainValidationError({"name": msg, "DOI": msg})
-
-    def is_member(self, user_id):
-        return user_id is not None and (user_id == self.owner_id or user_id in self.contributor_ids)

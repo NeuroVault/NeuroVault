@@ -17,6 +17,9 @@ from neurovault.core.domain.items import (
     NIDMProvenance,
     OtherImage,
     StatMap,
+    ANNOTATION_SCALARS,
+    HEADER_FIELDS as HEADER_COLUMNS,
+    ITEM_SCALARS,
     SubjectInfo,
     TemplateSpace,
 )
@@ -24,8 +27,6 @@ from neurovault.core.domain.metaanalysis import Metaanalysis
 
 from .mapping import assign, flatten, names, read, value
 
-HEADER_COLUMNS = ("collection_id", "name", "description", "is_valid")
-ANNOTATION_SCALARS = ("ignore_file_warning", "modality", "statistic_parameters", "smoothness_fwhm")
 
 
 class DjangoUnitOfWork:
@@ -80,9 +81,8 @@ def item_from_row(obj) -> CollectionItem:
         files=read(obj, ImageFiles),
         space=read(obj, TemplateSpace),
         subject=read(obj, SubjectInfo),
-        figure=obj.figure,
-        data=obj.data,
         payload=payload,
+        **{k: getattr(obj, k) for k in ITEM_SCALARS},
     )
 
 
@@ -91,7 +91,7 @@ def write_item(obj, item: CollectionItem):
     _write_header(obj, item.header)
     for vo in (item.files, item.space, item.subject):
         assign(obj, flatten(vo))
-    obj.figure, obj.data = item.figure, item.data
+    assign(obj, {k: getattr(item, k) for k in ITEM_SCALARS})
     assign(obj, dict.fromkeys(STAT_COLUMNS + ANNOTATION_COLUMNS))
     obj.source_bundle_id = None
     obj.label_description_file = None
@@ -198,7 +198,7 @@ class DjangoBundleRepository:
 
 # ------------------------------------------------------------- collections
 
-COLLECTION_SCALARS = ("name", "description", "full_dataset_url", "private", "private_token")
+COLLECTION_SCALARS = dc.SCALARS
 
 
 def collection_from_row(obj) -> dc.Collection:

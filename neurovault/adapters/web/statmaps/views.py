@@ -81,7 +81,7 @@ from neurovault.adapters.web.statmaps.forms import collection_changes, image_cha
 from neurovault.adapters.http import actor, can_change, can_delete, get_collection, get_image
 from neurovault.config.bootstrap import services
 from neurovault.core.domain.errors import DomainValidationError, PermissionDenied as DomainPermissionDenied
-from neurovault.adapters.web.statmaps.voxel_query_functions import *
+from neurovault.adapters.neuroimaging.atlas_queries import *
 from . import image_metadata
 
 logger = logging.getLogger(__name__)
@@ -143,7 +143,10 @@ def finalize_metaanalysis(request, metaanalysis_id):
 @login_required
 def toggle_active_metaanalysis(request, pk, collection_cid=None):
     image = get_image(pk, collection_cid, request)
-    new_status = services().metaanalyses.toggle_map(actor(request), image.pk)
+    try:
+        new_status = services().metaanalyses.toggle_map(actor(request), image.pk)
+    except DomainValidationError as e:
+        return JSONResponse({"error": e.errors["__all__"][0]}, status=400)
     return JSONResponse({"new_status": new_status})
 
 

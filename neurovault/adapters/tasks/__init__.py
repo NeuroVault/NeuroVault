@@ -1,16 +1,9 @@
 """Celery entry points: thin driving adapters over the application services.
 
-Task names keep their original module path so queued tasks still resolve.
+The Celery app is neurovault.config.celery. Task names keep their original
+module path so queued tasks still resolve.
 """
-import os
-
-from celery import Celery, shared_task
-from django.conf import settings
-
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.config.settings")
-app = Celery("neurovault")
-app.config_from_object("django.conf:settings")
-app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
+from celery import shared_task
 
 
 @shared_task(name="neurovault.apps.statmaps.tasks.process_map")

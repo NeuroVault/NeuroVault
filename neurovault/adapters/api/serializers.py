@@ -24,7 +24,7 @@ from neurovault.adapters.persistence.models import (
     NIDMBundle,
 )
 
-from neurovault.adapters.api.utils import strip, logical_xor
+from neurovault.adapters.api.utils import strip
 from neurovault.adapters.api import fields as api_fields
 
 FILE_FIELDS = ("file", "surface_left_file", "surface_right_file", "label_description_file")
@@ -32,14 +32,20 @@ FOREIGN_KEYS = ("cognitive_paradigm_cogatlas", "cognitive_contrast_cogatlas")
 
 
 class ContentTypeIdField(serializers.SerializerMethodField):
-    """The `polymorphic_ctype` key the API has always emitted: a content type id."""
+    """The `polymorphic_ctype` key the API has always emitted.
+
+    Its value is the id of the content type the polymorphic model had (for
+    NIDM results, `statmaps.nidmresults`), so clients matching on it keep
+    working. The row outlives the model; `get_or_create` covers databases
+    where it was removed with `remove_stale_contenttypes`.
+    """
 
     def __init__(self, model_name, **kwargs):
         self.model_name = model_name
         super().__init__(**kwargs)
 
     def to_representation(self, value):
-        return ContentType.objects.get_by_natural_key("statmaps", self.model_name).pk
+        return ContentType.objects.get_or_create(app_label="statmaps", model=self.model_name)[0].pk
 
 
 def actor_of(serializer):
@@ -299,7 +305,7 @@ class AtlasSerializer(ImageSerializer):
 
 class EditableAtlasSerializer(ImageSerializer):
     kind = Item.ATLAS
-    polymorphic_ctype = ContentTypeIdField("item")
+    polymorphic_ctype = ContentTypeIdField("atlas")
 
     class Meta:
         model = Item
@@ -345,7 +351,7 @@ class NIDMResultsSerializer(serializers.ModelSerializer):
     statmaps = ImageSerializer(
         many=True, required=False
     )
-    polymorphic_ctype = ContentTypeIdField("nidmbundle")
+    polymorphic_ctype = ContentTypeIdField("nidmresults")
     url = HyperlinkedImageURL(source="get_absolute_url", read_only=True)
 
     validate = NIDMResultsCommands.validate
@@ -359,7 +365,7 @@ class NIDMResultsSerializer(serializers.ModelSerializer):
 
 class EditableNIDMResultsSerializer(serializers.ModelSerializer):
     url = HyperlinkedImageURL(source="get_absolute_url", read_only=True)
-    polymorphic_ctype = ContentTypeIdField("nidmbundle")
+    polymorphic_ctype = ContentTypeIdField("nidmresults")
 
     validate = NIDMResultsCommands.validate
     update = NIDMResultsCommands.update
@@ -386,22 +392,18 @@ class CollectionSerializer(serializers.ModelSerializer):
         return obj.owner.username
 
     def validate(self, data):
-        doi = strip(data.get("DOI"))
-        name = strip(data.get("name"))
-
-        if not self.instance:
-            if not (logical_xor(doi, name)):
-                raise serializers.ValidationError('Specify either "name" or "DOI"')
-
-        if doi:
-            try:
-                completed = services().collections.complete_publication(
-                    {"DOI": doi}, require_name=False
-                )
-                completed.pop("DOI")
-                data.update(completed)
-            except DomainValidationError:
-                raise serializers.ValidationError("Could not resolve DOI")
+        try:
+            completed = services().collections.complete_publication(
+                {"DOI": strip(data.get("DOI")), "name": strip(data.get("name"))},
+                rule="name_xor_doi" if not self.instance else "none",
+            )
+        except DomainValidationError as e:
+            if "__all__" in e.errors:
+                raise serializers.ValidationError(e.errors["__all__"][0])
+            raise serializers.ValidationError("Could not resolve DOI")
+        if completed["DOI"]:
+            completed.pop("DOI")
+            data.update(completed)
         return data
 
     def create(self, validated_data):

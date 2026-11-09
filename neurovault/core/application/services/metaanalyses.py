@@ -6,7 +6,7 @@ import shutil
 import tempfile
 
 from neurovault.core.domain import metaanalysis as dm
-from neurovault.core.domain.errors import PermissionDenied
+from neurovault.core.domain.errors import DomainValidationError, PermissionDenied
 
 from ..ports import MetaAnalysisInput
 from .bundles import NamedBytes
@@ -62,8 +62,13 @@ class MetaanalysisService:
         return active[0] if active else None
 
     def toggle_map(self, actor, item_id):
-        """Add the map to the actor's active meta-analysis, or remove it; returns 'in'/'out'."""
+        """Add the map to the actor's active meta-analysis, or remove it; returns 'in'/'out'.
+
+        Only group-level T or Z maps uploaded as statistic maps can be added.
+        """
         m = self.metaanalyses.active_for(actor.user_id)[0]
+        if item_id not in m.map_ids and not dm.accepts_map(self.items.get(item_id)):
+            raise DomainValidationError("Only group-level T or Z statistic maps can join a meta-analysis.")
         if item_id in m.map_ids:
             m.map_ids = m.map_ids - {item_id}
             status = "out"
