@@ -197,7 +197,8 @@ class GoldenResponses(APITestCase):
             self.assertEqual(response.status_code, status, response.content)
         body = json.loads(response.content) if response.content else None
         got = {"status": response.status_code, "body": self._normalize(body, self._id_maps())}
-        if name.startswith(("post_", "put_")) and isinstance(got["body"], dict):
+        stores_file = {"post", "put"} & set(name.split("_"))
+        if stores_file and isinstance(got["body"], dict):
             for key in ASYNC_OUTPUTS:
                 if key in got["body"]:
                     got["body"][key] = "<ASYNC_OUTPUT>"
