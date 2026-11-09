@@ -301,6 +301,27 @@ Doing phases 1–3 before phase 4 means the 17 `instance_of` and the
 `polymorphic_ctype` call sites are rewritten once, when they move into use cases and
 repositories, and the schema swap touches only the persistence adapter.
 
+As landed, the phases are one PR, and the schema swap is two migrations:
+`0006_item_and_nidm_bundle` creates the new tables, and `0007_move_items` does the
+rest in one transaction. It locks the old item tables against writes, aborts if a row
+has no subclass row or a view depends on the old tables, copies items, bundles and tag
+links, re-points comparisons and meta-analysis selections, and drops the old tables.
+Its reverse copies everything back (per-item permissions are re-derived from the
+collection), so `migrate statmaps 0005` loses nothing.
+
+Deploying it:
+1. Take a `pg_dump` of the database.
+2. Stop web and celery (maintenance window). The migration's lock keeps old code from
+   writing to the old tables, but uploads made while it waits would fail.
+3. `manage.py migrate`. Do not run `remove_stale_contenttypes`: the API reports the
+   ids of the old `statmaps.nidmresults` and `statmaps.atlas` content types as
+   `polymorphic_ctype`, and a recreated row would get a new id.
+4. Start the new code.
+
+neurovault/NeuroVault#877 adds a `statmaps` migration on `Comparison` that also
+depends on 0005. Whichever PR merges second renumbers its migration to follow the
+other's last one; #877's `RenameIndex` operations then apply to the table 0007 leaves.
+
 ## 9. Verification
 
 - **Behaviour preservation:** golden API responses and characterization tests from
@@ -386,20 +407,25 @@ phase 5 (drop the polymorphic tables, `django-polymorphic` and
 `GUARDIAN_GET_CONTENT_TYPE`) in the following commit.
 
 Verification:
-- the master test suite plus the phase 0 goldens (43 responses) and characterization
-  tests pass on every phase;
-- 25 use-case tests run on in-memory fakes without Django, Docker or a database
+- the master test suite plus the goldens (53 responses, all recorded on `master`) and
+  characterization tests pass;
+- 37 use-case tests run on in-memory fakes without Django, Celery, Docker or a database
   (`python -m unittest neurovault.core.application.tests.test_services`);
-- `core/application/tests/test_layering.py` enforces the dependency rule;
+- `core/application/tests/test_layering.py` enforces the dependency rule: core imports
+  only the standard library, numpy, nibabel, nilearn, scipy and inner layers (relative
+  imports resolved, fakes included), and the web and API adapters do not import each
+  other;
 - `test_migration_copy_items` migrates one row of every kind (plus tags, comparisons,
-  meta-analysis selections, permissions, NaN values) through 0007/0008;
+  meta-analysis selections, permissions, NaN values) through 0007 and back to 0005,
+  and checks the shared id space and the pre-flight abort;
 - on a copy of the local database, 126/126 items are identical after 0007.
 
-Golden normalizations added during implementation: ids are mapped per entity type
-(item and bundle ids are separate sequences after phase 4); `polymorphic_ctype` is a
-database-specific content type id; in POST/PUT/PATCH responses the outputs of the
-asynchronous processing task (thumbnail, surface files, reduced representation) depend
-on when the task finishes, so they are not compared.
+Golden normalizations added during implementation: ids are mapped per entity type;
+`polymorphic_ctype` is a database-specific number, so the golden records the
+content type it names (`statmaps.nidmresults`, `statmaps.atlas`); in POST and PUT
+responses, which store a file, the outputs of the asynchronous processing task
+(thumbnail, surface files, reduced representation) depend on when the task finishes,
+so they are not compared. PATCH responses compare them.
 
 Behaviour that changed, each a master bug:
 
@@ -411,6 +437,18 @@ Behaviour that changed, each a master bug:
 | Gene-expression vector | mask path prefixed with `$`; fails | computed |
 | Quality checks on non-gzipped uploads | forced gzip decoding | reads by extension |
 | Image posted to a collection the user cannot change (Neurosynth/Neuropower form) | accepted | 403 |
+| Edit form posts another user's collection as the target | 500 (as above) | 403; the form offers only collections the user can change |
+| Edit form moves an NIDM-derived map out of its bundle's collection | 500 (as above) | refused; the field is disabled |
+| `upload_folder` into a collection the user cannot change | accepted | 403 |
+| Contributor changes a collection's contributors (API) | accepted | 403; owner or administrator only |
+| Meta-analysis selection of an atlas or NIDM map by direct POST | accepted | refused (`accepts_map`) |
+| Admin edits and deletes, including bulk delete | model `save()` and signals | through the use cases: permissions, files and processing as on the site |
+
+Other changes: `django_cleanup` is removed, because the use cases delete superseded and
+deleted files themselves (master's `django_cleanup` also deleted a map's file when its
+row was deleted). `social-auth-app-django` is pinned to 5.4.3: master's 5.6.0 needs
+Django 5.1, so its requirements did not resolve. Scripts under `scripts/` that imported
+removed models are ported or deleted (see the commit that removed them).
 
 Still broken, recorded as expected failures (out of scope for a refactor): editing an
 atlas on the web (`EditAtlasForm` references a field it lacks), the owner's redirect to a
@@ -421,5 +459,5 @@ rdflib). Also unchanged: the weighted meta-analysis path calls an undefined
 
 Removed as dead or broken: `Image.create`, AFNI sub-brick saving, `PolymorphicImageForm`,
 `meta.py` (moved into the NiMARE adapter and the use case), `trigger_comparisons`
-(imported a task that no longer exists). Stale content types of the old models remain;
-`manage.py remove_stale_contenttypes` clears them.
+(imported a task that no longer exists). Content types of the old models remain; keep
+them (§8, deploying).
