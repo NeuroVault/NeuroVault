@@ -1,11 +1,13 @@
 from django.forms.models import model_to_dict
 
-from neurovault.apps.statmaps.forms import EditStatisticMapForm
-from neurovault.apps.statmaps.models import StatisticMap
+from neurovault.adapters.persistence.models import Item
+from neurovault.adapters.web.statmaps.forms import EditStatisticMapForm
+from neurovault.config.bootstrap import services
+from neurovault.core.application.ports import SYSTEM
 
-count = StatisticMap.objects.count()
-for i, image in enumerate(StatisticMap.objects.all()):
-    print("Fixing StatisticMap %d (%d/%d)"%(image.pk, i+1, count))
+statmaps = Item.objects.statmaps()
+count = statmaps.count()
+for i, image in enumerate(statmaps):
+    print("Fixing statistic map %d (%d/%d)" % (image.pk, i + 1, count))
     form = EditStatisticMapForm(model_to_dict(image), instance=image, user=image.collection.owner)
-    image.is_valid = form.is_valid()
-    image.save()
+    services().items.change(SYSTEM, image.pk, {"is_valid": form.is_valid()}, check_access=False)

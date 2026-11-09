@@ -1,0 +1,10 @@
+{
+  "body": {
+    "email": "neuro@example.org",
+    "first_name": "",
+    "id": "<USER>",
+    "last_name": "",
+    "username": "NeuroGuy"
+  },
+  "status": 200
+}

@@ -1,0 +1,14 @@
+{
+  "body": {
+    "file": [
+      "No file was submitted."
+    ],
+    "map_type": [
+      "This field is required."
+    ],
+    "modality": [
+      "This field is required."
+    ]
+  },
+  "status": 400
+}

@@ -11,8 +11,8 @@ neurovault/pycortex_data/
 compose/nginx/certs
 
 # test data
-neurovault/apps/statmaps/tests/test_data/feat/*
-neurovault/apps/statmaps/tests/bench/*
+neurovault/adapters/web/statmaps/tests/test_data/feat/*
+neurovault/adapters/web/statmaps/tests/bench/*
 
 # celery generated schedule
 celerybeat-schedule

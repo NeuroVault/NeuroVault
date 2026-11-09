@@ -2,10 +2,10 @@ from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.db.models.query_utils import Q
 
-from neurovault.apps.statmaps.models import Collection
+from neurovault.adapters.persistence.models import Collection
 
-template = """<p>Dear {username},<br \>
-<br \>
+template = """<p>Dear {username},<br />
+<br />
 Twice a year data from NeuroVault are deposited in Stanford Digital
 Repository (SDR). The mission of SDR is to preserve important scientific dataset for decades. They increase chances of
 long-term data accessibility by mirroring datasets at multiple data centers distributed across the globe. In a week
@@ -26,7 +26,7 @@ The NeuroVault Team</p>"""
 counter = 0
 for user in User.objects.all():
     collections = Collection.objects.filter(owner=user).filter(Q(DOI__isnull=True) | Q(private=True))
-    collections = [col for col in collections if col.basecollectionitem_set.count() > 0]
+    collections = [col for col in collections if col.item_count() > 0]
     if collections:
         if user.first_name:
             email = template.replace("{username}", user.first_name.capitalize())

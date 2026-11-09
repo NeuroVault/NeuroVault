@@ -29,7 +29,7 @@ services:
 
   worker:
     image: neurovault/neurovault
-    command: celery -A neurovault.celery worker -Q default -n default@%h
+    command: celery -A neurovault.config.celery worker -Q default -n default@%h
     volumes:
       - .:/code
       - ${NV_IMAGE_DATA}:/var/www/image_data/images

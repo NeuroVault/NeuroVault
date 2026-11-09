@@ -1,0 +1,8 @@
+{
+  "body": {
+    "non_field_errors": [
+      "Specify either \"name\" or \"DOI\""
+    ]
+  },
+  "status": 400
+}

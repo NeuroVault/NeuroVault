@@ -4,11 +4,13 @@ import tempfile
 import shutil
 from subprocess import call
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "neurovault.config.settings")
 django.setup()
 
 from nidmfsl.fsl_exporter.fsl_exporter import FSLtoNIDMExporter
-from neurovault.apps.statmaps.utils import detect_feat_directory, get_traceback
+import traceback
+
+from neurovault.adapters.neuroimaging.workspace import detect_feat_directory
 
 
 if __name__ == '__main__':
@@ -34,7 +36,7 @@ if __name__ == '__main__':
                 parse += 1
             except:
                 fail += 1
-                print(("Unable to parse the FEAT directory: \n{0}.".format(get_traceback())))
+                print(("Unable to parse the FEAT directory: \n{0}.".format(traceback.format_exc())))
             finally:
                 print('ttl length: {}'.format(os.path.getsize(os.path.join(export_dir,'nidm.ttl'))))
                 shutil.rmtree(tmpdir)
