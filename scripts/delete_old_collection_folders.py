@@ -8,7 +8,7 @@ from django.conf import settings
 PRIVATE_MEDIA_ROOT = settings.PRIVATE_MEDIA_ROOT
 import os
 import os.path
-from neurovault.adapters.persistence.models import *
+from neurovault.adapters.persistence.models import Collection
 
 def delOldCollDir():
     collDir = os.path.join(PRIVATE_MEDIA_ROOT, 'images')

@@ -161,7 +161,6 @@ INSTALLED_APPS = [
     "taggit",
     "crispy_forms",
     "crispy_bootstrap4",
-    "django_cleanup",
     "file_resubmit",
     "guardian",
     "django_celery_results",
