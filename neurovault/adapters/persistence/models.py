@@ -897,6 +897,7 @@ class Item(models.Model):
     ANALYSIS_LEVEL_CHOICES = vocabulary.ANALYSIS_LEVEL_CHOICES
     MODALITY_CHOICES = vocabulary.MODALITY_CHOICES
     Pa = vocabulary.Pa
+    R = vocabulary.R
 
     objects = ItemQuerySet.as_manager()
 
