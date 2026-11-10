@@ -68,7 +68,7 @@ oauthlib==3.2.2
 packaging==23.1
 pandas==2.0.3
 patsy==0.5.3
-Pillow==10.0.0
+Pillow==13.0.0
 plotly==5.15.0
 prompt-toolkit==3.0.39
 prov==2.0.0
